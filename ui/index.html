@@ -1875,6 +1875,156 @@
   .gacha-rarity.SR  { background: var(--active-bg); color: var(--active-fg); border: 1px solid var(--active-border); }
   .gacha-rarity.R   { background: var(--surface-2); color: var(--muted); border: 1px solid var(--border); }
 
+  /* ---- Carrot Coin Wallet Pill, Token->Carrot Exchange Card & KPI Link ---- */
+  .carrot-wallet-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--active-bg);
+    border: 1px solid var(--active-border);
+    color: var(--active-fg);
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 800;
+    line-height: 1.2;
+    cursor: default;
+    transition: transform 0.14s ease, box-shadow 0.16s ease, background 0.15s ease;
+  }
+  button.carrot-wallet-pill { cursor: pointer; }
+  button.carrot-wallet-pill:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 20%, transparent);
+  }
+  .carrot-mint-card {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 9px 11px;
+    margin-bottom: 9px;
+    font-family: var(--font-mono);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .carrot-mint-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .carrot-mint-title {
+    font-size: 10.5px;
+    font-weight: 800;
+    color: var(--ink);
+  }
+  .carrot-claim-btn {
+    border: 1px solid var(--active-border);
+    background: var(--accent);
+    color: #fff;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 800;
+    padding: 3.5px 9px;
+    border-radius: 999px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 28%, transparent);
+    transition: transform 0.14s ease, filter 0.15s ease, box-shadow 0.16s ease;
+  }
+  .carrot-claim-btn:hover:not(:disabled) {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+  }
+  .carrot-claim-btn:active:not(:disabled) { transform: scale(0.95); }
+  .carrot-claim-btn:disabled {
+    background: var(--surface);
+    border-color: var(--border);
+    color: var(--muted);
+    box-shadow: none;
+    cursor: default;
+  }
+  .carrot-claim-btn.nudge {
+    animation: carrotNudge 0.45s cubic-bezier(0.22, 1.4, 0.36, 1);
+  }
+  @keyframes carrotNudge {
+    0%, 100% { transform: scale(1); }
+    35%      { transform: scale(1.1); box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 55%, transparent); }
+  }
+  .carrot-mint-stats {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 4px 10px;
+    font-size: 10px;
+    color: var(--ink-soft);
+  }
+  .carrot-mint-stats strong { color: var(--ink); }
+  .carrot-mint-stats .c-done { color: var(--teal); font-weight: 800; }
+  .carrot-mint-stats .c-wait { color: var(--accent); font-weight: 800; }
+  .carrot-mint-track {
+    height: 6px;
+    width: 100%;
+    border-radius: 999px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    display: flex;
+  }
+  .carrot-mint-seg-done {
+    height: 100%;
+    background: var(--teal);
+    transition: width 0.36s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .carrot-mint-seg-ready {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--amber));
+    transition: width 0.36s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .carrot-mint-foot {
+    font-size: 9.5px;
+    color: var(--muted);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 4px;
+    line-height: 1.4;
+  }
+  .token-carrot-bar {
+    margin-top: 7px;
+    padding: 4px 7px;
+    border-radius: 5px;
+    border: 1px dashed var(--border);
+    background: color-mix(in srgb, var(--surface-2) 65%, transparent);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease;
+  }
+  .token-carrot-bar:hover {
+    border-color: var(--active-border);
+    background: var(--active-bg);
+    color: var(--active-fg);
+  }
+  .token-carrot-bar.claimable {
+    border-style: solid;
+    border-color: var(--active-border);
+    background: var(--active-bg);
+    color: var(--active-fg);
+    font-weight: 700;
+  }
+  .token-carrot-bar .tc-cta {
+    flex-shrink: 0;
+    font-weight: 700;
+    color: var(--active-fg);
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
       animation-duration: 0.01ms !important;
@@ -3467,6 +3617,10 @@
         <span id="kpiInOut">输入 — · 输出 —</span>
         <span id="kpiCache">缓存 —</span>
       </div>
+      <div class="token-carrot-bar" id="tokenCarrotBar" title="点击打开萝卜币兑换与算力扭蛋">
+        <span id="tokenCarrotText">🥕 每日每 10M 可兑 1 萝卜币</span>
+        <span class="tc-cta" id="tokenCarrotCta">兑换 ▸</span>
+      </div>
     </div>
 
     <div class="card" data-kpi="cost" title="双击触发金币雨彩蛋">
@@ -3656,8 +3810,8 @@
     </div>
     <div class="dbg-inline-row" style="padding-top:4px;border-top:1px dashed color-mix(in srgb, var(--amber) 35%, transparent)">
       <span class="dbg-tag">🎲 扭蛋/游戏:</span>
-      <button class="dbg-mini-btn" id="dbgDropEggBtn" title="立刻弹出巡逻偶遇的可收集扭蛋">🎁 掉巡逻扭蛋</button>
-      <button class="dbg-mini-btn" id="dbgAddCoinsBtn" title="沙盒加10枚扭蛋币（不扣真实币）">🪙 +10调试币</button>
+      <button class="dbg-mini-btn" id="dbgDropEggBtn" title="立刻弹出巡逻偶遇的可收集萝卜币扭蛋">🎁 掉巡逻扭蛋</button>
+      <button class="dbg-mini-btn" id="dbgAddCoinsBtn" title="沙盒加10枚萝卜币（不扣真实币）">🥕 +10萝卜币</button>
       <button class="dbg-mini-btn" id="dbgOpenGachaBtn">🎰 测扭蛋</button>
       <button class="dbg-mini-btn" id="dbgOpenArcadeBtn">🎮 测游戏</button>
       <button class="dbg-mini-btn" id="dbgGodModeBtn" title="无限弹药+三管极速+护盾+无敌（不覆盖真实纪录）">🔥 无双: 关</button>
@@ -3719,28 +3873,44 @@
   </div>
 </div>
 
-<!-- CORE: TOOTOO COMPUTE GACHA & ALCHEMY MODAL -->
+<!-- CORE: TOOTOO COMPUTE GACHA & CARROT COIN EXCHANGE MODAL -->
 <div class="evo-backdrop" id="gachaModal">
-  <div class="arcade-dialog" style="width:min(430px, 94vw)">
+  <div class="arcade-dialog" style="width:min(440px, 94vw)">
     <div class="evo-head">
-      <span class="kicker" style="font-size:11px;color:var(--ink)">🎰 算力扭蛋 · 算力炼金</span>
-      <button class="btn" id="gachaCloseBtn" style="padding:3px 8px;font-size:10.5px">✕</button>
+      <span class="kicker" style="font-size:11px;color:var(--ink)">🎰 算力扭蛋 · 萝卜币兑换</span>
+      <span style="display:flex;gap:6px;align-items:center">
+        <span class="carrot-wallet-pill" id="gachaWalletPill" title="当前可用萝卜币余额">🥕 <span id="gachaHeaderCoins">0</span> 萝卜币</span>
+        <button class="btn" id="gachaCloseBtn" style="padding:3px 8px;font-size:10.5px">✕</button>
+      </span>
     </div>
-    <div class="alchemy-grid" id="alchemyGrid"></div>
+    <div class="carrot-mint-card" id="carrotMintCard">
+      <div class="carrot-mint-head">
+        <span class="carrot-mint-title">🥕 今日 Token 兑换萝卜币（每 10M = 1 币）</span>
+        <button class="carrot-claim-btn" id="carrotClaimBtn">🥕 兑换萝卜币</button>
+      </div>
+      <div class="carrot-mint-stats" id="carrotMintStats">今日消耗 — · 已兑换 0M (0 币)</div>
+      <div class="carrot-mint-track">
+        <div class="carrot-mint-seg-done" id="carrotSegDone" style="width:0%"></div>
+        <div class="carrot-mint-seg-ready" id="carrotSegReady" style="width:0%"></div>
+      </div>
+      <div class="carrot-mint-foot" id="carrotMintFoot">距下一枚萝卜币还差 —</div>
+    </div>
     <div class="gacha-box">
       <div class="gacha-machine" id="gachaMachine">🎰</div>
       <div style="font-size:11px;color:var(--muted);margin-bottom:8px">
-        每消耗 10M Token 铸造 1 枚算力币 · 余额 <strong id="gachaCoins" style="color:var(--accent)">0</strong> 枚 · 图鉴 <strong id="gachaColl" style="color:var(--ink)">0 / 24</strong>
+        当前余额 <strong id="gachaCoins" style="color:var(--accent)">0</strong> 枚萝卜币 · 扭蛋图鉴 <strong id="gachaColl" style="color:var(--ink)">0 / 24</strong>
       </div>
-      <button class="arc-primary-btn" id="gachaPullBtn">🪙 消耗 1 枚算力币扭一颗！</button>
+      <button class="arc-primary-btn" id="gachaPullBtn">🥕 消耗 1 枚萝卜币扭一颗！</button>
       <div class="gacha-result" id="gachaResult">
-        <span style="font-size:11px;color:var(--muted)">拉下开关，看看兔兔今天给你抽什么神签 ✨</span>
+        <span style="font-size:11px;color:var(--muted)">用萝卜币拉下开关，看看兔兔今天给你抽什么神签 ✨</span>
       </div>
     </div>
+    <div class="alchemy-grid" id="alchemyGrid" style="margin-top:9px;margin-bottom:0"></div>
     <div class="dbg-only dbg-inline" id="dbgGachaPanel">
       <div class="dbg-inline-row">
-        <span class="dbg-tag">🛠 扭蛋沙盒(不扣真实币/不写图鉴)</span>
-        <button class="dbg-mini-btn" id="dbgGachaPlusBtn">🪙 +10币</button>
+        <span class="dbg-tag">🛠 扭蛋沙盒(不扣真实萝卜币/不写图鉴)</span>
+        <button class="dbg-mini-btn" id="dbgGachaPlusBtn">🥕 +10萝卜币</button>
+        <button class="dbg-mini-btn" id="dbgGachaResetClaimBtn">↺ 重置临时兑换</button>
         <button class="dbg-mini-btn" id="dbgGachaResetCollBtn">↺ 清临时图鉴</button>
       </div>
       <div class="dbg-inline-row" id="dbgGachaForceChips">
@@ -3760,6 +3930,7 @@
     <div class="evo-head">
       <span class="kicker" style="font-size:11px;color:var(--ink)">更多玩法 · 算力游乐场</span>
       <span style="display:flex;gap:5px;align-items:center">
+        <button class="carrot-wallet-pill" id="arcWalletBtn" title="当前萝卜币余额（点击前往兑换与扭蛋）">🥕 <span id="arcHeaderCoins">0</span></button>
         <button class="btn" id="arcSfxBtn" style="padding:3px 7px;font-size:10px" title="开关合成复古音效">🔇 静音</button>
         <button class="btn" id="arcadeCloseBtn" style="padding:3px 8px;font-size:10.5px">✕</button>
       </span>
@@ -4156,8 +4327,9 @@ const debugState = {
   active: false,     // true while #debugBar is open
   level: null,       // null = real today_tokens; 1..9 = simulated tier
   unlockAll: false,
-  gachaCoins: 0,     // extra sandbox gacha coins (memory-only, never persisted)
+  gachaCoins: 0,     // extra sandbox carrot coins (memory-only, never persisted)
   gachaSpent: 0,     // sandbox spends (never touches real localStorage)
+  carrotClaimed: null,// sandbox claimed carrot-coin count while debug active
   gachaForce: "auto",// "auto" | "SSR" | "SR" | "R"
   gachaColl: null,   // memory-only gacha collection clone while debug is active
   godMode: false,    // games: infinite ammo, max fire rate/cannons, shields, invincible, no real best overwrite
@@ -6268,6 +6440,7 @@ function resetAllDebugState() {
   debugState.unlockAll = false;
   debugState.gachaCoins = 0;
   debugState.gachaSpent = 0;
+  debugState.carrotClaimed = null;
   debugState.gachaForce = "auto";
   debugState.gachaColl = null;
   debugState.godMode = false;
@@ -6406,7 +6579,7 @@ function spawnPatrolCapsule() {
   document.querySelectorAll(".patrol-capsule").forEach(n => n.remove());
   const cap = document.createElement("div");
   cap.className = "patrol-capsule";
-  cap.innerHTML = `<div class="cap-orb"></div><span class="cap-tag">巡逻完成！TooToo 捡到 <b>1 颗算力扭蛋</b> · 点击收下</span>`;
+  cap.innerHTML = `<div class="cap-orb"></div><span class="cap-tag">巡逻完成！TooToo 捡到 <b>1 枚萝卜币</b> · 点击收下</span>`;
   document.body.appendChild(cap);
   playSfx("cache");
 
@@ -6435,7 +6608,7 @@ function spawnPatrolCapsule() {
     }
     if (typeof renderGachaMeta === "function") renderGachaMeta();
 
-    cap.innerHTML = `<div class="cap-orb" style="animation:none"></div><span class="cap-tag">已收入囊中 · <b>${debugState.active ? "调试币" : "算力币"} +1</b> ✨</span>`;
+    cap.innerHTML = `<div class="cap-orb" style="animation:none"></div><span class="cap-tag">已收入囊中 · <b>${debugState.active ? "沙盒萝卜币" : "萝卜币"} +1</b> 🥕</span>`;
     setTimeout(() => {
       cap.classList.add("fading");
       setTimeout(() => cap.remove(), 320);
@@ -7889,40 +8062,188 @@ function getTodayKey() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+const CARROT_MINT_UNIT = 10e6; // 10M tokens = 1 萝卜币
+
+function getRealCarrotClaimed(todayKey, mintableTotal, realSpent, bonus) {
+  const cKey = "tootoo_carrot_claimed_" + todayKey;
+  let stored = null;
+  try {
+    const raw = localStorage.getItem(cKey);
+    if (raw !== null) stored = Math.max(0, Number(raw) || 0);
+  } catch {}
+  if (stored === null) {
+    // First time after upgrade: infer minimum claimed if user already spent beyond daily 3 + patrol bonus
+    const inferred = Math.min(mintableTotal, Math.max(0, realSpent - 3 - bonus));
+    return { claimed: inferred, cKey };
+  }
+  return { claimed: Math.min(mintableTotal, stored), cKey };
+}
+
 function getGachaCoinState() {
   const todayTok = getEffectiveTodayTokens();
   const todayKey = getTodayKey();
   const bKey = "tootoo_gacha_bonus_" + todayKey;
   let bonus = 0;
   try { bonus = Math.max(0, Number(localStorage.getItem(bKey) || 0) || 0); } catch {}
-  const dbgAdd = debugState.active ? debugState.gachaCoins : 0;
-  const earned = 3 + Math.floor(todayTok / 10e6) + bonus + dbgAdd; // Daily 3 starter + 1 per 10M tokens + patrol egg drops + debug coins
   const key = "tootoo_gacha_spent_" + todayKey;
-  let spent = 0;
-  try { spent = Math.max(0, Number(localStorage.getItem(key) || 0) || 0); } catch {}
+  let realSpent = 0;
+  try { realSpent = Math.max(0, Number(localStorage.getItem(key) || 0) || 0); } catch {}
+
+  const mintableTotal = Math.floor(todayTok / CARROT_MINT_UNIT);
+  const { claimed: realClaimed, cKey } = getRealCarrotClaimed(todayKey, mintableTotal, realSpent, bonus);
+  const claimed = (debugState.active && debugState.carrotClaimed != null)
+    ? Math.min(mintableTotal, debugState.carrotClaimed)
+    : realClaimed;
+  const claimable = Math.max(0, mintableTotal - claimed);
+  const convertedTok = claimed * CARROT_MINT_UNIT;
+  const claimableTok = claimable * CARROT_MINT_UNIT;
+  const nextProgressTok = Math.max(0, todayTok - mintableTotal * CARROT_MINT_UNIT);
+  const remainForNext = Math.max(0, CARROT_MINT_UNIT - nextProgressTok);
+
+  const dbgAdd = debugState.active ? debugState.gachaCoins : 0;
   const dbgSpent = debugState.active ? debugState.gachaSpent : 0;
-  return { earned, spent: spent + dbgSpent, realSpent: spent, bonus, balance: Math.max(0, earned - spent - dbgSpent), key };
+  const spent = realSpent + dbgSpent;
+  const earned = 3 + claimed + bonus + dbgAdd;
+  const balance = Math.max(0, earned - spent);
+
+  return {
+    todayTok,
+    mintableTotal,
+    claimed,
+    claimable,
+    convertedTok,
+    claimableTok,
+    nextProgressTok,
+    remainForNext,
+    earned,
+    spent,
+    realSpent,
+    bonus,
+    dbgAdd,
+    balance,
+    key,
+    cKey,
+  };
+}
+
+function claimCarrotCoins() {
+  const cs = getGachaCoinState();
+  if (cs.claimable <= 0) return;
+  const newClaimed = cs.claimed + cs.claimable;
+  if (debugState.active) {
+    debugState.carrotClaimed = newClaimed;
+  } else {
+    try { localStorage.setItem(cs.cKey, String(newClaimed)); } catch {}
+  }
+  const btn = document.getElementById("carrotClaimBtn");
+  if (btn) spawnConfettiBurst(btn, 20);
+  playSfx("gold");
+  renderGachaMeta();
 }
 
 function renderGachaMeta() {
   const coll = getGachaCollected();
   const el = document.getElementById("gachaColl");
   if (el) el.textContent = `${coll.length} / ${GACHA_POOL.length}`;
+
   const cs = getGachaCoinState();
   const coinEl = document.getElementById("gachaCoins");
   if (coinEl) coinEl.textContent = cs.balance;
-  document.getElementById("gachaBtn")?.classList.toggle("has-coins", cs.balance > 0);
+  const hdrGacha = document.getElementById("gachaHeaderCoins");
+  if (hdrGacha) hdrGacha.textContent = cs.balance;
+  const hdrArc = document.getElementById("arcHeaderCoins");
+  if (hdrArc) hdrArc.textContent = cs.balance;
+
+  const gBtn = document.getElementById("gachaBtn");
+  if (gBtn) {
+    gBtn.classList.toggle("has-coins", cs.balance > 0 || cs.claimable > 0);
+    gBtn.title = cs.claimable > 0
+      ? `算力扭蛋 · 余额 ${cs.balance} 枚萝卜币（还有 +${cs.claimable} 枚可兑换！）`
+      : `算力扭蛋 · 当前余额 ${cs.balance} 枚萝卜币`;
+  }
+
+  // Render Carrot Coin Exchange Ledger inside #gachaModal
+  const claimBtn = document.getElementById("carrotClaimBtn");
+  if (claimBtn) {
+    if (cs.claimable > 0) {
+      claimBtn.disabled = false;
+      claimBtn.textContent = `🥕 兑换 +${cs.claimable} 萝卜币`;
+    } else {
+      claimBtn.disabled = true;
+      claimBtn.textContent = cs.claimed > 0 ? "✓ 今日已全兑" : "满 10M 可兑";
+    }
+  }
+  const statsEl = document.getElementById("carrotMintStats");
+  if (statsEl) {
+    const waitHtml = cs.claimable > 0
+      ? `<span class="c-wait">待兑 ${fmtNum(cs.claimableTok)} (+${cs.claimable} 币)</span>`
+      : `<span>下枚蓄力 <strong>${fmtNum(cs.nextProgressTok)}</strong> / 10M</span>`;
+    statsEl.innerHTML = `
+      <span>今日 <strong>${fmtNum(cs.todayTok)}</strong> · <span class="c-done">已兑 ${fmtNum(cs.convertedTok)} (${cs.claimed} 币)</span></span>
+      ${waitHtml}
+    `;
+  }
+  const segDone = document.getElementById("carrotSegDone");
+  const segReady = document.getElementById("carrotSegReady");
+  if (segDone && segReady) {
+    if (cs.claimable > 0 && cs.todayTok > 0) {
+      const donePct = Math.min(100, (cs.convertedTok / cs.todayTok) * 100);
+      const readyPct = Math.min(100 - donePct, (cs.claimableTok / cs.todayTok) * 100);
+      segDone.style.width = donePct.toFixed(1) + "%";
+      segReady.style.width = Math.max(4, readyPct).toFixed(1) + "%";
+    } else {
+      const nextPct = Math.min(100, (cs.nextProgressTok / CARROT_MINT_UNIT) * 100);
+      segDone.style.width = nextPct.toFixed(1) + "%";
+      segReady.style.width = "0%";
+    }
+  }
+  const footEl = document.getElementById("carrotMintFoot");
+  if (footEl) {
+    const parts = [`每日送 3`, `Token已兑 ${cs.claimed}`];
+    if (cs.bonus > 0) parts.push(`巡逻 +${cs.bonus}`);
+    if (cs.dbgAdd > 0) parts.push(`沙盒 +${cs.dbgAdd}`);
+    if (cs.spent > 0) parts.push(`已扭 -${cs.spent}`);
+    footEl.innerHTML = `
+      <span>账本：${parts.join(" · ")} = 余 ${cs.balance} 币</span>
+      <span>距下枚还差 ${fmtNum(cs.remainForNext)}</span>
+    `;
+  }
+
+  // Render readable exchange hint directly on main "总用量" KPI card
+  const tcBar = document.getElementById("tokenCarrotBar");
+  const tcTxt = document.getElementById("tokenCarrotText");
+  const tcCta = document.getElementById("tokenCarrotCta");
+  if (tcBar && tcTxt && tcCta) {
+    tcBar.classList.toggle("claimable", cs.claimable > 0);
+    if (cs.claimable > 0) {
+      tcTxt.textContent = cs.claimed > 0
+        ? `🥕 已兑 ${fmtNum(cs.convertedTok)} · 待兑 +${cs.claimable} 萝卜币`
+        : `🥕 今日可兑 +${cs.claimable} 萝卜币 (${fmtNum(cs.claimableTok)})`;
+      tcCta.textContent = "去兑换 ▸";
+    } else if (cs.claimed > 0) {
+      tcTxt.textContent = `🥕 已兑 ${fmtNum(cs.convertedTok)}(${cs.claimed}币) · 差 ${fmtNum(cs.remainForNext)}`;
+      tcCta.textContent = `余${cs.balance} ▸`;
+    } else {
+      tcTxt.textContent = `🥕 距首枚萝卜币差 ${fmtNum(cs.remainForNext)}`;
+      tcCta.textContent = `余${cs.balance} ▸`;
+    }
+  }
+
   const btn = document.getElementById("gachaPullBtn");
   if (btn) {
     if (debugState.active) {
       const fTag = debugState.gachaForce !== "auto" ? ` · 必${debugState.gachaForce}` : "";
       btn.textContent = cs.balance > 0
-        ? `🛠 [沙盒] 扭一颗（剩 ${cs.balance} 枚${fTag}）`
-        : "🛠 沙盒币用完 · 点下方 +10币 续杯！";
+        ? `🛠 [沙盒] 消耗 1 萝卜币扭一颗（剩 ${cs.balance} 枚${fTag}）`
+        : (cs.claimable > 0
+          ? `🥕 先点上方兑换 +${cs.claimable} 枚萝卜币即可开扭！`
+          : "🛠 沙盒萝卜币用完 · 点下方 +10萝卜币 续杯！");
     } else {
       btn.textContent = cs.balance > 0
-        ? `🪙 消耗 1 枚算力币扭一颗（剩 ${cs.balance} 枚）`
-        : "🪙 算力币已用完 · 再烧 10M Token 自动铸币！";
+        ? `🥕 消耗 1 枚萝卜币扭一颗（剩 ${cs.balance} 枚）`
+        : (cs.claimable > 0
+          ? `🥕 先点上方兑换 +${cs.claimable} 枚萝卜币即可开扭！`
+          : `🥕 萝卜币已用完 · 再烧 ${fmtNum(cs.remainForNext)} 可兑下 1 枚`);
     }
   }
 }
@@ -7965,6 +8286,19 @@ function renderAlchemyStats() {
   `;
 }
 
+document.getElementById("carrotClaimBtn").addEventListener("click", claimCarrotCoins);
+document.getElementById("tokenCarrotBar").addEventListener("click", (e) => {
+  e.stopPropagation();
+  openGachaModal();
+});
+document.getElementById("tokenCarrotBar").addEventListener("dblclick", (e) => {
+  e.stopPropagation();
+});
+document.getElementById("arcWalletBtn").addEventListener("click", () => {
+  closeArcadeModal();
+  openGachaModal();
+});
+
 let gachaBusy = false;
 document.getElementById("gachaPullBtn").addEventListener("click", () => {
   if (gachaBusy) return;
@@ -7972,7 +8306,17 @@ document.getElementById("gachaPullBtn").addEventListener("click", () => {
   const res = document.getElementById("gachaResult");
   if (cs.balance <= 0) {
     res.className = "gacha-result";
-    res.innerHTML = `<span style="font-size:11px;color:var(--accent)">🪙 今日算力币已抽完！继续写代码每烧 10M Token 自动到账 +1 枚！</span>`;
+    if (cs.claimable > 0) {
+      res.innerHTML = `<span style="font-size:11px;color:var(--accent)">🥕 你今天还有 <strong>+${cs.claimable} 枚</strong> 萝卜币待兑换，点击上方「兑换」按钮马上入账！</span>`;
+      const cb = document.getElementById("carrotClaimBtn");
+      if (cb) {
+        cb.classList.remove("nudge");
+        void cb.offsetWidth;
+        cb.classList.add("nudge");
+      }
+    } else {
+      res.innerHTML = `<span style="font-size:11px;color:var(--accent)">🥕 今日萝卜币已用完！再消耗 ${fmtNum(cs.remainForNext)} Token 即可兑换下 1 枚萝卜币！</span>`;
+    }
     playSfx("bomb");
     return;
   }
@@ -8101,6 +8445,11 @@ document.getElementById("dbgGodModeBtn").addEventListener("click", toggleDebugGo
 
 // Gacha modal inline debug controls
 document.getElementById("dbgGachaPlusBtn").addEventListener("click", () => addDebugGachaCoins(10));
+document.getElementById("dbgGachaResetClaimBtn").addEventListener("click", () => {
+  debugState.carrotClaimed = 0;
+  renderGachaMeta();
+  playSfx("token");
+});
 document.getElementById("dbgGachaResetCollBtn").addEventListener("click", () => {
   debugState.gachaColl = [];
   renderGachaMeta();
