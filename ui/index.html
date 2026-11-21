@@ -325,9 +325,176 @@
   @keyframes fxRoyalGlow { 0% { box-shadow: 0 0 8px rgba(245,158,11,0.4); } 40% { box-shadow: 0 0 28px rgba(245,158,11,0.95), 0 0 12px rgba(167,139,250,0.85); } 100% { box-shadow: 0 0 10px rgba(245,158,11,0.38); } }
   @keyframes fxAscendGlow { 0% { box-shadow: 0 0 8px rgba(229,72,38,0.4); } 40% { box-shadow: 0 0 0 4px rgba(251,191,36,0.6), 0 0 32px rgba(229,72,38,0.95); } 100% { box-shadow: 0 0 0 2px rgba(229,72,38,0.2), 0 3px 12px rgba(229,72,38,0.32); } }
 
-  /* Dramatic screen-level FX for high tiers (Lv.4+) */
+  /* Dramatic screen-level FX for high tiers (Lv.4+) & 50B Mythic Overdrive */
   .shell.fx-quake-sm { animation: shellQuakeSm 0.34s ease-out; }
   .shell.fx-quake-lg { animation: shellQuakeLg 0.48s ease-out; }
+  .shell.fx-quake-mythic { animation: shellQuakeMythic 0.72s cubic-bezier(0.22, 1, 0.36, 1); }
+
+  @keyframes shellQuakeMythic {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    10% { transform: translate(-7px, 4px) rotate(-0.55deg); }
+    22% { transform: translate(7px, -4.5px) rotate(0.55deg); }
+    35% { transform: translate(-6px, -3px) rotate(-0.4deg); }
+    48% { transform: translate(6px, 3.5px) rotate(0.4deg); }
+    62% { transform: translate(-4px, 2px) rotate(-0.25deg); }
+    76% { transform: translate(3px, -2px) rotate(0.18deg); }
+    88% { transform: translate(-1.5px, 1px) rotate(0deg); }
+  }
+
+  /* EX 50B Mythic Full-Screen Cinematic FX Primitives */
+  .fx-mythic-vortex {
+    position: fixed;
+    width: 680px;
+    height: 680px;
+    border-radius: 50%;
+    pointer-events: none;
+    transform: translate(-50%, -50%) scale(0.15) rotate(0deg);
+    animation: mythicVortexBurst 1.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    mix-blend-mode: screen;
+  }
+  @keyframes mythicVortexBurst {
+    0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.12) rotate(0deg); }
+    18%  { opacity: 0.78; transform: translate(-50%, -50%) scale(0.75) rotate(75deg); }
+    65%  { opacity: 0.45; transform: translate(-50%, -50%) scale(1.25) rotate(170deg); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.65) rotate(240deg); }
+  }
+  .fx-prism-beam {
+    position: fixed;
+    left: -20vw;
+    width: 140vw;
+    height: 46px;
+    pointer-events: none;
+    filter: blur(4px);
+    animation: prismBeamSweep 1.05s cubic-bezier(0.18, 0.9, 0.3, 1) forwards;
+  }
+  @keyframes prismBeamSweep {
+    0%   { opacity: 0; transform: translateY(var(--y0)) rotate(var(--rot)) scaleY(0.25); }
+    22%  { opacity: 0.85; transform: translateY(var(--y1)) rotate(var(--rot)) scaleY(1.25); }
+    100% { opacity: 0; transform: translateY(var(--y2)) rotate(var(--rot)) scaleY(0.15); }
+  }
+  .fx-void-vignette {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(circle at var(--cx) var(--cy), rgba(168, 85, 247, 0.25) 0%, rgba(12, 5, 28, 0.72) 52%, rgba(2, 1, 8, 0.88) 100%);
+    animation: voidVignettePulse 1.3s ease-out forwards;
+  }
+  @keyframes voidVignettePulse {
+    0%   { opacity: 0; }
+    20%  { opacity: 0.95; }
+    52%  { opacity: 0.65; }
+    100% { opacity: 0; }
+  }
+  .fx-void-suck {
+    position: fixed;
+    border-radius: 50%;
+    pointer-events: none;
+    animation: voidSuckIn var(--dur, 0.32s) cubic-bezier(0.55, 0.05, 0.85, 0.2) forwards;
+  }
+  @keyframes voidSuckIn {
+    0%   { opacity: 0; transform: translate(calc(-50% + var(--sx)), calc(-50% + var(--sy))) scale(1.3); }
+    30%  { opacity: 1; }
+    100% { opacity: 0.2; transform: translate(-50%, -50%) scale(0.15); }
+  }
+  .fx-void-accretion {
+    position: fixed;
+    width: 140px;
+    height: 44px;
+    border-radius: 50%;
+    pointer-events: none;
+    border: 3px solid #F59E0B;
+    box-shadow: 0 0 24px #A855F7, inset 0 0 18px #F59E0B;
+    animation: voidAccretionOut 1.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  @keyframes voidAccretionOut {
+    0%   { opacity: 0; transform: translate(-50%, -50%) rotate(-18deg) scale(0.2); }
+    22%  { opacity: 1; transform: translate(-50%, -50%) rotate(-18deg) scale(1.15); }
+    100% { opacity: 0; transform: translate(-50%, -50%) rotate(-18deg) scale(4.8); }
+  }
+  .fx-cyber-line-h {
+    position: fixed;
+    left: 0;
+    right: 0;
+    height: 3px;
+    pointer-events: none;
+    background: linear-gradient(90deg, transparent, #22D3EE 25%, #FFFFFF 50%, #EC4899 75%, transparent);
+    box-shadow: 0 0 16px #22D3EE, 0 0 26px #EC4899;
+    animation: cyberCrossFlash 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .fx-cyber-line-v {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    pointer-events: none;
+    background: linear-gradient(180deg, transparent, #EC4899 25%, #FFFFFF 50%, #22D3EE 75%, transparent);
+    box-shadow: 0 0 16px #EC4899, 0 0 26px #22D3EE;
+    animation: cyberCrossFlash 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  @keyframes cyberCrossFlash {
+    0%   { opacity: 0; transform: scale(0.2); }
+    18%  { opacity: 1; transform: scale(1.05); }
+    65%  { opacity: 0.75; transform: scale(1); }
+    100% { opacity: 0; transform: scale(1.1); }
+  }
+  .fx-cyber-scan {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: -12vh;
+    height: 18vh;
+    pointer-events: none;
+    background: linear-gradient(180deg, transparent, rgba(34, 211, 238, 0.28) 50%, rgba(236, 72, 153, 0.2) 85%, transparent);
+    border-bottom: 2px solid rgba(34, 211, 238, 0.85);
+    box-shadow: 0 0 22px rgba(34, 211, 238, 0.55);
+    animation: cyberScanSweep 1.05s cubic-bezier(0.22, 0.9, 0.35, 1) forwards;
+  }
+  @keyframes cyberScanSweep {
+    0%   { opacity: 0; transform: translateY(0); }
+    15%  { opacity: 1; }
+    85%  { opacity: 0.85; }
+    100% { opacity: 0; transform: translateY(125vh); }
+  }
+  .fx-cyber-rain {
+    position: fixed;
+    pointer-events: none;
+    font-family: var(--font-mono);
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-shadow: 0 0 10px currentColor;
+    animation: cyberRainFall var(--dur, 1.1s) cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+  }
+  @keyframes cyberRainFall {
+    0%   { opacity: 0; transform: translateY(-20px) scale(0.9); }
+    20%  { opacity: 1; }
+    100% { opacity: 0; transform: translateY(130px) scale(1.05); }
+  }
+  .fx-mythic-banner {
+    position: fixed;
+    left: 50%;
+    top: 44%;
+    pointer-events: none;
+    font-family: var(--font-mono);
+    font-size: 16px;
+    font-weight: 900;
+    letter-spacing: 0.14em;
+    white-space: nowrap;
+    padding: 8px 20px;
+    border-radius: 999px;
+    background: rgba(14, 11, 24, 0.92);
+    border: 2px solid currentColor;
+    box-shadow: 0 0 32px currentColor, 0 10px 30px rgba(0, 0, 0, 0.45);
+    transform: translate(-50%, -50%) scale(0.4);
+    animation: mythicBannerPop 1.45s cubic-bezier(0.16, 1.3, 0.3, 1) forwards;
+  }
+  @keyframes mythicBannerPop {
+    0%   { opacity: 0; transform: translate(-50%, -35%) scale(0.35); letter-spacing: 0.26em; }
+    18%  { opacity: 1; transform: translate(-50%, -52%) scale(1.12); letter-spacing: 0.14em; }
+    32%  { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
+    78%  { opacity: 0.98; transform: translate(-50%, -56%) scale(1.02); }
+    100% { opacity: 0; transform: translate(-50%, -72%) scale(0.9); }
+  }
 
   @keyframes shellQuakeSm {
     0%,100% { transform: translate(0, 0); }
@@ -4740,8 +4907,119 @@ const TIER_FX_PALETTES = {
   7: { colors: ["#C026D3", "#F43F5E", "#FDE047"], rings: 3, count: 28, spread: 92, rays: 14, flash: "rgba(192,38,211,0.36)", quake: "lg", callout: "狱火觉醒", glyphs: ["◆", "✦", "⚡", "★"] },
   8: { colors: ["#F59E0B", "#A78BFA", "#FEF08A"], rings: 4, count: 36, spread: 112, rays: 18, flash: "rgba(167,139,250,0.36)", quake: "lg", callout: "★ 星渊降临 ★", glyphs: ["✦", "★", "◈", "✧"] },
   9: { colors: ["#E54826", "#FBBF24", "#FFFDF9", "#F43F5E"], rings: 5, count: 48, spread: 136, rays: 24, flash: "rgba(251,191,36,0.44)", quake: "lg", callout: "✦ 创世飞升 ✦", glyphs: ["✦", "★", "◈", "✧"] },
-  10: { colors: ["#8B5CF6", "#38BDF8", "#EC4899", "#FBBF24"], rings: 6, count: 64, spread: 158, rays: 28, flash: "rgba(139,92,246,0.42)", quake: "lg", callout: "✦ 奇点终焉 · 50B ✦", glyphs: ["✦", "◈", "★", "⚡", "✧"] },
+  10: { colors: ["#8B5CF6", "#38BDF8", "#EC4899", "#FBBF24"], rings: 7, count: 92, spread: 240, rays: 36, flash: "rgba(139,92,246,0.52)", quake: "mythic", callout: "✦ 奇点终焉 · 50B ✦", glyphs: ["✦", "◈", "★", "⚡", "✧", "❖"] },
 };
+
+function triggerSecretMythicFx(layer, cx, cy, sk) {
+  if (!layer || !sk) return;
+  if (typeof activateStardust === "function") activateStardust(6000);
+  playSfx("mythic");
+
+  // Full-screen center mythic title banner
+  const banner = document.createElement("div");
+  banner.className = "fx-mythic-banner";
+  banner.textContent = sk.callout;
+  banner.style.color = sk.fxColors[0];
+  layer.appendChild(banner);
+  setTimeout(() => banner.remove(), 1550);
+
+  if (sk.id === "prism") {
+    // Rotating rainbow prism vortex + 2 diagonal refracted light beams
+    const vx = document.createElement("div");
+    vx.className = "fx-mythic-vortex";
+    vx.style.left = cx + "px";
+    vx.style.top = cy + "px";
+    vx.style.background = "conic-gradient(from 0deg, rgba(139,92,246,0.6), rgba(56,189,248,0.65), rgba(20,184,166,0.55), rgba(251,191,36,0.65), rgba(236,72,153,0.65), rgba(139,92,246,0.6))";
+    layer.appendChild(vx);
+    setTimeout(() => vx.remove(), 1450);
+
+    [
+      { rot: "-22deg", y0: "12vh", y1: "36vh", y2: "68vh", bg: "linear-gradient(90deg, transparent, rgba(56,189,248,0.6), rgba(236,72,153,0.7), rgba(251,191,36,0.6), transparent)" },
+      { rot: "18deg", y0: "68vh", y1: "42vh", y2: "10vh", bg: "linear-gradient(90deg, transparent, rgba(139,92,246,0.65), rgba(20,184,166,0.7), rgba(255,255,255,0.8), transparent)" },
+    ].forEach((b, idx) => {
+      const el = document.createElement("div");
+      el.className = "fx-prism-beam";
+      el.style.background = b.bg;
+      el.style.setProperty("--rot", b.rot);
+      el.style.setProperty("--y0", b.y0);
+      el.style.setProperty("--y1", b.y1);
+      el.style.setProperty("--y2", b.y2);
+      el.style.animationDelay = (idx * 0.08) + "s";
+      layer.appendChild(el);
+      setTimeout(() => el.remove(), 1300);
+    });
+  } else if (sk.id === "void") {
+    // Event-horizon dark vignette + inward gravity implosion + expanding accretion ring!
+    const vig = document.createElement("div");
+    vig.className = "fx-void-vignette";
+    vig.style.setProperty("--cx", cx + "px");
+    vig.style.setProperty("--cy", cy + "px");
+    layer.appendChild(vig);
+    setTimeout(() => vig.remove(), 1400);
+
+    // Phase 1: 28 luminous shards sucked INWARD into the singularity
+    for (let i = 0; i < 28; i++) {
+      const ang = (Math.PI * 2 * i) / 28 + (Math.random() - 0.5) * 0.25;
+      const r = 130 + Math.random() * 140;
+      const dot = document.createElement("div");
+      dot.className = "fx-void-suck";
+      const sz = 4 + Math.random() * 5;
+      dot.style.left = cx + "px";
+      dot.style.top = cy + "px";
+      dot.style.width = sz + "px";
+      dot.style.height = sz + "px";
+      const col = sk.fxColors[i % sk.fxColors.length];
+      dot.style.background = col;
+      dot.style.boxShadow = `0 0 12px ${col}`;
+      dot.style.setProperty("--sx", (Math.cos(ang) * r).toFixed(1) + "px");
+      dot.style.setProperty("--sy", (Math.sin(ang) * r).toFixed(1) + "px");
+      dot.style.setProperty("--dur", (0.26 + Math.random() * 0.14).toFixed(2) + "s");
+      layer.appendChild(dot);
+      setTimeout(() => dot.remove(), 500);
+    }
+
+    // Phase 2: Twin tilted golden-violet accretion rings bursting outward
+    [0, 140].forEach(delay => {
+      setTimeout(() => {
+        const acc = document.createElement("div");
+        acc.className = "fx-void-accretion";
+        acc.style.left = cx + "px";
+        acc.style.top = cy + "px";
+        layer.appendChild(acc);
+        setTimeout(() => acc.remove(), 1250);
+      }, 180 + delay);
+    });
+  } else if (sk.id === "cyber") {
+    // Neon HUD crosshair lock-on + full-screen scanline sweep + cascading 50B quantum code rain!
+    const lh = document.createElement("div");
+    lh.className = "fx-cyber-line-h";
+    lh.style.top = cy + "px";
+    const lv = document.createElement("div");
+    lv.className = "fx-cyber-line-v";
+    lv.style.left = cx + "px";
+    const scan = document.createElement("div");
+    scan.className = "fx-cyber-scan";
+    layer.appendChild(lh);
+    layer.appendChild(lv);
+    layer.appendChild(scan);
+    setTimeout(() => { lh.remove(); lv.remove(); scan.remove(); }, 1150);
+
+    const tokens = ["50B", "01", "λ", "⚡", "◈", "QBIT", "∞", "0xFF"];
+    const cols = ["#22D3EE", "#EC4899", "#FACC15", "#34D399"];
+    for (let i = 0; i < 24; i++) {
+      const el = document.createElement("span");
+      el.className = "fx-cyber-rain";
+      el.textContent = tokens[i % tokens.length];
+      el.style.left = (4 + (i / 24) * 92 + (Math.random() - 0.5) * 3).toFixed(1) + "vw";
+      el.style.top = (6 + Math.random() * 48).toFixed(1) + "vh";
+      el.style.color = cols[i % cols.length];
+      el.style.animationDelay = (Math.random() * 0.25).toFixed(2) + "s";
+      el.style.setProperty("--dur", (0.85 + Math.random() * 0.45).toFixed(2) + "s");
+      layer.appendChild(el);
+      setTimeout(() => el.remove(), 1600);
+    }
+  }
+}
 
 function triggerBunnyFx(el, level) {
   const lv = Math.max(1, Math.min(10, Number(level) || 1));
@@ -4759,18 +5037,19 @@ function triggerBunnyFx(el, level) {
   let cfg = TIER_FX_PALETTES[lv] || TIER_FX_PALETTES[1];
   if (lv === 10) {
     const sk = getActiveSecretSkin();
-    cfg = { ...cfg, colors: sk.fxColors, flash: sk.flash, callout: sk.callout };
+    cfg = { ...cfg, colors: sk.fxColors, flash: sk.flash, callout: null };
+    triggerSecretMythicFx(layer, cx, cy, sk);
   }
 
-  // Screen-level quake for Lv.3+
+  // Screen-level quake for Lv.3+ (and Mythic 0.72s tremor for EX 50B!)
   if (cfg.quake) {
     const shell = document.querySelector(".shell");
     if (shell) {
-      const cls = cfg.quake === "lg" ? "fx-quake-lg" : "fx-quake-sm";
-      shell.classList.remove("fx-quake-sm", "fx-quake-lg");
+      const cls = cfg.quake === "mythic" ? "fx-quake-mythic" : cfg.quake === "lg" ? "fx-quake-lg" : "fx-quake-sm";
+      shell.classList.remove("fx-quake-sm", "fx-quake-lg", "fx-quake-mythic");
       void shell.offsetWidth;
       shell.classList.add(cls);
-      setTimeout(() => shell.classList.remove(cls), 520);
+      setTimeout(() => shell.classList.remove(cls), cfg.quake === "mythic" ? 760 : 520);
     }
   }
 
@@ -6802,6 +7081,9 @@ function playSfx(kind) {
   else if (kind === "gacha") { [392, 440, 494, 587].forEach((f, i) => playTone(f, 0.07, "square", 0.03, i * 0.09)); }
   else if (kind === "ssr" || kind === "levelUp") {
     [523, 659, 784, 1046, 1318].forEach((f, i) => playTone(f, 0.18, "triangle", 0.075, i * 0.075));
+  }
+  else if (kind === "mythic") {
+    [392, 523, 659, 784, 1046, 1318, 1568, 2093].forEach((f, i) => playTone(f, 0.24, "triangle", 0.07, i * 0.055));
   }
 }
 
