@@ -1414,41 +1414,46 @@
     100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.15); }
   }
 
-  /* Two-way Bunny Patrol runner (bottom L->R, then top R->L) + surprise gacha capsule */
+  /* Two-way -> Full Clockwise Perimeter Patrol from Avatar + Empty Avatar While Away */
+  .bunny-wrap.is-away {
+    background: var(--surface-2) !important;
+    border: 1.5px dashed color-mix(in srgb, var(--border-strong) 75%, var(--border)) !important;
+    box-shadow: none !important;
+  }
+  .bunny-wrap.is-away::before,
+  .bunny-wrap.is-away::after {
+    opacity: 0 !important;
+  }
+  .bunny-wrap.is-away .bunny-svg {
+    opacity: 0 !important;
+    transform: scale(0.35) !important;
+    animation: none !important;
+  }
   .patrol-bunny {
     position: fixed;
-    bottom: 6px;
-    left: -48px;
+    top: 0;
+    left: 0;
     width: 34px;
     height: 34px;
-    z-index: 997;
+    margin-left: -17px;
+    margin-top: -17px;
+    z-index: 999;
     pointer-events: none;
+    will-change: transform;
     filter: drop-shadow(0 3px 6px rgba(23, 22, 20, 0.22));
-    animation: patrolCrossLR 3.6s linear forwards;
   }
-  .patrol-bunny.top-return {
-    bottom: auto;
-    top: 8px;
-    left: calc(100vw + 48px);
-    animation: patrolCrossRL 3.6s linear forwards;
-  }
-  .patrol-bunny.top-return .pb-flip {
+  .patrol-bunny .pb-flip {
     width: 100%;
     height: 100%;
+    transition: transform 0.14s ease;
+  }
+  .patrol-bunny.facing-left .pb-flip {
     transform: scaleX(-1);
   }
   .patrol-bunny .pb-inner {
     width: 100%;
     height: 100%;
-    animation: patrolHop 0.36s ease-in-out infinite;
-  }
-  @keyframes patrolCrossLR {
-    0%   { left: -46px; }
-    100% { left: calc(100vw + 46px); }
-  }
-  @keyframes patrolCrossRL {
-    0%   { left: calc(100vw + 46px); }
-    100% { left: -46px; }
+    animation: patrolHop 0.34s ease-in-out infinite;
   }
   @keyframes patrolHop {
     0%, 100% { transform: translateY(0) rotate(-4deg); }
@@ -1456,19 +1461,15 @@
   }
   .patrol-print {
     position: fixed;
-    bottom: 8px;
     font-size: 10px;
     pointer-events: none;
     z-index: 996;
+    transform: translate(-50%, -50%);
     animation: printFade 1.5s ease-out forwards;
   }
-  .patrol-print.top-print {
-    bottom: auto;
-    top: 16px;
-  }
   @keyframes printFade {
-    0%   { opacity: 0.85; transform: translateY(0) scale(0.85); }
-    100% { opacity: 0; transform: translateY(-8px) scale(1.1); }
+    0%   { opacity: 0.85; transform: translate(-50%, -50%) scale(0.85); }
+    100% { opacity: 0; transform: translate(-50%, calc(-50% - 8px)) scale(1.1); }
   }
 
   /* Collectible surprise Gacha Capsule gently brought back after patrol completes */
@@ -2929,6 +2930,49 @@
     border-color: var(--teal);
     color: #fff;
   }
+  .dbg-only { display: none; }
+  body.debug-mode .dbg-only { display: flex; }
+  .dbg-inline {
+    flex-direction: column;
+    gap: 5px;
+    margin-top: 8px;
+    padding: 7px 9px;
+    background: color-mix(in srgb, var(--amber) 7%, var(--surface));
+    border: 1px dashed var(--amber);
+    border-radius: 7px;
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+  }
+  .dbg-inline-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+  }
+  .dbg-tag {
+    color: var(--amber);
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    margin-right: 2px;
+  }
+  .dbg-mini-btn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--ink-soft);
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 700;
+    padding: 2.5px 6.5px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.12s ease;
+  }
+  .dbg-mini-btn:hover { border-color: var(--amber); color: var(--ink); }
+  .dbg-mini-btn.on {
+    background: var(--amber);
+    border-color: var(--amber);
+    color: #fff;
+  }
   .pop-only { display: none; }
   .pop-only-block { display: none; }
   .native-only { display: none; }
@@ -3594,7 +3638,7 @@
   <!-- HIDDEN DEVELOPER DEBUG BAR -->
   <div class="dbg-bar" id="debugBar">
     <div class="dbg-head">
-      <span>🛠 本地调试 · 头像/动效/菜单栏预览</span>
+      <span>🛠 本地调试 · 头像/动效/扭蛋/游戏沙盒</span>
       <span style="display:flex;gap:5px;flex-wrap:wrap">
         <button class="btn" id="dbgFxBtn" style="padding:2px 6px;font-size:9.5px">⚡ 播特效</button>
         <button class="btn" id="dbgFeedBtn" style="padding:2px 6px;font-size:9.5px">✨ 模拟投喂</button>
@@ -3615,6 +3659,14 @@
       <button data-lv="7">Lv.7</button>
       <button data-lv="8">Lv.8</button>
       <button data-lv="9">Lv.9</button>
+    </div>
+    <div class="dbg-inline-row" style="padding-top:4px;border-top:1px dashed color-mix(in srgb, var(--amber) 35%, transparent)">
+      <span class="dbg-tag">🎲 扭蛋/游戏:</span>
+      <button class="dbg-mini-btn" id="dbgDropEggBtn" title="立刻弹出巡逻偶遇的可收集扭蛋">🎁 掉巡逻扭蛋</button>
+      <button class="dbg-mini-btn" id="dbgAddCoinsBtn" title="沙盒加10枚扭蛋币（不扣真实币）">🪙 +10调试币</button>
+      <button class="dbg-mini-btn" id="dbgOpenGachaBtn">🎰 测扭蛋</button>
+      <button class="dbg-mini-btn" id="dbgOpenArcadeBtn">🎮 测游戏</button>
+      <button class="dbg-mini-btn" id="dbgGodModeBtn" title="无限弹药+三管极速+护盾+无敌（不覆盖真实纪录）">🔥 无双: 关</button>
     </div>
   </div>
 
@@ -3691,6 +3743,20 @@
         <span style="font-size:11px;color:var(--muted)">拉下开关，看看兔兔今天给你抽什么神签 ✨</span>
       </div>
     </div>
+    <div class="dbg-only dbg-inline" id="dbgGachaPanel">
+      <div class="dbg-inline-row">
+        <span class="dbg-tag">🛠 扭蛋沙盒(不扣真实币/不写图鉴)</span>
+        <button class="dbg-mini-btn" id="dbgGachaPlusBtn">🪙 +10币</button>
+        <button class="dbg-mini-btn" id="dbgGachaResetCollBtn">↺ 清临时图鉴</button>
+      </div>
+      <div class="dbg-inline-row" id="dbgGachaForceChips">
+        <span class="dbg-tag">强制出货:</span>
+        <button class="dbg-mini-btn on" data-rarity="auto">正常随机</button>
+        <button class="dbg-mini-btn" data-rarity="SSR">👑 必SSR</button>
+        <button class="dbg-mini-btn" data-rarity="SR">⚡ 必SR</button>
+        <button class="dbg-mini-btn" data-rarity="R">🍀 必R</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -3743,6 +3809,16 @@
         <span id="blWaveInfo">防线完好 ❤️❤️❤️ · 移动走位自动射击</span>
         <button class="btn" id="blNovaBtn" style="padding:3px 9px;font-size:10px" title="消耗 25 发 Token 弹药释放全屏清屏激光（快捷键：空格）">⚡ 算力清屏 (-25弹)</button>
       </div>
+      <div class="dbg-only dbg-inline">
+        <div class="dbg-inline-row">
+          <span class="dbg-tag">🛠 打Bug调试:</span>
+          <button class="dbg-mini-btn" id="dbgBlGodBtn">🔥 无双: 关</button>
+          <button class="dbg-mini-btn" id="dbgBlBossBtn">👾 刷OOM Boss</button>
+          <button class="dbg-mini-btn" id="dbgBlAmmoBtn">🔋 掉弹药包</button>
+          <button class="dbg-mini-btn" id="dbgBlOverclockBtn">⚡ 掉超频(隐藏5管)</button>
+          <button class="dbg-mini-btn" id="dbgBlNovaBtn">💥 免费清屏</button>
+        </div>
+      </div>
     </div>
 
     <!-- GAME 2: TOKEN RAIN CATCHER -->
@@ -3755,13 +3831,23 @@
         <canvas id="rainCanvas"></canvas>
         <div class="rain-overlay" id="rainOverlay">
           <h3 id="rainTitle">🥕 兔兔接 Token 雨</h3>
-          <p id="rainDesc">左右移动鼠标或按 ← → 控制当前阶级的兔兔！接住 🟠Token 与 🟢缓存球得分，吃 💛金胡萝卜开启吸金磁铁，躲开 💣首字超时雷！</p>
+          <p id="rainDesc">左右移动鼠标或按 ← → 控制当前阶级的兔兔！接住 🟠Token 与 🟢缓存球得分，吃 💛金胡萝卜开启吸金磁铁，偶遇 🌈彩虹星触发双倍狂热，躲开 💣首字超时雷！</p>
           <button class="arc-primary-btn" id="rainStartBtn">▶ 开始 30 秒冲刺</button>
+        </div>
+      </div>
+      <div class="dbg-only dbg-inline">
+        <div class="dbg-inline-row">
+          <span class="dbg-tag">🛠 Token雨调试:</span>
+          <button class="dbg-mini-btn" id="dbgRainShieldBtn">🛡️ +护盾</button>
+          <button class="dbg-mini-btn" id="dbgRainGoldBtn">🥕 掉金胡萝卜</button>
+          <button class="dbg-mini-btn" id="dbgRainRainbowBtn">🌈 掉彩虹星(隐藏)</button>
+          <button class="dbg-mini-btn" id="dbgRainBombBtn">💣 掉卡顿雷</button>
+          <button class="dbg-mini-btn" id="dbgRainTimeBtn">⏱ +15s</button>
         </div>
       </div>
     </div>
 
-    <!-- GAME 2: TTFT REFLEX ARENA -->
+    <!-- GAME 3: TTFT REFLEX ARENA -->
     <div class="arcade-pane" id="arcPane-reflex">
       <div class="arc-hud">
         <span>对手 <strong id="refAiLbl">今日 AI 中位首字 —</strong></span>
@@ -3785,6 +3871,15 @@
         <div id="refVerdict" style="color:var(--muted);text-align:center;padding-top:2px">点击上方竞技场测一局！</div>
       </div>
       <div class="reflex-hist" id="reflexHist"></div>
+      <div class="dbg-only dbg-inline">
+        <div class="dbg-inline-row" id="dbgReflexChips">
+          <span class="dbg-tag">🛠 首字调试:</span>
+          <button class="dbg-mini-btn" id="dbgRefFastBtn">⚡ 0.4s快发: 关</button>
+          <button class="dbg-mini-btn on" data-ai="real">AI真实</button>
+          <button class="dbg-mini-btn" data-ai="0.15">🤖 0.15s极快(测败)</button>
+          <button class="dbg-mini-btn" data-ai="3.5">🐢 3.5s超慢(测胜)</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -4064,9 +4159,40 @@ function getBunnyTier(tokens) {
 }
 
 const debugState = {
-  level: null,     // null = real today_tokens; 1..9 = simulated tier
+  active: false,     // true while #debugBar is open
+  level: null,       // null = real today_tokens; 1..9 = simulated tier
   unlockAll: false,
+  gachaCoins: 0,     // extra sandbox gacha coins (memory-only, never persisted)
+  gachaSpent: 0,     // sandbox spends (never touches real localStorage)
+  gachaForce: "auto",// "auto" | "SSR" | "SR" | "R"
+  gachaColl: null,   // memory-only gacha collection clone while debug is active
+  godMode: false,    // games: infinite ammo, max fire rate/cannons, shields, invincible, no real best overwrite
+  reflexFast: false, // reflex: 0.4s fast trigger
+  reflexAiMock: null,// null (real) | 0.15 | 3.5
 };
+
+function syncDebugUi() {
+  const godTxt = debugState.godMode ? "🔥 无双: 开" : "🔥 无双: 关";
+  const b1 = document.getElementById("dbgGodModeBtn");
+  const b2 = document.getElementById("dbgBlGodBtn");
+  if (b1) { b1.textContent = godTxt; b1.classList.toggle("on", debugState.godMode); }
+  if (b2) { b2.textContent = godTxt; b2.classList.toggle("on", debugState.godMode); }
+
+  const rf = document.getElementById("dbgRefFastBtn");
+  if (rf) {
+    rf.textContent = debugState.reflexFast ? "⚡ 0.4s快发: 开" : "⚡ 0.4s快发: 关";
+    rf.classList.toggle("on", debugState.reflexFast);
+  }
+  document.querySelectorAll("#dbgGachaForceChips button[data-rarity]").forEach(btn => {
+    btn.classList.toggle("on", btn.dataset.rarity === debugState.gachaForce);
+  });
+  document.querySelectorAll("#dbgReflexChips button[data-ai]").forEach(btn => {
+    const val = btn.dataset.ai === "real" ? null : Number(btn.dataset.ai);
+    btn.classList.toggle("on", debugState.reflexAiMock === val);
+  });
+  if (typeof renderGachaMeta === "function") renderGachaMeta();
+  if (typeof refreshArcadeContext === "function") refreshArcadeContext();
+}
 
 function getEffectiveTodayTokens() {
   if (debugState.level != null) {
@@ -4576,6 +4702,7 @@ bunnyMascotEl.addEventListener("mouseleave", () => {
 });
 
 bunnyMascotEl.addEventListener("click", () => {
+  if (patrolRunning) return;
   hopBunny();
   petCombo++;
   clearTimeout(petComboResetTimer);
@@ -4854,6 +4981,7 @@ window.__onPopoverClose = () => {
   if (typeof stopBlasterGame === "function") stopBlasterGame();
   if (typeof stopRainGame === "function") stopRainGame();
   if (typeof cancelReflexTimer === "function") cancelReflexTimer();
+  if (typeof cancelBunnyPatrol === "function") cancelBunnyPatrol();
   disconnectStream();
 };
 
@@ -6141,12 +6269,37 @@ document.getElementById("popQuitLink").addEventListener("click", (e) => {
 });
 
 // ---- Hidden Developer Debug Mode Controls ----
+function resetAllDebugState() {
+  debugState.active = false;
+  debugState.unlockAll = false;
+  debugState.gachaCoins = 0;
+  debugState.gachaSpent = 0;
+  debugState.gachaForce = "auto";
+  debugState.gachaColl = null;
+  debugState.godMode = false;
+  debugState.reflexFast = false;
+  debugState.reflexAiMock = null;
+  document.body.classList.remove("debug-mode");
+  const ub = document.getElementById("dbgUnlockBtn");
+  if (ub) ub.textContent = "全解锁: 关";
+  applyDebugOverride(0);
+  syncDebugUi();
+}
+
 function toggleDebugBar(forceState) {
   const bar = document.getElementById("debugBar");
   if (!bar) return;
   const open = forceState != null ? forceState : !bar.classList.contains("open");
   bar.classList.toggle("open", open);
-  if (open) bar.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  if (open) {
+    debugState.active = true;
+    document.body.classList.add("debug-mode");
+    if (!debugState.gachaColl) debugState.gachaColl = getRealGachaCollected().slice();
+    syncDebugUi();
+    bar.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  } else {
+    resetAllDebugState();
+  }
 }
 
 // Secret combo only: Control + Option + Command + D (use e.code since Option+D produces '∂' on macOS)
@@ -6254,7 +6407,7 @@ document.addEventListener("mousemove", (e) => {
   setTimeout(() => dot.remove(), 680);
 });
 
-// ---- Two-Way Bunny Patrol (Bottom L->R, then Top R->L) + Gentle Post-Patrol Capsule ----
+// ---- Full Clockwise Perimeter Patrol from Avatar (Avatar stays blank while away!) + Surprise Capsule ----
 function spawnPatrolCapsule() {
   document.querySelectorAll(".patrol-capsule").forEach(n => n.remove());
   const cap = document.createElement("div");
@@ -6278,13 +6431,17 @@ function spawnPatrolCapsule() {
     spawnConfettiBurst(cap, 18);
     playSfx("gold");
 
-    const bKey = "tootoo_gacha_bonus_" + getTodayKey();
-    let bonus = 0;
-    try { bonus = Math.max(0, Number(localStorage.getItem(bKey) || 0) || 0); } catch {}
-    try { localStorage.setItem(bKey, String(bonus + 1)); } catch {}
+    if (debugState.active) {
+      debugState.gachaCoins += 1;
+    } else {
+      const bKey = "tootoo_gacha_bonus_" + getTodayKey();
+      let bonus = 0;
+      try { bonus = Math.max(0, Number(localStorage.getItem(bKey) || 0) || 0); } catch {}
+      try { localStorage.setItem(bKey, String(bonus + 1)); } catch {}
+    }
     if (typeof renderGachaMeta === "function") renderGachaMeta();
 
-    cap.innerHTML = `<div class="cap-orb" style="animation:none"></div><span class="cap-tag">已收入囊中 · <b>算力币 +1</b> ✨</span>`;
+    cap.innerHTML = `<div class="cap-orb" style="animation:none"></div><span class="cap-tag">已收入囊中 · <b>${debugState.active ? "调试币" : "算力币"} +1</b> ✨</span>`;
     setTimeout(() => {
       cap.classList.add("fading");
       setTimeout(() => cap.remove(), 320);
@@ -6293,69 +6450,90 @@ function spawnPatrolCapsule() {
 }
 
 let patrolRunning = false;
+let patrolRaf = null;
+function cancelBunnyPatrol() {
+  if (patrolRaf) {
+    cancelAnimationFrame(patrolRaf);
+    patrolRaf = null;
+  }
+  patrolRunning = false;
+  document.querySelectorAll(".patrol-bunny").forEach(n => n.remove());
+  document.getElementById("patrolBtn")?.classList.remove("patrolling");
+  document.getElementById("bunnyMascot")?.classList.remove("is-away");
+}
 function summonBunnyPatrol() {
   if (patrolRunning) return;
   patrolRunning = true;
   document.getElementById("patrolBtn")?.classList.add("patrolling");
+  const bunny = document.getElementById("bunnyMascot");
   const tier = getBunnyTier(getEffectiveTodayTokens());
 
-  // Leg 1: Bottom edge Left -> Right
-  const botRunner = document.createElement("div");
-  botRunner.className = "patrol-bunny";
-  botRunner.innerHTML = `<div class="pb-inner"><svg viewBox="0 0 36 36" fill="none" style="width:100%;height:100%">${tier.svg}</svg></div>`;
-  document.body.appendChild(botRunner);
+  // Compute exact avatar center so TooToo hops straight out of the avatar frame
+  const br = bunny ? bunny.getBoundingClientRect() : { left: 20, top: 16, width: 38, height: 38 };
+  const startX = br.left + br.width / 2;
+  const startY = Math.max(22, Math.min(window.innerHeight - 24, br.top + br.height / 2));
+
+  // Leave the avatar empty while TooToo is out patrolling
+  if (bunny) bunny.classList.add("is-away");
+
+  const runner = document.createElement("div");
+  runner.className = "patrol-bunny";
+  runner.innerHTML = `<div class="pb-flip"><div class="pb-inner"><svg viewBox="0 0 36 36" fill="none" style="width:100%;height:100%">${tier.svg}</svg></div></div>`;
+  runner.style.transform = `translate3d(${startX.toFixed(1)}px, ${startY.toFixed(1)}px, 0)`;
+  document.body.appendChild(runner);
   playSfx("token");
 
-  const botPrints = ["🐾", "🥕", "🐾", "✦", "🐾"];
-  botPrints.forEach((glyph, i) => {
-    setTimeout(() => {
-      const r = botRunner.getBoundingClientRect();
-      if (r.left < 0 || r.left > window.innerWidth) return;
-      const p = document.createElement("span");
-      p.className = "patrol-print";
-      p.textContent = glyph;
-      p.style.left = (r.left + 8) + "px";
-      document.body.appendChild(p);
-      setTimeout(() => p.remove(), 1500);
-    }, 520 + i * 620);
-  });
-  setTimeout(() => botRunner.remove(), 3800);
+  const glyphs = ["🐾", "🥕", "🐾", "✦", "🐾"];
+  let glyphIdx = 0;
+  let lastPrintDist = 0;
+  let prevX = startX;
+  let prevY = startY;
+  const t0 = performance.now();
 
-  // Leg 2: Top edge Right -> Left return patrol
-  setTimeout(() => {
-    const topRunner = document.createElement("div");
-    topRunner.className = "patrol-bunny top-return";
-    topRunner.innerHTML = `<div class="pb-flip"><div class="pb-inner"><svg viewBox="0 0 36 36" fill="none" style="width:100%;height:100%">${tier.svg}</svg></div></div>`;
-    document.body.appendChild(topRunner);
+  // Clockwise 4-leg perimeter patrol: Top (L->R) -> Right (T->B) -> Bottom (R->L) -> Left (B->Avatar)
+  const speedPxPerSec = 275; // crisp, playful speed adapting naturally to popover or full window
 
-    const topPrints = ["🐾", "✦", "🥕", "🐾"];
-    topPrints.forEach((glyph, i) => {
-      setTimeout(() => {
-        const r = topRunner.getBoundingClientRect();
-        if (r.left < 0 || r.left > window.innerWidth) return;
-        const p = document.createElement("span");
-        p.className = "patrol-print top-print";
-        p.textContent = glyph;
-        p.style.left = (r.left + 12) + "px";
-        document.body.appendChild(p);
-        setTimeout(() => p.remove(), 1500);
-      }, 600 + i * 700);
-    });
+  function dropPrint(px, py) {
+    const p = document.createElement("span");
+    p.className = "patrol-print";
+    p.textContent = glyphs[glyphIdx++ % glyphs.length];
+    p.style.left = px.toFixed(1) + "px";
+    p.style.top = py.toFixed(1) + "px";
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 1400);
+  }
 
-    // Only AFTER patrol finishes returning to top-left:
-    // First-ever patrol guarantees 1 capsule; afterwards ~18% chance (up to 3/day); most patrols simply finish quietly!
-    setTimeout(() => {
-      topRunner.remove();
+  function step(now) {
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+    const hr = bunny ? bunny.getBoundingClientRect() : br;
+    const homeX = hr.left + hr.width / 2;
+    const homeY = Math.max(22, Math.min(H - 24, hr.top + hr.height / 2));
+    const rightX = Math.max(startX + 60, W - 24);
+    const botY = Math.max(startY + 80, H - 22);
+    const leftX = Math.max(22, Math.min(homeX, 34));
+
+    const l1 = Math.max(1, rightX - startX);
+    const l2 = Math.max(1, botY - startY);
+    const l3 = Math.max(1, rightX - leftX);
+    const l4 = Math.max(1, Math.hypot(homeX - leftX, botY - homeY));
+    const total = l1 + l2 + l3 + l4;
+    const dist = ((now - t0) / 1000) * speedPxPerSec;
+
+    if (dist >= total) {
+      runner.remove();
       patrolRunning = false;
+      patrolRaf = null;
       document.getElementById("patrolBtn")?.classList.remove("patrolling");
 
-      const bunny = document.getElementById("bunnyMascot");
       if (bunny) {
+        bunny.classList.remove("is-away");
         bunny.classList.remove("nibble");
         void bunny.offsetWidth;
         bunny.classList.add("nibble");
-        setTimeout(() => bunny.classList.remove("nibble"), 400);
+        setTimeout(() => bunny.classList.remove("nibble"), 420);
       }
+      playSfx("token");
 
       let isFirst = true;
       try { isFirst = localStorage.getItem("tootoo_patrol_egg_seen") !== "1"; } catch {}
@@ -6365,13 +6543,52 @@ function summonBunnyPatrol() {
       const foundEgg = isFirst || (todayBonus < 3 && Math.random() < 0.18);
 
       if (foundEgg) {
-        if (isFirst) {
+        if (isFirst && !debugState.active) {
           try { localStorage.setItem("tootoo_patrol_egg_seen", "1"); } catch {}
         }
         spawnPatrolCapsule();
       }
-    }, 3650);
-  }, 3650);
+      return;
+    }
+
+    let x = startX, y = startY, facingLeft = false;
+    if (dist < l1) {
+      const f = dist / l1;
+      x = startX + (rightX - startX) * f;
+      y = startY;
+      facingLeft = false;
+    } else if (dist < l1 + l2) {
+      const f = (dist - l1) / l2;
+      x = rightX;
+      y = startY + (botY - startY) * f;
+      facingLeft = false;
+    } else if (dist < l1 + l2 + l3) {
+      const f = (dist - l1 - l2) / l3;
+      x = rightX - (rightX - leftX) * f;
+      y = botY;
+      facingLeft = true;
+    } else {
+      const f = (dist - l1 - l2 - l3) / l4;
+      x = leftX + (homeX - leftX) * f;
+      y = botY + (homeY - botY) * f;
+      facingLeft = false;
+    }
+
+    runner.classList.toggle("facing-left", facingLeft);
+    runner.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
+
+    lastPrintDist += Math.hypot(x - prevX, y - prevY);
+    prevX = x;
+    prevY = y;
+    if (lastPrintDist >= 105 && dist > 35 && dist < total - 35) {
+      lastPrintDist = 0;
+      dropPrint(x, y + 6);
+    }
+
+    patrolRaf = requestAnimationFrame(step);
+  }
+
+  patrolRaf = requestAnimationFrame(step);
 }
 document.getElementById("patrolBtn").addEventListener("click", summonBunnyPatrol);
 
@@ -6560,13 +6777,22 @@ function getBlasterLoadout() {
   const todayTok = getEffectiveTodayTokens();
   const k = (state.data && state.data.kpi) || {};
   const tier = getBunnyTier(todayTok);
+  if (debugState.active && debugState.godMode) {
+    return { todayTok, ammo: 999, tps: 180, cacheHit: 99, refundProb: 0.55, fireHz: 11.0, cannons: 3, tier, god: true };
+  }
   const ammo = Math.max(40, Math.round(todayTok / 1e6));
   const tps = Math.max(25, Math.min(200, k.tps != null ? k.tps : 72));
   const cacheHit = Math.max(0, Math.min(100, k.cache_hit != null ? k.cache_hit : 60));
   const refundProb = Math.min(0.55, (cacheHit / 100) * 0.55);
   const fireHz = +(3.4 + (tps / 180) * 7.6).toFixed(1);
   const cannons = tier.level >= 6 ? 3 : tier.level >= 3 ? 2 : 1;
-  return { todayTok, ammo, tps, cacheHit, refundProb, fireHz, cannons, tier };
+  return { todayTok, ammo, tps, cacheHit, refundProb, fireHz, cannons, tier, god: false };
+}
+
+function getEffectiveReflexAiSec() {
+  if (debugState.active && debugState.reflexAiMock != null) return debugState.reflexAiMock;
+  const k = (state.data && state.data.kpi) || {};
+  return k.ttft_p50 != null ? k.ttft_p50 : 2.8;
 }
 
 function refreshArcadeContext() {
@@ -6574,12 +6800,12 @@ function refreshArcadeContext() {
   const k = (state.data && state.data.kpi) || {};
   const tps = k.tps != null ? k.tps : 65;
   const cacheHit = k.cache_hit != null ? k.cache_hit : 75;
-  const ttft = k.ttft_p50 != null ? k.ttft_p50 : 2.8;
+  const ttft = getEffectiveReflexAiSec();
 
   // Blaster loadout HUD
   const lo = getBlasterLoadout();
   if (!blasterState || !blasterState.running) {
-    document.getElementById("blAmmo").textContent = `${lo.ammo} 发`;
+    document.getElementById("blAmmo").textContent = lo.god ? "♾️ 无限" : `${lo.ammo} 发`;
     document.getElementById("blFireRate").textContent = `${lo.fireHz}/s ×${lo.cannons}管`;
     document.getElementById("blRefund").textContent = `${Math.round(lo.refundProb * 100)}%`;
   }
@@ -6587,14 +6813,15 @@ function refreshArcadeContext() {
   try { blBest = Number(localStorage.getItem("tootoo_blaster_best") || 0) || 0; } catch {}
   document.getElementById("blBest").textContent = blBest;
 
-  const shieldCnt = cacheHit >= 88 ? 2 : cacheHit >= 70 ? 1 : 0;
+  const shieldCnt = (debugState.active && debugState.godMode) ? 3 : (cacheHit >= 88 ? 2 : cacheHit >= 70 ? 1 : 0);
   document.getElementById("rainTierLbl").textContent = `Lv.${tier.level} ${tier.name}${shieldCnt ? ` · 🛡️×${shieldCnt}` : ""}`;
   document.getElementById("rainSpeedLbl").textContent = `${tps.toFixed(0)} tok/s · 缓存 ${cacheHit}%`;
   let rBest = 0;
   try { rBest = Number(localStorage.getItem("tootoo_rain_best") || 0) || 0; } catch {}
   document.getElementById("rainBest").textContent = rBest;
 
-  document.getElementById("refAiLbl").textContent = `今日 AI 中位首字 ${ttft.toFixed(2)}s`;
+  const aiPrefix = (debugState.active && debugState.reflexAiMock != null) ? "[调试] 模拟 AI 首字" : "今日 AI 中位首字";
+  document.getElementById("refAiLbl").textContent = `${aiPrefix} ${ttft.toFixed(2)}s`;
   document.getElementById("refAiVal").textContent = `${ttft.toFixed(2)}s`;
   let fBest = null;
   try { const v = localStorage.getItem("tootoo_reflex_best"); if (v) fBest = Number(v); } catch {}
@@ -6646,15 +6873,17 @@ function stopBlasterGame() {
   if (blasterState) blasterState.running = false;
 }
 
-function triggerBlasterNova() {
+function triggerBlasterNova(freeDebug = false) {
   const s = blasterState;
   if (!s || !s.running) return;
-  if (s.ammo < 25) {
+  const isFree = freeDebug || (debugState.active && debugState.godMode);
+  if (!isFree && s.ammo < 25) {
     s.floats.push({ x: s.x, y: s.h - 46, txt: "弹药不足 25 发!", col: "#DC2626", life: 0.8 });
     playSfx("bomb");
     return;
   }
-  s.ammo -= 25;
+  if (freeDebug) s.debugTainted = true;
+  if (!isFree) s.ammo -= 25;
   s.novaRing = { r: 16, maxR: Math.max(s.w, s.h) * 1.1, alpha: 1 };
   s.shakeTimer = 0.36;
   playSfx("ssr");
@@ -6709,6 +6938,8 @@ function startBlasterGame() {
     score: 0,
     kills: 0,
     shakeTimer: 0,
+    overclockTimer: 0,
+    debugTainted: Boolean(debugState.active && debugState.godMode),
     novaRing: null,
     bullets: [],
     enemies: [],
@@ -6720,7 +6951,7 @@ function startBlasterGame() {
 
   document.getElementById("blasterOverlay").classList.add("hidden");
   document.getElementById("blScore").textContent = "0";
-  document.getElementById("blAmmo").textContent = `${lo.ammo} 发`;
+  document.getElementById("blAmmo").textContent = lo.god ? "♾️ 无限" : `${lo.ammo} 发`;
   document.getElementById("blFireRate").textContent = `${lo.fireHz}/s ×${lo.cannons}管`;
   document.getElementById("blRefund").textContent = `${Math.round(lo.refundProb * 100)}%`;
   blasterRaf = requestAnimationFrame(tickBlasterGame);
@@ -6733,6 +6964,10 @@ function tickBlasterGame(now) {
   s.lastTs = now;
   s.elapsed += dt;
   if (s.shakeTimer > 0) s.shakeTimer = Math.max(0, s.shakeTimer - dt);
+  if (s.overclockTimer > 0) s.overclockTimer = Math.max(0, s.overclockTimer - dt);
+
+  const isGod = debugState.active && debugState.godMode;
+  if (isGod) s.debugTainted = true;
 
   if (blKeys.left) s.targetX -= 400 * dt;
   if (blKeys.right) s.targetX += 400 * dt;
@@ -6741,32 +6976,41 @@ function tickBlasterGame(now) {
 
   const by = s.h - 26;
 
-  // Auto-fire bullets using real Token Ammo & TPS fire rate
-  const fireInterval = 1 / s.fireHz;
+  // Auto-fire bullets using real Token Ammo & TPS fire rate (or Overclock 5-cannon frenzy!)
+  const effHz = (isGod ? 11.0 : s.fireHz) * (s.overclockTimer > 0 ? 1.55 : 1);
+  const fireInterval = 1 / effHz;
   s.fireAcc += dt;
-  if (s.ammo > 0 && s.fireAcc >= fireInterval) {
+  if ((isGod || s.overclockTimer > 0 || s.ammo > 0) && s.fireAcc >= fireInterval) {
     s.fireAcc -= fireInterval;
-    const isCacheFree = Math.random() < s.refundProb;
+    const isCacheFree = isGod || s.overclockTimer > 0 || Math.random() < s.refundProb;
     if (isCacheFree) {
       s.refunded++;
-      if (s.refunded % 6 === 1) {
+      if (!isGod && s.overclockTimer <= 0 && s.refunded % 6 === 1) {
         s.floats.push({ x: s.x, y: by - 26, txt: "♻️ CACHE 免弹!", col: "#0E8A78", life: 0.65 });
       }
     } else {
       s.ammo = Math.max(0, s.ammo - 1);
     }
-    const bCol = isCacheFree ? "#0E8A78" : s.aura;
-    if (s.cannons === 1) {
+    const bCol = s.overclockTimer > 0 ? "#F59E0B" : (isCacheFree ? "#0E8A78" : s.aura);
+    const cannons = s.overclockTimer > 0 ? 5 : (isGod ? 3 : s.cannons);
+    if (cannons === 1) {
       s.bullets.push({ x: s.x, y: by - 16, vx: 0, vy: -440, col: bCol, dmg: 1 });
-    } else if (s.cannons === 2) {
+    } else if (cannons === 2) {
       s.bullets.push({ x: s.x - 8, y: by - 14, vx: -12, vy: -440, col: bCol, dmg: 1 });
       s.bullets.push({ x: s.x + 8, y: by - 14, vx: 12, vy: -440, col: bCol, dmg: 1 });
-    } else {
+    } else if (cannons === 3) {
       s.bullets.push({ x: s.x, y: by - 18, vx: 0, vy: -460, col: bCol, dmg: 1 });
       s.bullets.push({ x: s.x - 10, y: by - 12, vx: -58, vy: -440, col: bCol, dmg: 1 });
       s.bullets.push({ x: s.x + 10, y: by - 12, vx: 58, vy: -440, col: bCol, dmg: 1 });
+    } else {
+      // Hidden Overclock 5-cannon golden fan barrage!
+      s.bullets.push({ x: s.x, y: by - 20, vx: 0, vy: -500, col: bCol, dmg: 2 });
+      s.bullets.push({ x: s.x - 8, y: by - 15, vx: -48, vy: -470, col: bCol, dmg: 1 });
+      s.bullets.push({ x: s.x + 8, y: by - 15, vx: 48, vy: -470, col: bCol, dmg: 1 });
+      s.bullets.push({ x: s.x - 14, y: by - 10, vx: -115, vy: -440, col: "#E54826", dmg: 1 });
+      s.bullets.push({ x: s.x + 14, y: by - 10, vx: 115, vy: -440, col: "#E54826", dmg: 1 });
     }
-    if (Math.random() < 0.25) playTone(isCacheFree ? 880 : 620, 0.04, "triangle", 0.025);
+    if (Math.random() < 0.25) playTone(s.overclockTimer > 0 ? 1046 : (isCacheFree ? 880 : 620), 0.04, "triangle", 0.025);
   }
 
   // Spawn escalating programmer enemies
@@ -6827,8 +7071,10 @@ function tickBlasterGame(now) {
           spawnBlasterParts(en.x, en.y, en.col, en.boss ? 18 : 10);
           s.floats.push({ x: en.x, y: en.y, txt: `+${en.pts}`, col: en.col, life: 0.7 });
           playSfx(en.boss ? "gold" : "token");
-          if (en.boss || Math.random() < 0.08) {
-            s.pickups.push({ x: en.x, y: en.y, vy: 88, amt: en.boss ? 25 : 10 });
+          if (en.boss && Math.random() < 0.35) {
+            s.pickups.push({ x: en.x, y: en.y, vy: 82, kind: "overclock", amt: 0 });
+          } else if (en.boss || Math.random() < 0.08) {
+            s.pickups.push({ x: en.x, y: en.y, vy: 88, kind: "ammo", amt: en.boss ? 25 : 10 });
           }
           break;
         }
@@ -6841,22 +7087,33 @@ function tickBlasterGame(now) {
 
     if (en.y > s.h - 10) {
       s.enemies.splice(i, 1);
-      s.lives = Math.max(0, s.lives - 1);
-      s.shakeTimer = 0.32;
-      s.floats.push({ x: en.x, y: s.h - 24, txt: `${en.lbl} 突破防线!`, col: "#DC2626", life: 0.9 });
-      playSfx("bomb");
+      if (isGod) {
+        s.floats.push({ x: en.x, y: s.h - 24, txt: `🛡️ 无双免疫 ${en.lbl}`, col: "#F59E0B", life: 0.8 });
+      } else {
+        s.lives = Math.max(0, s.lives - 1);
+        s.shakeTimer = 0.32;
+        s.floats.push({ x: en.x, y: s.h - 24, txt: `${en.lbl} 突破防线!`, col: "#DC2626", life: 0.9 });
+        playSfx("bomb");
+      }
     }
   }
 
-  // Update ammo supply pickups
+  // Update ammo & hidden overclock pickups
   for (let i = s.pickups.length - 1; i >= 0; i--) {
     const pk = s.pickups[i];
     pk.y += pk.vy * dt;
-    if (Math.hypot(pk.x - s.x, pk.y - by) < 28) {
-      s.ammo += pk.amt;
-      spawnBlasterParts(pk.x, pk.y, "#0E8A78", 12);
-      s.floats.push({ x: pk.x, y: by - 20, txt: `+${pk.amt} Token弹!`, col: "#0E8A78", life: 0.9 });
-      playSfx("cache");
+    if (Math.hypot(pk.x - s.x, pk.y - by) < 30) {
+      if (pk.kind === "overclock") {
+        s.overclockTimer = 6.0;
+        spawnBlasterParts(pk.x, pk.y, "#F59E0B", 20);
+        s.floats.push({ x: pk.x, y: by - 22, txt: "⚡ 隐藏超频! 5管狂暴 6s!", col: "#F59E0B", life: 1.15 });
+        playSfx("ssr");
+      } else {
+        s.ammo += pk.amt;
+        spawnBlasterParts(pk.x, pk.y, "#0E8A78", 12);
+        s.floats.push({ x: pk.x, y: by - 20, txt: `+${pk.amt} Token弹!`, col: "#0E8A78", life: 0.9 });
+        playSfx("cache");
+      }
       s.pickups.splice(i, 1);
     } else if (pk.y > s.h + 16) {
       s.pickups.splice(i, 1);
@@ -6920,17 +7177,34 @@ function tickBlasterGame(now) {
     blCtx.fill();
   }
 
-  // Ammo pickups
+  // Ammo & Overclock pickups
   for (const pk of s.pickups) {
-    blCtx.fillStyle = "#0E8A78";
-    blCtx.beginPath();
-    blCtx.roundRect(pk.x - 12, pk.y - 9, 24, 18, 5);
-    blCtx.fill();
-    blCtx.fillStyle = "#fff";
-    blCtx.font = "bold 9px monospace";
-    blCtx.textAlign = "center";
-    blCtx.textBaseline = "middle";
-    blCtx.fillText(`+${pk.amt}`, pk.x, pk.y + 0.5);
+    if (pk.kind === "overclock") {
+      blCtx.save();
+      blCtx.shadowColor = "rgba(245, 158, 11, 0.8)";
+      blCtx.shadowBlur = 12;
+      blCtx.fillStyle = "#F59E0B";
+      blCtx.beginPath();
+      blCtx.roundRect(pk.x - 15, pk.y - 10, 30, 20, 6);
+      blCtx.fill();
+      blCtx.shadowBlur = 0;
+      blCtx.fillStyle = "#fff";
+      blCtx.font = "bold 9.5px monospace";
+      blCtx.textAlign = "center";
+      blCtx.textBaseline = "middle";
+      blCtx.fillText("⚡5×", pk.x, pk.y + 0.5);
+      blCtx.restore();
+    } else {
+      blCtx.fillStyle = "#0E8A78";
+      blCtx.beginPath();
+      blCtx.roundRect(pk.x - 12, pk.y - 9, 24, 18, 5);
+      blCtx.fill();
+      blCtx.fillStyle = "#fff";
+      blCtx.font = "bold 9px monospace";
+      blCtx.textAlign = "center";
+      blCtx.textBaseline = "middle";
+      blCtx.fillText(`+${pk.amt}`, pk.x, pk.y + 0.5);
+    }
   }
 
   // Enemies
@@ -6959,6 +7233,13 @@ function tickBlasterGame(now) {
   // Draw Bunny Turret
   blCtx.save();
   blCtx.translate(s.x, by);
+  if (s.overclockTimer > 0) {
+    blCtx.beginPath();
+    blCtx.arc(0, 0, 24 + Math.sin(now / 55) * 3, 0, Math.PI * 2);
+    blCtx.strokeStyle = "rgba(245, 158, 11, 0.85)";
+    blCtx.lineWidth = 2.5;
+    blCtx.stroke();
+  }
   blCtx.fillStyle = "#181715";
   blCtx.beginPath();
   blCtx.ellipse(-7, -14, 3.8, 9.5, -0.15, 0, Math.PI * 2);
@@ -6996,16 +7277,17 @@ function tickBlasterGame(now) {
   blCtx.globalAlpha = 1;
   blCtx.restore();
 
-  document.getElementById("blAmmo").textContent = `${s.ammo} 发`;
+  document.getElementById("blAmmo").textContent = isGod ? "♾️ 无限" : `${s.ammo} 发`;
   document.getElementById("blScore").textContent = s.score;
-  document.getElementById("blWaveInfo").textContent = `防线 ${"❤️".repeat(s.lives)}${"🖤".repeat(3 - s.lives)} · 第 ${wave} 波 · 缓存已免 ${s.refunded} 弹`;
+  const ocTxt = s.overclockTimer > 0 ? ` · ⚡超频 ${s.overclockTimer.toFixed(1)}s` : "";
+  document.getElementById("blWaveInfo").textContent = `防线 ${isGod ? "🛡️无双" : ("❤️".repeat(s.lives) + "🖤".repeat(3 - s.lives))} · 第 ${wave} 波 · 免弹 ${s.refunded}${ocTxt}`;
 
   // End check: out of lives OR (ammo depleted and no bullets left)
-  if (s.lives <= 0 || (s.ammo <= 0 && s.bullets.length === 0)) {
+  if (!isGod && (s.lives <= 0 || (s.ammo <= 0 && s.bullets.length === 0))) {
     s.running = false;
     let best = 0;
     try { best = Number(localStorage.getItem("tootoo_blaster_best") || 0) || 0; } catch {}
-    const isNew = s.score > best;
+    const isNew = !s.debugTainted && s.score > best;
     if (isNew) {
       best = s.score;
       try { localStorage.setItem("tootoo_blaster_best", String(best)); } catch {}
@@ -7016,8 +7298,9 @@ function tickBlasterGame(now) {
       playSfx("win");
     }
     const reason = s.lives <= 0 ? "防线被 Bug 突破！" : "今日 Token 弹药全部倾泻完毕！";
-    document.getElementById("blasterTitle").textContent = `${isNew ? "🏆 新纪录！" : "🎯 战报"} 得分 ${s.score}`;
-    document.getElementById("blasterDesc").textContent = `${reason} 共歼灭 ${s.kills} 只 Bug，真实缓存帮你白嫖了 ${s.refunded} 发免费弹药！写更多代码即可扩充弹药库！`;
+    const dbgPrefix = s.debugTainted ? "[调试] " : "";
+    document.getElementById("blasterTitle").textContent = `${dbgPrefix}${isNew ? "🏆 新纪录！" : "🎯 战报"} 得分 ${s.score}`;
+    document.getElementById("blasterDesc").textContent = `${reason} 共歼灭 ${s.kills} 只 Bug，真实缓存帮你白嫖了 ${s.refunded} 发免费弹药！${s.debugTainted ? "（调试局不计入最高纪录）" : "写更多代码即可扩充弹药库！"}`;
     document.getElementById("blasterStartBtn").textContent = "↻ 重新装填弹药";
     document.getElementById("blasterOverlay").classList.remove("hidden");
     return;
@@ -7073,7 +7356,7 @@ function startRainGame() {
   const tps = Math.max(35, Math.min(180, k.tps != null ? k.tps : 72));
   const cachePct = k.cache_hit != null ? k.cache_hit : 60;
   const cacheRate = Math.max(0.18, Math.min(0.65, (cachePct / 100) * 0.65));
-  const shields = cachePct >= 88 ? 2 : cachePct >= 70 ? 1 : 0;
+  const shields = (debugState.active && debugState.godMode) ? 3 : (cachePct >= 88 ? 2 : cachePct >= 70 ? 1 : 0);
   const tier = getBunnyTier(getEffectiveTodayTokens());
   const auraColors = ["#E54826", "#FB923C", "#F59E0B", "#EA580C", "#FACC15", "#EF4444", "#C026D3", "#A78BFA", "#FBBF24"];
 
@@ -7088,9 +7371,11 @@ function startRainGame() {
     timeLeft: 30,
     spawnAcc: 0,
     magnetTimer: 0,
+    feverTimer: 0,
     dizzyTimer: 0,
     shakeTimer: 0,
     shields,
+    debugTainted: Boolean(debugState.active && debugState.godMode),
     tps,
     cacheRate,
     tierLv: tier.level,
@@ -7124,6 +7409,7 @@ function tickRainGame(now) {
 
   s.timeLeft = Math.max(0, s.timeLeft - dt);
   if (s.magnetTimer > 0) s.magnetTimer = Math.max(0, s.magnetTimer - dt);
+  if (s.feverTimer > 0) s.feverTimer = Math.max(0, s.feverTimer - dt);
   if (s.dizzyTimer > 0) s.dizzyTimer = Math.max(0, s.dizzyTimer - dt);
   if (s.shakeTimer > 0) s.shakeTimer = Math.max(0, s.shakeTimer - dt);
 
@@ -7133,37 +7419,39 @@ function tickRainGame(now) {
   s.targetX = Math.max(24, Math.min(s.w - 24, s.targetX));
   s.x += (s.targetX - s.x) * Math.min(1, dt * 16);
 
-  // Spawn items scaled by real TPS
+  // Spawn items scaled by real TPS (including rare hidden Rainbow Star!)
   const spawnInterval = Math.max(0.24, 0.58 - (s.tps / 180) * 0.28);
   s.spawnAcc += dt;
   while (s.spawnAcc >= spawnInterval) {
     s.spawnAcc -= spawnInterval;
     const roll = Math.random();
     let kind = "token";
-    if (roll < 0.08) kind = "gold";
-    else if (roll < 0.22) kind = "bomb";
-    else if (roll < 0.22 + s.cacheRate * 0.55) kind = "cache";
+    if (roll < 0.035) kind = "rainbow";
+    else if (roll < 0.105) kind = "gold";
+    else if (roll < 0.24) kind = "bomb";
+    else if (roll < 0.24 + s.cacheRate * 0.55) kind = "cache";
     const baseVy = 115 + (s.tps / 180) * 115 + Math.random() * 55;
     s.items.push({
       kind,
       x: 20 + Math.random() * (s.w - 40),
       y: -14,
-      vy: kind === "gold" ? baseVy * 1.18 : baseVy,
-      r: kind === "gold" ? 11 : kind === "bomb" ? 11 : 9.5,
+      vy: (kind === "gold" || kind === "rainbow") ? baseVy * 1.15 : baseVy,
+      r: kind === "rainbow" ? 12.5 : kind === "gold" ? 11 : kind === "bomb" ? 11 : 9.5,
       rot: Math.random() * Math.PI * 2,
     });
   }
 
   const by = s.h - 28;
+  const magnetOn = s.magnetTimer > 0 || s.feverTimer > 0;
   for (let i = s.items.length - 1; i >= 0; i--) {
     const it = s.items[i];
-    if (s.magnetTimer > 0 && it.kind !== "bomb") {
+    if (magnetOn && it.kind !== "bomb") {
       const dx = s.x - it.x;
       const dy = by - it.y;
       const dist = Math.hypot(dx, dy) || 1;
-      if (dist < 175) {
-        it.x += (dx / dist) * 340 * dt;
-        it.y += (dy / dist) * 260 * dt;
+      if (dist < (s.feverTimer > 0 ? 240 : 175)) {
+        it.x += (dx / dist) * 360 * dt;
+        it.y += (dy / dist) * 280 * dt;
       }
     }
     it.y += it.vy * dt;
@@ -7172,8 +7460,8 @@ function tickRainGame(now) {
     const hitDist = Math.hypot(it.x - s.x, it.y - by);
     if (hitDist < it.r + 20) {
       if (it.kind === "bomb") {
-        if (s.shields > 0) {
-          s.shields--;
+        if (s.shields > 0 || (debugState.active && debugState.godMode)) {
+          if (s.shields > 0 && !(debugState.active && debugState.godMode)) s.shields--;
           spawnRainParticles(it.x, it.y, "#0E8A78", 16);
           s.floats.push({ x: it.x, y: by - 18, txt: "🛡️ 缓存护盾抵挡!", col: "#0E8A78", life: 0.95 });
           playSfx("cache");
@@ -7189,11 +7477,18 @@ function tickRainGame(now) {
       } else {
         s.combo++;
         if (s.combo > s.maxCombo) s.maxCombo = s.combo;
-        const mult = s.combo >= 12 ? 3 : s.combo >= 5 ? 2 : 1;
-        const basePts = it.kind === "gold" ? 50 : it.kind === "cache" ? 25 : 10;
+        const mult = (s.combo >= 12 ? 3 : s.combo >= 5 ? 2 : 1) * (s.feverTimer > 0 ? 2 : 1);
+        const basePts = it.kind === "rainbow" ? 90 : it.kind === "gold" ? 50 : it.kind === "cache" ? 25 : 10;
         const pts = Math.round(basePts * mult * (s.tierMult || 1));
         s.score += pts;
-        if (it.kind === "gold") {
+        if (it.kind === "rainbow") {
+          s.feverTimer = 5.0;
+          s.magnetTimer = Math.max(s.magnetTimer, 5.0);
+          s.shields = Math.min(5, s.shields + 1);
+          spawnRainParticles(it.x, it.y, "#A78BFA", 24);
+          s.floats.push({ x: it.x, y: by - 20, txt: `+${pts} 🌈 彩虹狂热 2× +护盾!`, col: "#A78BFA", life: 1.15 });
+          playSfx("ssr");
+        } else if (it.kind === "gold") {
           s.magnetTimer = 3.6;
           spawnRainParticles(it.x, it.y, "#F59E0B", 18);
           s.floats.push({ x: it.x, y: by - 18, txt: `+${pts} 磁铁暴走!`, col: "#F59E0B", life: 1.0 });
@@ -7255,13 +7550,13 @@ function tickRainGame(now) {
     rainCtx.stroke();
   }
 
-  // Magnet fever aura ring
-  if (s.magnetTimer > 0) {
+  // Magnet / Rainbow fever aura ring
+  if (s.magnetTimer > 0 || s.feverTimer > 0) {
     rainCtx.save();
     rainCtx.beginPath();
-    rainCtx.arc(s.x, by, 44 + Math.sin(now / 70) * 6, 0, Math.PI * 2);
-    rainCtx.strokeStyle = "rgba(245, 158, 11, 0.55)";
-    rainCtx.lineWidth = 2;
+    rainCtx.arc(s.x, by, (s.feverTimer > 0 ? 52 : 44) + Math.sin(now / 70) * 6, 0, Math.PI * 2);
+    rainCtx.strokeStyle = s.feverTimer > 0 ? "rgba(168, 85, 247, 0.72)" : "rgba(245, 158, 11, 0.55)";
+    rainCtx.lineWidth = s.feverTimer > 0 ? 2.5 : 2;
     rainCtx.setLineDash([5, 5]);
     rainCtx.stroke();
     rainCtx.restore();
@@ -7296,6 +7591,22 @@ function tickRainGame(now) {
       rainCtx.textAlign = "center";
       rainCtx.textBaseline = "middle";
       rainCtx.fillText("⚡", 0, 0.5);
+    } else if (it.kind === "rainbow") {
+      const grad = rainCtx.createRadialGradient(0, 0, 2, 0, 0, it.r);
+      grad.addColorStop(0, "#FEF08A");
+      grad.addColorStop(0.5, "#C084FC");
+      grad.addColorStop(1, "#38BDF8");
+      rainCtx.fillStyle = grad;
+      rainCtx.shadowColor = "rgba(168,85,247,0.85)";
+      rainCtx.shadowBlur = 14;
+      rainCtx.beginPath();
+      rainCtx.arc(0, 0, it.r, 0, Math.PI * 2);
+      rainCtx.fill();
+      rainCtx.shadowBlur = 0;
+      rainCtx.font = "13px sans-serif";
+      rainCtx.textAlign = "center";
+      rainCtx.textBaseline = "middle";
+      rainCtx.fillText("🌈", 0, 1);
     } else if (it.kind === "gold") {
       rainCtx.fillStyle = "#F59E0B";
       rainCtx.shadowColor = "rgba(245,158,11,0.7)";
@@ -7399,11 +7710,22 @@ function tickRainGame(now) {
     rainCtx.textAlign = "left";
     rainCtx.fillText(`🔥 COMBO ×${s.combo}`, 10, 20);
   }
-  if (s.magnetTimer > 0) {
+  if (s.feverTimer > 0) {
+    rainCtx.fillStyle = "#A78BFA";
+    rainCtx.font = "bold 11px monospace";
+    rainCtx.textAlign = "right";
+    rainCtx.fillText(`🌈 2×狂热 ${s.feverTimer.toFixed(1)}s`, s.w - 10, 20);
+  } else if (s.magnetTimer > 0) {
     rainCtx.fillStyle = "#F59E0B";
     rainCtx.font = "bold 11px monospace";
     rainCtx.textAlign = "right";
     rainCtx.fillText(`🧲 磁铁 ${s.magnetTimer.toFixed(1)}s`, s.w - 10, 20);
+  }
+  if (s.shields > 0) {
+    rainCtx.fillStyle = "#0E8A78";
+    rainCtx.font = "bold 10.5px monospace";
+    rainCtx.textAlign = "right";
+    rainCtx.fillText(`🛡️×${s.shields}`, s.w - 10, (s.feverTimer > 0 || s.magnetTimer > 0) ? 35 : 20);
   }
   rainCtx.restore();
 
@@ -7414,7 +7736,7 @@ function tickRainGame(now) {
     s.running = false;
     let best = 0;
     try { best = Number(localStorage.getItem("tootoo_rain_best") || 0) || 0; } catch {}
-    const isNewRecord = s.score > best;
+    const isNewRecord = !s.debugTainted && s.score > best;
     if (isNewRecord) {
       best = s.score;
       try { localStorage.setItem("tootoo_rain_best", String(best)); } catch {}
@@ -7426,9 +7748,10 @@ function tickRainGame(now) {
     }
     const remark = s.score >= 700 ? "神级手速！比 200 tok/s 还能吸！"
       : s.score >= 380 ? "Token 收割机本机！兔兔吃饱啦！"
-      : "热身完毕！下次盯紧金胡萝卜触发吸金磁铁！";
-    document.getElementById("rainTitle").textContent = `${isNewRecord ? "🏆 新纪录！" : "⏱ 时间到！"} 得分 ${s.score}`;
-    document.getElementById("rainDesc").textContent = `最高连击 ×${s.maxCombo} · ${remark}`;
+      : "热身完毕！下次盯紧金胡萝卜和彩虹星触发吸金狂热！";
+    const dbgPrefix = s.debugTainted ? "[调试] " : "";
+    document.getElementById("rainTitle").textContent = `${dbgPrefix}${isNewRecord ? "🏆 新纪录！" : "⏱ 时间到！"} 得分 ${s.score}`;
+    document.getElementById("rainDesc").textContent = `最高连击 ×${s.maxCombo} · ${remark}${s.debugTainted ? "（调试局不计入最高纪录）" : ""}`;
     document.getElementById("rainStartBtn").textContent = "↻ 再来一局";
     document.getElementById("rainOverlay").classList.remove("hidden");
     return;
@@ -7459,14 +7782,14 @@ document.getElementById("reflexStage").addEventListener("click", () => {
   const stage = document.getElementById("reflexStage");
   const big = document.getElementById("reflexBig");
   const sub = document.getElementById("reflexSub");
-  const aiTtftMs = Math.max(200, (((state.data && state.data.kpi && state.data.kpi.ttft_p50) || 2.8) * 1000));
+  const aiTtftMs = Math.max(100, getEffectiveReflexAiSec() * 1000);
 
   if (reflexMode === "idle") {
     reflexMode = "waiting";
     stage.className = "reflex-stage waiting";
     big.textContent = "⏳ 模型思考中…";
     sub.textContent = "盯紧屏幕！亮起亮橙信号瞬间点击，千万别抢跑！";
-    const delay = 1200 + Math.random() * 2200;
+    const delay = (debugState.active && debugState.reflexFast) ? 400 : (1200 + Math.random() * 2200);
     reflexTimer = setTimeout(() => {
       reflexMode = "go";
       reflexStartTs = performance.now();
@@ -7491,9 +7814,10 @@ document.getElementById("reflexStage").addEventListener("click", () => {
     sub.textContent = `${title} · 点击再测一轮`;
     playSfx("win");
 
+    const refTainted = debugState.active && (debugState.reflexFast || debugState.reflexAiMock != null);
     let best = null;
     try { const v = localStorage.getItem("tootoo_reflex_best"); if (v) best = Number(v); } catch {}
-    if (best == null || ms < best) {
+    if (!refTainted && (best == null || ms < best)) {
       best = ms;
       try { localStorage.setItem("tootoo_reflex_best", String(best)); } catch {}
       document.getElementById("refBest").textContent = `${(best / 1000).toFixed(3)}s`;
@@ -7552,11 +7876,18 @@ const GACHA_POOL = [
   { id: 24, r: "R",  icon: "🎉", name: "提前下班预言兔", desc: "效率太高提前收工，快奖励自己吃顿好的！" },
 ];
 
-function getGachaCollected() {
+function getRealGachaCollected() {
   try {
     const raw = JSON.parse(localStorage.getItem("tootoo_gacha_coll") || "[]");
     return Array.isArray(raw) ? raw : [];
   } catch { return []; }
+}
+
+function getGachaCollected() {
+  if (debugState.active && Array.isArray(debugState.gachaColl)) {
+    return debugState.gachaColl;
+  }
+  return getRealGachaCollected();
 }
 
 function getTodayKey() {
@@ -7570,11 +7901,13 @@ function getGachaCoinState() {
   const bKey = "tootoo_gacha_bonus_" + todayKey;
   let bonus = 0;
   try { bonus = Math.max(0, Number(localStorage.getItem(bKey) || 0) || 0); } catch {}
-  const earned = 3 + Math.floor(todayTok / 10e6) + bonus; // Daily 3 starter + 1 per 10M tokens + patrol egg drops
+  const dbgAdd = debugState.active ? debugState.gachaCoins : 0;
+  const earned = 3 + Math.floor(todayTok / 10e6) + bonus + dbgAdd; // Daily 3 starter + 1 per 10M tokens + patrol egg drops + debug coins
   const key = "tootoo_gacha_spent_" + todayKey;
   let spent = 0;
   try { spent = Math.max(0, Number(localStorage.getItem(key) || 0) || 0); } catch {}
-  return { earned, spent, bonus, balance: Math.max(0, earned - spent), key };
+  const dbgSpent = debugState.active ? debugState.gachaSpent : 0;
+  return { earned, spent: spent + dbgSpent, realSpent: spent, bonus, balance: Math.max(0, earned - spent - dbgSpent), key };
 }
 
 function renderGachaMeta() {
@@ -7587,9 +7920,16 @@ function renderGachaMeta() {
   document.getElementById("gachaBtn")?.classList.toggle("has-coins", cs.balance > 0);
   const btn = document.getElementById("gachaPullBtn");
   if (btn) {
-    btn.textContent = cs.balance > 0
-      ? `🪙 消耗 1 枚算力币扭一颗（剩 ${cs.balance} 枚）`
-      : "🪙 算力币已用完 · 再烧 10M Token 自动铸币！";
+    if (debugState.active) {
+      const fTag = debugState.gachaForce !== "auto" ? ` · 必${debugState.gachaForce}` : "";
+      btn.textContent = cs.balance > 0
+        ? `🛠 [沙盒] 扭一颗（剩 ${cs.balance} 枚${fTag}）`
+        : "🛠 沙盒币用完 · 点下方 +10币 续杯！";
+    } else {
+      btn.textContent = cs.balance > 0
+        ? `🪙 消耗 1 枚算力币扭一颗（剩 ${cs.balance} 枚）`
+        : "🪙 算力币已用完 · 再烧 10M Token 自动铸币！";
+    }
   }
 }
 
@@ -7642,7 +7982,11 @@ document.getElementById("gachaPullBtn").addEventListener("click", () => {
     playSfx("bomb");
     return;
   }
-  try { localStorage.setItem(cs.key, String(cs.spent + 1)); } catch {}
+  if (debugState.active) {
+    debugState.gachaSpent += 1;
+  } else {
+    try { localStorage.setItem(cs.key, String(cs.realSpent + 1)); } catch {}
+  }
   renderGachaMeta();
 
   gachaBusy = true;
@@ -7657,7 +8001,8 @@ document.getElementById("gachaPullBtn").addEventListener("click", () => {
   setTimeout(() => {
     gachaBusy = false;
     const roll = Math.random();
-    const tier = roll < 0.18 ? "SSR" : roll < 0.55 ? "SR" : "R";
+    const forced = debugState.active && debugState.gachaForce !== "auto" ? debugState.gachaForce : null;
+    const tier = forced || (roll < 0.18 ? "SSR" : roll < 0.55 ? "SR" : "R");
     const pool = GACHA_POOL.filter(x => x.r === tier);
     const pick = pool[Math.floor(Math.random() * pool.length)];
 
@@ -7665,13 +8010,16 @@ document.getElementById("gachaPullBtn").addEventListener("click", () => {
     const isNew = !coll.includes(pick.id);
     if (isNew) {
       coll.push(pick.id);
-      try { localStorage.setItem("tootoo_gacha_coll", JSON.stringify(coll)); } catch {}
+      if (!debugState.active) {
+        try { localStorage.setItem("tootoo_gacha_coll", JSON.stringify(coll)); } catch {}
+      }
       renderGachaMeta();
     }
 
     res.className = `gacha-result pop tier-${pick.r}`;
     res.innerHTML = `
-      <div style="display:flex;align-items:center;gap:6px">
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center">
+        ${debugState.active ? `<span class="pill amber" style="font-size:8.5px;padding:1px 5px">沙盒</span>` : ""}
         <span class="gacha-rarity ${pick.r}">${pick.r}</span>
         <strong style="font-size:12.5px;color:var(--ink)">${pick.icon} ${pick.name}</strong>
         ${isNew ? `<span class="pill accent" style="font-size:8.5px;padding:1px 5px">NEW!</span>` : ""}
@@ -7725,10 +8073,133 @@ document.getElementById("dbgUnlockBtn").addEventListener("click", (e) => {
 });
 
 document.getElementById("dbgCloseBtn").addEventListener("click", () => {
-  debugState.unlockAll = false;
-  document.getElementById("dbgUnlockBtn").textContent = "全解锁: 关";
-  applyDebugOverride(0);
   toggleDebugBar(false);
+});
+
+// ---- Debug Bar: Gacha & Arcade Rare-Item / Sandbox Controls ----
+function addDebugGachaCoins(n = 10) {
+  debugState.gachaCoins += n;
+  renderGachaMeta();
+  playSfx("gold");
+}
+function toggleDebugGodMode() {
+  debugState.godMode = !debugState.godMode;
+  if (blasterState && blasterState.running && debugState.godMode) {
+    blasterState.debugTainted = true;
+    blasterState.ammo = Math.max(blasterState.ammo, 999);
+    blasterState.lives = 3;
+    blasterState.floats.push({ x: blasterState.x, y: blasterState.h - 46, txt: "🔥 无双模式已开启!", col: "#F59E0B", life: 1.0 });
+  }
+  if (rainState && rainState.running && debugState.godMode) {
+    rainState.debugTainted = true;
+    rainState.shields = Math.max(rainState.shields, 3);
+    rainState.floats.push({ x: rainState.x, y: rainState.h - 46, txt: "🔥 无双护盾已开启!", col: "#F59E0B", life: 1.0 });
+  }
+  syncDebugUi();
+  playSfx("cache");
+}
+
+document.getElementById("dbgDropEggBtn").addEventListener("click", () => spawnPatrolCapsule());
+document.getElementById("dbgAddCoinsBtn").addEventListener("click", () => addDebugGachaCoins(10));
+document.getElementById("dbgOpenGachaBtn").addEventListener("click", () => openGachaModal());
+document.getElementById("dbgOpenArcadeBtn").addEventListener("click", () => openArcadeModal());
+document.getElementById("dbgGodModeBtn").addEventListener("click", toggleDebugGodMode);
+
+// Gacha modal inline debug controls
+document.getElementById("dbgGachaPlusBtn").addEventListener("click", () => addDebugGachaCoins(10));
+document.getElementById("dbgGachaResetCollBtn").addEventListener("click", () => {
+  debugState.gachaColl = [];
+  renderGachaMeta();
+  playSfx("token");
+});
+document.querySelectorAll("#dbgGachaForceChips button[data-rarity]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    debugState.gachaForce = btn.dataset.rarity;
+    syncDebugUi();
+  });
+});
+
+// Blaster inline debug item spawners
+document.getElementById("dbgBlGodBtn").addEventListener("click", toggleDebugGodMode);
+document.getElementById("dbgBlBossBtn").addEventListener("click", () => {
+  if (!blasterState || !blasterState.running) startBlasterGame();
+  const s = blasterState;
+  s.debugTainted = true;
+  s.enemies.push({
+    lbl: "OOM", hp: 7, maxHp: 7, r: 18, vy: 50, col: "#9333EA", pts: 120, boss: true,
+    x: 40 + Math.random() * (s.w - 80), y: -14, wobble: 0,
+  });
+  s.floats.push({ x: s.w / 2, y: 26, txt: "👾 [调试] 空投 OOM Boss!", col: "#9333EA", life: 0.9 });
+  playSfx("bomb");
+});
+document.getElementById("dbgBlAmmoBtn").addEventListener("click", () => {
+  if (!blasterState || !blasterState.running) startBlasterGame();
+  const s = blasterState;
+  s.debugTainted = true;
+  s.pickups.push({ x: Math.max(28, Math.min(s.w - 28, s.x)), y: 12, vy: 110, kind: "ammo", amt: 25 });
+  playSfx("cache");
+});
+document.getElementById("dbgBlOverclockBtn").addEventListener("click", () => {
+  if (!blasterState || !blasterState.running) startBlasterGame();
+  const s = blasterState;
+  s.debugTainted = true;
+  s.pickups.push({ x: Math.max(28, Math.min(s.w - 28, s.x)), y: 12, vy: 110, kind: "overclock", amt: 0 });
+  playSfx("gold");
+});
+document.getElementById("dbgBlNovaBtn").addEventListener("click", () => {
+  if (!blasterState || !blasterState.running) startBlasterGame();
+  triggerBlasterNova(true);
+});
+
+// Rain inline debug item spawners
+document.getElementById("dbgRainShieldBtn").addEventListener("click", () => {
+  if (!rainState || !rainState.running) startRainGame();
+  const s = rainState;
+  s.debugTainted = true;
+  s.shields = Math.min(5, s.shields + 1);
+  s.floats.push({ x: s.x, y: s.h - 46, txt: `🛡️ 护盾 +1 (现有 ×${s.shields})`, col: "#0E8A78", life: 0.9 });
+  playSfx("cache");
+});
+document.getElementById("dbgRainGoldBtn").addEventListener("click", () => {
+  if (!rainState || !rainState.running) startRainGame();
+  const s = rainState;
+  s.debugTainted = true;
+  s.items.push({ kind: "gold", x: Math.max(24, Math.min(s.w - 24, s.x)), y: -8, vy: 165, r: 11, rot: 0 });
+  playSfx("gold");
+});
+document.getElementById("dbgRainRainbowBtn").addEventListener("click", () => {
+  if (!rainState || !rainState.running) startRainGame();
+  const s = rainState;
+  s.debugTainted = true;
+  s.items.push({ kind: "rainbow", x: Math.max(24, Math.min(s.w - 24, s.x)), y: -8, vy: 165, r: 12.5, rot: 0 });
+  playSfx("ssr");
+});
+document.getElementById("dbgRainBombBtn").addEventListener("click", () => {
+  if (!rainState || !rainState.running) startRainGame();
+  const s = rainState;
+  s.debugTainted = true;
+  s.items.push({ kind: "bomb", x: Math.max(24, Math.min(s.w - 24, s.x)), y: -8, vy: 175, r: 11, rot: 0 });
+  playSfx("bomb");
+});
+document.getElementById("dbgRainTimeBtn").addEventListener("click", () => {
+  if (!rainState || !rainState.running) startRainGame();
+  const s = rainState;
+  s.debugTainted = true;
+  s.timeLeft += 15;
+  s.floats.push({ x: s.w / 2, y: 34, txt: "⏱ [调试] 时间 +15s", col: "#0E8A78", life: 0.9 });
+  playSfx("token");
+});
+
+// Reflex inline debug controls
+document.getElementById("dbgRefFastBtn").addEventListener("click", () => {
+  debugState.reflexFast = !debugState.reflexFast;
+  syncDebugUi();
+});
+document.querySelectorAll("#dbgReflexChips button[data-ai]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    debugState.reflexAiMock = btn.dataset.ai === "real" ? null : Number(btn.dataset.ai);
+    syncDebugUi();
+  });
 });
 
 initTheme();
