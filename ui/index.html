@@ -231,23 +231,17 @@
     100% { box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.3), 0 0 16px rgba(56, 189, 248, 0.45); }
   }
 
-  /* EX 50B Mythic Secret Card inside Evolution Gallery */
+  /* EX 50B Mythic Secret Card inside Evolution Gallery (shown ONLY once unlocked!) */
   .evo-card.evo-secret {
     grid-column: 1 / -1;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
+    flex-direction: column;
+    align-items: stretch;
     text-align: left;
-    gap: 12px;
-    padding: 10px 13px;
+    gap: 8px;
+    padding: 10px 12px;
     background: linear-gradient(125deg, color-mix(in srgb, var(--violet) 9%, var(--surface)), color-mix(in srgb, var(--accent) 7%, var(--surface)), color-mix(in srgb, var(--teal) 8%, var(--surface)));
     border: 1.5px solid color-mix(in srgb, var(--violet) 42%, var(--border));
     box-shadow: 0 4px 16px color-mix(in srgb, var(--violet) 12%, transparent);
-  }
-  .evo-card.evo-secret.locked {
-    border-style: dashed;
-    background: color-mix(in srgb, var(--violet) 4%, var(--surface-2));
-    box-shadow: none;
   }
   .evo-secret-left {
     display: flex;
@@ -272,11 +266,10 @@
     color: var(--violet);
   }
   .evo-skin-pills {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    justify-content: flex-end;
-    flex-shrink: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+    width: 100%;
   }
   .evo-skin-btn {
     border: 1px solid var(--border);
@@ -285,9 +278,10 @@
     font-family: var(--font-mono);
     font-size: 9.5px;
     font-weight: 700;
-    padding: 3.5px 7.5px;
-    border-radius: 999px;
+    padding: 4.5px 6px;
+    border-radius: 6px;
     cursor: pointer;
+    text-align: center;
     transition: all 0.15s ease;
     white-space: nowrap;
   }
@@ -4881,7 +4875,7 @@ function renderEvoModal() {
     evoProgTimer = null;
   }
 
-  if (next) {
+  if (next && (!next.secret || debugState.unlockAll || maxUnlockedLv >= next.level)) {
     const rawPct = Math.round((tokens / next.min) * 100);
     const remain = Math.max(0, next.min - tokens);
     const pct = remain > 0 ? Math.max(4, Math.min(95, rawPct)) : 100;
@@ -4918,10 +4912,11 @@ function renderEvoModal() {
       }
     }, 640);
   } else {
+    const isSecretNow = Boolean(cur.secret);
     box.innerHTML = `
       <div class="evo-prog-head">
-        <span>今日：<strong>EX ${cur.name}</strong> (${fmtNum(tokens)})</span>
-        <span class="evo-prog-rem">50B 究极隐藏款已觉醒 ✦</span>
+        <span>今日：<strong>${isSecretNow ? "EX" : `Lv.${cur.level}`} ${cur.name}</strong> (${fmtNum(tokens)})</span>
+        <span class="evo-prog-rem">${isSecretNow ? "50B 究极隐藏款已觉醒 ✦" : "今日已达满阶巅峰 ✨"}</span>
       </div>
       <div class="evo-prog-track">
         <div class="evo-prog-fill is-growing" id="evoProgFill" style="width:0%"></div>
@@ -4944,30 +4939,9 @@ function renderEvoModal() {
     const isLocked = !debugState.unlockAll && t.level > maxUnlockedLv;
     const delay = idx * 28;
     if (t.secret) {
-      const cls = `evo-card evo-secret ${t.level === cur.level ? "current" : (isLocked ? "locked" : "unlocked")} evo-enter`;
-      if (isLocked) {
-        return `<div class="${cls}" style="--d:${delay}ms" data-locked="1" data-lv="${t.level}">
-          <div class="evo-secret-left">
-            <div class="bunny-wrap" title="50B 究极隐藏款 · 达成后永久解锁并获得 3 款限定皮肤">
-              <svg class="bunny-svg" viewBox="0 0 36 36" fill="none">
-                <rect x="10.5" y="16" width="15" height="11.5" rx="3" stroke="currentColor" stroke-width="1.8" opacity="0.5"/>
-                <path d="M13.5 16 V12.5 A4.5 4.5 0 0 1 22.5 12.5 V16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" opacity="0.5"/>
-                <circle cx="18" cy="21.5" r="1.6" fill="currentColor" opacity="0.55"/>
-              </svg>
-            </div>
-            <div class="evo-secret-meta">
-              <span class="evo-secret-badge">✦ EX 究极隐藏款 · 50B 门槛</span>
-              <div class="evo-name">??? 待觉醒</div>
-              <div class="evo-rng">单日突破 50B 解锁 · 含 3 款限定皮肤</div>
-            </div>
-          </div>
-          <div class="evo-skin-pills">
-            <span class="evo-skin-btn" style="opacity:0.5;cursor:default">皮肤 I · ???</span>
-            <span class="evo-skin-btn" style="opacity:0.5;cursor:default">皮肤 II · ???</span>
-            <span class="evo-skin-btn" style="opacity:0.5;cursor:default">皮肤 III · ???</span>
-          </div>
-        </div>`;
-      }
+      // True hidden tier: completely invisible until actually unlocked (or debug previewed)!
+      if (isLocked) return "";
+      const cls = `evo-card evo-secret ${t.level === cur.level ? "current" : "unlocked"} evo-enter`;
       const vis = getTierVisual(t);
       const skinBtns = Object.values(SECRET_SKINS).map(sk =>
         `<button class="evo-skin-btn${sk.id === activeSkin.id ? " active" : ""}" data-skin="${sk.id}">${sk.label}</button>`
@@ -4980,7 +4954,7 @@ function renderEvoModal() {
           <div class="evo-secret-meta">
             <span class="evo-secret-badge">✦ EX 究极隐藏款 · ${t.range}</span>
             <div class="evo-name">${t.name} · ${activeSkin.label}</div>
-            <div class="evo-rng">点击右侧随时切换 3 款限定皮肤</div>
+            <div class="evo-rng">已永久解锁 · 点击下方随时切换 3 款限定皮肤</div>
           </div>
         </div>
         <div class="evo-skin-pills">${skinBtns}</div>
@@ -5027,7 +5001,7 @@ function renderEvoModal() {
     const maxLbl = maxUnlockedLv >= 10 ? "EX 究极隐藏款" : `Lv.${maxUnlockedLv}`;
     hintEl.textContent = maxUnlockedLv > cur.level
       ? `历史最高已永久解锁至 ${maxLbl} · 点击任意已解锁形态可重温专属动效`
-      : "已解锁形态永久保留 · 点击可触发专属动效 · 更高阶与 50B 隐藏款达成后自动揭晓";
+      : "已解锁形态永久保留 · 点击可触发专属动效 · 更高阶形态达成后自动揭晓";
   }
   grid.querySelectorAll(".evo-card").forEach(card => {
     const wrap = card.querySelector(".bunny-wrap");
