@@ -695,20 +695,22 @@
   }
   .evo-prog-rem.is-waiting {
     opacity: 0;
-    animation: evoRemFadeIn 0.62s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    animation: evoRemFadeIn 0.62s ease-in forwards;
   }
   @keyframes evoRemFadeIn {
-    0%   { opacity: 0.08; transform: translateY(2px); }
-    100% { opacity: 0.85; transform: translateY(0); }
+    0%   { opacity: 0; transform: translateY(2px); }
+    45%  { opacity: 0.14; transform: translateY(1.5px); }
+    80%  { opacity: 0.42; transform: translateY(0.5px); }
+    100% { opacity: 0.72; transform: translateY(0); }
   }
   .evo-prog-rem.pulse {
     animation: evoRemBlinkTwice 1.25s ease-in-out forwards;
   }
   @keyframes evoRemBlinkTwice {
-    0%   { opacity: 0.85; transform: scale(1); filter: brightness(1); text-shadow: none; }
+    0%   { opacity: 0.72; transform: scale(1); filter: brightness(1); text-shadow: none; }
     14%  { opacity: 1; transform: scale(1.045); filter: brightness(1.24); text-shadow: 0 0 10px color-mix(in srgb, var(--accent) 52%, transparent); }
     28%  { opacity: 1; transform: scale(1.03); filter: brightness(1.18); text-shadow: 0 0 8px color-mix(in srgb, var(--accent) 40%, transparent); }
-    43%  { opacity: 0.22; transform: scale(0.99); filter: brightness(0.92); text-shadow: none; }
+    43%  { opacity: 0.18; transform: scale(0.99); filter: brightness(0.92); text-shadow: none; }
     57%  { opacity: 1; transform: scale(1.045); filter: brightness(1.24); text-shadow: 0 0 10px color-mix(in srgb, var(--accent) 52%, transparent); }
     72%  { opacity: 1; transform: scale(1.03); filter: brightness(1.18); text-shadow: 0 0 8px color-mix(in srgb, var(--accent) 40%, transparent); }
     100% { opacity: 1; transform: scale(1); filter: brightness(1); text-shadow: none; }
