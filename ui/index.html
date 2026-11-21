@@ -1215,23 +1215,81 @@
     100% { opacity: 0; transform: translate(-50%, -50%) scale(8.5); }
   }
 
-  /* Matrix Token Rain inside Total Tokens card */
-  .fx-matrix-drop {
+  /* Token Flood Tidal Surge inside Total Tokens card */
+  .fx-flood {
     position: absolute;
-    top: -12px;
-    font-family: var(--font-mono);
-    font-size: 9.5px;
-    font-weight: 800;
+    inset: 0;
     pointer-events: none;
-    z-index: 5;
-    opacity: 0;
-    animation: matrixFall var(--dur, 0.78s) cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    z-index: 3;
+    overflow: hidden;
+    border-radius: inherit;
   }
-  @keyframes matrixFall {
-    0%   { opacity: 0; transform: translateY(0) scale(0.85); }
-    18%  { opacity: 0.95; }
-    80%  { opacity: 0.75; }
-    100% { opacity: 0; transform: translateY(105px) scale(1.05); }
+  .fx-flood-body {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 112%;
+    transform: translateY(108%);
+    animation: floodSurge 1.85s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  .fx-wave {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 200%;
+    height: 24px;
+    will-change: transform;
+  }
+  .fx-wave.w-back {
+    top: -12px;
+    animation: waveFlowBack 1.15s linear infinite;
+  }
+  .fx-wave.w-front {
+    top: -8px;
+    animation: waveFlowFront 0.85s linear infinite;
+  }
+  .fx-flood-fill {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 12px;
+    bottom: 0;
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent) 34%, transparent) 0%,
+      color-mix(in srgb, var(--teal) 32%, color-mix(in srgb, var(--accent) 26%, transparent)) 100%
+    );
+  }
+  .fx-bubble {
+    position: absolute;
+    bottom: 6px;
+    border-radius: 50%;
+    border: 1.2px solid rgba(255, 255, 255, 0.72);
+    background: color-mix(in srgb, var(--accent) 22%, rgba(255, 255, 255, 0.35));
+    pointer-events: none;
+    z-index: 4;
+    animation: bubbleRise var(--dur, 1.1s) ease-out forwards;
+  }
+  @keyframes floodSurge {
+    0%   { transform: translateY(108%); opacity: 0.7; }
+    28%  { transform: translateY(16%); opacity: 1; }
+    52%  { transform: translateY(8%); opacity: 1; }
+    72%  { transform: translateY(18%); opacity: 0.95; }
+    100% { transform: translateY(112%); opacity: 0; }
+  }
+  @keyframes waveFlowFront {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  @keyframes waveFlowBack {
+    0%   { transform: translateX(-50%); }
+    100% { transform: translateX(0); }
+  }
+  @keyframes bubbleRise {
+    0%   { opacity: 0; transform: translate(0, 0) scale(0.45); }
+    20%  { opacity: 0.95; }
+    100% { opacity: 0; transform: translate(var(--dx, 6px), -96px) scale(1.15); }
   }
 
   /* TTFT Thinking -> First-Token Pop & Laser Sweep */
@@ -3277,7 +3335,7 @@
 
   <!-- HERO 4-INSTRUMENT STRIP -->
   <section class="hero-grid">
-    <div class="card" data-kpi="tokens" title="双击触发 Token 矩阵雨并同步最新用量">
+    <div class="card" data-kpi="tokens" title="双击触发算力洪流并同步最新用量">
       <div class="card-head">
         <span class="kicker k-teal">总用量</span>
         <span class="pill teal" id="cachePill">缓存 —%</span>
@@ -6243,22 +6301,38 @@ document.querySelectorAll(".hero-grid .card[data-kpi]").forEach(card => {
     const kind = card.dataset.kpi;
     const r = card.getBoundingClientRect();
     if (kind === "tokens") {
-      // 1. Matrix Token Rain pouring across the card (matching 4 real token-type colors)
+      // Token Flood: surging dual-layer wave tide filling the card + rising bubbles
       playSfx("cache");
-      const glyphs = ["01", "tok", "{}", "λ", "✦", "[]", "AI", "⚡", ">>", "0x"];
-      const cols = ["var(--teal)", "var(--blue)", "var(--accent)", "var(--amber)"];
-      for (let i = 0; i < 16; i++) {
-        const drop = document.createElement("span");
-        drop.className = "fx-matrix-drop";
-        drop.textContent = glyphs[i % glyphs.length];
-        drop.style.left = (6 + (i * 5.8) + (Math.random() - 0.5) * 3).toFixed(1) + "%";
-        drop.style.color = cols[i % cols.length];
-        drop.style.animationDelay = (i * 26 + Math.random() * 60).toFixed(0) + "ms";
-        drop.style.setProperty("--dur", (0.62 + Math.random() * 0.28).toFixed(2) + "s");
-        card.appendChild(drop);
-        setTimeout(() => drop.remove(), 1100);
+      card.querySelectorAll(".fx-flood").forEach(n => n.remove());
+      const flood = document.createElement("div");
+      flood.className = "fx-flood";
+      flood.innerHTML = `
+        <div class="fx-flood-body">
+          <svg class="fx-wave w-back" viewBox="0 0 240 24" preserveAspectRatio="none">
+            <path d="M0 12 Q30 2 60 12 T120 12 T180 12 T240 12 V24 H0 Z" fill="var(--teal)" opacity="0.34"/>
+          </svg>
+          <svg class="fx-wave w-front" viewBox="0 0 240 24" preserveAspectRatio="none">
+            <path d="M0 12 Q30 22 60 12 T120 12 T180 12 T240 12 V24 H0 Z" fill="var(--accent)" opacity="0.36"/>
+          </svg>
+          <div class="fx-flood-fill"></div>
+        </div>
+      `;
+      card.appendChild(flood);
+      for (let i = 0; i < 12; i++) {
+        const b = document.createElement("span");
+        b.className = "fx-bubble";
+        const sz = (4 + Math.random() * 5.5).toFixed(1);
+        b.style.width = sz + "px";
+        b.style.height = sz + "px";
+        b.style.left = (8 + Math.random() * 84).toFixed(1) + "%";
+        b.style.animationDelay = (140 + i * 75 + Math.random() * 90).toFixed(0) + "ms";
+        b.style.setProperty("--dx", ((Math.random() - 0.5) * 20).toFixed(1) + "px");
+        b.style.setProperty("--dur", (0.85 + Math.random() * 0.45).toFixed(2) + "s");
+        flood.appendChild(b);
       }
-      // 2. Stack bar wave bounce + brief terminal scramble settling back on exact real value
+      setTimeout(() => flood.remove(), 1950);
+
+      // Gentle stack bar wave + real live sync (no fake numbers)
       const stack = document.getElementById("tokenStack");
       if (stack) {
         stack.classList.remove("wave-pop");
@@ -6266,22 +6340,6 @@ document.querySelectorAll(".hero-grid .card[data-kpi]").forEach(card => {
         stack.classList.add("wave-pop");
         setTimeout(() => stack.classList.remove("wave-pop"), 700);
       }
-      const kpiEl = document.getElementById("kpiTokens");
-      if (kpiEl && state.data && state.data.kpi) {
-        const realText = fmtNum(state.data.kpi.tokens);
-        const chars = "0123456789ABCDEF";
-        let frame = 0;
-        const scram = setInterval(() => {
-          frame++;
-          if (frame >= 7) {
-            clearInterval(scram);
-            kpiEl.textContent = fmtNum(state.data.kpi.tokens);
-            return;
-          }
-          kpiEl.textContent = realText.replace(/\d/g, () => chars[Math.floor(Math.random() * 10)]);
-        }, 38);
-      }
-      // 3. Real live sync (only floats +delta if genuine new tokens arrived!)
       fetchTelemetry(true);
     } else if (kind === "cost") {
       playSfx("gold");
