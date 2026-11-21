@@ -921,15 +921,23 @@
   }
 
   /* Button micro-physics */
+  .btn-ico .spin-ico,
+  #settingsBtn .ico-gear,
+  #themeBtn .ico-theme,
+  #expandBtn .ico-exp,
+  #arcadeBtn .ico-pad {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
   #settingsBtn .ico-gear {
-    display: inline-block;
     transition: transform 0.38s cubic-bezier(0.22, 1.25, 0.36, 1);
   }
   #settingsBtn:hover .ico-gear {
     transform: rotate(90deg);
   }
   #themeBtn .ico-theme {
-    display: inline-block;
     transition: transform 0.42s cubic-bezier(0.34, 1.45, 0.64, 1);
   }
   #themeBtn.flipped .ico-theme {
@@ -939,9 +947,6 @@
     transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.14s ease, color 0.18s ease;
   }
   #expandBtn .ico-exp {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
     transition: transform 0.24s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
   #expandBtn:hover {
@@ -2829,8 +2834,8 @@
   }
 
   body.popover-mode .btn-ico {
-    width: 26px;
-    height: 26px;
+    width: 28px;
+    height: 28px;
     padding: 0;
   }
 
@@ -2946,7 +2951,7 @@
     border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
   }
   #refreshBtn.spinning .spin-ico {
-    display: inline-block;
+    display: inline-flex;
     animation: icoSpin 0.72s linear infinite;
   }
 
@@ -3163,11 +3168,11 @@
       </div>
       <div class="ctrl-actions">
         <span class="scan-badge" id="scanBadge">扫描 —</span>
-        <button class="btn btn-ico" id="refreshBtn" title="重新扫描本地日志"><span class="spin-ico">↻</span></button>
-        <button class="btn btn-ico" id="themeBtn" title="切换浅色/深色主题"><span class="ico-theme">◐</span></button>
-        <button class="btn btn-ico" id="arcadeBtn" title="打开 TOOTOO 算力游乐场"><span class="ico-pad">🎮</span></button>
-        <button class="btn btn-ico" id="settingsBtn" title="设置"><span class="ico-gear">⚙</span></button>
-        <button class="btn btn-ico pop-only" id="expandBtn" title="打开完整窗口"><span class="ico-exp"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.2" cy="7.2" r="4.6"/><path d="M10.7 10.7L14 14"/></svg></span></button>
+        <button class="btn btn-ico" id="refreshBtn" title="重新扫描本地日志"><span class="spin-ico"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 8a5.5 5.5 0 1 1-1.35-3.6"/><path d="M13.5 2.5v2.9h-2.9"/></svg></span></button>
+        <button class="btn btn-ico" id="themeBtn" title="切换浅色/深色主题"><span class="ico-theme"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="5.5"/><path d="M8 2.5a5.5 5.5 0 0 1 0 11Z" fill="currentColor" stroke="none"/></svg></span></button>
+        <button class="btn btn-ico" id="settingsBtn" title="设置"><span class="ico-gear"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2.2"/><path d="M12.9 9.7a1.1 1.1 0 0 0 .22 1.2l.04.04a1.33 1.33 0 1 1-1.88 1.88l-.04-.04a1.1 1.1 0 0 0-1.2-.22 1.1 1.1 0 0 0-.67 1.01v.11a1.33 1.33 0 1 1-2.67 0v-.06a1.1 1.1 0 0 0-.72-1.01 1.1 1.1 0 0 0-1.2.22l-.04.04a1.33 1.33 0 1 1-1.88-1.88l.04-.04a1.1 1.1 0 0 0 .22-1.2 1.1 1.1 0 0 0-1.01-.67h-.11a1.33 1.33 0 1 1 0-2.67h.06a1.1 1.1 0 0 0 1.01-.72 1.1 1.1 0 0 0-.22-1.2l-.04-.04a1.33 1.33 0 1 1 1.88-1.88l.04.04a1.1 1.1 0 0 0 1.2.22h.05a1.1 1.1 0 0 0 .67-1.01v-.11a1.33 1.33 0 1 1 2.67 0v.06a1.1 1.1 0 0 0 .67 1.01 1.1 1.1 0 0 0 1.2-.22l.04-.04a1.33 1.33 0 1 1 1.88 1.88l-.04.04a1.1 1.1 0 0 0-.22 1.2v.05a1.1 1.1 0 0 0 1.01.67h.11a1.33 1.33 0 1 1 0 2.67h-.06a1.1 1.1 0 0 0-1.01.67Z"/></svg></span></button>
+        <button class="btn btn-ico pop-only" id="expandBtn" title="打开完整窗口"><span class="ico-exp"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.2" cy="7.2" r="4.6"/><path d="M10.7 10.7L14 14"/></svg></span></button>
+        <button class="btn btn-ico" id="arcadeBtn" title="打开 TOOTOO 算力游乐场"><span class="ico-pad"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round"><rect x="1.8" y="4.4" width="12.4" height="7.6" rx="3.4"/><path d="M4.6 8.2h2.4M5.8 7v2.4"/><circle cx="10.4" cy="7.5" r="0.7" fill="currentColor" stroke="none"/><circle cx="11.9" cy="8.9" r="0.7" fill="currentColor" stroke="none"/></svg></span></button>
       </div>
     </div>
   </header>
