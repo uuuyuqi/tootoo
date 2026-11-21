@@ -4478,19 +4478,27 @@ function renderBunnyState(tokens) {
     lastRealBunnyLv = tier.level;
   }
 
-  // Preserve active transient FX classes (fx-click / siphoning / nibble) across SSE refreshes
+  // Preserve active transient FX / patrol classes across SSE refreshes
   const keepFxClick = wrap.classList.contains("fx-click");
   const keepSiphon = wrap.classList.contains("siphoning");
+  const keepIsSiphon = wrap.classList.contains("is-siphoning");
   const keepNibble = wrap.classList.contains("nibble");
+  const keepAway = (typeof patrolRunning !== "undefined" && patrolRunning) || wrap.classList.contains("is-away");
   wrap.className = "bunny-wrap"
     + (tier.stage ? " " + tier.stage : "")
     + (keepFxClick ? " fx-click" : "")
     + (keepSiphon ? " siphoning" : "")
-    + (keepNibble ? " nibble" : "");
+    + (keepIsSiphon ? " is-siphoning" : "")
+    + (keepNibble ? " nibble" : "")
+    + (keepAway ? " is-away" : "");
   const prevLv = wrap.dataset.lv;
   wrap.dataset.lv = String(tier.level);
   if (prevLv !== String(tier.level) || !svg.innerHTML) {
     svg.innerHTML = tier.svg;
+    if (keepAway) {
+      const patrolSvg = document.querySelector(".patrol-bunny svg");
+      if (patrolSvg) patrolSvg.innerHTML = tier.svg;
+    }
   }
   const dbgPrefix = debugState.level != null ? "[调试] " : "";
   mood.textContent = `${dbgPrefix}今日 Lv.${tier.level} ${tier.name} ▸`;
