@@ -3182,7 +3182,7 @@
 
   <!-- HERO 4-INSTRUMENT STRIP -->
   <section class="hero-grid">
-    <div class="card" data-kpi="tokens" title="双击触发能量投喂彩蛋">
+    <div class="card" data-kpi="tokens" title="双击立即同步最新用量">
       <div class="card-head">
         <span class="kicker k-teal">总用量</span>
         <span class="pill teal" id="cachePill">缓存 —%</span>
@@ -6148,9 +6148,19 @@ document.querySelectorAll(".hero-grid .card[data-kpi]").forEach(card => {
     const kind = card.dataset.kpi;
     const r = card.getBoundingClientRect();
     if (kind === "tokens") {
-      const amt = Math.max(52000, Math.round(((state.data && state.data.today_tokens) || 120000) * 0.003));
-      triggerLiveTokenFeed(amt);
+      // Trigger a real live scan: only float a +delta badge if real tokens actually increased!
+      const before = prevLiveTodayTokens;
       playSfx("cache");
+      fetchTelemetry(true).then(() => {
+        if (prevLiveTodayTokens === before) {
+          // Pure visual sparkle ring with zero fabricated numbers when already up to date
+          const ring = document.createElement("div");
+          ring.className = "fx-sonar";
+          ring.style.borderColor = "var(--teal)";
+          card.appendChild(ring);
+          setTimeout(() => ring.remove(), 900);
+        }
+      });
     } else if (kind === "cost") {
       playSfx("gold");
       for (let i = 0; i < 12; i++) {
