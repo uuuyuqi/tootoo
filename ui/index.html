@@ -1269,25 +1269,67 @@
   }
   .arcade-tabs {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 5px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
     background: var(--surface-2);
     border: 1px solid var(--border);
     border-radius: 7px;
     padding: 3px;
-    margin-bottom: 11px;
+    margin-bottom: 10px;
   }
   .arcade-tabs button {
     border: none;
     background: transparent;
     color: var(--ink-soft);
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 10.5px;
     font-weight: 700;
-    padding: 6px 4px;
+    padding: 6px 2px;
     border-radius: 5px;
     cursor: pointer;
+    white-space: nowrap;
     transition: all 0.16s ease;
+  }
+  .loadout-bar {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 5px;
+    margin-bottom: 8px;
+  }
+  .loadout-chip {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 7px;
+    font-family: var(--font-mono);
+    text-align: center;
+  }
+  .loadout-chip .lk {
+    display: block;
+    font-size: 9px;
+    color: var(--muted);
+    margin-bottom: 1px;
+  }
+  .loadout-chip .lv {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: var(--ink);
+  }
+  #blasterCanvas {
+    display: block;
+    width: 100%;
+    height: 248px;
+    cursor: crosshair;
+    touch-action: none;
+  }
+  .blaster-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 7px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--muted);
   }
   .arcade-tabs button.active {
     background: var(--active-bg);
@@ -3307,13 +3349,48 @@
     </div>
 
     <div class="arcade-tabs" id="arcadeTabs">
-      <button data-game="rain" class="active">🥕 接 Token 雨</button>
-      <button data-game="reflex">⚡ 首字手速对决</button>
-      <button data-game="gacha">🎰 算力扭蛋机</button>
+      <button data-game="blaster" class="active">🚀 弹药打Bug</button>
+      <button data-game="rain">🥕 接Token雨</button>
+      <button data-game="reflex">⚡ 首字对决</button>
+      <button data-game="gacha">🎰 算力扭蛋</button>
     </div>
 
-    <!-- GAME 1: TOKEN RAIN CATCHER -->
-    <div class="arcade-pane active" id="arcPane-rain">
+    <!-- GAME 1 (FLAGSHIP): 🚀 TOKEN AMMO BUG BLASTER -->
+    <div class="arcade-pane active" id="arcPane-blaster">
+      <div class="loadout-bar">
+        <div class="loadout-chip">
+          <span class="lk">🔋 Token弹药</span>
+          <span class="lv" id="blAmmo" style="color:var(--accent)">—</span>
+        </div>
+        <div class="loadout-chip">
+          <span class="lk">⚡ 射速(tok/s)</span>
+          <span class="lv" id="blFireRate">—</span>
+        </div>
+        <div class="loadout-chip">
+          <span class="lk">♻️ 缓存免弹</span>
+          <span class="lv" id="blRefund" style="color:var(--teal)">—</span>
+        </div>
+        <div class="loadout-chip">
+          <span class="lk">💥 歼灭 / 最高</span>
+          <span class="lv"><span id="blScore">0</span> / <span id="blBest" style="color:var(--muted)">0</span></span>
+        </div>
+      </div>
+      <div class="rain-wrap">
+        <canvas id="blasterCanvas"></canvas>
+        <div class="rain-overlay" id="blasterOverlay">
+          <h3 id="blasterTitle">🚀 Token 弹幕 · Bug 歼灭战</h3>
+          <p id="blasterDesc">你的真实 Token 消耗量就是弹药库（每 1M = 1 发）！真实输出速度决定射速，真实缓存命中率触发免费补弹！移动鼠标走位自动开火，空格 / 点击画布消耗 25 发释放清屏激光！</p>
+          <button class="arc-primary-btn" id="blasterStartBtn">▶ 装填今日弹药出击</button>
+        </div>
+      </div>
+      <div class="blaster-actions">
+        <span id="blWaveInfo">防线完好 ❤️❤️❤️ · 移动走位自动射击</span>
+        <button class="btn" id="blNovaBtn" style="padding:3px 9px;font-size:10px" title="消耗 25 发 Token 弹药释放全屏清屏激光（快捷键：空格）">⚡ 算力清屏 (-25弹)</button>
+      </div>
+    </div>
+
+    <!-- GAME 2: TOKEN RAIN CATCHER -->
+    <div class="arcade-pane" id="arcPane-rain">
       <div class="arc-hud">
         <span>出战 <strong id="rainTierLbl">Lv.1</strong> · <span id="rainSpeedLbl">速度 —</span></span>
         <span>得分 <span class="accent" id="rainScore">0</span> · 剩余 <strong id="rainTime">30s</strong> · 最高 <strong id="rainBest">0</strong></span>
@@ -3360,9 +3437,9 @@
       <div class="gacha-box">
         <div class="gacha-machine" id="gachaMachine">🎰</div>
         <div style="font-size:11px;color:var(--muted);margin-bottom:8px">
-          基于今日算力充能 · 已收集 <strong id="gachaColl" style="color:var(--ink)">0 / 24</strong> 张程序员算力签
+          每消耗 10M Token 铸造 1 枚算力币 · 余额 <strong id="gachaCoins" style="color:var(--accent)">0</strong> 枚 · 图鉴 <strong id="gachaColl" style="color:var(--ink)">0 / 24</strong>
         </div>
-        <button class="arc-primary-btn" id="gachaPullBtn">🪙 扭一颗今日算力签！</button>
+        <button class="arc-primary-btn" id="gachaPullBtn">🪙 消耗 1 枚算力币扭一颗！</button>
         <div class="gacha-result" id="gachaResult">
           <span style="font-size:11px;color:var(--muted)">拉下开关，看看兔兔今天给你抽什么神签 ✨</span>
         </div>
@@ -4434,6 +4511,7 @@ window.__onPopoverClose = () => {
   popoverVisible = false;
   if (typeof stopQuotaSiphon === "function") stopQuotaSiphon();
   if (typeof clearBunnySpeech === "function") clearBunnySpeech();
+  if (typeof stopBlasterGame === "function") stopBlasterGame();
   if (typeof stopRainGame === "function") stopRainGame();
   if (typeof cancelReflexTimer === "function") cancelReflexTimer();
   disconnectStream();
@@ -5920,6 +5998,7 @@ function openArcadeModal() {
 }
 function closeArcadeModal() {
   document.getElementById("arcadeModal").classList.remove("open");
+  stopBlasterGame();
   stopRainGame();
   cancelReflexTimer();
 }
@@ -5935,11 +6014,25 @@ document.querySelectorAll("#arcadeTabs button").forEach(btn => {
     btn.classList.add("active");
     const g = btn.dataset.game;
     document.querySelectorAll(".arcade-pane").forEach(p => p.classList.toggle("active", p.id === `arcPane-${g}`));
+    if (g !== "blaster") stopBlasterGame();
     if (g !== "rain") stopRainGame();
     if (g !== "reflex") cancelReflexTimer();
     refreshArcadeContext();
   });
 });
+
+function getBlasterLoadout() {
+  const todayTok = getEffectiveTodayTokens();
+  const k = (state.data && state.data.kpi) || {};
+  const tier = getBunnyTier(todayTok);
+  const ammo = Math.max(40, Math.round(todayTok / 1e6));
+  const tps = Math.max(25, Math.min(200, k.tps != null ? k.tps : 72));
+  const cacheHit = Math.max(0, Math.min(100, k.cache_hit != null ? k.cache_hit : 60));
+  const refundProb = Math.min(0.55, (cacheHit / 100) * 0.55);
+  const fireHz = +(3.4 + (tps / 180) * 7.6).toFixed(1);
+  const cannons = tier.level >= 6 ? 3 : tier.level >= 3 ? 2 : 1;
+  return { todayTok, ammo, tps, cacheHit, refundProb, fireHz, cannons, tier };
+}
 
 function refreshArcadeContext() {
   const tier = getBunnyTier(getEffectiveTodayTokens());
@@ -5948,7 +6041,19 @@ function refreshArcadeContext() {
   const cacheHit = k.cache_hit != null ? k.cache_hit : 75;
   const ttft = k.ttft_p50 != null ? k.ttft_p50 : 2.8;
 
-  document.getElementById("rainTierLbl").textContent = `Lv.${tier.level} ${tier.name}`;
+  // Blaster loadout HUD
+  const lo = getBlasterLoadout();
+  if (!blasterState || !blasterState.running) {
+    document.getElementById("blAmmo").textContent = `${lo.ammo} 发`;
+    document.getElementById("blFireRate").textContent = `${lo.fireHz}/s ×${lo.cannons}管`;
+    document.getElementById("blRefund").textContent = `${Math.round(lo.refundProb * 100)}%`;
+  }
+  let blBest = 0;
+  try { blBest = Number(localStorage.getItem("tootoo_blaster_best") || 0) || 0; } catch {}
+  document.getElementById("blBest").textContent = blBest;
+
+  const shieldCnt = cacheHit >= 88 ? 2 : cacheHit >= 70 ? 1 : 0;
+  document.getElementById("rainTierLbl").textContent = `Lv.${tier.level} ${tier.name}${shieldCnt ? ` · 🛡️×${shieldCnt}` : ""}`;
   document.getElementById("rainSpeedLbl").textContent = `${tps.toFixed(0)} tok/s · 缓存 ${cacheHit}%`;
   let rBest = 0;
   try { rBest = Number(localStorage.getItem("tootoo_rain_best") || 0) || 0; } catch {}
@@ -5963,6 +6068,430 @@ function refreshArcadeContext() {
   renderAlchemyStats();
   renderGachaMeta();
 }
+
+// ============================================================
+// GAME 1 (FLAGSHIP): 🚀 TOKEN AMMO BUG BLASTER (60fps Canvas)
+// ============================================================
+const blasterCanvas = document.getElementById("blasterCanvas");
+const blCtx = blasterCanvas.getContext("2d");
+let blasterRaf = null;
+let blasterState = null;
+const blKeys = { left: false, right: false };
+
+window.addEventListener("keydown", (e) => {
+  if (!blasterState || !blasterState.running) return;
+  if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") blKeys.left = true;
+  if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") blKeys.right = true;
+  if (e.code === "Space") {
+    e.preventDefault();
+    triggerBlasterNova();
+  }
+});
+window.addEventListener("keyup", (e) => {
+  if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") blKeys.left = false;
+  if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") blKeys.right = false;
+});
+blasterCanvas.addEventListener("pointermove", (e) => {
+  if (!blasterState || !blasterState.running) return;
+  const r = blasterCanvas.getBoundingClientRect();
+  blasterState.targetX = ((e.clientX - r.left) / r.width) * blasterState.w;
+});
+blasterCanvas.addEventListener("pointerdown", () => {
+  if (blasterState && blasterState.running) triggerBlasterNova();
+});
+document.getElementById("blNovaBtn").addEventListener("click", () => {
+  if (blasterState && blasterState.running) triggerBlasterNova();
+});
+
+function stopBlasterGame() {
+  if (blasterRaf) {
+    cancelAnimationFrame(blasterRaf);
+    blasterRaf = null;
+  }
+  if (blasterState) blasterState.running = false;
+}
+
+function triggerBlasterNova() {
+  const s = blasterState;
+  if (!s || !s.running) return;
+  if (s.ammo < 25) {
+    s.floats.push({ x: s.x, y: s.h - 46, txt: "弹药不足 25 发!", col: "#DC2626", life: 0.8 });
+    playSfx("bomb");
+    return;
+  }
+  s.ammo -= 25;
+  s.novaRing = { r: 16, maxR: Math.max(s.w, s.h) * 1.1, alpha: 1 };
+  s.shakeTimer = 0.36;
+  playSfx("ssr");
+  let wiped = 0;
+  for (const en of s.enemies) {
+    wiped++;
+    s.kills++;
+    s.score += en.pts;
+    spawnBlasterParts(en.x, en.y, en.col, 12);
+  }
+  s.enemies = [];
+  s.floats.push({ x: s.w / 2, y: s.h * 0.45, txt: `⚡ 算力清屏! 蒸发 ${wiped} 只 Bug!`, col: "#F59E0B", life: 1.1 });
+}
+
+function spawnBlasterParts(x, y, col, n = 10) {
+  for (let i = 0; i < n; i++) {
+    const a = (Math.PI * 2 * i) / n + Math.random() * 0.5;
+    const sp = 50 + Math.random() * 125;
+    blasterState.parts.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 0.42 + Math.random() * 0.25, col, r: 2 + Math.random() * 2.5 });
+  }
+}
+
+function startBlasterGame() {
+  stopBlasterGame();
+  const dpr = window.devicePixelRatio || 1;
+  const w = Math.max(320, blasterCanvas.clientWidth || 460);
+  const h = 248;
+  blasterCanvas.width = Math.round(w * dpr);
+  blasterCanvas.height = Math.round(h * dpr);
+  blCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const lo = getBlasterLoadout();
+  const auraColors = ["#E54826", "#FB923C", "#F59E0B", "#EA580C", "#FACC15", "#EF4444", "#C026D3", "#A78BFA", "#FBBF24"];
+
+  blasterState = {
+    running: true,
+    w, h,
+    x: w / 2,
+    targetX: w / 2,
+    ammo: lo.ammo,
+    maxAmmo: lo.ammo,
+    refunded: 0,
+    fireHz: lo.fireHz,
+    refundProb: lo.refundProb,
+    cannons: lo.cannons,
+    tierLv: lo.tier.level,
+    aura: auraColors[lo.tier.level - 1] || "#E54826",
+    fireAcc: 0,
+    spawnAcc: 0,
+    elapsed: 0,
+    lives: 3,
+    score: 0,
+    kills: 0,
+    shakeTimer: 0,
+    novaRing: null,
+    bullets: [],
+    enemies: [],
+    pickups: [],
+    parts: [],
+    floats: [],
+    lastTs: performance.now(),
+  };
+
+  document.getElementById("blasterOverlay").classList.add("hidden");
+  document.getElementById("blScore").textContent = "0";
+  document.getElementById("blAmmo").textContent = `${lo.ammo} 发`;
+  document.getElementById("blFireRate").textContent = `${lo.fireHz}/s ×${lo.cannons}管`;
+  document.getElementById("blRefund").textContent = `${Math.round(lo.refundProb * 100)}%`;
+  blasterRaf = requestAnimationFrame(tickBlasterGame);
+}
+
+function tickBlasterGame(now) {
+  const s = blasterState;
+  if (!s || !s.running) return;
+  const dt = Math.min(0.05, (now - s.lastTs) / 1000);
+  s.lastTs = now;
+  s.elapsed += dt;
+  if (s.shakeTimer > 0) s.shakeTimer = Math.max(0, s.shakeTimer - dt);
+
+  if (blKeys.left) s.targetX -= 400 * dt;
+  if (blKeys.right) s.targetX += 400 * dt;
+  s.targetX = Math.max(22, Math.min(s.w - 22, s.targetX));
+  s.x += (s.targetX - s.x) * Math.min(1, dt * 18);
+
+  const by = s.h - 26;
+
+  // Auto-fire bullets using real Token Ammo & TPS fire rate
+  const fireInterval = 1 / s.fireHz;
+  s.fireAcc += dt;
+  if (s.ammo > 0 && s.fireAcc >= fireInterval) {
+    s.fireAcc -= fireInterval;
+    const isCacheFree = Math.random() < s.refundProb;
+    if (isCacheFree) {
+      s.refunded++;
+      if (s.refunded % 6 === 1) {
+        s.floats.push({ x: s.x, y: by - 26, txt: "♻️ CACHE 免弹!", col: "#0E8A78", life: 0.65 });
+      }
+    } else {
+      s.ammo = Math.max(0, s.ammo - 1);
+    }
+    const bCol = isCacheFree ? "#0E8A78" : s.aura;
+    if (s.cannons === 1) {
+      s.bullets.push({ x: s.x, y: by - 16, vx: 0, vy: -440, col: bCol, dmg: 1 });
+    } else if (s.cannons === 2) {
+      s.bullets.push({ x: s.x - 8, y: by - 14, vx: -12, vy: -440, col: bCol, dmg: 1 });
+      s.bullets.push({ x: s.x + 8, y: by - 14, vx: 12, vy: -440, col: bCol, dmg: 1 });
+    } else {
+      s.bullets.push({ x: s.x, y: by - 18, vx: 0, vy: -460, col: bCol, dmg: 1 });
+      s.bullets.push({ x: s.x - 10, y: by - 12, vx: -58, vy: -440, col: bCol, dmg: 1 });
+      s.bullets.push({ x: s.x + 10, y: by - 12, vx: 58, vy: -440, col: bCol, dmg: 1 });
+    }
+    if (Math.random() < 0.25) playTone(isCacheFree ? 880 : 620, 0.04, "triangle", 0.025);
+  }
+
+  // Spawn escalating programmer enemies
+  const wave = 1 + Math.floor(s.elapsed / 10);
+  const spawnInterval = Math.max(0.28, 0.85 - wave * 0.07);
+  s.spawnAcc += dt;
+  while (s.spawnAcc >= spawnInterval) {
+    s.spawnAcc -= spawnInterval;
+    const roll = Math.random();
+    let spec;
+    if (roll < 0.12 && s.elapsed > 4) {
+      spec = { lbl: "OOM", hp: 5 + Math.floor(wave * 0.6), r: 17, vy: 46 + wave * 4, col: "#9333EA", pts: 120, boss: true };
+    } else if (roll < 0.34) {
+      spec = { lbl: "429", hp: 1, r: 12, vy: 118 + wave * 9, col: "#D97706", pts: 35, boss: false };
+    } else if (roll < 0.56) {
+      spec = { lbl: "502", hp: 2, r: 13.5, vy: 72 + wave * 5, col: "#52525B", pts: 45, boss: false };
+    } else {
+      spec = { lbl: "BUG", hp: 1 + (wave >= 4 ? 1 : 0), r: 12.5, vy: 82 + wave * 6, col: "#DC2626", pts: 25, boss: false };
+    }
+    s.enemies.push({
+      ...spec,
+      maxHp: spec.hp,
+      x: 22 + Math.random() * (s.w - 44),
+      y: -18,
+      wobble: Math.random() * Math.PI * 2,
+    });
+  }
+
+  // Update bullets
+  for (let i = s.bullets.length - 1; i >= 0; i--) {
+    const b = s.bullets[i];
+    b.x += b.vx * dt;
+    b.y += b.vy * dt;
+    if (b.y < -12 || b.x < -12 || b.x > s.w + 12) {
+      s.bullets.splice(i, 1);
+    }
+  }
+
+  // Update enemies & collisions
+  for (let i = s.enemies.length - 1; i >= 0; i--) {
+    const en = s.enemies[i];
+    en.wobble += dt * 3.5;
+    en.y += en.vy * dt;
+    en.x += Math.sin(en.wobble) * (en.lbl === "429" ? 42 : 14) * dt;
+    en.x = Math.max(en.r + 4, Math.min(s.w - en.r - 4, en.x));
+
+    let killed = false;
+    for (let j = s.bullets.length - 1; j >= 0; j--) {
+      const b = s.bullets[j];
+      if (Math.hypot(b.x - en.x, b.y - en.y) < en.r + 6) {
+        s.bullets.splice(j, 1);
+        en.hp -= b.dmg;
+        spawnBlasterParts(b.x, b.y, b.col, 4);
+        if (en.hp <= 0) {
+          killed = true;
+          s.kills++;
+          s.score += en.pts;
+          spawnBlasterParts(en.x, en.y, en.col, en.boss ? 18 : 10);
+          s.floats.push({ x: en.x, y: en.y, txt: `+${en.pts}`, col: en.col, life: 0.7 });
+          playSfx(en.boss ? "gold" : "token");
+          if (en.boss || Math.random() < 0.08) {
+            s.pickups.push({ x: en.x, y: en.y, vy: 88, amt: en.boss ? 25 : 10 });
+          }
+          break;
+        }
+      }
+    }
+    if (killed) {
+      s.enemies.splice(i, 1);
+      continue;
+    }
+
+    if (en.y > s.h - 10) {
+      s.enemies.splice(i, 1);
+      s.lives = Math.max(0, s.lives - 1);
+      s.shakeTimer = 0.32;
+      s.floats.push({ x: en.x, y: s.h - 24, txt: `${en.lbl} 突破防线!`, col: "#DC2626", life: 0.9 });
+      playSfx("bomb");
+    }
+  }
+
+  // Update ammo supply pickups
+  for (let i = s.pickups.length - 1; i >= 0; i--) {
+    const pk = s.pickups[i];
+    pk.y += pk.vy * dt;
+    if (Math.hypot(pk.x - s.x, pk.y - by) < 28) {
+      s.ammo += pk.amt;
+      spawnBlasterParts(pk.x, pk.y, "#0E8A78", 12);
+      s.floats.push({ x: pk.x, y: by - 20, txt: `+${pk.amt} Token弹!`, col: "#0E8A78", life: 0.9 });
+      playSfx("cache");
+      s.pickups.splice(i, 1);
+    } else if (pk.y > s.h + 16) {
+      s.pickups.splice(i, 1);
+    }
+  }
+
+  // Update nova ring, particles, floats
+  if (s.novaRing) {
+    s.novaRing.r += 760 * dt;
+    s.novaRing.alpha = Math.max(0, 1 - s.novaRing.r / s.novaRing.maxR);
+    if (s.novaRing.alpha <= 0) s.novaRing = null;
+  }
+  for (let i = s.parts.length - 1; i >= 0; i--) {
+    const p = s.parts[i];
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.life -= dt;
+    if (p.life <= 0) s.parts.splice(i, 1);
+  }
+  for (let i = s.floats.length - 1; i >= 0; i--) {
+    const f = s.floats[i];
+    f.y -= 34 * dt;
+    f.life -= dt;
+    if (f.life <= 0) s.floats.splice(i, 1);
+  }
+
+  // Render blaster canvas
+  const cs = getComputedStyle(document.documentElement);
+  const bg = cs.getPropertyValue("--surface-2").trim() || "#EFECE4";
+  blCtx.save();
+  if (s.shakeTimer > 0) {
+    blCtx.translate((Math.random() - 0.5) * 7, (Math.random() - 0.5) * 5);
+  }
+  blCtx.fillStyle = bg;
+  blCtx.fillRect(0, 0, s.w, s.h);
+
+  // Subtle radar grid
+  blCtx.strokeStyle = "rgba(128,128,128,0.08)";
+  blCtx.lineWidth = 1;
+  for (let gx = 40; gx < s.w; gx += 46) {
+    blCtx.beginPath(); blCtx.moveTo(gx, 0); blCtx.lineTo(gx, s.h); blCtx.stroke();
+  }
+
+  // Nova shockwave
+  if (s.novaRing) {
+    blCtx.save();
+    blCtx.globalAlpha = s.novaRing.alpha;
+    blCtx.strokeStyle = "#F59E0B";
+    blCtx.lineWidth = 5;
+    blCtx.beginPath();
+    blCtx.arc(s.x, by, s.novaRing.r, 0, Math.PI * 2);
+    blCtx.stroke();
+    blCtx.restore();
+  }
+
+  // Bullets
+  for (const b of s.bullets) {
+    blCtx.fillStyle = b.col;
+    blCtx.beginPath();
+    blCtx.roundRect(b.x - 2, b.y - 6, 4, 12, 2);
+    blCtx.fill();
+  }
+
+  // Ammo pickups
+  for (const pk of s.pickups) {
+    blCtx.fillStyle = "#0E8A78";
+    blCtx.beginPath();
+    blCtx.roundRect(pk.x - 12, pk.y - 9, 24, 18, 5);
+    blCtx.fill();
+    blCtx.fillStyle = "#fff";
+    blCtx.font = "bold 9px monospace";
+    blCtx.textAlign = "center";
+    blCtx.textBaseline = "middle";
+    blCtx.fillText(`+${pk.amt}`, pk.x, pk.y + 0.5);
+  }
+
+  // Enemies
+  for (const en of s.enemies) {
+    blCtx.save();
+    blCtx.translate(en.x, en.y);
+    blCtx.fillStyle = en.col;
+    blCtx.beginPath();
+    blCtx.roundRect(-en.r, -en.r * 0.78, en.r * 2, en.r * 1.56, 6);
+    blCtx.fill();
+    blCtx.fillStyle = "#fff";
+    blCtx.font = `bold ${en.boss ? 10 : 8.5}px monospace`;
+    blCtx.textAlign = "center";
+    blCtx.textBaseline = "middle";
+    blCtx.fillText(en.lbl, 0, 0.5);
+    if (en.maxHp > 1) {
+      const bw = en.r * 1.8;
+      blCtx.fillStyle = "rgba(0,0,0,0.28)";
+      blCtx.fillRect(-bw / 2, -en.r * 0.78 - 5, bw, 3);
+      blCtx.fillStyle = "#FEF08A";
+      blCtx.fillRect(-bw / 2, -en.r * 0.78 - 5, bw * (en.hp / en.maxHp), 3);
+    }
+    blCtx.restore();
+  }
+
+  // Draw Bunny Turret
+  blCtx.save();
+  blCtx.translate(s.x, by);
+  blCtx.fillStyle = "#181715";
+  blCtx.beginPath();
+  blCtx.ellipse(-7, -14, 3.8, 9.5, -0.15, 0, Math.PI * 2);
+  blCtx.ellipse(7, -14, 3.8, 9.5, 0.15, 0, Math.PI * 2);
+  blCtx.fill();
+  blCtx.fillStyle = s.aura;
+  blCtx.beginPath();
+  blCtx.ellipse(-7, -14, 1.8, 6, -0.15, 0, Math.PI * 2);
+  blCtx.ellipse(7, -14, 1.8, 6, 0.15, 0, Math.PI * 2);
+  blCtx.fill();
+  blCtx.fillStyle = "#181715";
+  blCtx.beginPath(); blCtx.roundRect(-14, -9, 28, 21, 10); blCtx.fill();
+  blCtx.fillStyle = "#FAF8F3";
+  blCtx.beginPath(); blCtx.roundRect(-12, -7, 24, 17, 8.5); blCtx.fill();
+  blCtx.fillStyle = "#181715";
+  blCtx.beginPath(); blCtx.arc(-5, 0, 1.8, 0, Math.PI * 2); blCtx.arc(5, 0, 1.8, 0, Math.PI * 2); blCtx.fill();
+  blCtx.fillStyle = s.aura;
+  blCtx.fillRect(-1.5, 2.5, 3, 2);
+  blCtx.restore();
+
+  // Particles & floats
+  for (const p of s.parts) {
+    blCtx.globalAlpha = Math.max(0, p.life * 1.8);
+    blCtx.fillStyle = p.col;
+    blCtx.beginPath(); blCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2); blCtx.fill();
+  }
+  blCtx.globalAlpha = 1;
+  blCtx.font = "bold 10.5px monospace";
+  blCtx.textAlign = "center";
+  for (const f of s.floats) {
+    blCtx.globalAlpha = Math.min(1, f.life * 1.5);
+    blCtx.fillStyle = f.col;
+    blCtx.fillText(f.txt, f.x, f.y);
+  }
+  blCtx.globalAlpha = 1;
+  blCtx.restore();
+
+  document.getElementById("blAmmo").textContent = `${s.ammo} 发`;
+  document.getElementById("blScore").textContent = s.score;
+  document.getElementById("blWaveInfo").textContent = `防线 ${"❤️".repeat(s.lives)}${"🖤".repeat(3 - s.lives)} · 第 ${wave} 波 · 缓存已免 ${s.refunded} 弹`;
+
+  // End check: out of lives OR (ammo depleted and no bullets left)
+  if (s.lives <= 0 || (s.ammo <= 0 && s.bullets.length === 0)) {
+    s.running = false;
+    let best = 0;
+    try { best = Number(localStorage.getItem("tootoo_blaster_best") || 0) || 0; } catch {}
+    const isNew = s.score > best;
+    if (isNew) {
+      best = s.score;
+      try { localStorage.setItem("tootoo_blaster_best", String(best)); } catch {}
+      document.getElementById("blBest").textContent = best;
+      spawnConfettiBurst(document.getElementById("arcadeModal").querySelector(".arcade-dialog"), 26);
+      playSfx("ssr");
+    } else {
+      playSfx("win");
+    }
+    const reason = s.lives <= 0 ? "防线被 Bug 突破！" : "今日 Token 弹药全部倾泻完毕！";
+    document.getElementById("blasterTitle").textContent = `${isNew ? "🏆 新纪录！" : "🎯 战报"} 得分 ${s.score}`;
+    document.getElementById("blasterDesc").textContent = `${reason} 共歼灭 ${s.kills} 只 Bug，真实缓存帮你白嫖了 ${s.refunded} 发免费弹药！写更多代码即可扩充弹药库！`;
+    document.getElementById("blasterStartBtn").textContent = "↻ 重新装填弹药";
+    document.getElementById("blasterOverlay").classList.remove("hidden");
+    return;
+  }
+
+  blasterRaf = requestAnimationFrame(tickBlasterGame);
+}
+
+document.getElementById("blasterStartBtn").addEventListener("click", startBlasterGame);
 
 // ============================================================
 // GAME 1: 🥕 TOKEN RAIN CATCHER (60fps Canvas)
@@ -6007,7 +6536,9 @@ function startRainGame() {
 
   const k = (state.data && state.data.kpi) || {};
   const tps = Math.max(35, Math.min(180, k.tps != null ? k.tps : 72));
-  const cacheRate = Math.max(0.18, Math.min(0.65, ((k.cache_hit != null ? k.cache_hit : 60) / 100) * 0.65));
+  const cachePct = k.cache_hit != null ? k.cache_hit : 60;
+  const cacheRate = Math.max(0.18, Math.min(0.65, (cachePct / 100) * 0.65));
+  const shields = cachePct >= 88 ? 2 : cachePct >= 70 ? 1 : 0;
   const tier = getBunnyTier(getEffectiveTodayTokens());
   const auraColors = ["#E54826", "#FB923C", "#F59E0B", "#EA580C", "#FACC15", "#EF4444", "#C026D3", "#A78BFA", "#FBBF24"];
 
@@ -6024,9 +6555,11 @@ function startRainGame() {
     magnetTimer: 0,
     dizzyTimer: 0,
     shakeTimer: 0,
+    shields,
     tps,
     cacheRate,
     tierLv: tier.level,
+    tierMult: 1 + (tier.level - 1) * 0.15,
     aura: auraColors[tier.level - 1] || "#E54826",
     items: [],
     parts: [],
@@ -6104,19 +6637,26 @@ function tickRainGame(now) {
     const hitDist = Math.hypot(it.x - s.x, it.y - by);
     if (hitDist < it.r + 20) {
       if (it.kind === "bomb") {
-        s.combo = 0;
-        s.dizzyTimer = 0.7;
-        s.shakeTimer = 0.32;
-        s.timeLeft = Math.max(0, s.timeLeft - 2.5);
-        spawnRainParticles(it.x, it.y, "#DC2626", 14);
-        s.floats.push({ x: it.x, y: by - 16, txt: "TTFT 卡顿! -2.5s", col: "#DC2626", life: 0.9 });
-        playSfx("bomb");
+        if (s.shields > 0) {
+          s.shields--;
+          spawnRainParticles(it.x, it.y, "#0E8A78", 16);
+          s.floats.push({ x: it.x, y: by - 18, txt: "🛡️ 缓存护盾抵挡!", col: "#0E8A78", life: 0.95 });
+          playSfx("cache");
+        } else {
+          s.combo = 0;
+          s.dizzyTimer = 0.7;
+          s.shakeTimer = 0.32;
+          s.timeLeft = Math.max(0, s.timeLeft - 2.5);
+          spawnRainParticles(it.x, it.y, "#DC2626", 14);
+          s.floats.push({ x: it.x, y: by - 16, txt: "TTFT 卡顿! -2.5s", col: "#DC2626", life: 0.9 });
+          playSfx("bomb");
+        }
       } else {
         s.combo++;
         if (s.combo > s.maxCombo) s.maxCombo = s.combo;
         const mult = s.combo >= 12 ? 3 : s.combo >= 5 ? 2 : 1;
         const basePts = it.kind === "gold" ? 50 : it.kind === "cache" ? 25 : 10;
-        const pts = basePts * mult;
+        const pts = Math.round(basePts * mult * (s.tierMult || 1));
         s.score += pts;
         if (it.kind === "gold") {
           s.magnetTimer = 3.6;
@@ -6484,10 +7024,33 @@ function getGachaCollected() {
   } catch { return []; }
 }
 
+function getTodayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function getGachaCoinState() {
+  const todayTok = getEffectiveTodayTokens();
+  const earned = 3 + Math.floor(todayTok / 10e6); // Daily 3 starter coins + 1 coin per 10M real tokens
+  const key = "tootoo_gacha_spent_" + getTodayKey();
+  let spent = 0;
+  try { spent = Math.max(0, Number(localStorage.getItem(key) || 0) || 0); } catch {}
+  return { earned, spent, balance: Math.max(0, earned - spent), key };
+}
+
 function renderGachaMeta() {
   const coll = getGachaCollected();
   const el = document.getElementById("gachaColl");
   if (el) el.textContent = `${coll.length} / ${GACHA_POOL.length}`;
+  const cs = getGachaCoinState();
+  const coinEl = document.getElementById("gachaCoins");
+  if (coinEl) coinEl.textContent = cs.balance;
+  const btn = document.getElementById("gachaPullBtn");
+  if (btn) {
+    btn.textContent = cs.balance > 0
+      ? `🪙 消耗 1 枚算力币扭一颗（剩 ${cs.balance} 枚）`
+      : "🪙 算力币已用完 · 再烧 10M Token 自动铸币！";
+  }
 }
 
 function renderAlchemyStats() {
@@ -6531,9 +7094,19 @@ function renderAlchemyStats() {
 let gachaBusy = false;
 document.getElementById("gachaPullBtn").addEventListener("click", () => {
   if (gachaBusy) return;
+  const cs = getGachaCoinState();
+  const res = document.getElementById("gachaResult");
+  if (cs.balance <= 0) {
+    res.className = "gacha-result";
+    res.innerHTML = `<span style="font-size:11px;color:var(--accent)">🪙 今日算力币已抽完！继续写代码每烧 10M Token 自动到账 +1 枚！</span>`;
+    playSfx("bomb");
+    return;
+  }
+  try { localStorage.setItem(cs.key, String(cs.spent + 1)); } catch {}
+  renderGachaMeta();
+
   gachaBusy = true;
   const mac = document.getElementById("gachaMachine");
-  const res = document.getElementById("gachaResult");
   mac.classList.remove("shaking");
   void mac.offsetWidth;
   mac.classList.add("shaking");
