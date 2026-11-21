@@ -1141,6 +1141,411 @@
     100% { transform: scale(1); }
   }
 
+  /* ---- Wave 2: Signature Card FX, Stardust, Patrol & Arcade ---- */
+  #arcadeBtn .ico-pad {
+    display: inline-block;
+    transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  #arcadeBtn:hover .ico-pad {
+    transform: rotate(-14deg) scale(1.18);
+  }
+  #arcadeBtn:hover {
+    border-color: var(--active-border);
+    color: var(--active-fg);
+  }
+
+  .fx-coin {
+    position: fixed;
+    pointer-events: none;
+    font-family: var(--font-mono);
+    font-weight: 800;
+    color: #F59E0B;
+    text-shadow: 0 1px 6px rgba(245, 158, 11, 0.55);
+    z-index: 999;
+    animation: coinFlipFly var(--dur, 0.95s) cubic-bezier(0.16, 0.85, 0.32, 1) forwards;
+  }
+  @keyframes coinFlipFly {
+    0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.5) rotateY(0deg); }
+    18%  { opacity: 1; transform: translate(calc(-50% + var(--dx) * 0.3), calc(-50% + var(--dy) * 0.4)) scale(1.15) rotateY(180deg); }
+    100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy) + 26px)) scale(0.8) rotateY(720deg); }
+  }
+
+  .fx-speedline {
+    position: absolute;
+    height: 2px;
+    border-radius: 999px;
+    pointer-events: none;
+    z-index: 4;
+    background: linear-gradient(90deg, transparent, var(--accent), var(--amber), transparent);
+    animation: speedStreak 0.42s cubic-bezier(0.15, 0.85, 0.3, 1) forwards;
+  }
+  @keyframes speedStreak {
+    0%   { opacity: 0; transform: translateX(-80%) scaleX(0.4); }
+    30%  { opacity: 0.95; }
+    100% { opacity: 0; transform: translateX(160%) scaleX(1.3); }
+  }
+
+  .fx-sonar {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid var(--teal);
+    pointer-events: none;
+    z-index: 4;
+    transform: translate(-50%, -50%) scale(0.3);
+    animation: sonarExpand 0.78s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  @keyframes sonarExpand {
+    0%   { opacity: 0.9; transform: translate(-50%, -50%) scale(0.3); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(8.5); }
+  }
+
+  .fx-stardust {
+    position: fixed;
+    pointer-events: none;
+    z-index: 998;
+    border-radius: 50%;
+    animation: stardustFade 0.65s ease-out forwards;
+  }
+  @keyframes stardustFade {
+    0%   { opacity: 0.95; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.15); }
+  }
+
+  /* Bottom-edge Bunny Patrol runner */
+  .patrol-bunny {
+    position: fixed;
+    bottom: 6px;
+    left: -48px;
+    width: 34px;
+    height: 34px;
+    z-index: 997;
+    pointer-events: none;
+    filter: drop-shadow(0 3px 6px rgba(23, 22, 20, 0.22));
+    animation: patrolCross 4.4s linear forwards;
+  }
+  .patrol-bunny .pb-inner {
+    width: 100%;
+    height: 100%;
+    animation: patrolHop 0.38s ease-in-out infinite;
+  }
+  @keyframes patrolCross {
+    0%   { left: -46px; }
+    100% { left: calc(100vw + 46px); }
+  }
+  @keyframes patrolHop {
+    0%, 100% { transform: translateY(0) rotate(-4deg); }
+    50%      { transform: translateY(-9px) rotate(6deg); }
+  }
+  .patrol-print {
+    position: fixed;
+    bottom: 8px;
+    font-size: 10px;
+    pointer-events: none;
+    z-index: 996;
+    animation: printFade 1.5s ease-out forwards;
+  }
+  @keyframes printFade {
+    0%   { opacity: 0.85; transform: translateY(0) scale(0.85); }
+    100% { opacity: 0; transform: translateY(-8px) scale(1.1); }
+  }
+
+  /* ---- TooToo Arcade Modal ---- */
+  .arcade-dialog {
+    width: min(560px, 100%);
+    max-height: 92vh;
+    overflow-y: auto;
+    background: var(--surface);
+    border: 1.5px solid var(--border-strong);
+    border-radius: 10px;
+    padding: 14px 15px 15px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
+  }
+  .evo-backdrop.open .arcade-dialog {
+    animation: modalPopIn 0.22s cubic-bezier(0.22, 1.25, 0.36, 1);
+  }
+  .arcade-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 3px;
+    margin-bottom: 11px;
+  }
+  .arcade-tabs button {
+    border: none;
+    background: transparent;
+    color: var(--ink-soft);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 6px 4px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.16s ease;
+  }
+  .arcade-tabs button.active {
+    background: var(--active-bg);
+    color: var(--active-fg);
+    box-shadow: inset 0 0 0 1px var(--active-border);
+  }
+  .arcade-pane { display: none; }
+  .arcade-pane.active { display: block; animation: panelFadeUp 0.2s ease-out; }
+
+  .arc-hud {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 10px;
+    margin-bottom: 8px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+  }
+  .arc-hud strong { color: var(--ink); }
+  .arc-hud .accent { color: var(--accent); font-weight: 800; }
+
+  .rain-wrap {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  #rainCanvas {
+    display: block;
+    width: 100%;
+    height: 248px;
+    cursor: crosshair;
+    touch-action: none;
+  }
+  .rain-overlay {
+    position: absolute;
+    inset: 0;
+    background: color-mix(in srgb, var(--surface) 84%, transparent);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 8px;
+    padding: 16px;
+    transition: opacity 0.2s ease;
+  }
+  .rain-overlay.hidden { opacity: 0; pointer-events: none; }
+  .rain-overlay h3 {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--ink);
+  }
+  .rain-overlay p {
+    font-size: 11px;
+    color: var(--muted);
+    max-width: 340px;
+    line-height: 1.55;
+  }
+  .arc-primary-btn {
+    border: 1px solid var(--active-border);
+    background: var(--accent);
+    color: #fff;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    font-weight: 800;
+    padding: 7px 18px;
+    border-radius: 999px;
+    cursor: pointer;
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 36%, transparent);
+    transition: transform 0.14s ease, filter 0.14s ease;
+  }
+  .arc-primary-btn:hover { filter: brightness(1.07); transform: translateY(-1px); }
+  .arc-primary-btn:active { transform: scale(0.95); }
+
+  /* Game 2: TTFT Reflex Arena */
+  .reflex-stage {
+    height: 185px;
+    border-radius: 9px;
+    border: 1.5px solid var(--border);
+    background: var(--surface-2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 6px;
+    padding: 14px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  }
+  .reflex-stage:active { transform: scale(0.99); }
+  .reflex-stage.waiting {
+    border-color: var(--amber);
+    background: color-mix(in srgb, var(--amber) 11%, var(--surface-2));
+  }
+  .reflex-stage.go {
+    border-color: var(--accent);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 26%, var(--surface)), color-mix(in srgb, var(--amber) 20%, var(--surface)));
+    box-shadow: 0 0 24px color-mix(in srgb, var(--accent) 30%, transparent);
+  }
+  .reflex-stage.early {
+    border-color: var(--bad);
+    animation: fxBoxShake 0.35s ease-out;
+  }
+  .reflex-big {
+    font-family: var(--font-mono);
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--ink);
+  }
+  .reflex-sub {
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+  .reflex-vs {
+    margin-top: 10px;
+    padding: 9px 11px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .reflex-bar-row {
+    display: grid;
+    grid-template-columns: 72px 1fr 56px;
+    align-items: center;
+    gap: 8px;
+  }
+  .reflex-hist {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 8px;
+  }
+
+  /* Game 3: Token Alchemy & Gacha */
+  .alchemy-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+    margin-bottom: 11px;
+  }
+  .alchemy-tile {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 8px 10px;
+    transition: transform 0.16s ease, border-color 0.16s ease;
+  }
+  .alchemy-tile:hover {
+    transform: translateY(-1.5px);
+    border-color: var(--active-border);
+  }
+  .alchemy-tile .al-k {
+    font-size: 10px;
+    color: var(--muted);
+    margin-bottom: 3px;
+  }
+  .alchemy-tile .al-v {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--ink);
+  }
+  .alchemy-tile .al-sub {
+    font-size: 9.5px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .gacha-box {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 12px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .gacha-machine {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--accent) 26%, var(--surface)), var(--surface));
+    border: 2px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+    font-size: 30px;
+    margin-bottom: 8px;
+    box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 18%, transparent);
+    transition: transform 0.2s ease;
+  }
+  .gacha-machine.shaking {
+    animation: gachaShake 0.58s ease-in-out;
+  }
+  @keyframes gachaShake {
+    0%, 100% { transform: rotate(0deg) scale(1); }
+    15%      { transform: rotate(-16deg) scale(1.08); }
+    32%      { transform: rotate(15deg) scale(1.1); }
+    50%      { transform: rotate(-14deg) scale(1.12); }
+    68%      { transform: rotate(12deg) scale(1.06); }
+    85%      { transform: rotate(-6deg) scale(1.02); }
+  }
+  .gacha-result {
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    min-height: 62px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .gacha-result.pop { animation: modalPopIn 0.34s cubic-bezier(0.22, 1.35, 0.36, 1); }
+  .gacha-result.tier-SSR {
+    border-color: #F59E0B;
+    box-shadow: 0 0 18px rgba(245, 158, 11, 0.28);
+  }
+  .gacha-result.tier-SR {
+    border-color: var(--accent);
+    box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 22%, transparent);
+  }
+  .gacha-rarity {
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 800;
+    padding: 1px 7px;
+    border-radius: 999px;
+    letter-spacing: 0.08em;
+  }
+  .gacha-rarity.SSR { background: linear-gradient(90deg, #F59E0B, #E54826); color: #fff; }
+  .gacha-rarity.SR  { background: var(--active-bg); color: var(--active-fg); border: 1px solid var(--active-border); }
+  .gacha-rarity.R   { background: var(--surface-2); color: var(--muted); border: 1px solid var(--border); }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
       animation-duration: 0.01ms !important;
@@ -2623,6 +3028,7 @@
         <span class="scan-badge" id="scanBadge">扫描 —</span>
         <button class="btn btn-ico" id="refreshBtn" title="重新扫描本地日志"><span class="spin-ico">↻</span></button>
         <button class="btn btn-ico" id="themeBtn" title="切换浅色/深色主题"><span class="ico-theme">◐</span></button>
+        <button class="btn btn-ico" id="arcadeBtn" title="打开 TOOTOO 算力游乐场"><span class="ico-pad">🎮</span></button>
         <button class="btn btn-ico" id="settingsBtn" title="设置"><span class="ico-gear">⚙</span></button>
         <button class="btn pop-only" id="expandBtn" title="打开完整窗口，一探究竟！"><span class="ico-exp">⤢</span> 一探究竟!</button>
       </div>
@@ -2634,7 +3040,7 @@
 
   <!-- HERO 4-INSTRUMENT STRIP -->
   <section class="hero-grid">
-    <div class="card">
+    <div class="card" data-kpi="tokens" title="双击触发能量投喂彩蛋">
       <div class="card-head">
         <span class="kicker k-teal">总用量</span>
         <span class="pill teal" id="cachePill">缓存 —%</span>
@@ -2647,7 +3053,7 @@
       </div>
     </div>
 
-    <div class="card">
+    <div class="card" data-kpi="cost" title="双击触发金币雨彩蛋">
       <div class="card-head">
         <span class="kicker k-blue">估算成本</span>
         <span class="pill" id="peakHourPill">高峰 —</span>
@@ -2659,7 +3065,7 @@
       </div>
     </div>
 
-    <div class="card">
+    <div class="card" data-kpi="tps" title="双击触发极速风刃彩蛋">
       <div class="card-head">
         <span class="kicker k-accent">输出速度</span>
         <span class="pill accent" id="fastestPill">峰值 —</span>
@@ -2672,7 +3078,7 @@
       </div>
     </div>
 
-    <div class="card">
+    <div class="card" data-kpi="ttft" title="双击触发声呐雷达彩蛋">
       <div class="card-head">
         <span class="kicker k-amber">首字延迟</span>
         <span class="pill amber" id="p95Pill">P95 —</span>
@@ -2815,6 +3221,7 @@
         <button class="btn" id="dbgFxBtn" style="padding:2px 6px;font-size:9.5px">⚡ 播特效</button>
         <button class="btn" id="dbgFeedBtn" style="padding:2px 6px;font-size:9.5px">✨ 模拟投喂</button>
         <button class="btn" id="dbgLevelUpBtn" style="padding:2px 6px;font-size:9.5px">🎉 模拟升级</button>
+        <button class="btn" id="dbgPatrolBtn" style="padding:2px 6px;font-size:9.5px">🐾 巡逻</button>
         <button class="btn" id="dbgUnlockBtn" style="padding:2px 6px;font-size:9.5px">全解锁: 关</button>
         <button class="btn" id="dbgCloseBtn" style="padding:2px 6px;font-size:9.5px">✕</button>
       </span>
@@ -2882,6 +3289,83 @@
         <button class="btn" id="popPricingLink" title="立即从 OpenRouter + LiteLLM 拉取最新模型价格">↻ 同步价格</button>
         <button class="btn" id="popBrowserLink">↗ 在浏览器打开</button>
         <button class="btn pop-only" id="settingsQuitBtn" style="color:var(--bad)">退出 TooToo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOOTOO DATA-DRIVEN ARCADE MODAL -->
+<div class="evo-backdrop" id="arcadeModal">
+  <div class="arcade-dialog">
+    <div class="evo-head">
+      <span class="kicker" style="font-size:11px;color:var(--ink)">TOOTOO 算力游乐场</span>
+      <span style="display:flex;gap:5px;align-items:center">
+        <button class="btn" id="arcPatrolBtn" style="padding:3px 7px;font-size:10px" title="召唤小兔兔在屏幕底部巡逻一圈">🐾 巡逻</button>
+        <button class="btn" id="arcSfxBtn" style="padding:3px 7px;font-size:10px" title="开关合成复古音效">🔇 静音</button>
+        <button class="btn" id="arcadeCloseBtn" style="padding:3px 8px;font-size:10.5px">✕</button>
+      </span>
+    </div>
+
+    <div class="arcade-tabs" id="arcadeTabs">
+      <button data-game="rain" class="active">🥕 接 Token 雨</button>
+      <button data-game="reflex">⚡ 首字手速对决</button>
+      <button data-game="gacha">🎰 算力扭蛋机</button>
+    </div>
+
+    <!-- GAME 1: TOKEN RAIN CATCHER -->
+    <div class="arcade-pane active" id="arcPane-rain">
+      <div class="arc-hud">
+        <span>出战 <strong id="rainTierLbl">Lv.1</strong> · <span id="rainSpeedLbl">速度 —</span></span>
+        <span>得分 <span class="accent" id="rainScore">0</span> · 剩余 <strong id="rainTime">30s</strong> · 最高 <strong id="rainBest">0</strong></span>
+      </div>
+      <div class="rain-wrap">
+        <canvas id="rainCanvas"></canvas>
+        <div class="rain-overlay" id="rainOverlay">
+          <h3 id="rainTitle">🥕 兔兔接 Token 雨</h3>
+          <p id="rainDesc">左右移动鼠标或按 ← → 控制当前阶级的兔兔！接住 🟠Token 与 🟢缓存球得分，吃 💛金胡萝卜开启吸金磁铁，躲开 💣首字超时雷！</p>
+          <button class="arc-primary-btn" id="rainStartBtn">▶ 开始 30 秒冲刺</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- GAME 2: TTFT REFLEX ARENA -->
+    <div class="arcade-pane" id="arcPane-reflex">
+      <div class="arc-hud">
+        <span>对手 <strong id="refAiLbl">今日 AI 中位首字 —</strong></span>
+        <span>你的最快 <span class="accent" id="refBest">—</span></span>
+      </div>
+      <div class="reflex-stage" id="reflexStage">
+        <div class="reflex-big" id="reflexBig">⚡ 准备对决</div>
+        <div class="reflex-sub" id="reflexSub">点击此处开始 · 看到亮橙信号瞬间点击，看你和 AI 谁的首字更快！</div>
+      </div>
+      <div class="reflex-vs" id="reflexVs">
+        <div class="reflex-bar-row">
+          <span>你的首字</span>
+          <div class="race-track" style="height:6px"><div class="race-bar" id="refYouBar" style="width:0%;background:var(--teal)"></div></div>
+          <span id="refYouVal" style="text-align:right">—</span>
+        </div>
+        <div class="reflex-bar-row">
+          <span>AI 中位首字</span>
+          <div class="race-track" style="height:6px"><div class="race-bar" id="refAiBar" style="width:0%;background:var(--accent)"></div></div>
+          <span id="refAiVal" style="text-align:right">—</span>
+        </div>
+        <div id="refVerdict" style="color:var(--muted);text-align:center;padding-top:2px">点击上方竞技场测一局！</div>
+      </div>
+      <div class="reflex-hist" id="reflexHist"></div>
+    </div>
+
+    <!-- GAME 3: TOKEN ALCHEMY & GACHA -->
+    <div class="arcade-pane" id="arcPane-gacha">
+      <div class="alchemy-grid" id="alchemyGrid"></div>
+      <div class="gacha-box">
+        <div class="gacha-machine" id="gachaMachine">🎰</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px">
+          基于今日算力充能 · 已收集 <strong id="gachaColl" style="color:var(--ink)">0 / 24</strong> 张程序员算力签
+        </div>
+        <button class="arc-primary-btn" id="gachaPullBtn">🪙 扭一颗今日算力签！</button>
+        <div class="gacha-result" id="gachaResult">
+          <span style="font-size:11px;color:var(--muted)">拉下开关，看看兔兔今天给你抽什么神签 ✨</span>
+        </div>
       </div>
     </div>
   </div>
@@ -3244,6 +3728,8 @@ function celebrateLevelUp(tier) {
     triggerBunnyFx(wrap, tier.level);
     spawnConfettiBurst(wrap, 24 + tier.level * 2);
   }
+  if (typeof activateStardust === "function") activateStardust(5000);
+  if (typeof playSfx === "function") playSfx("levelUp");
   showLevelUpToast(tier);
   if (mood) {
     mood.classList.remove("levelup-pop");
@@ -3688,7 +4174,14 @@ bunnyMascotEl.addEventListener("click", () => {
     setTimeout(() => badge.remove(), 920);
     if (petCombo === 5 || petCombo === 10) {
       showBunnySpeech();
-      if (petCombo === 10) spawnConfettiBurst(bunnyMascotEl, 18);
+      if (petCombo === 10) {
+        spawnConfettiBurst(bunnyMascotEl, 18);
+        if (typeof activateStardust === "function") activateStardust(5000);
+      }
+    } else if (petCombo === 8 && typeof activateStardust === "function") {
+      activateStardust(4000);
+    } else if (petCombo === 15 && typeof summonBunnyPatrol === "function") {
+      summonBunnyPatrol();
     }
   }
 });
@@ -3941,6 +4434,8 @@ window.__onPopoverClose = () => {
   popoverVisible = false;
   if (typeof stopQuotaSiphon === "function") stopQuotaSiphon();
   if (typeof clearBunnySpeech === "function") clearBunnySpeech();
+  if (typeof stopRainGame === "function") stopRainGame();
+  if (typeof cancelReflexTimer === "function") cancelReflexTimer();
   disconnectStream();
 };
 
@@ -5259,6 +5754,828 @@ document.getElementById("dbgFxBtn").addEventListener("click", () => hopBunny());
 document.getElementById("dbgFeedBtn").addEventListener("click", () => {
   if (window.scrollY > 12) window.scrollTo({ top: 0, behavior: "smooth" });
   setTimeout(() => triggerLiveTokenFeed(248500), window.scrollY > 12 ? 260 : 40);
+});
+document.getElementById("dbgPatrolBtn").addEventListener("click", () => summonBunnyPatrol());
+
+// ============================================================
+// WAVE 2: PURE SYNTH SFX + CARD EASTER EGGS + STARDUST + PATROL + ARCADE
+// ============================================================
+let sfxEnabled = false;
+try { sfxEnabled = localStorage.getItem("tootoo_sfx") === "1"; } catch {}
+let audioCtx = null;
+
+function updateSfxBtn() {
+  const b = document.getElementById("arcSfxBtn");
+  if (b) b.textContent = sfxEnabled ? "🔊 音效" : "🔇 静音";
+}
+updateSfxBtn();
+
+function playTone(freq, dur, type = "triangle", gainVal = 0.08, delay = 0) {
+  if (!sfxEnabled) return;
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    if (!audioCtx) audioCtx = new AC();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    const t0 = audioCtx.currentTime + delay;
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(gainVal, t0 + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(g);
+    g.connect(audioCtx.destination);
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.02);
+  } catch {}
+}
+
+function playSfx(kind) {
+  if (!sfxEnabled) return;
+  if (kind === "token") { playTone(587, 0.09, "triangle", 0.06); playTone(784, 0.1, "triangle", 0.05, 0.045); }
+  else if (kind === "cache") { playTone(659, 0.08, "sine", 0.07); playTone(880, 0.09, "sine", 0.07, 0.05); playTone(1174, 0.12, "sine", 0.06, 0.1); }
+  else if (kind === "gold") { [523, 659, 784, 1046].forEach((f, i) => playTone(f, 0.14, "triangle", 0.07, i * 0.055)); }
+  else if (kind === "bomb") { playTone(165, 0.22, "sawtooth", 0.08); playTone(110, 0.26, "sawtooth", 0.07, 0.07); }
+  else if (kind === "go") { playTone(880, 0.12, "sine", 0.08); }
+  else if (kind === "win") { [523, 659, 784].forEach((f, i) => playTone(f, 0.13, "triangle", 0.07, i * 0.07)); }
+  else if (kind === "gacha") { [392, 440, 494, 587].forEach((f, i) => playTone(f, 0.07, "square", 0.03, i * 0.09)); }
+  else if (kind === "ssr" || kind === "levelUp") {
+    [523, 659, 784, 1046, 1318].forEach((f, i) => playTone(f, 0.18, "triangle", 0.075, i * 0.075));
+  }
+}
+
+document.getElementById("arcSfxBtn").addEventListener("click", () => {
+  sfxEnabled = !sfxEnabled;
+  try { localStorage.setItem("tootoo_sfx", sfxEnabled ? "1" : "0"); } catch {}
+  updateSfxBtn();
+  if (sfxEnabled) playSfx("cache");
+});
+
+// ---- 5-Second Stardust Cursor Trail ----
+let stardustUntil = 0;
+let lastStardustTs = 0;
+function activateStardust(ms = 5000) {
+  stardustUntil = Math.max(stardustUntil, Date.now() + ms);
+}
+document.addEventListener("mousemove", (e) => {
+  const now = Date.now();
+  if (now > stardustUntil || now - lastStardustTs < 30) return;
+  lastStardustTs = now;
+  const cols = ["#E54826", "#F59E0B", "#0E8A78", "#A78BFA"];
+  const dot = document.createElement("span");
+  dot.className = "fx-stardust";
+  const sz = (3.5 + Math.random() * 3.5).toFixed(1);
+  dot.style.width = sz + "px";
+  dot.style.height = sz + "px";
+  dot.style.left = e.clientX + "px";
+  dot.style.top = e.clientY + "px";
+  dot.style.background = cols[Math.floor(Math.random() * cols.length)];
+  dot.style.boxShadow = `0 0 8px ${dot.style.background}`;
+  dot.style.setProperty("--dx", ((Math.random() - 0.5) * 26).toFixed(1) + "px");
+  dot.style.setProperty("--dy", (8 + Math.random() * 18).toFixed(1) + "px");
+  document.body.appendChild(dot);
+  setTimeout(() => dot.remove(), 680);
+});
+
+// ---- Bottom-Edge Bunny Patrol ----
+function summonBunnyPatrol() {
+  const tier = getBunnyTier(getEffectiveTodayTokens());
+  const runner = document.createElement("div");
+  runner.className = "patrol-bunny";
+  runner.innerHTML = `<div class="pb-inner"><svg viewBox="0 0 36 36" fill="none" style="width:100%;height:100%">${tier.svg}</svg></div>`;
+  document.body.appendChild(runner);
+  playSfx("token");
+  const prints = ["🐾", "🥕", "🐾", "✦", "🐾"];
+  prints.forEach((glyph, i) => {
+    setTimeout(() => {
+      const r = runner.getBoundingClientRect();
+      if (r.left < 0 || r.left > window.innerWidth) return;
+      const p = document.createElement("span");
+      p.className = "patrol-print";
+      p.textContent = glyph;
+      p.style.left = (r.left + 8) + "px";
+      document.body.appendChild(p);
+      setTimeout(() => p.remove(), 1550);
+    }, 650 + i * 720);
+  });
+  setTimeout(() => runner.remove(), 4600);
+}
+document.getElementById("arcPatrolBtn").addEventListener("click", summonBunnyPatrol);
+
+// ---- Hero KPI Double-Click Signature Easter Eggs ----
+document.querySelectorAll(".hero-grid .card[data-kpi]").forEach(card => {
+  card.addEventListener("dblclick", () => {
+    const kind = card.dataset.kpi;
+    const r = card.getBoundingClientRect();
+    if (kind === "tokens") {
+      const amt = Math.max(52000, Math.round(((state.data && state.data.today_tokens) || 120000) * 0.003));
+      triggerLiveTokenFeed(amt);
+      playSfx("cache");
+    } else if (kind === "cost") {
+      playSfx("gold");
+      for (let i = 0; i < 12; i++) {
+        const c = document.createElement("span");
+        c.className = "fx-coin";
+        c.textContent = i % 3 === 0 ? "✦" : "$";
+        c.style.left = (r.left + r.width * (0.2 + Math.random() * 0.6)).toFixed(1) + "px";
+        c.style.top = (r.top + r.height * 0.5).toFixed(1) + "px";
+        c.style.fontSize = (12 + Math.random() * 6).toFixed(1) + "px";
+        c.style.setProperty("--dx", ((Math.random() - 0.5) * 90).toFixed(1) + "px");
+        c.style.setProperty("--dy", (-45 - Math.random() * 55).toFixed(1) + "px");
+        c.style.setProperty("--dur", (0.75 + Math.random() * 0.35).toFixed(2) + "s");
+        document.body.appendChild(c);
+        setTimeout(() => c.remove(), 1200);
+      }
+    } else if (kind === "tps") {
+      playSfx("token");
+      for (let i = 0; i < 6; i++) {
+        const line = document.createElement("div");
+        line.className = "fx-speedline";
+        line.style.top = (14 + i * 15) + "%";
+        line.style.left = "0";
+        line.style.width = (55 + Math.random() * 35) + "%";
+        line.style.animationDelay = (i * 42) + "ms";
+        card.appendChild(line);
+        setTimeout(() => line.remove(), 680);
+      }
+    } else if (kind === "ttft") {
+      playSfx("go");
+      for (let i = 0; i < 2; i++) {
+        const ring = document.createElement("div");
+        ring.className = "fx-sonar";
+        ring.style.animationDelay = (i * 180) + "ms";
+        card.appendChild(ring);
+        setTimeout(() => ring.remove(), 1100);
+      }
+    }
+  });
+});
+
+// ---- Arcade Modal Open/Close & Tab Switching ----
+function openArcadeModal() {
+  document.getElementById("arcadeModal").classList.add("open");
+  refreshArcadeContext();
+}
+function closeArcadeModal() {
+  document.getElementById("arcadeModal").classList.remove("open");
+  stopRainGame();
+  cancelReflexTimer();
+}
+document.getElementById("arcadeBtn").addEventListener("click", openArcadeModal);
+document.getElementById("arcadeCloseBtn").addEventListener("click", closeArcadeModal);
+document.getElementById("arcadeModal").addEventListener("click", (e) => {
+  if (e.target === e.currentTarget) closeArcadeModal();
+});
+
+document.querySelectorAll("#arcadeTabs button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("#arcadeTabs button").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    const g = btn.dataset.game;
+    document.querySelectorAll(".arcade-pane").forEach(p => p.classList.toggle("active", p.id === `arcPane-${g}`));
+    if (g !== "rain") stopRainGame();
+    if (g !== "reflex") cancelReflexTimer();
+    refreshArcadeContext();
+  });
+});
+
+function refreshArcadeContext() {
+  const tier = getBunnyTier(getEffectiveTodayTokens());
+  const k = (state.data && state.data.kpi) || {};
+  const tps = k.tps != null ? k.tps : 65;
+  const cacheHit = k.cache_hit != null ? k.cache_hit : 75;
+  const ttft = k.ttft_p50 != null ? k.ttft_p50 : 2.8;
+
+  document.getElementById("rainTierLbl").textContent = `Lv.${tier.level} ${tier.name}`;
+  document.getElementById("rainSpeedLbl").textContent = `${tps.toFixed(0)} tok/s · 缓存 ${cacheHit}%`;
+  let rBest = 0;
+  try { rBest = Number(localStorage.getItem("tootoo_rain_best") || 0) || 0; } catch {}
+  document.getElementById("rainBest").textContent = rBest;
+
+  document.getElementById("refAiLbl").textContent = `今日 AI 中位首字 ${ttft.toFixed(2)}s`;
+  document.getElementById("refAiVal").textContent = `${ttft.toFixed(2)}s`;
+  let fBest = null;
+  try { const v = localStorage.getItem("tootoo_reflex_best"); if (v) fBest = Number(v); } catch {}
+  document.getElementById("refBest").textContent = fBest != null ? `${(fBest / 1000).toFixed(3)}s` : "—";
+
+  renderAlchemyStats();
+  renderGachaMeta();
+}
+
+// ============================================================
+// GAME 1: 🥕 TOKEN RAIN CATCHER (60fps Canvas)
+// ============================================================
+const rainCanvas = document.getElementById("rainCanvas");
+const rainCtx = rainCanvas.getContext("2d");
+let rainRaf = null;
+let rainState = null;
+const rainKeys = { left: false, right: false };
+
+window.addEventListener("keydown", (e) => {
+  if (!rainState || !rainState.running) return;
+  if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") rainKeys.left = true;
+  if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") rainKeys.right = true;
+});
+window.addEventListener("keyup", (e) => {
+  if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") rainKeys.left = false;
+  if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") rainKeys.right = false;
+});
+rainCanvas.addEventListener("pointermove", (e) => {
+  if (!rainState || !rainState.running) return;
+  const r = rainCanvas.getBoundingClientRect();
+  rainState.targetX = ((e.clientX - r.left) / r.width) * rainState.w;
+});
+
+function stopRainGame() {
+  if (rainRaf) {
+    cancelAnimationFrame(rainRaf);
+    rainRaf = null;
+  }
+  if (rainState) rainState.running = false;
+}
+
+function startRainGame() {
+  stopRainGame();
+  const dpr = window.devicePixelRatio || 1;
+  const w = Math.max(320, rainCanvas.clientWidth || 460);
+  const h = 248;
+  rainCanvas.width = Math.round(w * dpr);
+  rainCanvas.height = Math.round(h * dpr);
+  rainCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const k = (state.data && state.data.kpi) || {};
+  const tps = Math.max(35, Math.min(180, k.tps != null ? k.tps : 72));
+  const cacheRate = Math.max(0.18, Math.min(0.65, ((k.cache_hit != null ? k.cache_hit : 60) / 100) * 0.65));
+  const tier = getBunnyTier(getEffectiveTodayTokens());
+  const auraColors = ["#E54826", "#FB923C", "#F59E0B", "#EA580C", "#FACC15", "#EF4444", "#C026D3", "#A78BFA", "#FBBF24"];
+
+  rainState = {
+    running: true,
+    w, h,
+    x: w / 2,
+    targetX: w / 2,
+    score: 0,
+    combo: 0,
+    maxCombo: 0,
+    timeLeft: 30,
+    spawnAcc: 0,
+    magnetTimer: 0,
+    dizzyTimer: 0,
+    shakeTimer: 0,
+    tps,
+    cacheRate,
+    tierLv: tier.level,
+    aura: auraColors[tier.level - 1] || "#E54826",
+    items: [],
+    parts: [],
+    floats: [],
+    lastTs: performance.now(),
+  };
+
+  document.getElementById("rainOverlay").classList.add("hidden");
+  document.getElementById("rainScore").textContent = "0";
+  document.getElementById("rainTime").textContent = "30s";
+  rainRaf = requestAnimationFrame(tickRainGame);
+}
+
+function spawnRainParticles(x, y, col, n = 10) {
+  for (let i = 0; i < n; i++) {
+    const a = (Math.PI * 2 * i) / n + Math.random() * 0.5;
+    const sp = 55 + Math.random() * 115;
+    rainState.parts.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 25, life: 0.45 + Math.random() * 0.25, col, r: 2 + Math.random() * 2.5 });
+  }
+}
+
+function tickRainGame(now) {
+  const s = rainState;
+  if (!s || !s.running) return;
+  const dt = Math.min(0.05, (now - s.lastTs) / 1000);
+  s.lastTs = now;
+
+  s.timeLeft = Math.max(0, s.timeLeft - dt);
+  if (s.magnetTimer > 0) s.magnetTimer = Math.max(0, s.magnetTimer - dt);
+  if (s.dizzyTimer > 0) s.dizzyTimer = Math.max(0, s.dizzyTimer - dt);
+  if (s.shakeTimer > 0) s.shakeTimer = Math.max(0, s.shakeTimer - dt);
+
+  // Move bunny smoothly
+  if (rainKeys.left) s.targetX -= 390 * dt;
+  if (rainKeys.right) s.targetX += 390 * dt;
+  s.targetX = Math.max(24, Math.min(s.w - 24, s.targetX));
+  s.x += (s.targetX - s.x) * Math.min(1, dt * 16);
+
+  // Spawn items scaled by real TPS
+  const spawnInterval = Math.max(0.24, 0.58 - (s.tps / 180) * 0.28);
+  s.spawnAcc += dt;
+  while (s.spawnAcc >= spawnInterval) {
+    s.spawnAcc -= spawnInterval;
+    const roll = Math.random();
+    let kind = "token";
+    if (roll < 0.08) kind = "gold";
+    else if (roll < 0.22) kind = "bomb";
+    else if (roll < 0.22 + s.cacheRate * 0.55) kind = "cache";
+    const baseVy = 115 + (s.tps / 180) * 115 + Math.random() * 55;
+    s.items.push({
+      kind,
+      x: 20 + Math.random() * (s.w - 40),
+      y: -14,
+      vy: kind === "gold" ? baseVy * 1.18 : baseVy,
+      r: kind === "gold" ? 11 : kind === "bomb" ? 11 : 9.5,
+      rot: Math.random() * Math.PI * 2,
+    });
+  }
+
+  const by = s.h - 28;
+  for (let i = s.items.length - 1; i >= 0; i--) {
+    const it = s.items[i];
+    if (s.magnetTimer > 0 && it.kind !== "bomb") {
+      const dx = s.x - it.x;
+      const dy = by - it.y;
+      const dist = Math.hypot(dx, dy) || 1;
+      if (dist < 175) {
+        it.x += (dx / dist) * 340 * dt;
+        it.y += (dy / dist) * 260 * dt;
+      }
+    }
+    it.y += it.vy * dt;
+    it.rot += dt * 3;
+
+    const hitDist = Math.hypot(it.x - s.x, it.y - by);
+    if (hitDist < it.r + 20) {
+      if (it.kind === "bomb") {
+        s.combo = 0;
+        s.dizzyTimer = 0.7;
+        s.shakeTimer = 0.32;
+        s.timeLeft = Math.max(0, s.timeLeft - 2.5);
+        spawnRainParticles(it.x, it.y, "#DC2626", 14);
+        s.floats.push({ x: it.x, y: by - 16, txt: "TTFT 卡顿! -2.5s", col: "#DC2626", life: 0.9 });
+        playSfx("bomb");
+      } else {
+        s.combo++;
+        if (s.combo > s.maxCombo) s.maxCombo = s.combo;
+        const mult = s.combo >= 12 ? 3 : s.combo >= 5 ? 2 : 1;
+        const basePts = it.kind === "gold" ? 50 : it.kind === "cache" ? 25 : 10;
+        const pts = basePts * mult;
+        s.score += pts;
+        if (it.kind === "gold") {
+          s.magnetTimer = 3.6;
+          spawnRainParticles(it.x, it.y, "#F59E0B", 18);
+          s.floats.push({ x: it.x, y: by - 18, txt: `+${pts} 磁铁暴走!`, col: "#F59E0B", life: 1.0 });
+          playSfx("gold");
+        } else if (it.kind === "cache") {
+          spawnRainParticles(it.x, it.y, "#0E8A78", 12);
+          s.floats.push({ x: it.x, y: by - 14, txt: `+${pts} CACHE`, col: "#0E8A78", life: 0.75 });
+          playSfx("cache");
+        } else {
+          spawnRainParticles(it.x, it.y, "#E54826", 8);
+          s.floats.push({ x: it.x, y: by - 14, txt: `+${pts}${mult > 1 ? ` ×${mult}` : ""}`, col: "#E54826", life: 0.65 });
+          playSfx("token");
+        }
+      }
+      s.items.splice(i, 1);
+      continue;
+    }
+    if (it.y > s.h + 24) {
+      if (it.kind !== "bomb") s.combo = 0;
+      s.items.splice(i, 1);
+    }
+  }
+
+  // Update particles & floating texts
+  for (let i = s.parts.length - 1; i >= 0; i--) {
+    const p = s.parts[i];
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.vy += 260 * dt;
+    p.life -= dt;
+    if (p.life <= 0) s.parts.splice(i, 1);
+  }
+  for (let i = s.floats.length - 1; i >= 0; i--) {
+    const f = s.floats[i];
+    f.y -= 36 * dt;
+    f.life -= dt;
+    if (f.life <= 0) s.floats.splice(i, 1);
+  }
+
+  // Render scene
+  const cs = getComputedStyle(document.documentElement);
+  const bg = cs.getPropertyValue("--surface-2").trim() || "#EFECE4";
+  const ink = cs.getPropertyValue("--ink").trim() || "#171614";
+  const muted = cs.getPropertyValue("--muted").trim() || "#6E6A63";
+  rainCtx.save();
+  if (s.shakeTimer > 0) {
+    rainCtx.translate((Math.random() - 0.5) * 7, (Math.random() - 0.5) * 5);
+  }
+  rainCtx.fillStyle = bg;
+  rainCtx.fillRect(0, 0, s.w, s.h);
+
+  // Subtle vertical speed lanes
+  rainCtx.strokeStyle = "rgba(128,128,128,0.08)";
+  rainCtx.lineWidth = 1;
+  for (let gx = 40; gx < s.w; gx += 48) {
+    rainCtx.beginPath();
+    rainCtx.moveTo(gx, 0);
+    rainCtx.lineTo(gx, s.h);
+    rainCtx.stroke();
+  }
+
+  // Magnet fever aura ring
+  if (s.magnetTimer > 0) {
+    rainCtx.save();
+    rainCtx.beginPath();
+    rainCtx.arc(s.x, by, 44 + Math.sin(now / 70) * 6, 0, Math.PI * 2);
+    rainCtx.strokeStyle = "rgba(245, 158, 11, 0.55)";
+    rainCtx.lineWidth = 2;
+    rainCtx.setLineDash([5, 5]);
+    rainCtx.stroke();
+    rainCtx.restore();
+  }
+
+  // Draw items
+  for (const it of s.items) {
+    rainCtx.save();
+    rainCtx.translate(it.x, it.y);
+    if (it.kind === "token") {
+      rainCtx.fillStyle = "#E54826";
+      rainCtx.beginPath();
+      rainCtx.arc(0, 0, it.r, 0, Math.PI * 2);
+      rainCtx.fill();
+      rainCtx.fillStyle = "#FAF8F3";
+      rainCtx.font = "bold 9px monospace";
+      rainCtx.textAlign = "center";
+      rainCtx.textBaseline = "middle";
+      rainCtx.fillText("T", 0, 0.5);
+    } else if (it.kind === "cache") {
+      rainCtx.rotate(it.rot * 0.5);
+      rainCtx.fillStyle = "#0E8A78";
+      rainCtx.beginPath();
+      rainCtx.moveTo(0, -it.r);
+      rainCtx.lineTo(it.r, 0);
+      rainCtx.lineTo(0, it.r);
+      rainCtx.lineTo(-it.r, 0);
+      rainCtx.closePath();
+      rainCtx.fill();
+      rainCtx.fillStyle = "#fff";
+      rainCtx.font = "bold 8px monospace";
+      rainCtx.textAlign = "center";
+      rainCtx.textBaseline = "middle";
+      rainCtx.fillText("⚡", 0, 0.5);
+    } else if (it.kind === "gold") {
+      rainCtx.fillStyle = "#F59E0B";
+      rainCtx.shadowColor = "rgba(245,158,11,0.7)";
+      rainCtx.shadowBlur = 10;
+      rainCtx.beginPath();
+      rainCtx.arc(0, 0, it.r, 0, Math.PI * 2);
+      rainCtx.fill();
+      rainCtx.shadowBlur = 0;
+      rainCtx.font = "12px sans-serif";
+      rainCtx.textAlign = "center";
+      rainCtx.textBaseline = "middle";
+      rainCtx.fillText("🥕", 0, 1);
+    } else {
+      rainCtx.fillStyle = "#DC2626";
+      rainCtx.beginPath();
+      rainCtx.arc(0, 0, it.r, 0, Math.PI * 2);
+      rainCtx.fill();
+      rainCtx.fillStyle = "#fff";
+      rainCtx.font = "bold 10px monospace";
+      rainCtx.textAlign = "center";
+      rainCtx.textBaseline = "middle";
+      rainCtx.fillText("!", 0, 0.5);
+    }
+    rainCtx.restore();
+  }
+
+  // Draw Cute Stylized TooToo Bunny Catcher
+  rainCtx.save();
+  rainCtx.translate(s.x, by);
+  if (s.tierLv >= 5 || s.magnetTimer > 0) {
+    rainCtx.beginPath();
+    rainCtx.arc(0, 0, 22, 0, Math.PI * 2);
+    rainCtx.fillStyle = s.magnetTimer > 0 ? "rgba(245,158,11,0.22)" : `${s.aura}2e`;
+    rainCtx.fill();
+  }
+  // Ears
+  rainCtx.fillStyle = "#181715";
+  rainCtx.beginPath();
+  rainCtx.ellipse(-7, -15, 4, 10, -0.18, 0, Math.PI * 2);
+  rainCtx.ellipse(7, -15, 4, 10, 0.18, 0, Math.PI * 2);
+  rainCtx.fill();
+  rainCtx.fillStyle = s.aura;
+  rainCtx.beginPath();
+  rainCtx.ellipse(-7, -15, 2, 6.5, -0.18, 0, Math.PI * 2);
+  rainCtx.ellipse(7, -15, 2, 6.5, 0.18, 0, Math.PI * 2);
+  rainCtx.fill();
+  // Head
+  rainCtx.fillStyle = "#181715";
+  rainCtx.beginPath();
+  rainCtx.roundRect(-15, -10, 30, 23, 11);
+  rainCtx.fill();
+  rainCtx.fillStyle = "#FAF8F3";
+  rainCtx.beginPath();
+  rainCtx.roundRect(-13, -8, 26, 19, 9.5);
+  rainCtx.fill();
+  // Eyes & Blush
+  rainCtx.fillStyle = "#E54826";
+  rainCtx.globalAlpha = 0.35;
+  rainCtx.beginPath();
+  rainCtx.ellipse(-8, 4, 2.6, 1.5, 0, 0, Math.PI * 2);
+  rainCtx.ellipse(8, 4, 2.6, 1.5, 0, 0, Math.PI * 2);
+  rainCtx.fill();
+  rainCtx.globalAlpha = 1;
+  rainCtx.fillStyle = "#181715";
+  if (s.dizzyTimer > 0) {
+    rainCtx.font = "bold 9px monospace";
+    rainCtx.textAlign = "center";
+    rainCtx.fillText("×   ×", 0, 2);
+  } else {
+    rainCtx.beginPath();
+    rainCtx.arc(-5.5, 0, 1.9, 0, Math.PI * 2);
+    rainCtx.arc(5.5, 0, 1.9, 0, Math.PI * 2);
+    rainCtx.fill();
+  }
+  rainCtx.fillStyle = "#E54826";
+  rainCtx.fillRect(-1.5, 2.5, 3, 2);
+  rainCtx.restore();
+
+  // Particles & floating texts
+  for (const p of s.parts) {
+    rainCtx.globalAlpha = Math.max(0, p.life * 1.6);
+    rainCtx.fillStyle = p.col;
+    rainCtx.beginPath();
+    rainCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    rainCtx.fill();
+  }
+  rainCtx.globalAlpha = 1;
+  rainCtx.font = "bold 11px monospace";
+  rainCtx.textAlign = "center";
+  for (const f of s.floats) {
+    rainCtx.globalAlpha = Math.min(1, f.life * 1.5);
+    rainCtx.fillStyle = f.col;
+    rainCtx.fillText(f.txt, f.x, f.y);
+  }
+  rainCtx.globalAlpha = 1;
+
+  // Live combo HUD badge inside canvas
+  if (s.combo >= 3) {
+    rainCtx.fillStyle = s.combo >= 12 ? "#F59E0B" : "#E54826";
+    rainCtx.font = "bold 12px monospace";
+    rainCtx.textAlign = "left";
+    rainCtx.fillText(`🔥 COMBO ×${s.combo}`, 10, 20);
+  }
+  if (s.magnetTimer > 0) {
+    rainCtx.fillStyle = "#F59E0B";
+    rainCtx.font = "bold 11px monospace";
+    rainCtx.textAlign = "right";
+    rainCtx.fillText(`🧲 磁铁 ${s.magnetTimer.toFixed(1)}s`, s.w - 10, 20);
+  }
+  rainCtx.restore();
+
+  document.getElementById("rainScore").textContent = s.score;
+  document.getElementById("rainTime").textContent = Math.ceil(s.timeLeft) + "s";
+
+  if (s.timeLeft <= 0) {
+    s.running = false;
+    let best = 0;
+    try { best = Number(localStorage.getItem("tootoo_rain_best") || 0) || 0; } catch {}
+    const isNewRecord = s.score > best;
+    if (isNewRecord) {
+      best = s.score;
+      try { localStorage.setItem("tootoo_rain_best", String(best)); } catch {}
+      document.getElementById("rainBest").textContent = best;
+      spawnConfettiBurst(document.getElementById("arcadeModal").querySelector(".arcade-dialog"), 24);
+      playSfx("ssr");
+    } else {
+      playSfx("win");
+    }
+    const remark = s.score >= 700 ? "神级手速！比 200 tok/s 还能吸！"
+      : s.score >= 380 ? "Token 收割机本机！兔兔吃饱啦！"
+      : "热身完毕！下次盯紧金胡萝卜触发吸金磁铁！";
+    document.getElementById("rainTitle").textContent = `${isNewRecord ? "🏆 新纪录！" : "⏱ 时间到！"} 得分 ${s.score}`;
+    document.getElementById("rainDesc").textContent = `最高连击 ×${s.maxCombo} · ${remark}`;
+    document.getElementById("rainStartBtn").textContent = "↻ 再来一局";
+    document.getElementById("rainOverlay").classList.remove("hidden");
+    return;
+  }
+
+  rainRaf = requestAnimationFrame(tickRainGame);
+}
+
+document.getElementById("rainStartBtn").addEventListener("click", startRainGame);
+
+// ============================================================
+// GAME 2: ⚡ TTFT REFLEX ARENA
+// ============================================================
+let reflexMode = "idle"; // idle | waiting | go
+let reflexTimer = null;
+let reflexStartTs = 0;
+let reflexHistory = [];
+
+function cancelReflexTimer() {
+  if (reflexTimer) {
+    clearTimeout(reflexTimer);
+    reflexTimer = null;
+  }
+  reflexMode = "idle";
+}
+
+document.getElementById("reflexStage").addEventListener("click", () => {
+  const stage = document.getElementById("reflexStage");
+  const big = document.getElementById("reflexBig");
+  const sub = document.getElementById("reflexSub");
+  const aiTtftMs = Math.max(200, (((state.data && state.data.kpi && state.data.kpi.ttft_p50) || 2.8) * 1000));
+
+  if (reflexMode === "idle") {
+    reflexMode = "waiting";
+    stage.className = "reflex-stage waiting";
+    big.textContent = "⏳ 模型思考中…";
+    sub.textContent = "盯紧屏幕！亮起亮橙信号瞬间点击，千万别抢跑！";
+    const delay = 1200 + Math.random() * 2200;
+    reflexTimer = setTimeout(() => {
+      reflexMode = "go";
+      reflexStartTs = performance.now();
+      stage.className = "reflex-stage go";
+      big.textContent = "⚡ 首字吐出！快点！";
+      sub.textContent = "NOW! NOW! NOW!";
+      playSfx("go");
+    }, delay);
+  } else if (reflexMode === "waiting") {
+    cancelReflexTimer();
+    stage.className = "reflex-stage early";
+    big.textContent = "⚠️ 抢跑啦！";
+    sub.textContent = "AI 还没开始吐字呢 · 点击重新挑战";
+    playSfx("bomb");
+  } else if (reflexMode === "go") {
+    const ms = Math.max(80, Math.round(performance.now() - reflexStartTs));
+    reflexMode = "idle";
+    stage.className = "reflex-stage";
+    const sec = (ms / 1000).toFixed(3);
+    const title = ms < 200 ? "⚡ 量子手速兔" : ms < 260 ? "🚀 闪电首字王" : ms < 340 ? "🟢 缓存级反射" : "☕ 淡定架构师";
+    big.textContent = `${sec}s`;
+    sub.textContent = `${title} · 点击再测一轮`;
+    playSfx("win");
+
+    let best = null;
+    try { const v = localStorage.getItem("tootoo_reflex_best"); if (v) best = Number(v); } catch {}
+    if (best == null || ms < best) {
+      best = ms;
+      try { localStorage.setItem("tootoo_reflex_best", String(best)); } catch {}
+      document.getElementById("refBest").textContent = `${(best / 1000).toFixed(3)}s`;
+    }
+
+    const maxBar = Math.max(ms, aiTtftMs, 1000);
+    document.getElementById("refYouBar").style.width = Math.max(4, Math.round((ms / maxBar) * 100)) + "%";
+    document.getElementById("refAiBar").style.width = Math.max(4, Math.round((aiTtftMs / maxBar) * 100)) + "%";
+    document.getElementById("refYouVal").textContent = `${sec}s`;
+    document.getElementById("refAiVal").textContent = `${(aiTtftMs / 1000).toFixed(2)}s`;
+
+    const verdict = document.getElementById("refVerdict");
+    if (ms < aiTtftMs) {
+      const mult = (aiTtftMs / ms).toFixed(1);
+      verdict.style.color = "var(--teal)";
+      verdict.textContent = `🏆 你的首字比今日 AI 中位数快了 ${mult} 倍！`;
+    } else {
+      verdict.style.color = "var(--accent)";
+      verdict.textContent = `🤖 今日 AI 居然比你快一步！点击再来一局扳回颜面！`;
+    }
+
+    reflexHistory = [ms, ...reflexHistory].slice(0, 5);
+    document.getElementById("reflexHist").innerHTML = reflexHistory
+      .map((v, i) => `<span class="pill ${i === 0 ? "teal" : ""}">#${reflexHistory.length - i} ${(v / 1000).toFixed(3)}s</span>`)
+      .join("");
+  }
+});
+
+// ============================================================
+// GAME 3: 🎰 TOKEN ALCHEMY & GACHA MACHINE
+// ============================================================
+const GACHA_POOL = [
+  { id: 1, r: "SSR", icon: "👑", name: "缓存命中 99.9% 之神", desc: "今日所有长上下文精准命中缓存，老板直呼省钱！" },
+  { id: 2, r: "SSR", icon: "🚀", name: "一次编译通过圣兔", desc: "今天写的大重构居然零报错一次跑通，堪称神迹！" },
+  { id: 3, r: "SSR", icon: "✨", name: "零幻觉暴击兔", desc: "AI 今天思路清晰得像开了天眼，连边界条件都帮你补齐了。" },
+  { id: 4, r: "SSR", icon: "💎", name: "满血配额永动机", desc: "额度条怎么吸都吸不空，今天就是你的高产巅峰日！" },
+  { id: 5, r: "SR",  icon: "⚡", name: "200 tok/s 极速闪电兔", desc: "输出像瀑布一样倾泻，你的眼睛快跟不上滚屏速度了。" },
+  { id: 6, r: "SR",  icon: "🥕", name: "黄金胡萝卜收藏家", desc: "Token 转化效率拉满，每一千字都直击核心需求。" },
+  { id: 7, r: "SR",  icon: "🧠", name: "深度思考冥想兔", desc: "首字多等了三秒，但换来了一套极其优雅的架构设计。" },
+  { id: 8, r: "SR",  icon: "🔥", name: "深夜热修战神", desc: "越到晚上思路越丝滑，高峰时段就在今夜！" },
+  { id: 9, r: "SR",  icon: "🎯", name: "精准 Diff 外科医生", desc: "只改三行代码，干掉困扰一周的隐蔽竞态 Bug。" },
+  { id: 10, r: "SR", icon: "🌈", name: "多模型协同指挥官", desc: "AGY、Codex、OMP 轮番上阵，真正的 AI 军团长。" },
+  { id: 11, r: "SR", icon: "🛡️", name: "零回归守护兔", desc: "测试全绿，CI 一路畅通，晚上可以安心早点合电脑。" },
+  { id: 12, r: "SR", icon: "🧪", name: "神级 Prompt 炼金师", desc: "一句话精准命中模型心坎，免去十轮反复拉扯。" },
+  { id: 13, r: "R",  icon: "☕", name: "冰美式续命兔", desc: "边喝咖啡边看代码自动生长，摸鱼也是生产力。" },
+  { id: 14, r: "R",  icon: "📦", name: "整洁 Commit 强迫症", desc: "提交信息写得像诗一样工整，Reviewer 看完直接 Approve。" },
+  { id: 15, r: "R",  icon: "🔍", name: "日志侦探小兔", desc: "三秒从十万行日志里揪出罪魁祸首，深藏功与名。" },
+  { id: 16, r: "R",  icon: "🎧", name: "心流白噪音兔", desc: "戴上耳机进入心流，抬头一看已经狂飙 200M Token。" },
+  { id: 17, r: "R",  icon: "📝", name: "文档补全好心兔", desc: "顺手把 README 和注释也写明白了，未来的你会感谢现在。" },
+  { id: 18, r: "R",  icon: "🌱", name: "像素级细节控", desc: "把 1px 对齐和圆角强迫症打磨到极致，看着就舒服。" },
+  { id: 19, r: "R",  icon: "🐾", name: "快乐踩键盘兔", desc: "今天主打一个轻松愉悦，写代码像玩游戏一样上头。" },
+  { id: 20, r: "R",  icon: "🌙", name: "夜猫子算力收割者", desc: "月亮不睡你不睡，兔兔陪你一起刷满今天经验条。" },
+  { id: 21, r: "R",  icon: "🔋", name: "节能省流小能手", desc: "精简上下文立大功，小 Token 撬动大功能！" },
+  { id: 22, r: "R",  icon: "🎨", name: "丝滑动效魔法师", desc: "给产品加上灵魂微动效，用起来手感直接翻倍。" },
+  { id: 23, r: "R",  icon: "🍀", name: "防删库幸运兔", desc: "今天 git rebase 零冲突，本地分支干净如初。" },
+  { id: 24, r: "R",  icon: "🎉", name: "提前下班预言兔", desc: "效率太高提前收工，快奖励自己吃顿好的！" },
+];
+
+function getGachaCollected() {
+  try {
+    const raw = JSON.parse(localStorage.getItem("tootoo_gacha_coll") || "[]");
+    return Array.isArray(raw) ? raw : [];
+  } catch { return []; }
+}
+
+function renderGachaMeta() {
+  const coll = getGachaCollected();
+  const el = document.getElementById("gachaColl");
+  if (el) el.textContent = `${coll.length} / ${GACHA_POOL.length}`;
+}
+
+function renderAlchemyStats() {
+  const grid = document.getElementById("alchemyGrid");
+  if (!grid) return;
+  const k = (state.data && state.data.kpi) || {};
+  const tok = k.tokens || 0;
+  const outTok = k.out || 0;
+  const cost = k.cost || 0;
+  const tps = k.tps || 0;
+
+  const threeBody = (tok / 1.8e6).toFixed(1);
+  const coffees = Math.max(0, Math.round(cost / 4.5));
+  const savedHours = (outTok / 2200).toFixed(1); // ~2200 tokens/hr thoughtful coding
+  const readMult = tps > 0 ? (tps / 5.5).toFixed(1) : "—";
+
+  grid.innerHTML = `
+    <div class="alchemy-tile">
+      <div class="al-k">📚 等效啃完《三体》全集</div>
+      <div class="al-v">${threeBody} <span style="font-size:11px;color:var(--muted)">套</span></div>
+      <div class="al-sub">按每套约 1.8M Token 换算</div>
+    </div>
+    <div class="alchemy-tile">
+      <div class="al-k">☕ 算力折合冰美式</div>
+      <div class="al-v">${coffees} <span style="font-size:11px;color:var(--muted)">杯</span></div>
+      <div class="al-sub">按估算成本 ${fmtCost(cost)} 换算</div>
+    </div>
+    <div class="alchemy-tile">
+      <div class="al-k">⌨️ 替你省下手敲时长</div>
+      <div class="al-v">${savedHours} <span style="font-size:11px;color:var(--muted)">小时</span></div>
+      <div class="al-sub">基于 ${fmtNum(outTok)} 真实输出</div>
+    </div>
+    <div class="alchemy-tile">
+      <div class="al-k">🚀 超越人类阅读速度</div>
+      <div class="al-v">${readMult}${readMult === "—" ? "" : "×"}</div>
+      <div class="al-sub">当前输出均值 ${tps ? tps.toFixed(1) + " tok/s" : "—"}</div>
+    </div>
+  `;
+}
+
+let gachaBusy = false;
+document.getElementById("gachaPullBtn").addEventListener("click", () => {
+  if (gachaBusy) return;
+  gachaBusy = true;
+  const mac = document.getElementById("gachaMachine");
+  const res = document.getElementById("gachaResult");
+  mac.classList.remove("shaking");
+  void mac.offsetWidth;
+  mac.classList.add("shaking");
+  playSfx("gacha");
+  res.className = "gacha-result";
+  res.innerHTML = `<span style="font-size:11px;color:var(--muted)">🎲 扭蛋滚动中… 正在注入今日算力欧气…</span>`;
+
+  setTimeout(() => {
+    gachaBusy = false;
+    const roll = Math.random();
+    const tier = roll < 0.18 ? "SSR" : roll < 0.55 ? "SR" : "R";
+    const pool = GACHA_POOL.filter(x => x.r === tier);
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+
+    const coll = getGachaCollected();
+    const isNew = !coll.includes(pick.id);
+    if (isNew) {
+      coll.push(pick.id);
+      try { localStorage.setItem("tootoo_gacha_coll", JSON.stringify(coll)); } catch {}
+      renderGachaMeta();
+    }
+
+    res.className = `gacha-result pop tier-${pick.r}`;
+    res.innerHTML = `
+      <div style="display:flex;align-items:center;gap:6px">
+        <span class="gacha-rarity ${pick.r}">${pick.r}</span>
+        <strong style="font-size:12.5px;color:var(--ink)">${pick.icon} ${pick.name}</strong>
+        ${isNew ? `<span class="pill accent" style="font-size:8.5px;padding:1px 5px">NEW!</span>` : ""}
+      </div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.45">${pick.desc}</div>
+    `;
+    if (pick.r === "SSR") {
+      spawnConfettiBurst(mac, 28);
+      activateStardust(5000);
+      playSfx("ssr");
+    } else if (pick.r === "SR") {
+      spawnConfettiBurst(mac, 14);
+      playSfx("gold");
+    } else {
+      playSfx("token");
+    }
+  }, 600);
 });
 
 let dbgLevelUpTimer = null;
