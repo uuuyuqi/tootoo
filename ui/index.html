@@ -926,11 +926,12 @@
   }
 
   /* Button micro-physics */
-  .btn-ico .spin-ico,
   #settingsBtn .ico-gear,
   #themeBtn .ico-theme,
   #expandBtn .ico-exp,
-  #arcadeBtn .ico-pad {
+  #gachaBtn .ico-gacha,
+  #patrolBtn .ico-paw,
+  #arcadeBtn .ico-more {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -948,19 +949,60 @@
   #themeBtn.flipped .ico-theme {
     transform: rotate(180deg);
   }
-  #expandBtn {
+  #expandBtn,
+  #gachaBtn,
+  #patrolBtn,
+  #arcadeBtn {
     transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.14s ease, color 0.18s ease;
   }
-  #expandBtn .ico-exp {
+  #expandBtn .ico-exp,
+  #gachaBtn .ico-gacha,
+  #patrolBtn .ico-paw,
+  #arcadeBtn .ico-more {
     transition: transform 0.24s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
-  #expandBtn:hover {
+  #expandBtn:hover,
+  #gachaBtn:hover,
+  #patrolBtn:hover,
+  #arcadeBtn:hover {
     border-color: var(--active-border);
     color: var(--active-fg);
     box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 16%, transparent);
   }
   #expandBtn:hover .ico-exp {
     transform: scale(1.16) rotate(-8deg);
+  }
+  #gachaBtn {
+    position: relative;
+  }
+  #gachaBtn:hover .ico-gacha {
+    transform: rotate(18deg) scale(1.14);
+  }
+  #gachaBtn.has-coins::after {
+    content: "";
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 1.5px var(--surface);
+    pointer-events: none;
+  }
+  #patrolBtn:hover .ico-paw {
+    transform: rotate(-12deg) scale(1.14);
+  }
+  #patrolBtn.patrolling {
+    border-color: var(--active-border);
+    color: var(--active-fg);
+    background: var(--active-bg);
+  }
+  #patrolBtn.patrolling .ico-paw {
+    animation: patrolHop 0.42s ease-in-out infinite;
+  }
+  #arcadeBtn:hover .ico-more {
+    transform: scale(1.14);
   }
 
   .theme-ripple {
@@ -1154,17 +1196,6 @@
   }
 
   /* ---- Wave 2: Signature Card FX, Stardust, Patrol & Arcade ---- */
-  #arcadeBtn .ico-pad {
-    display: inline-block;
-    transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-  #arcadeBtn:hover .ico-pad {
-    transform: rotate(-14deg) scale(1.18);
-  }
-  #arcadeBtn:hover {
-    border-color: var(--active-border);
-    color: var(--active-fg);
-  }
 
   .fx-coin {
     position: fixed;
@@ -1522,7 +1553,7 @@
   }
   .arcade-tabs {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 4px;
     background: var(--surface-2);
     border: 1px solid var(--border);
@@ -2892,18 +2923,72 @@
   }
   .pop-only { display: none; }
   .pop-only-block { display: none; }
+  .native-only { display: none; }
+  body.native-app .native-only { display: inline-flex; }
   body.popover-mode .hide-in-pop { display: none !important; }
 
   .pop-footer {
-    display: none;
+    display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 10px;
-    padding-top: 8px;
+    margin-top: 14px;
+    padding-top: 10px;
     border-top: 1px dashed var(--border);
     font-family: var(--font-mono);
     font-size: 10px;
     color: var(--muted);
+  }
+  body.popover-mode .pop-footer {
+    margin-top: 10px;
+    padding-top: 8px;
+  }
+  .footer-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .footer-ico-btn {
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    justify-content: center;
+    background: var(--surface);
+  }
+  body.popover-mode .footer-ico-btn {
+    width: 24px;
+    height: 24px;
+  }
+  .btn-quit {
+    height: 26px;
+    padding: 0 10px;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #fff;
+    background: #dc2626;
+    border-color: #b91c1c;
+    box-shadow: 0 1px 0 rgba(185, 28, 28, 0.25);
+  }
+  body.popover-mode .btn-quit {
+    height: 24px;
+    padding: 0 9px;
+    font-size: 10px;
+  }
+  .btn-quit:hover {
+    background: #b91c1c;
+    border-color: #991b1b;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+  }
+  [data-theme="dark"] .btn-quit {
+    background: #dc2626;
+    border-color: #ef4444;
+    color: #fff;
+  }
+  [data-theme="dark"] .btn-quit:hover {
+    background: #ef4444;
+    border-color: #f87171;
+    color: #fff;
+    box-shadow: 0 2px 10px rgba(239, 68, 68, 0.35);
   }
 
   /* ---- POPOVER COMPACT MODE (?mode=popover) ---- */
@@ -3097,15 +3182,6 @@
   body.is-fetching:not(.is-booting) .agent-list {
     opacity: 0.56;
     transition: opacity 0.14s ease;
-  }
-
-  #refreshBtn.spinning {
-    color: var(--accent);
-    border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
-  }
-  #refreshBtn.spinning .spin-ico {
-    display: inline-flex;
-    animation: icoSpin 0.72s linear infinite;
   }
 
   @keyframes topSweep {
@@ -3321,11 +3397,10 @@
       </div>
       <div class="ctrl-actions">
         <span class="scan-badge" id="scanBadge">扫描 —</span>
-        <button class="btn btn-ico" id="refreshBtn" title="重新扫描本地日志"><span class="spin-ico"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 8a5.5 5.5 0 1 1-1.35-3.6"/><path d="M13.5 2.5v2.9h-2.9"/></svg></span></button>
-        <button class="btn btn-ico" id="themeBtn" title="切换浅色/深色主题"><span class="ico-theme"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="5.5"/><path d="M8 2.5a5.5 5.5 0 0 1 0 11Z" fill="currentColor" stroke="none"/></svg></span></button>
-        <button class="btn btn-ico" id="settingsBtn" title="设置"><span class="ico-gear"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2.2"/><path d="M12.9 9.7a1.1 1.1 0 0 0 .22 1.2l.04.04a1.33 1.33 0 1 1-1.88 1.88l-.04-.04a1.1 1.1 0 0 0-1.2-.22 1.1 1.1 0 0 0-.67 1.01v.11a1.33 1.33 0 1 1-2.67 0v-.06a1.1 1.1 0 0 0-.72-1.01 1.1 1.1 0 0 0-1.2.22l-.04.04a1.33 1.33 0 1 1-1.88-1.88l.04-.04a1.1 1.1 0 0 0 .22-1.2 1.1 1.1 0 0 0-1.01-.67h-.11a1.33 1.33 0 1 1 0-2.67h.06a1.1 1.1 0 0 0 1.01-.72 1.1 1.1 0 0 0-.22-1.2l-.04-.04a1.33 1.33 0 1 1 1.88-1.88l.04.04a1.1 1.1 0 0 0 1.2.22h.05a1.1 1.1 0 0 0 .67-1.01v-.11a1.33 1.33 0 1 1 2.67 0v.06a1.1 1.1 0 0 0 .67 1.01 1.1 1.1 0 0 0 1.2-.22l.04-.04a1.33 1.33 0 1 1 1.88 1.88l-.04.04a1.1 1.1 0 0 0-.22 1.2v.05a1.1 1.1 0 0 0 1.01.67h.11a1.33 1.33 0 1 1 0 2.67h-.06a1.1 1.1 0 0 0-1.01.67Z"/></svg></span></button>
         <button class="btn btn-ico pop-only" id="expandBtn" title="打开完整窗口"><span class="ico-exp"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.2" cy="7.2" r="4.6"/><path d="M10.7 10.7L14 14"/></svg></span></button>
-        <button class="btn btn-ico" id="arcadeBtn" title="打开 TOOTOO 算力游乐场"><span class="ico-pad"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round"><rect x="1.8" y="4.4" width="12.4" height="7.6" rx="3.4"/><path d="M4.6 8.2h2.4M5.8 7v2.4"/><circle cx="10.4" cy="7.5" r="0.7" fill="currentColor" stroke="none"/><circle cx="11.9" cy="8.9" r="0.7" fill="currentColor" stroke="none"/></svg></span></button>
+        <button class="btn btn-ico" id="gachaBtn" title="算力扭蛋 · 算力炼金"><span class="ico-gacha"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="5.6"/><path d="M2.5 8h3.6M9.9 8h3.6"/><circle cx="8" cy="8" r="1.9"/><circle cx="8" cy="8" r="0.55" fill="currentColor" stroke="none"/><path d="M5.4 5.1a3.5 3.5 0 0 1 2.2-1.1" stroke-width="1.3"/></svg></span></button>
+        <button class="btn btn-ico" id="patrolBtn" title="召唤小兔兔巡逻（偶尔能捡到算力扭蛋）"><span class="ico-paw"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.45" stroke-linecap="round" stroke-linejoin="round"><path d="M5.1 11.4c0-1.55 1.3-2.75 2.9-2.75s2.9 1.2 2.9 2.75c0 1-.72 1.75-1.68 1.75-.46 0-.84-.16-1.22-.16s-.76.16-1.22.16c-.96 0-1.68-.75-1.68-1.75Z"/><circle cx="3.5" cy="7.4" r="1.15"/><circle cx="6.2" cy="4.7" r="1.2"/><circle cx="9.8" cy="4.7" r="1.2"/><circle cx="12.5" cy="7.4" r="1.15"/></svg></span></button>
+        <button class="btn btn-ico" id="arcadeBtn" title="更多玩法 · 算力游乐场"><span class="ico-more"><svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" stroke="none"><circle cx="3.6" cy="8" r="1.35"/><circle cx="8" cy="8" r="1.35"/><circle cx="12.4" cy="8" r="1.35"/></svg></span></button>
       </div>
     </div>
   </header>
@@ -3535,12 +3610,13 @@
     </div>
   </div>
 
-  <!-- POPOVER FOOTER -->
+  <!-- FOOTER -->
   <footer class="pop-footer">
     <span id="popScanInfo">SCAN — · 本地只读零侵入</span>
-    <span style="display:flex;gap:12px;align-items:center">
-      <a href="#" id="popSettingsLink" style="color:var(--ink-soft);text-decoration:none" title="打开设置面板">⚙ 设置</a>
-      <a href="#" id="popQuitLink" style="color:var(--muted);text-decoration:none">退出</a>
+    <span class="footer-actions">
+      <button class="btn btn-ico footer-ico-btn" id="themeBtn" title="切换浅色/深色主题"><span class="ico-theme"><svg width="13.5" height="13.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="5.5"/><path d="M8 2.5a5.5 5.5 0 0 1 0 11Z" fill="currentColor" stroke="none"/></svg></span></button>
+      <button class="btn btn-ico footer-ico-btn" id="settingsBtn" title="设置"><span class="ico-gear"><svg width="13.5" height="13.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2.2"/><path d="M12.9 9.7a1.1 1.1 0 0 0 .22 1.2l.04.04a1.33 1.33 0 1 1-1.88 1.88l-.04-.04a1.1 1.1 0 0 0-1.2-.22 1.1 1.1 0 0 0-.67 1.01v.11a1.33 1.33 0 1 1-2.67 0v-.06a1.1 1.1 0 0 0-.72-1.01 1.1 1.1 0 0 0-1.2.22l-.04.04a1.33 1.33 0 1 1-1.88-1.88l.04-.04a1.1 1.1 0 0 0 .22-1.2 1.1 1.1 0 0 0-1.01-.67h-.11a1.33 1.33 0 1 1 0-2.67h.06a1.1 1.1 0 0 0 1.01-.72 1.1 1.1 0 0 0-.22-1.2l-.04-.04a1.33 1.33 0 1 1 1.88-1.88l.04.04a1.1 1.1 0 0 0 1.2.22h.05a1.1 1.1 0 0 0 .67-1.01v-.11a1.33 1.33 0 1 1 2.67 0v.06a1.1 1.1 0 0 0 .67 1.01 1.1 1.1 0 0 0 1.2-.22l.04-.04a1.33 1.33 0 1 1 1.88 1.88l-.04.04a1.1 1.1 0 0 0-.22 1.2v.05a1.1 1.1 0 0 0 1.01.67h.11a1.33 1.33 0 1 1 0 2.67h-.06a1.1 1.1 0 0 0-1.01.67Z"/></svg></span></button>
+      <button class="btn btn-quit native-only" id="popQuitLink" title="退出 TooToo">退出</button>
     </span>
   </footer>
 </div>
@@ -3589,13 +3665,33 @@
   </div>
 </div>
 
-<!-- TOOTOO DATA-DRIVEN ARCADE MODAL -->
+<!-- CORE: TOOTOO COMPUTE GACHA & ALCHEMY MODAL -->
+<div class="evo-backdrop" id="gachaModal">
+  <div class="arcade-dialog" style="width:min(430px, 94vw)">
+    <div class="evo-head">
+      <span class="kicker" style="font-size:11px;color:var(--ink)">🎰 算力扭蛋 · 算力炼金</span>
+      <button class="btn" id="gachaCloseBtn" style="padding:3px 8px;font-size:10.5px">✕</button>
+    </div>
+    <div class="alchemy-grid" id="alchemyGrid"></div>
+    <div class="gacha-box">
+      <div class="gacha-machine" id="gachaMachine">🎰</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px">
+        每消耗 10M Token 铸造 1 枚算力币 · 余额 <strong id="gachaCoins" style="color:var(--accent)">0</strong> 枚 · 图鉴 <strong id="gachaColl" style="color:var(--ink)">0 / 24</strong>
+      </div>
+      <button class="arc-primary-btn" id="gachaPullBtn">🪙 消耗 1 枚算力币扭一颗！</button>
+      <div class="gacha-result" id="gachaResult">
+        <span style="font-size:11px;color:var(--muted)">拉下开关，看看兔兔今天给你抽什么神签 ✨</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MORE: TOOTOO DATA-DRIVEN ARCADE MODAL -->
 <div class="evo-backdrop" id="arcadeModal">
   <div class="arcade-dialog">
     <div class="evo-head">
-      <span class="kicker" style="font-size:11px;color:var(--ink)">TOOTOO 算力游乐场</span>
+      <span class="kicker" style="font-size:11px;color:var(--ink)">更多玩法 · 算力游乐场</span>
       <span style="display:flex;gap:5px;align-items:center">
-        <button class="btn" id="arcPatrolBtn" style="padding:3px 7px;font-size:10px" title="召唤小兔兔绕屏幕边缘往返巡逻一圈（偶尔能捡到算力扭蛋）">🐾 巡逻</button>
         <button class="btn" id="arcSfxBtn" style="padding:3px 7px;font-size:10px" title="开关合成复古音效">🔇 静音</button>
         <button class="btn" id="arcadeCloseBtn" style="padding:3px 8px;font-size:10.5px">✕</button>
       </span>
@@ -3605,7 +3701,6 @@
       <button data-game="blaster" class="active">🚀 弹药打Bug</button>
       <button data-game="rain">🥕 接Token雨</button>
       <button data-game="reflex">⚡ 首字对决</button>
-      <button data-game="gacha">🎰 算力扭蛋</button>
     </div>
 
     <!-- GAME 1 (FLAGSHIP): 🚀 TOKEN AMMO BUG BLASTER -->
@@ -3683,21 +3778,6 @@
       </div>
       <div class="reflex-hist" id="reflexHist"></div>
     </div>
-
-    <!-- GAME 3: TOKEN ALCHEMY & GACHA -->
-    <div class="arcade-pane" id="arcPane-gacha">
-      <div class="alchemy-grid" id="alchemyGrid"></div>
-      <div class="gacha-box">
-        <div class="gacha-machine" id="gachaMachine">🎰</div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:8px">
-          每消耗 10M Token 铸造 1 枚算力币 · 余额 <strong id="gachaCoins" style="color:var(--accent)">0</strong> 枚 · 图鉴 <strong id="gachaColl" style="color:var(--ink)">0 / 24</strong>
-        </div>
-        <button class="arc-primary-btn" id="gachaPullBtn">🪙 消耗 1 枚算力币扭一颗！</button>
-        <div class="gacha-result" id="gachaResult">
-          <span style="font-size:11px;color:var(--muted)">拉下开关，看看兔兔今天给你抽什么神签 ✨</span>
-        </div>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -3753,6 +3833,9 @@ const params = new URLSearchParams(window.location.search);
 const isPopover = params.get("mode") === "popover";
 if (isPopover) {
   document.body.classList.add("popover-mode");
+}
+if (isPopover || (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.tootoo)) {
+  document.body.classList.add("native-app");
 }
 
 function postNative(action, extra = {}) {
@@ -4516,7 +4599,7 @@ bunnyMascotEl.addEventListener("click", () => {
   }
 });
 
-// Brand logo wave + cheeky speech bubble on click
+// Brand logo wave on hover / click (letters hop only, no bunny FX or speech)
 const brandLogoEl = document.getElementById("brandLogo");
 function triggerLogoWave() {
   brandLogoEl.classList.remove("wave");
@@ -4525,11 +4608,7 @@ function triggerLogoWave() {
   setTimeout(() => brandLogoEl.classList.remove("wave"), 820);
 }
 brandLogoEl.addEventListener("mouseenter", triggerLogoWave);
-brandLogoEl.addEventListener("click", () => {
-  triggerLogoWave();
-  hopBunny();
-  showBunnySpeech();
-});
+brandLogoEl.addEventListener("click", triggerLogoWave);
 
 // Hero card cursor spotlight
 document.querySelectorAll(".hero-grid .card").forEach(card => {
@@ -4685,9 +4764,7 @@ async function fetchTelemetry(force = false) {
   activeFetchCtrl = ctrl;
   const timeoutId = setTimeout(() => ctrl.abort(), 10000);
 
-  const btn = document.getElementById("refreshBtn");
   document.body.classList.add("is-fetching");
-  btn.classList.add("spinning");
   try {
     const url = `/api/telemetry?range=${encodeURIComponent(state.range)}&tool=${encodeURIComponent(state.tool)}&force=${force ? 1 : 0}`;
     const res = await fetch(url, { signal: ctrl.signal });
@@ -4731,7 +4808,6 @@ async function fetchTelemetry(force = false) {
     if (seq === fetchSeq) {
       activeFetchCtrl = null;
       document.body.classList.remove("is-fetching");
-      btn.classList.remove("spinning");
     }
   }
 }
@@ -4823,6 +4899,7 @@ function renderAll(d) {
 
   // 9-Tier Bunny evolution strictly tracks TODAY's total tokens across all agents (or debug preview level)
   renderBunnyState(getEffectiveTodayTokens());
+  if (typeof renderGachaMeta === "function") renderGachaMeta();
   renderTopQuota(d);
 
   renderToolChips(d);
@@ -5785,12 +5862,6 @@ document.getElementById("popTabs").querySelectorAll("button").forEach(btn => {
   });
 });
 
-document.getElementById("refreshBtn").addEventListener("click", () => {
-  hopBunny();
-  shouldAnimateCharts = true;
-  fetchTelemetry(true);
-});
-
 document.getElementById("expandBtn").addEventListener("click", () => {
   if (!postNative("openWindow")) {
     window.open(window.location.origin + "/", "_blank");
@@ -5999,10 +6070,6 @@ function stopQuotaSiphon() {
 topQuotaEl.addEventListener("mouseenter", startQuotaSiphon);
 topQuotaEl.addEventListener("mouseleave", stopQuotaSiphon);
 topQuotaEl.addEventListener("click", stopQuotaSiphon);
-document.getElementById("popSettingsLink").addEventListener("click", (e) => {
-  e.preventDefault();
-  openSettingsModal();
-});
 document.getElementById("settingsCloseBtn").addEventListener("click", () => {
   document.getElementById("settingsModal").classList.remove("open");
 });
@@ -6218,6 +6285,7 @@ let patrolRunning = false;
 function summonBunnyPatrol() {
   if (patrolRunning) return;
   patrolRunning = true;
+  document.getElementById("patrolBtn")?.classList.add("patrolling");
   const tier = getBunnyTier(getEffectiveTodayTokens());
 
   // Leg 1: Bottom edge Left -> Right
@@ -6268,6 +6336,7 @@ function summonBunnyPatrol() {
     setTimeout(() => {
       topRunner.remove();
       patrolRunning = false;
+      document.getElementById("patrolBtn")?.classList.remove("patrolling");
 
       const bunny = document.getElementById("bunnyMascot");
       if (bunny) {
@@ -6293,7 +6362,7 @@ function summonBunnyPatrol() {
     }, 3650);
   }, 3650);
 }
-document.getElementById("arcPatrolBtn").addEventListener("click", summonBunnyPatrol);
+document.getElementById("patrolBtn").addEventListener("click", summonBunnyPatrol);
 
 // ---- Hero KPI Double-Click Signature Easter Eggs ----
 document.querySelectorAll(".hero-grid .card[data-kpi]").forEach(card => {
@@ -6431,7 +6500,22 @@ document.querySelectorAll(".hero-grid .card[data-kpi]").forEach(card => {
   });
 });
 
-// ---- Arcade Modal Open/Close & Tab Switching ----
+// ---- Core Gacha Modal Open/Close ----
+function openGachaModal() {
+  document.getElementById("gachaModal").classList.add("open");
+  renderAlchemyStats();
+  renderGachaMeta();
+}
+function closeGachaModal() {
+  document.getElementById("gachaModal").classList.remove("open");
+}
+document.getElementById("gachaBtn").addEventListener("click", openGachaModal);
+document.getElementById("gachaCloseBtn").addEventListener("click", closeGachaModal);
+document.getElementById("gachaModal").addEventListener("click", (e) => {
+  if (e.target === e.currentTarget) closeGachaModal();
+});
+
+// ---- More Arcade Modal Open/Close & Tab Switching ----
 function openArcadeModal() {
   document.getElementById("arcadeModal").classList.add("open");
   refreshArcadeContext();
@@ -7489,6 +7573,7 @@ function renderGachaMeta() {
   const cs = getGachaCoinState();
   const coinEl = document.getElementById("gachaCoins");
   if (coinEl) coinEl.textContent = cs.balance;
+  document.getElementById("gachaBtn")?.classList.toggle("has-coins", cs.balance > 0);
   const btn = document.getElementById("gachaPullBtn");
   if (btn) {
     btn.textContent = cs.balance > 0
