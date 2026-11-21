@@ -1,0 +1,2594 @@
+#!/usr/bin/env python3
+"""
+tootoo Scanner — Zero-dependency local telemetry scanner for AI coding agents.
+Reads local session logs & SQLite stores directly (no hooks, no proxy required):
+  - Antigravity (agy / IDE / CLI / T3 ACP): SQLite + Protobuf (exact TTFT & stream duration)
+  - Codex CLI: JSONL session rollouts (task_started, item_completed, token_count, rate_limits)
+  - OpenCode: SQLite (session, message, part timing & tokens)
+  - Claude Code: JSONL project logs (usage, parentUuid chain, thinkingDurationMs)
+  - Gemini CLI: JSON / JSONL chat logs
+"""
+
+from __future__ import annotations
+
+import atexit
+import glob
+import hashlib
+import http.client
+import json
+import math
+import os
+import re
+import sqlite3
+import ssl
+import subprocess
+import threading
+import time
+from collections import defaultdict
+from datetime import date, datetime, timedelta, timezone
+from pathlib import Path
+from typing import Any
+
+from pricing import PricingEngine, calibrate_observed_rates, trigger_background_sync_if_stale
+
+HOME = os.path.expanduser("~")
+CACHE_DIR = os.path.join(HOME, ".tootoo")
+CACHE_FILE = os.path.join(CACHE_DIR, "scan_cache_v5.json")
+CONFIG_FILE = os.path.join(CACHE_DIR, "config.json")
+
+# Performance outlier guards & TTFT log-histogram parameters
+PERF_MIN_OUTPUT = 20
+PERF_MAX_SECONDS = 1800.0
+PERF_MIN_SECONDS = 0.2
+PERF_MAX_TPS = 3000.0
+PERF_MAX_TTFT = 120.0
+TTFT_BASE = 0.05
+TTFT_RATIO = 1.05
+
+# Approximate USD per 1M tokens: (input, output, cache_read, cache_write)
+MODEL_PRICING: list[tuple[str, tuple[float, float, float, float]]] = [
+    ("claude-opus-5", (15.0, 75.0, 1.5, 18.75)),
+    ("claude-sonnet-5", (3.0, 15.0, 0.3, 3.75)),
+    ("claude-opus-4", (15.0, 75.0, 1.5, 18.75)),
+    ("claude-sonnet-4", (3.0, 15.0, 0.3, 3.75)),
+    ("claude-haiku-4", (0.8, 4.0, 0.08, 1.0)),
+    ("claude-3-7-sonnet", (3.0, 15.0, 0.3, 3.75)),
+    ("claude-3-5-sonnet", (3.0, 15.0, 0.3, 3.75)),
+    ("claude-3-5-haiku", (0.8, 4.0, 0.08, 1.0)),
+    ("gemini-4", (2.5, 15.0, 0.25, 0.0)),
+    ("gemini-3.5-pro", (2.5, 15.0, 0.25, 0.0)),
+    ("gemini-3-pro", (2.0, 12.0, 0.2, 0.0)),
+    ("gemini-2.5-pro", (1.25, 10.0, 0.125, 0.0)),
+    ("gemini-2.5-flash-lite", (0.1, 0.4, 0.01, 0.0)),
+    ("gemini-2.5-flash", (0.3, 2.5, 0.03, 0.0)),
+    ("gemini-3", (0.5, 3.0, 0.05, 0.0)),
+    ("gemini-2.0-flash", (0.1, 0.4, 0.01, 0.0)),
+    ("gpt-6", (2.5, 15.0, 0.25, 0.0)),
+    ("gpt-5-mini", (0.25, 2.0, 0.025, 0.0)),
+    ("gpt-5-nano", (0.05, 0.4, 0.005, 0.0)),
+    ("gpt-5", (1.25, 10.0, 0.125, 0.0)),
+    ("codex", (1.5, 10.0, 0.15, 0.0)),
+    ("o4-mini", (1.1, 4.4, 0.275, 0.0)),
+    ("o3-mini", (1.1, 4.4, 0.275, 0.0)),
+    ("o3", (2.0, 8.0, 0.5, 0.0)),
+    ("gpt-4.1-mini", (0.4, 1.6, 0.1, 0.0)),
+    ("gpt-4.1", (2.0, 8.0, 0.5, 0.0)),
+    ("gpt-4o-mini", (0.15, 0.6, 0.075, 0.0)),
+    ("gpt-4o", (2.5, 10.0, 1.25, 0.0)),
+    ("deepseek-r1", (0.55, 2.19, 0.14, 0.0)),
+    ("deepseek", (0.27, 1.1, 0.07, 0.0)),
+    ("qwen", (0.4, 1.2, 0.1, 0.0)),
+    ("kimi", (0.6, 2.5, 0.15, 0.0)),
+    ("minimax", (0.3, 1.2, 0.05, 0.0)),
+    ("glm", (0.5, 2.0, 0.1, 0.0)),
+]
+
+TOOL_META = {
+    "antigravity": {"label": "Antigravity (agy)", "short": "AGY", "accent": "#E54826"},
+    "codex": {"label": "Codex CLI", "short": "CODEX", "accent": "#0D8A72"},
+    "omp": {"label": "OMP / Pi", "short": "OMP", "accent": "#DB2777"},
+    "devin": {"label": "Devin CLI", "short": "DEVIN", "accent": "#0284C7"},
+    "qoder": {"label": "Qoder CLI", "short": "QODER", "accent": "#059669"},
+    "copilot": {"label": "Copilot CLI", "short": "COPILOT", "accent": "#4F46E5"},
+    "droid": {"label": "Factory Droid", "short": "DROID", "accent": "#EA580C"},
+    "opencode": {"label": "OpenCode", "short": "OPENCODE", "accent": "#D97706"},
+    "grok": {"label": "Grok CLI", "short": "GROK", "accent": "#52525B"},
+    "claude": {"label": "Claude Code", "short": "CLAUDE", "accent": "#2563EB"},
+    "gemini": {"label": "Gemini CLI", "short": "GEMINI", "accent": "#7C3AED"},
+    "hermes": {"label": "Hermes", "short": "HERMES", "accent": "#0891B2"},
+    "qwencode": {"label": "Qwen Code", "short": "QWEN", "accent": "#6D28D9"},
+    "kimicode": {"label": "Kimi Code", "short": "KIMI", "accent": "#0F766E"},
+    "mimocode": {"label": "MiMoCode", "short": "MIMO", "accent": "#B45309"},
+    "cline": {"label": "Cline / Roo", "short": "CLINE", "accent": "#BE123C"},
+}
+
+
+def estimate_cost(
+    model: str,
+    inp: int = 0,
+    out: int = 0,
+    cache_read: int = 0,
+    cache_write: int = 0,
+    reasoning: int = 0,
+) -> float:
+    m = (model or "").lower().strip()
+    if "/" in m:
+        m = m.split("/")[-1]
+    rates = (1.5, 8.0, 0.15, 0.0)
+    for prefix, r in MODEL_PRICING:
+        if prefix in m:
+            rates = r
+            break
+    pin, pout, pcr, pcw = rates
+    bill_out = max(out, 0) + max(reasoning, 0)
+    return (
+        max(inp, 0) * pin
+        + bill_out * pout
+        + max(cache_read, 0) * pcr
+        + max(cache_write, 0) * pcw
+    ) / 1_000_000.0
+
+
+def nice_model(model: str | None) -> str:
+    if not model or not isinstance(model, str):
+        return "unknown"
+    m = model.strip()
+    if "/" in m:
+        m = m.split("/")[-1]
+    # Strip trailing date stamps like -20251001 if overly verbose
+    m = re.sub(r"-20\d{6}$", "", m)
+    return m or "unknown"
+
+
+def parse_iso_ts(ts_str: str | None) -> float | None:
+    if not ts_str or not isinstance(ts_str, str):
+        return None
+    s = ts_str.strip()
+    if s.endswith("Z"):
+        s = s[:-1] + "+00:00"
+    try:
+        return datetime.fromisoformat(s).timestamp()
+    except ValueError:
+        return None
+
+
+def local_day_hour(epoch_sec: float) -> tuple[str, int]:
+    dt = datetime.fromtimestamp(epoch_sec).astimezone()
+    return dt.date().isoformat(), dt.hour
+
+
+# ---------- TTFT Log-Histogram & Performance Helpers ----------
+
+def ttft_to_bucket(sec: float) -> int:
+    if sec < TTFT_BASE:
+        return 0
+    return int(math.floor(math.log(sec / TTFT_BASE) / math.log(TTFT_RATIO))) + 1
+
+
+def bucket_to_bounds(bucket: int) -> tuple[float, float]:
+    if bucket <= 0:
+        return 0.0, TTFT_BASE
+    return (
+        TTFT_BASE * (TTFT_RATIO ** (bucket - 1)),
+        TTFT_BASE * (TTFT_RATIO ** bucket),
+    )
+
+
+def histogram_percentile(hist: dict[str, int], p: float) -> float | None:
+    buckets = sorted((int(k), int(v)) for k, v in hist.items() if int(v) > 0)
+    total = sum(v for _, v in buckets)
+    if total == 0:
+        return None
+    target = max(1.0, min(float(total), p * total))
+    seen = 0
+    for b, cnt in buckets:
+        if seen + cnt >= target:
+            lo, hi = bucket_to_bounds(b)
+            frac = (target - seen - 0.5) / cnt
+            frac = max(0.0, min(1.0, frac))
+            return round(lo + (hi - lo) * frac, 2)
+        seen += cnt
+    lo, hi = bucket_to_bounds(buckets[-1][0])
+    return round(hi, 2)
+
+
+def empty_perf() -> dict[str, Any]:
+    return {"o": 0, "g": 0.0, "n": 0, "th": {}}
+
+
+def perf_add(
+    perf_map: dict[str, dict[str, Any]],
+    model: str,
+    out_tokens: int,
+    gen_seconds: float | None,
+    ttft_seconds: float | None = None,
+) -> bool:
+    if gen_seconds is None:
+        return False
+    try:
+        out = int(out_tokens or 0)
+        gen = float(gen_seconds)
+    except (TypeError, ValueError, OverflowError):
+        return False
+    if out < PERF_MIN_OUTPUT or not (PERF_MIN_SECONDS < gen <= PERF_MAX_SECONDS):
+        return False
+    if out / gen > PERF_MAX_TPS:
+        return False
+    st = perf_map.setdefault(model or "unknown", empty_perf())
+    st["o"] += out
+    st["g"] = round(st["g"] + gen, 3)
+    st["n"] += 1
+    if ttft_seconds is not None:
+        try:
+            ttft = float(ttft_seconds)
+            if 0.0 <= ttft <= PERF_MAX_TTFT:
+                b = str(ttft_to_bucket(ttft))
+                st["th"][b] = st["th"].get(b, 0) + 1
+        except (TypeError, ValueError):
+            pass
+    return True
+
+
+def perf_merge(dst: dict[str, Any], src: dict[str, Any]) -> None:
+    dst["o"] += int(src.get("o", 0) or 0)
+    dst["g"] = round(dst["g"] + float(src.get("g", 0.0) or 0.0), 3)
+    dst["n"] += int(src.get("n", 0) or 0)
+    for b, c in (src.get("th") or {}).items():
+        dst["th"][b] = dst["th"].get(b, 0) + int(c)
+
+
+# ---------- Read-Only SQLite Helper ----------
+
+def sqlite_open_ro(path: str) -> sqlite3.Connection:
+    uri = Path(path).resolve().as_uri() + "?mode=ro"
+    try:
+        conn = sqlite3.connect(uri, uri=True, timeout=1.0)
+        conn.execute("SELECT 1")
+        return conn
+    except sqlite3.OperationalError:
+        wal = path + "-wal"
+        if os.path.exists(wal) and os.path.getsize(wal) > 0:
+            raise
+        conn = sqlite3.connect(uri + "&immutable=1", uri=True, timeout=1.0)
+        conn.execute("SELECT 1")
+        return conn
+
+
+# ---------- Lightweight Protobuf Wire Decoder (for Antigravity) ----------
+
+def _decode_varint(buf: bytes, pos: int) -> tuple[int, int]:
+    result = 0
+    shift = 0
+    n = len(buf)
+    while pos < n:
+        b = buf[pos]
+        pos += 1
+        result |= (b & 0x7F) << shift
+        if not (b & 0x80):
+            return result, pos
+        shift += 7
+        if shift > 70:
+            break
+    return result, pos
+
+
+def _parse_proto(buf: bytes):
+    pos = 0
+    n = len(buf)
+    while pos < n:
+        tag, pos = _decode_varint(buf, pos)
+        field_num = tag >> 3
+        wire_type = tag & 0x07
+        if field_num == 0:
+            break
+        if wire_type == 0:
+            val, pos = _decode_varint(buf, pos)
+            yield field_num, 0, val
+        elif wire_type == 1:
+            if pos + 8 > n:
+                break
+            yield field_num, 1, buf[pos : pos + 8]
+            pos += 8
+        elif wire_type == 2:
+            length, pos = _decode_varint(buf, pos)
+            if length < 0 or pos + length > n:
+                break
+            yield field_num, 2, buf[pos : pos + length]
+            pos += length
+        elif wire_type == 5:
+            if pos + 4 > n:
+                break
+            yield field_num, 5, buf[pos : pos + 4]
+            pos += 4
+        else:
+            break
+
+
+def _proto_duration(buf: bytes) -> float | None:
+    sec = 0
+    nanos = 0
+    for fn, wt, val in _parse_proto(buf):
+        if wt != 0:
+            continue
+        if fn == 1:
+            sec = val if val < (1 << 63) else val - (1 << 64)
+        elif fn == 2:
+            nanos = val if val < (1 << 63) else val - (1 << 64)
+    total = sec + nanos / 1e9
+    return total if 0.0 <= total <= 86400.0 else None
+
+
+def _ag_parse_gen_record(blob: bytes, fallback_ts: float) -> dict[str, Any] | None:
+    model = None
+    inp = out = cached = thoughts = 0
+    response = None
+    ts_sec = None
+    ttft = stream = None
+    min_ts = 1_577_836_800  # 2020-01-01
+    max_ts = 2_208_988_800  # 2040-01-01
+
+    for fn, wt, val in _parse_proto(blob):
+        if fn == 11 and wt == 2:
+            ttft = _proto_duration(val)
+        elif fn == 12 and wt == 2:
+            stream = _proto_duration(val)
+        elif fn == 19 and wt == 2:
+            try:
+                model = val.decode("utf-8")
+            except UnicodeDecodeError:
+                pass
+        elif fn == 4 and wt == 2:
+            for tfn, twt, tval in _parse_proto(val):
+                if twt != 0:
+                    continue
+                if tfn == 2:
+                    inp = tval
+                elif tfn == 3:
+                    out = tval
+                elif tfn == 5:
+                    cached = tval
+                elif tfn == 9:
+                    thoughts = tval
+                elif tfn == 10:
+                    response = tval
+        elif fn == 9 and wt == 2:
+            for tfn, twt, tval in _parse_proto(val):
+                if tfn == 4 and twt == 2:
+                    for sfn, swt, sval in _parse_proto(tval):
+                        if sfn == 1 and swt == 0 and min_ts <= sval <= max_ts:
+                            ts_sec = float(sval)
+
+    if ts_sec is None:
+        ts_sec = fallback_ts
+    if not (min_ts <= ts_sec <= max_ts):
+        return None
+    if max(inp, out, cached, thoughts) > 50_000_000:
+        return None
+    if not model or len(model) > 120 or not model.isprintable():
+        model = "unknown"
+    final_out = response if response is not None else max(out - thoughts, 0)
+    if inp == 0 and final_out == 0 and cached == 0 and thoughts == 0:
+        return None
+    return {
+        "ts": ts_sec,
+        "model": nice_model(model),
+        "in": inp,
+        "out": final_out,
+        "cr": cached,
+        "cw": 0,
+        "reason": thoughts,
+        "gen": round(stream, 3) if stream is not None else None,
+        "ttft": round(ttft, 3) if ttft is not None else None,
+    }
+
+
+def _ag_step_ts(meta_blob: bytes | None) -> float | None:
+    if not meta_blob:
+        return None
+    min_ts = 1_577_836_800
+    max_ts = 2_208_988_800
+    for fn, wt, val in _parse_proto(meta_blob):
+        if fn == 1 and wt == 2:
+            for sfn, swt, sval in _parse_proto(val):
+                if sfn == 1 and swt == 0 and min_ts <= sval <= max_ts:
+                    return float(sval)
+    return None
+
+
+def _decode_packed_varints(buf: bytes) -> list[int]:
+    vals: list[int] = []
+    pos = 0
+    n = len(buf)
+    while pos < n:
+        v, pos = _decode_varint(buf, pos)
+        vals.append(v)
+    return vals
+
+
+def parse_antigravity_db(path: str) -> dict[str, Any]:
+    events = []
+    mtime = os.path.getmtime(path)
+    wal_path = path + "-wal"
+    if os.path.exists(wal_path):
+        try:
+            mtime = max(mtime, os.path.getmtime(wal_path))
+        except OSError:
+            pass
+    try:
+        conn = sqlite_open_ro(path)
+    except Exception:
+        return {"events": [], "project": None}
+
+    try:
+        tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        if "gen_metadata" not in tables:
+            return {"events": [], "project": None}
+
+        step_ts_map: dict[int, float] = {}
+        if "steps" in tables:
+            try:
+                for idx, meta in conn.execute("SELECT idx, metadata FROM steps WHERE metadata IS NOT NULL"):
+                    ts = _ag_step_ts(meta)
+                    if ts:
+                        step_ts_map[idx] = ts
+            except sqlite3.Error:
+                pass
+
+        for idx, blob in conn.execute("SELECT idx, data FROM gen_metadata WHERE data IS NOT NULL ORDER BY idx"):
+            if not isinstance(blob, (bytes, bytearray)):
+                continue
+            raw_bytes = bytes(blob)
+            # gen_metadata top-level field 2 holds packed step indices referencing steps.idx;
+            # top-level field 1 wraps the generation record(s)
+            step_idxs: list[int] = []
+            sub_records: list[bytes] = []
+            for fn, wt, val in _parse_proto(raw_bytes):
+                if fn == 1 and wt == 2:
+                    sub_records.append(val)
+                elif fn == 2 and wt == 2:
+                    step_idxs.extend(_decode_packed_varints(val))
+                elif fn == 2 and wt == 0:
+                    step_idxs.append(val)
+
+            step_times = [step_ts_map[s] for s in step_idxs if s in step_ts_map]
+            fb = max(step_times) if step_times else step_ts_map.get(idx, mtime)
+            if not sub_records:
+                sub_records = [raw_bytes]
+            for sub in sub_records:
+                rec = _ag_parse_gen_record(sub, fb)
+                if rec:
+                    rec["cost"] = estimate_cost(
+                        rec["model"], rec["in"], rec["out"], rec["cr"], 0, rec["reason"]
+                    )
+                    events.append(rec)
+    except sqlite3.Error:
+        pass
+    finally:
+        conn.close()
+
+    return {"events": events, "project": None}
+
+
+def discover_antigravity_dbs() -> list[str]:
+    patterns = [
+        os.path.join(HOME, ".gemini", "antigravity", "conversations", "*.db"),
+        os.path.join(HOME, ".gemini", "antigravity-cli", "conversations", "*.db"),
+        os.path.join(HOME, ".gemini", "antigravity-ide", "conversations", "*.db"),
+        os.path.join(HOME, ".t3", "userdata", "providers", "antigravity", "*", "antigravity-acp", "conversations", "*.db"),
+    ]
+    by_stem: dict[str, tuple[float, int, str]] = {}
+    for pat in patterns:
+        for p in glob.glob(pat):
+            try:
+                st = os.stat(p)
+            except OSError:
+                continue
+            stem = os.path.basename(p)
+            prev = by_stem.get(stem)
+            if prev is None or (st.st_size, st.st_mtime) > (prev[1], prev[0]):
+                by_stem[stem] = (st.st_mtime, st.st_size, p)
+    return [v[2] for v in by_stem.values()]
+
+
+# ---------- Codex CLI Scanner ----------
+
+_RE_ITEM_STARTED = re.compile(r'"started_at_ms"\s*:\s*(\d+)')
+
+
+def parse_codex_file(path: str) -> dict[str, Any]:
+    events: list[dict[str, Any]] = []
+    project: str | None = None
+    model = "gpt-5"
+    perf_trigger: float | None = None
+    perf_first: float | None = None
+    prev_total_key: tuple[int, int, int, int] | None = None
+    latest_quota: dict[str, Any] | None = None
+    latest_quota_ts: float = 0.0
+
+    try:
+        with open(path, "r", encoding="utf-8", errors="ignore") as f:
+            for line in f:
+                if not line or line[0] != "{":
+                    continue
+                # Fast pre-filter before full JSON parse
+                is_meta = '"session_meta"' in line or '"turn_context"' in line
+                is_token = '"token_count"' in line or '"token_usage_record"' in line
+                is_task = '"task_started"' in line
+                is_item = '"item_completed"' in line and ('"Reasoning"' in line or '"AgentMessage"' in line)
+                if not (is_meta or is_token or is_task or is_item):
+                    continue
+
+                if is_item and not is_token:
+                    m = _RE_ITEM_STARTED.search(line[-300:])
+                    if m:
+                        s_ms = int(m.group(1))
+                        if perf_first is None or s_ms < perf_first:
+                            perf_first = float(s_ms)
+                    continue
+
+                try:
+                    obj = json.loads(line)
+                except Exception:
+                    continue
+
+                typ = obj.get("type")
+                payload = obj.get("payload")
+                if not isinstance(payload, dict):
+                    continue
+                ts = parse_iso_ts(obj.get("timestamp"))
+
+                if typ == "turn_context":
+                    if payload.get("model"):
+                        model = nice_model(payload["model"])
+                    if not project and isinstance(payload.get("cwd"), str):
+                        project = payload["cwd"]
+                elif typ == "session_meta":
+                    if not project and isinstance(payload.get("cwd"), str):
+                        project = payload["cwd"]
+                elif typ == "event_msg":
+                    ptyp = payload.get("type")
+                    if ptyp == "task_started" and ts is not None:
+                        perf_trigger = ts * 1000.0
+                        perf_first = None
+                    elif ptyp == "token_count":
+                        rl = payload.get("rate_limits")
+                        if isinstance(rl, dict) and ts and ts > latest_quota_ts:
+                            latest_quota_ts = ts
+                            latest_quota = {
+                                "ts": ts,
+                                "plan": rl.get("plan_type"),
+                                "primary": rl.get("primary"),
+                                "secondary": rl.get("secondary"),
+                            }
+                        info = payload.get("info") or {}
+                        tot = info.get("total_token_usage") or {}
+                        last = info.get("last_token_usage") or {}
+                        if not isinstance(last, dict) or not ts:
+                            continue
+                        tkey = (
+                            int(tot.get("input_tokens", 0) or 0),
+                            int(tot.get("cached_input_tokens", 0) or 0),
+                            int(tot.get("output_tokens", 0) or 0),
+                            int(tot.get("reasoning_output_tokens", 0) or 0),
+                        )
+                        if prev_total_key is not None and tkey == prev_total_key and any(tkey):
+                            continue
+                        prev_total_key = tkey
+
+                        li = int(last.get("input_tokens", 0) or 0)
+                        lc = int(last.get("cached_input_tokens", 0) or 0)
+                        lo = int(last.get("output_tokens", 0) or 0)
+                        lr = int(last.get("reasoning_output_tokens", 0) or 0)
+                        if not (li or lc or lo or lr):
+                            continue
+                        non_cached_in = max(li - lc, 0)
+                        end_ms = ts * 1000.0
+                        gen = ttft = None
+                        if perf_first is not None and end_ms > perf_first:
+                            gen = round((end_ms - perf_first) / 1000.0, 3)
+                            if perf_trigger is not None and perf_first >= perf_trigger:
+                                ttft = round((perf_first - perf_trigger) / 1000.0, 3)
+                        elif perf_trigger is not None and end_ms > perf_trigger:
+                            gen = round((end_ms - perf_trigger) / 1000.0, 3)
+
+                        events.append({
+                            "ts": ts,
+                            "model": model,
+                            "in": non_cached_in,
+                            "out": lo,
+                            "cr": lc,
+                            "cw": int(last.get("cache_write_input_tokens", 0) or 0),
+                            "reason": lr,
+                            "gen": gen,
+                            "ttft": ttft,
+                            "cost": estimate_cost(model, non_cached_in, lo, lc, 0, 0),
+                        })
+                        perf_trigger = None
+                        perf_first = None
+    except OSError:
+        pass
+
+    return {"events": events, "project": project, "quota": latest_quota}
+
+
+# ---------- OpenCode SQLite Scanner ----------
+
+def parse_opencode_db(path: str) -> dict[str, Any]:
+    events: list[dict[str, Any]] = []
+    session_projects: dict[str, str] = {}
+    if not os.path.exists(path):
+        return {"events": [], "projects_by_session": {}}
+    try:
+        conn = sqlite_open_ro(path)
+    except Exception:
+        return {"events": [], "projects_by_session": {}}
+
+    try:
+        tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        for tbl in ("session", "session_v2"):
+            if tbl in tables:
+                cols = {r[1] for r in conn.execute(f"PRAGMA table_info({tbl})")}
+                if {"id", "directory"} <= cols:
+                    for sid, d in conn.execute(f"SELECT id, directory FROM {tbl}"):
+                        if isinstance(d, str) and d.startswith("/"):
+                            session_projects.setdefault(sid, d)
+
+        if "message" not in tables or "part" not in tables:
+            return {"events": [], "projects_by_session": session_projects}
+
+        msg_meta: dict[str, tuple[str, str, float, str | None]] = {}
+        for mid, sid, t_created, raw in conn.execute(
+            "SELECT id, session_id, time_created, data FROM message "
+            "WHERE json_extract(data, '$.role') = 'assistant'"
+        ):
+            try:
+                d = json.loads(raw)
+            except Exception:
+                continue
+            model = nice_model(d.get("modelID") or (d.get("model") or {}).get("id"))
+            created_ms = (d.get("time") or {}).get("created") or t_created or 0
+            cwd = (d.get("path") or {}).get("cwd") or session_projects.get(sid)
+            msg_meta[mid] = (sid, model, float(created_ms), cwd)
+
+        # Stream parts ordered by message_id, time_created to compute step timing & usage
+        rows = conn.execute(
+            """
+            SELECT message_id, time_created,
+                   json_extract(data, '$.type'),
+                   json_extract(data, '$.time.start'),
+                   json_extract(data, '$.tokens.input'),
+                   json_extract(data, '$.tokens.output'),
+                   json_extract(data, '$.tokens.reasoning'),
+                   json_extract(data, '$.tokens.cache.read'),
+                   json_extract(data, '$.tokens.cache.write'),
+                   json_extract(data, '$.cost')
+            FROM part
+            WHERE json_extract(data, '$.type') IN ('step-start', 'step-finish', 'reasoning', 'text')
+            ORDER BY message_id, time_created
+            """
+        ).fetchall()
+
+        cur_mid = None
+        req_start: float | None = None
+        first_tok: float | None = None
+
+        for mid, written_ms, kind, start_ms, tin, tout, treas, tcr, tcw, cost in rows:
+            meta = msg_meta.get(mid)
+            if not meta:
+                continue
+            sid, model, created_ms, cwd = meta
+            if mid != cur_mid:
+                cur_mid = mid
+                req_start = created_ms
+                first_tok = None
+
+            if kind == "step-start":
+                first_tok = None
+            elif kind in ("reasoning", "text"):
+                t = start_ms if isinstance(start_ms, (int, float)) else written_ms
+                if isinstance(t, (int, float)) and (first_tok is None or t < first_tok):
+                    first_tok = float(t)
+            elif kind == "step-finish" and isinstance(written_ms, (int, float)):
+                inp = int(tin or 0)
+                out = int(tout or 0)
+                reas = int(treas or 0)
+                cr = int(tcr or 0)
+                cw = int(tcw or 0)
+                gen = ttft = None
+                if first_tok is not None and written_ms > first_tok:
+                    gen = round((written_ms - first_tok) / 1000.0, 3)
+                    if req_start is not None and first_tok >= req_start:
+                        ttft = round((first_tok - req_start) / 1000.0, 3)
+                elif req_start is not None and written_ms > req_start:
+                    gen = round((written_ms - req_start) / 1000.0, 3)
+
+                native_cost = float(cost) if isinstance(cost, (int, float)) and cost > 0 else None
+                if inp or out or cr or cw or reas:
+                    ev_oc = {
+                        "ts": float(written_ms) / 1000.0,
+                        "model": model,
+                        "in": inp,
+                        "out": out + reas,
+                        "cr": cr,
+                        "cw": cw,
+                        "reason": reas,
+                        "gen": gen,
+                        "ttft": ttft,
+                        "cost": native_cost or 0.0,
+                        "project": cwd,
+                        "session": sid,
+                    }
+                    if native_cost is not None:
+                        ev_oc["native_cost"] = native_cost
+                    events.append(ev_oc)
+                req_start = float(written_ms)
+                first_tok = None
+    except sqlite3.Error:
+        pass
+    finally:
+        conn.close()
+
+    return {"events": events}
+
+
+# ---------- Claude Code JSONL Scanner ----------
+
+def parse_claude_file(path: str) -> dict[str, Any]:
+    events: list[dict[str, Any]] = []
+    when: dict[str, float] = {}
+    via: dict[str, str] = {}
+    raw_entries: list[dict[str, Any]] = []
+    project: str | None = None
+
+    try:
+        with open(path, "r", encoding="utf-8", errors="ignore") as f:
+            for line in f:
+                if not line or line[0] != "{":
+                    continue
+                try:
+                    obj = json.loads(line)
+                except Exception:
+                    continue
+                uid = obj.get("uuid")
+                ts = parse_iso_ts(obj.get("timestamp"))
+                p_uid = obj.get("parentUuid")
+                if not project and isinstance(obj.get("cwd"), str):
+                    project = obj["cwd"]
+                if obj.get("type") == "attachment" and uid and p_uid:
+                    via[uid] = p_uid
+                    continue
+                if uid and ts is not None:
+                    when[uid] = ts
+
+                msg = obj.get("message")
+                if not isinstance(msg, dict):
+                    continue
+                usage = msg.get("usage")
+                if not isinstance(usage, dict) or ts is None:
+                    continue
+                model = nice_model(msg.get("model"))
+                inp = int(usage.get("input_tokens", 0) or 0)
+                out = int(usage.get("output_tokens", 0) or 0)
+                cr = int(usage.get("cache_read_input_tokens", 0) or 0)
+                cw = int(usage.get("cache_creation_input_tokens", 0) or 0)
+                if not (inp or out or cr or cw):
+                    continue
+                think_ms = obj.get("thinkingDurationMs")
+                req_key = obj.get("requestId") or msg.get("id") or uid
+                raw_entries.append({
+                    "req_key": req_key,
+                    "ts": ts,
+                    "parent": p_uid,
+                    "think_ms": think_ms,
+                    "model": model,
+                    "in": inp,
+                    "out": out,
+                    "cr": cr,
+                    "cw": cw,
+                })
+    except OSError:
+        return {"events": [], "project": None}
+
+    # Group by requestId to deduplicate streaming snapshots & compute timing
+    by_req: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for e in raw_entries:
+        by_req[str(e["req_key"])].append(e)
+
+    def find_start(parent_id: str | None) -> float | None:
+        cur = parent_id
+        for _ in range(32):
+            if not cur:
+                return None
+            if cur in when:
+                return when[cur]
+            cur = via.get(cur)
+        return None
+
+    for grp in by_req.values():
+        last = grp[-1]
+        end = max(x["ts"] for x in grp)
+        first = None
+        for x in grp:
+            if x.get("think_ms"):
+                first = x["ts"] - float(x["think_ms"]) / 1000.0
+                break
+        start = find_start(grp[0].get("parent"))
+        gen = ttft = None
+        if first is not None and end > first:
+            gen = round(end - first, 3)
+            if start is not None and first >= start:
+                ttft = round(first - start, 3)
+        elif start is not None and end > start:
+            gen = round(end - start, 3)
+
+        events.append({
+            "ts": end,
+            "model": last["model"],
+            "in": last["in"],
+            "out": last["out"],
+            "cr": last["cr"],
+            "cw": last["cw"],
+            "reason": 0,
+            "gen": gen,
+            "ttft": ttft,
+            "cost": estimate_cost(last["model"], last["in"], last["out"], last["cr"], last["cw"]),
+        })
+
+    return {"events": events, "project": project}
+
+
+# ---------- OMP (Oh My Pi) / Pi Coding Agent Scanner ----------
+
+def parse_omp_file(path: str) -> dict[str, Any]:
+    events: list[dict[str, Any]] = []
+    project: str | None = None
+    try:
+        with open(path, "r", encoding="utf-8", errors="ignore") as f:
+            for line in f:
+                if not line or line[0] != "{":
+                    continue
+                if '"type":"session"' in line or '"type": "session"' in line:
+                    try:
+                        obj = json.loads(line)
+                        if isinstance(obj.get("cwd"), str) and obj["cwd"].startswith("/"):
+                            project = obj["cwd"]
+                    except Exception:
+                        pass
+                    continue
+                if '"usage"' not in line:
+                    continue
+                try:
+                    obj = json.loads(line)
+                except Exception:
+                    continue
+                msg = obj.get("message")
+                if not isinstance(msg, dict) or msg.get("role") != "assistant":
+                    continue
+                usage = msg.get("usage")
+                if not isinstance(usage, dict):
+                    continue
+                inp = int(usage.get("input", 0) or 0)
+                out = int(usage.get("output", 0) or 0)
+                cr = int(usage.get("cacheRead", 0) or 0)
+                cw = int(usage.get("cacheWrite", 0) or 0)
+                reas = int(usage.get("reasoning", 0) or 0)
+                if not (inp or out or cr or cw or reas):
+                    continue
+
+                ts = parse_iso_ts(obj.get("timestamp"))
+                if ts is None:
+                    raw_ts = msg.get("completedAt") or msg.get("timestamp")
+                    if isinstance(raw_ts, (int, float)):
+                        ts = raw_ts / 1000.0 if raw_ts > 1e11 else float(raw_ts)
+                if ts is None:
+                    continue
+
+                model = nice_model(msg.get("model"))
+                dur_ms = msg.get("duration") if msg.get("duration") is not None else msg.get("durationMs")
+                ttft_ms = msg.get("ttft") if msg.get("ttft") is not None else msg.get("ttftMs")
+
+                gen = ttft = None
+                try:
+                    d_val = float(dur_ms) if dur_ms is not None else None
+                    t_val = float(ttft_ms) if ttft_ms is not None else None
+                    if t_val is not None and t_val >= 0:
+                        ttft = round(t_val / 1000.0, 3)
+                    if d_val is not None and d_val > 0:
+                        if t_val is not None and d_val > t_val:
+                            gen = round((d_val - t_val) / 1000.0, 3)
+                        else:
+                            gen = round(d_val / 1000.0, 3)
+                except (TypeError, ValueError):
+                    pass
+
+                cost_obj = usage.get("cost")
+                native_cost = None
+                native_parts = None
+                if isinstance(cost_obj, dict) and isinstance(cost_obj.get("total"), (int, float)) and cost_obj["total"] > 0:
+                    native_cost = float(cost_obj["total"])
+                    native_parts = {
+                        "in": float(cost_obj.get("input") or 0.0),
+                        "out": float(cost_obj.get("output") or 0.0),
+                        "cr": float(cost_obj.get("cacheRead") or 0.0),
+                        "cw": float(cost_obj.get("cacheWrite") or 0.0),
+                    }
+
+                ev_dict = {
+                    "ts": ts,
+                    "model": model,
+                    "in": inp,
+                    "out": out + reas,
+                    "cr": cr,
+                    "cw": cw,
+                    "reason": reas,
+                    "gen": gen,
+                    "ttft": ttft,
+                    "cost": native_cost or 0.0,
+                }
+                if native_cost is not None:
+                    ev_dict["native_cost"] = native_cost
+                if native_parts is not None:
+                    ev_dict["native_cost_parts"] = native_parts
+                events.append(ev_dict)
+    except OSError:
+        pass
+
+    return {"events": events, "project": project}
+
+
+def discover_omp_files() -> list[str]:
+    roots = [
+        os.path.join(HOME, ".omp", "agent", "sessions"),
+        os.path.join(HOME, ".pi", "agent", "sessions"),
+    ]
+    by_name: dict[str, tuple[float, int, str]] = {}
+    for root in roots:
+        if not os.path.isdir(root):
+            continue
+        for p in glob.glob(os.path.join(root, "**", "*.jsonl"), recursive=True):
+            try:
+                st = os.stat(p)
+            except OSError:
+                continue
+            name = os.path.basename(p)
+            prev = by_name.get(name)
+            if prev is None or (st.st_size, st.st_mtime) > (prev[1], prev[0]):
+                by_name[name] = (st.st_mtime, st.st_size, p)
+    return [v[2] for v in by_name.values()]
+
+
+# ---------- Devin CLI SQLite Scanner ----------
+
+def parse_devin_db(path: str) -> dict[str, Any]:
+    events: list[dict[str, Any]] = []
+    if not os.path.exists(path):
+        return {"events": []}
+    try:
+        conn = sqlite_open_ro(path)
+    except Exception:
+        return {"events": []}
+
+    try:
+        tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        if "message_nodes" not in tables or "sessions" not in tables:
+            return {"events": []}
+
+        sess_info: dict[str, tuple[str, str | None]] = {}
+        for sid, model, wd in conn.execute("SELECT id, model, working_directory FROM sessions"):
+            sess_info[sid] = (nice_model(model), wd if isinstance(wd, str) and wd.startswith("/") else None)
+
+        seen_keys: set[str] = set()
+        rows = conn.execute(
+            """
+            SELECT session_id, created_at,
+                   json_extract(chat_message, '$.message_id'),
+                   json_extract(chat_message, '$.metadata.request_id'),
+                   json_extract(chat_message, '$.metadata.model'),
+                   json_extract(chat_message, '$.metadata.metrics')
+            FROM message_nodes
+            WHERE json_extract(chat_message, '$.role') = 'assistant'
+              AND json_extract(chat_message, '$.metadata.metrics') IS NOT NULL
+            ORDER BY row_id
+            """
+        )
+        for sid, created_at, mid, req_id, msg_model, metrics_raw in rows:
+            dedupe = f"{sid}:{req_id or mid}"
+            if dedupe in seen_keys:
+                continue
+            seen_keys.add(dedupe)
+            try:
+                m = json.loads(metrics_raw) if isinstance(metrics_raw, str) else metrics_raw
+            except Exception:
+                continue
+            if not isinstance(m, dict):
+                continue
+            inp = int(m.get("input_tokens") or 0)
+            out = int(m.get("output_tokens") or 0)
+            cr = int(m.get("cache_read_tokens") or 0)
+            cw = int(m.get("cache_creation_tokens") or 0)
+            if not (inp or out or cr or cw):
+                continue
+            s_model, wd = sess_info.get(sid, ("unknown", None))
+            model = nice_model(msg_model) if msg_model else s_model
+            ts = float(created_at) if isinstance(created_at, (int, float)) else 0.0
+            if ts > 1e11:
+                ts /= 1000.0
+            if ts <= 0:
+                continue
+
+            ttft_ms = m.get("ttft_ms")
+            tot_ms = m.get("total_time_ms")
+            gen = ttft = None
+            try:
+                t_val = float(ttft_ms) if ttft_ms is not None else None
+                d_val = float(tot_ms) if tot_ms is not None else None
+                if t_val is not None and t_val >= 0:
+                    ttft = round(t_val / 1000.0, 3)
+                if d_val is not None and d_val > 0:
+                    if t_val is not None and d_val > t_val:
+                        gen = round((d_val - t_val) / 1000.0, 3)
+                    else:
+                        gen = round(d_val / 1000.0, 3)
+            except (TypeError, ValueError):
+                pass
+
+            events.append({
+                "ts": ts,
+                "model": model,
+                "in": inp,
+                "out": out,
+                "cr": cr,
+                "cw": cw,
+                "reason": 0,
+                "gen": gen,
+                "ttft": ttft,
+                "cost": estimate_cost(model, inp, out, cr, cw),
+                "project": wd,
+                "session": sid,
+            })
+    except sqlite3.Error:
+        pass
+    finally:
+        conn.close()
+
+    return {"events": events}
+
+
+# ---------- GitHub Copilot CLI Scanner ----------
+
+def parse_copilot_file(path: str) -> dict[str, Any]:
+    events: list[dict[str, Any]] = []
+    project: str | None = None
+    try:
+        with open(path, "r", encoding="utf-8", errors="ignore") as f:
+            for line in f:
+                if not line or line[0] != "{":
+                    continue
+                if '"session.usage_record"' not in line and '"session.start"' not in line:
+                    continue
+                try:
+                    obj = json.loads(line)
+                except Exception:
+                    continue
+                typ = obj.get("type")
+                data = obj.get("data") or {}
+                if not isinstance(data, dict):
+                    continue
+                if typ == "session.start":
+                    cwd = (data.get("context") or {}).get("cwd") or data.get("cwd")
+                    if isinstance(cwd, str) and cwd.startswith("/"):
+                        project = cwd
+                    continue
+                if typ != "session.usage_record":
+                    continue
+                u = data.get("usage")
+                if not isinstance(u, dict):
+                    continue
+                ts = parse_iso_ts(obj.get("timestamp"))
+                if ts is None:
+                    ts = os.path.getmtime(path)
+                inp = int(u.get("inputTokens") or 0)
+                out = int(u.get("outputTokens") or 0)
+                cr = int(u.get("cacheReadTokens") or 0)
+                cw = int(u.get("cacheWriteTokens") or 0)
+                reas = int(u.get("reasoningTokens") or 0)
+                if not (inp or out or cr or cw or reas):
+                    continue
+                model = nice_model(u.get("model") or u.get("modelDisplayName"))
+                dur_ms = u.get("duration")
+                ttft_ms = u.get("timeToFirstTokenMs")
+                gen = ttft = None
+                try:
+                    t_val = float(ttft_ms) if ttft_ms is not None else None
+                    d_val = float(dur_ms) if dur_ms is not None else None
+                    if t_val is not None and t_val >= 0:
+                        ttft = round(t_val / 1000.0, 3)
+                    if d_val is not None and d_val > 0:
+                        if t_val is not None and d_val > t_val:
+                            gen = round((d_val - t_val) / 1000.0, 3)
+                        else:
+                            gen = round(d_val / 1000.0, 3)
+                except (TypeError, ValueError):
+                    pass
+
+                events.append({
+                    "ts": ts,
+                    "model": model,
+                    "in": inp,
+                    "out": out + reas,
+                    "cr": cr,
+                    "cw": cw,
+                    "reason": reas,
+                    "gen": gen,
+                    "ttft": ttft,
+                    "cost": estimate_cost(model, inp, out, cr, cw, reas),
+                })
+    except OSError:
+        pass
+    return {"events": events, "project": project}
+
+
+# ---------- Factory Droid Scanner ----------
+
+def parse_droid_settings(path: str) -> dict[str, Any]:
+    try:
+        with open(path, "r", encoding="utf-8", errors="ignore") as f:
+            d = json.load(f)
+    except Exception:
+        return {"events": [], "project": None}
+    if not isinstance(d, dict):
+        return {"events": [], "project": None}
+    tu = d.get("tokenUsage")
+    if not isinstance(tu, dict):
+        return {"events": [], "project": None}
+    inp = int(tu.get("inputTokens") or 0)
+    out = int(tu.get("outputTokens") or 0)
+    cr = int(tu.get("cacheReadTokens") or 0)
+    cw = int(tu.get("cacheCreationTokens") or 0)
+    reas = int(tu.get("thinkingTokens") or 0)
+    if not (inp or out or cr or cw or reas):
+        return {"events": [], "project": None}
+    model = nice_model(d.get("model") or d.get("toolExecutionModeModelId"))
+    ts = os.path.getmtime(path)
+    active_ms = d.get("assistantActiveTimeMs")
+    gen = None
+    if isinstance(active_ms, (int, float)) and active_ms > 200:
+        gen = round(float(active_ms) / 1000.0, 3)
+    # Try to recover project path from parent folder like -Users-username-...
+    parent = os.path.basename(os.path.dirname(path))
+    project = None
+    if parent.startswith("-Users-"):
+        cand = "/" + parent.lstrip("-").replace("-", "/")
+        if os.path.isdir(cand):
+            project = cand
+    return {
+        "events": [{
+            "ts": ts,
+            "model": model,
+            "in": inp,
+            "out": out + reas,
+            "cr": cr,
+            "cw": cw,
+            "reason": reas,
+            "gen": gen,
+            "ttft": None,
+            "cost": estimate_cost(model, inp, out, cr, cw, reas),
+        }],
+        "project": project,
+    }
+
+
+# ---------- Grok CLI Scanner ----------
+
+def parse_grok_log(path: str) -> dict[str, Any]:
+    events: list[dict[str, Any]] = []
+    try:
+        with open(path, "r", encoding="utf-8", errors="ignore") as f:
+            for line in f:
+                if "shell.turn.inference_done" not in line:
+                    continue
+                try:
+                    obj = json.loads(line)
+                except Exception:
+                    continue
+                ctx = obj.get("ctx")
+                if not isinstance(ctx, dict):
+                    continue
+                ts = parse_iso_ts(obj.get("ts"))
+                if ts is None:
+                    continue
+                prompt = int(ctx.get("prompt_tokens") or 0)
+                cr = int(ctx.get("cached_prompt_tokens") or 0)
+                inp = max(prompt - cr, 0)
+                comp = int(ctx.get("completion_tokens") or 0)
+                reas = int(ctx.get("reasoning_tokens") or 0)
+                if not (inp or comp or cr or reas):
+                    continue
+                model = nice_model(ctx.get("model") or "grok-code")
+                elap_ms = ctx.get("model_elapsed_ms")
+                ttft_ms = ctx.get("ttft_ms")
+                gen = ttft = None
+                try:
+                    t_val = float(ttft_ms) if ttft_ms is not None else None
+                    d_val = float(elap_ms) if elap_ms is not None else None
+                    if t_val is not None and t_val >= 0:
+                        ttft = round(t_val / 1000.0, 3)
+                    if d_val is not None and d_val > 0:
+                        if t_val is not None and d_val > t_val:
+                            gen = round((d_val - t_val) / 1000.0, 3)
+                        else:
+                            gen = round(d_val / 1000.0, 3)
+                except (TypeError, ValueError):
+                    pass
+                events.append({
+                    "ts": ts,
+                    "model": model,
+                    "in": inp,
+                    "out": comp,
+                    "cr": cr,
+                    "cw": 0,
+                    "reason": reas,
+                    "gen": gen,
+                    "ttft": ttft,
+                    "cost": estimate_cost(model, inp, comp, cr, 0, 0),
+                    "session": obj.get("sid") or "grok",
+                })
+    except OSError:
+        pass
+    return {"events": events, "project": None}
+
+
+# ---------- Hermes SQLite Scanner ----------
+
+def parse_hermes_db(path: str) -> dict[str, Any]:
+    events: list[dict[str, Any]] = []
+    if not os.path.exists(path):
+        return {"events": []}
+    try:
+        conn = sqlite_open_ro(path)
+    except Exception:
+        return {"events": []}
+    try:
+        tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        if "sessions" not in tables:
+            return {"events": []}
+        cols = {r[1] for r in conn.execute("PRAGMA table_info(sessions)")}
+        if not {"id", "input_tokens", "output_tokens"} <= cols:
+            return {"events": []}
+        for row in conn.execute(
+            """
+            SELECT id, model, started_at, last_activity_at,
+                   input_tokens, output_tokens, cache_read_tokens,
+                   cache_write_tokens, reasoning_tokens,
+                   actual_cost_usd, estimated_cost_usd, cwd
+            FROM sessions
+            """
+        ):
+            sid, model, started, last_act, inp, out, cr, cw, reas, act_c, est_c, cwd = row
+            inp = int(inp or 0); out = int(out or 0)
+            cr = int(cr or 0); cw = int(cw or 0); reas = int(reas or 0)
+            if not (inp or out or cr or cw or reas):
+                continue
+            ts = float(last_act or started or 0)
+            if ts <= 0:
+                continue
+            m = nice_model(model)
+            cost = float(act_c or est_c or 0.0) or estimate_cost(m, inp, out, cr, cw, reas)
+            events.append({
+                "ts": ts,
+                "model": m,
+                "in": inp,
+                "out": out + reas,
+                "cr": cr,
+                "cw": cw,
+                "reason": reas,
+                "gen": None,
+                "ttft": None,
+                "cost": cost,
+                "project": cwd if isinstance(cwd, str) and cwd.startswith("/") else None,
+                "session": sid,
+            })
+    except sqlite3.Error:
+        pass
+    finally:
+        conn.close()
+    return {"events": events}
+
+
+# ---------- Kimi Code Wire JSONL Scanner ----------
+
+def parse_kimi_wire(path: str) -> dict[str, Any]:
+    events: list[dict[str, Any]] = []
+    try:
+        with open(path, "r", encoding="utf-8", errors="ignore") as f:
+            for line in f:
+                if "token_usage" not in line and "TokenUsage" not in line:
+                    continue
+                try:
+                    obj = json.loads(line)
+                except Exception:
+                    continue
+                payload = obj.get("payload") or obj.get("message") or obj
+                if not isinstance(payload, dict):
+                    continue
+                tu = payload.get("token_usage") or payload.get("usage")
+                if not isinstance(tu, dict):
+                    continue
+                inp = int(tu.get("input_other") or tu.get("input_tokens") or tu.get("input") or 0)
+                out = int(tu.get("output") or tu.get("output_tokens") or 0)
+                cr = int(tu.get("input_cache_read") or tu.get("cache_read_tokens") or 0)
+                cw = int(tu.get("input_cache_creation") or tu.get("cache_write_tokens") or 0)
+                if not (inp or out or cr or cw):
+                    continue
+                ts = obj.get("timestamp")
+                if isinstance(ts, str):
+                    ts = parse_iso_ts(ts)
+                elif isinstance(ts, (int, float)):
+                    ts = ts / 1000.0 if ts > 1e11 else float(ts)
+                else:
+                    ts = os.path.getmtime(path)
+                model = nice_model(payload.get("model") or "kimi-k2")
+                events.append({
+                    "ts": ts,
+                    "model": model,
+                    "in": inp,
+                    "out": out,
+                    "cr": cr,
+                    "cw": cw,
+                    "reason": 0,
+                    "gen": None,
+                    "ttft": None,
+                    "cost": estimate_cost(model, inp, out, cr, cw),
+                })
+    except OSError:
+        pass
+    return {"events": events, "project": None}
+
+
+# ---------- Cline / Roo Code VS Code Storage Scanner ----------
+
+def parse_cline_ui_messages(path: str) -> dict[str, Any]:
+    events: list[dict[str, Any]] = []
+    try:
+        with open(path, "r", encoding="utf-8", errors="ignore") as f:
+            rows = json.load(f)
+    except Exception:
+        return {"events": [], "project": None}
+    if not isinstance(rows, list):
+        return {"events": [], "project": None}
+    for row in rows:
+        if not isinstance(row, dict) or row.get("say") != "api_req_started":
+            continue
+        txt = row.get("text")
+        if not isinstance(txt, str):
+            continue
+        try:
+            meta = json.loads(txt)
+        except Exception:
+            continue
+        if not isinstance(meta, dict):
+            continue
+        inp = int(meta.get("tokensIn") or 0)
+        out = int(meta.get("tokensOut") or 0)
+        cr = int(meta.get("cacheReads") or 0)
+        cw = int(meta.get("cacheWrites") or 0)
+        if not (inp or out or cr or cw):
+            continue
+        ts_raw = row.get("ts")
+        ts = float(ts_raw) / 1000.0 if isinstance(ts_raw, (int, float)) and ts_raw > 1e11 else os.path.getmtime(path)
+        model = nice_model(meta.get("apiProtocol") or meta.get("model") or "cline")
+        cost = float(meta.get("cost") or 0.0) or estimate_cost(model, inp, out, cr, cw)
+        events.append({
+            "ts": ts,
+            "model": model,
+            "in": inp,
+            "out": out,
+            "cr": cr,
+            "cw": cw,
+            "reason": 0,
+            "gen": None,
+            "ttft": None,
+            "cost": cost,
+        })
+    return {"events": events, "project": None}
+
+
+# ---------- Gemini CLI Scanner ----------
+
+def parse_gemini_chat(path: str) -> dict[str, Any]:
+    events: list[dict[str, Any]] = []
+    messages: list[dict[str, Any]] = []
+    try:
+        if path.endswith(".json"):
+            with open(path, "r", encoding="utf-8", errors="ignore") as f:
+                data = json.load(f)
+            if isinstance(data, dict) and isinstance(data.get("messages"), list):
+                messages = data["messages"]
+        else:
+            with open(path, "r", encoding="utf-8", errors="ignore") as f:
+                for line in f:
+                    try:
+                        obj = json.loads(line)
+                        if isinstance(obj, dict) and obj.get("type") == "gemini":
+                            messages.append(obj)
+                    except Exception:
+                        continue
+    except Exception:
+        return {"events": [], "project": None}
+
+    prev_user_ts: float | None = None
+    for m in messages:
+        if not isinstance(m, dict):
+            continue
+        ts = parse_iso_ts(m.get("timestamp"))
+        if m.get("type") == "user" and ts is not None:
+            prev_user_ts = ts
+            continue
+        if m.get("type") != "gemini" or not isinstance(m.get("tokens"), dict) or ts is None:
+            continue
+        tk = m["tokens"]
+        inp = int(tk.get("input", 0) or 0)
+        out = int(tk.get("output", 0) or 0)
+        cr = int(tk.get("cached", 0) or 0)
+        reas = int(tk.get("thoughts", 0) or 0)
+        model = nice_model(m.get("model"))
+        gen = round(ts - prev_user_ts, 3) if (prev_user_ts and ts > prev_user_ts) else None
+        prev_user_ts = None
+        if inp or out or cr or reas:
+            events.append({
+                "ts": ts,
+                "model": model,
+                "in": inp,
+                "out": out,
+                "cr": cr,
+                "cw": 0,
+                "reason": reas,
+                "gen": gen,
+                "ttft": None,
+                "cost": estimate_cost(model, inp, out, cr, 0, reas),
+            })
+    return {"events": events, "project": None}
+
+
+# ---------- Incremental Cache & Orchestrator ----------
+
+def _cleanup_legacy_caches() -> None:
+    for v in (1, 2, 3, 4):
+        old = os.path.join(CACHE_DIR, f"scan_cache_v{v}.json")
+        if os.path.exists(old):
+            try:
+                os.remove(old)
+            except OSError:
+                pass
+
+
+def _load_cache() -> dict[str, Any]:
+    _cleanup_legacy_caches()
+    try:
+        with open(CACHE_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            if isinstance(data, dict) and data.get("version") == 1:
+                return data
+    except Exception:
+        pass
+    return {"version": 1, "files": {}}
+
+
+def _save_cache(cache: dict[str, Any]) -> None:
+    try:
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        tmp = CACHE_FILE + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(cache, f, separators=(",", ":"))
+        os.replace(tmp, CACHE_FILE)
+    except OSError:
+        pass
+
+
+def _file_sig(path: str) -> list[int | float]:
+    st = os.stat(path)
+    # Also consider WAL mtime/size for SQLite DBs
+    wal = path + "-wal"
+    w_mtime = 0.0
+    w_size = 0
+    if os.path.exists(wal):
+        try:
+            wst = os.stat(wal)
+            w_mtime = wst.st_mtime
+            w_size = wst.st_size
+        except OSError:
+            pass
+    return [round(st.st_mtime, 2), st.st_size, round(w_mtime, 2), w_size]
+
+
+_SCAN_LOCK = threading.Lock()
+_MEM_FILE_CACHE: dict[str, Any] | None = None
+_MEM_SCAN_TS: float = 0.0
+_MEM_SCAN_EVENTS: list[dict[str, Any]] | None = None
+_MEM_SCAN_QUOTAS: dict[str, Any] = {}
+_MEM_OBSERVED_TS: float = -1.0
+_MEM_OBSERVED_RATES: dict[str, dict[str, float]] = {}
+_MEM_SCAN_TTL = 5.0
+_DISK_SAVE_INTERVAL = 120.0
+_LAST_DISK_SAVE_TS: float = 0.0
+_CACHE_NEEDS_SAVE: bool = False
+
+
+def _flush_cache_if_needed(force_disk: bool = False) -> None:
+    global _LAST_DISK_SAVE_TS, _CACHE_NEEDS_SAVE
+    if not _CACHE_NEEDS_SAVE or _MEM_FILE_CACHE is None:
+        return
+    now_m = time.monotonic()
+    if not force_disk and _LAST_DISK_SAVE_TS > 0 and (now_m - _LAST_DISK_SAVE_TS) < _DISK_SAVE_INTERVAL:
+        return
+    _save_cache(_MEM_FILE_CACHE)
+    _LAST_DISK_SAVE_TS = now_m
+    _CACHE_NEEDS_SAVE = False
+
+
+atexit.register(lambda: _flush_cache_if_needed(force_disk=True))
+
+
+def _hydrate_parsed(tool: str, path: str, parsed: dict[str, Any]) -> None:
+    evs = parsed.get("events")
+    if not evs:
+        return
+    # Already hydrated in-place? Skip O(N) loop completely
+    first = evs[0]
+    if "day" in first and "tool" in first and "session" in first:
+        return
+    file_proj = parsed.get("project")
+    session_id = hashlib.md5(path.encode("utf-8")).hexdigest()[:10]
+    for ev in evs:
+        ev["tool"] = tool
+        if "day" not in ev or "hour" not in ev:
+            dk, hr = local_day_hour(ev["ts"])
+            ev["day"] = dk
+            ev["hour"] = hr
+        if not ev.get("project") and file_proj:
+            ev["project"] = file_proj
+        if not ev.get("session"):
+            ev["session"] = session_id
+
+
+def scan_all_events(force: bool = False, rebuild: bool = False) -> tuple[list[dict[str, Any]], dict[str, Any], float]:
+    global _MEM_FILE_CACHE, _MEM_SCAN_TS, _MEM_SCAN_EVENTS, _MEM_SCAN_QUOTAS
+    t0 = time.perf_counter()
+    with _SCAN_LOCK:
+        now_mono = time.monotonic()
+        if (
+            not force
+            and not rebuild
+            and _MEM_SCAN_EVENTS is not None
+            and (now_mono - _MEM_SCAN_TS) < _MEM_SCAN_TTL
+        ):
+            elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 1)
+            return _MEM_SCAN_EVENTS, _MEM_SCAN_QUOTAS, elapsed_ms
+
+        if rebuild:
+            cache: dict[str, Any] = {"version": 1, "files": {}}
+        elif _MEM_FILE_CACHE is not None:
+            cache = _MEM_FILE_CACHE
+        else:
+            cache = _load_cache()
+        fcache: dict[str, Any] = cache.setdefault("files", {})
+        dirty = False
+
+        # Discover all 16 local AI coding agent sources
+        sources: list[tuple[str, str]] = []
+        for p in discover_antigravity_dbs():
+            sources.append(("antigravity", p))
+        for cx_dir in (
+            os.path.join(HOME, ".codex", "sessions"),
+            os.path.join(HOME, ".codex", "archived_sessions"),
+        ):
+            if os.path.isdir(cx_dir):
+                for p in glob.glob(os.path.join(cx_dir, "**", "*.jsonl"), recursive=True):
+                    sources.append(("codex", p))
+        for p in discover_omp_files():
+            sources.append(("omp", p))
+        devin_db = os.path.join(HOME, ".local", "share", "devin", "cli", "sessions.db")
+        if os.path.exists(devin_db):
+            sources.append(("devin", devin_db))
+        qoder_proj = os.path.join(HOME, ".qoder", "projects")
+        if os.path.isdir(qoder_proj):
+            for p in glob.glob(os.path.join(qoder_proj, "**", "*.jsonl"), recursive=True):
+                sources.append(("qoder", p))
+        cop_state = os.path.join(HOME, ".copilot", "session-state")
+        if os.path.isdir(cop_state):
+            for p in glob.glob(os.path.join(cop_state, "**", "events.jsonl"), recursive=True):
+                sources.append(("copilot", p))
+        fac_sess = os.path.join(HOME, ".factory", "sessions")
+        if os.path.isdir(fac_sess):
+            for p in glob.glob(os.path.join(fac_sess, "**", "*.settings.json"), recursive=True):
+                sources.append(("droid", p))
+        grok_logs = os.path.join(HOME, ".grok", "logs")
+        if os.path.isdir(grok_logs):
+            for p in glob.glob(os.path.join(grok_logs, "*.jsonl")):
+                sources.append(("grok", p))
+        oc_db = os.path.join(HOME, ".local", "share", "opencode", "opencode.db")
+        if os.path.exists(oc_db):
+            sources.append(("opencode", oc_db))
+        hermes_db = os.path.join(HOME, ".hermes", "state.db")
+        if os.path.exists(hermes_db):
+            sources.append(("hermes", hermes_db))
+        for root in (
+            os.path.join(HOME, ".claude", "projects"),
+            os.path.join(HOME, ".config", "claude", "projects"),
+        ):
+            if os.path.isdir(root):
+                for p in glob.glob(os.path.join(root, "**", "*.jsonl"), recursive=True):
+                    sources.append(("claude", p))
+        gemini_tmp = os.path.join(HOME, ".gemini", "tmp")
+        if os.path.isdir(gemini_tmp):
+            for pat in ("**/chats/*.json", "**/chats/*.jsonl"):
+                for p in glob.glob(os.path.join(gemini_tmp, pat), recursive=True):
+                    sources.append(("gemini", p))
+        qwen_tmp = os.path.join(HOME, ".qwen", "tmp")
+        if os.path.isdir(qwen_tmp):
+            for pat in ("**/chats/*.json", "**/chats/*.jsonl"):
+                for p in glob.glob(os.path.join(qwen_tmp, pat), recursive=True):
+                    sources.append(("qwencode", p))
+        qwen_proj = os.path.join(HOME, ".qwen", "projects")
+        if os.path.isdir(qwen_proj):
+            for p in glob.glob(os.path.join(qwen_proj, "**", "*.jsonl"), recursive=True):
+                sources.append(("qwencode", p))
+        kimi_sess = os.path.join(HOME, ".kimi", "sessions")
+        if os.path.isdir(kimi_sess):
+            for p in glob.glob(os.path.join(kimi_sess, "**", "wire.jsonl"), recursive=True):
+                sources.append(("kimicode", p))
+        mimo_db = os.path.join(HOME, ".local", "share", "mimocode", "mimocode.db")
+        if os.path.exists(mimo_db):
+            sources.append(("mimocode", mimo_db))
+        for ext_id in ("saoudrizwan.claude-dev", "rooveterinaryinc.roo-cline"):
+            ext_tasks = os.path.join(HOME, "Library", "Application Support", "Code", "User", "globalStorage", ext_id, "tasks")
+            if os.path.isdir(ext_tasks):
+                for p in glob.glob(os.path.join(ext_tasks, "*", "ui_messages.json")):
+                    sources.append(("cline", p))
+
+        global _CACHE_NEEDS_SAVE
+        seen_keys: set[str] = set()
+        valid_sources: list[tuple[str, str, str]] = []
+
+        for tool, path in sources:
+            key = f"{tool}:{path}"
+            seen_keys.add(key)
+            try:
+                sig = _file_sig(path)
+            except OSError:
+                continue
+            valid_sources.append((tool, path, key))
+
+            cached = fcache.get(key)
+            if cached and cached.get("sig") == sig:
+                continue
+
+            if tool == "antigravity":
+                parsed = parse_antigravity_db(path)
+            elif tool == "codex":
+                parsed = parse_codex_file(path)
+            elif tool == "omp":
+                parsed = parse_omp_file(path)
+            elif tool == "devin":
+                parsed = parse_devin_db(path)
+            elif tool == "qoder":
+                parsed = parse_claude_file(path)
+            elif tool == "copilot":
+                parsed = parse_copilot_file(path)
+            elif tool == "droid":
+                parsed = parse_droid_settings(path)
+            elif tool == "grok":
+                parsed = parse_grok_log(path)
+            elif tool in ("opencode", "mimocode"):
+                parsed = parse_opencode_db(path)
+            elif tool == "hermes":
+                parsed = parse_hermes_db(path)
+            elif tool == "claude":
+                parsed = parse_claude_file(path)
+            elif tool == "qwencode":
+                parsed = parse_claude_file(path) if "/projects/" in path else parse_gemini_chat(path)
+            elif tool == "kimicode":
+                parsed = parse_kimi_wire(path)
+            elif tool == "cline":
+                parsed = parse_cline_ui_messages(path)
+            else:
+                parsed = parse_gemini_chat(path)
+            _hydrate_parsed(tool, path, parsed)
+            fcache[key] = {"sig": sig, "data": parsed}
+            dirty = True
+
+        # Prune deleted files from cache
+        stale = [k for k in fcache if k not in seen_keys]
+        for k in stale:
+            del fcache[k]
+            dirty = True
+
+        _MEM_FILE_CACHE = cache
+
+        # Fast path: zero file signatures changed -> reuse in-memory event list directly!
+        if not dirty and _MEM_SCAN_EVENTS is not None:
+            _MEM_SCAN_TS = time.monotonic()
+            _flush_cache_if_needed(force_disk=False)
+            elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 1)
+            return _MEM_SCAN_EVENTS, _MEM_SCAN_QUOTAS, elapsed_ms
+
+        all_events: list[dict[str, Any]] = []
+        quotas: dict[str, Any] = {}
+        for tool, path, key in valid_sources:
+            entry = fcache.get(key)
+            if not entry:
+                continue
+            parsed = entry["data"]
+            _hydrate_parsed(tool, path, parsed)
+            q = parsed.get("quota")
+            if q and isinstance(q, dict):
+                prev_q = quotas.get(tool)
+                if prev_q is None or q.get("ts", 0) > prev_q.get("ts", 0):
+                    quotas[tool] = q
+            evs = parsed.get("events")
+            if evs:
+                all_events.extend(evs)
+
+        if dirty:
+            _CACHE_NEEDS_SAVE = True
+            _flush_cache_if_needed(force_disk=rebuild)
+
+        _MEM_SCAN_EVENTS = all_events
+        _MEM_SCAN_QUOTAS = quotas
+        _MEM_SCAN_TS = time.monotonic()
+
+        elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 1)
+        return all_events, quotas, elapsed_ms
+
+
+# ---------- Antigravity Loopback Quota ----------
+
+_AG_QUOTA_LOCK = threading.Lock()
+_AG_QUOTA_CACHE: dict[str, tuple[float, dict[str, Any]]] = {}
+_AG_SCAN_EMPTY_UNTIL = 0.0
+_AG_QUOTA_TTL = 300.0
+_AG_RETRY_TTL = 90.0
+_AG_MAX_RESPONSE_BYTES = 2 * 1024 * 1024
+_AG_QUOTA_WINDOWS = (
+    ("gemini-5h", "antigravity:gemini_5h", "Gemini 5h", 300),
+    ("gemini-weekly", "antigravity:gemini_7d", "Gemini 周", 10080),
+    ("cg-5h", "antigravity:cg_5h", "C/G 5h", 300),
+    ("cg-weekly", "antigravity:cg_7d", "C/G 周", 10080),
+)
+
+
+def _antigravity_extract_flag(command: str, flag: str) -> str | None:
+    match = re.search(
+        re.escape(flag) + r'''(?:=|\s+)(?:"([^"]*)"|'([^']*)'|([^\s]+))''',
+        command, re.I,
+    )
+    return next((v for v in match.groups() if v is not None), None) if match else None
+
+
+def _antigravity_process_infos(output: str) -> list[dict[str, Any]]:
+    processes = []
+    for line in output.splitlines():
+        match = re.match(r"^\s*(\d+)\s+(.+)$", line)
+        if not match:
+            continue
+        command = match.group(2)
+        lower = command.lower()
+        language_server = re.search(
+            r'(^|[/\\])language(?:_|-)server(?:[_-][a-z0-9]+)*(?:\.exe)?"?(?:\s|$)', lower,
+        )
+        app_match = ("--app_data_dir" in lower and "antigravity" in lower) or any(
+            marker in lower for marker in ("antigravity.app/", "/gemini.app/", "antigravity ide.app/")
+        )
+        cli = re.search(
+            r'(^|[/\\])(antigravity-cli|antigravity_cli|agy)(?:\.exe)?"?(?:\s|[/\\]|$)', lower,
+        )
+        if not (language_server and app_match) and not cli:
+            continue
+        csrf = _antigravity_extract_flag(command, "--csrf_token") or ""
+        if language_server and not csrf:
+            continue
+        raw_port = _antigravity_extract_flag(command, "--extension_server_port") or ""
+        port = int(raw_port) if raw_port.isdecimal() else 0
+        processes.append({
+            "pid": int(match.group(1)),
+            "kind": "ide" if language_server else "cli",
+            "csrf_token": csrf,
+            "extension_port": port if 0 < port <= 65535 else None,
+            "extension_csrf_token": _antigravity_extract_flag(command, "--extension_server_csrf_token"),
+        })
+    return processes
+
+
+def _antigravity_running_processes(force: bool = False) -> list[dict[str, Any]]:
+    global _AG_SCAN_EMPTY_UNTIL
+    if not force and time.monotonic() < _AG_SCAN_EMPTY_UNTIL:
+        return []
+    try:
+        output = subprocess.run(
+            ["/bin/ps", "-u", str(os.getuid()), "-o", "pid=,command="],
+            capture_output=True, text=True, timeout=2, check=False,
+        ).stdout
+    except (OSError, subprocess.SubprocessError):
+        output = ""
+    processes = _antigravity_process_infos(output)
+    _AG_SCAN_EMPTY_UNTIL = 0.0 if processes else time.monotonic() + _AG_RETRY_TTL
+    return processes
+
+
+def _antigravity_endpoints(process: dict[str, Any]) -> list[tuple[str, int, str, bool]]:
+    endpoints = []
+    if process["extension_port"]:
+        for token in (process["extension_csrf_token"], process["csrf_token"]):
+            if token is not None:
+                endpoints.append(("http", process["extension_port"], token, True))
+    lsof = next((path for path in ("/usr/sbin/lsof", "/usr/bin/lsof") if os.access(path, os.X_OK)), None)
+    if lsof:
+        try:
+            result = subprocess.run(
+                [lsof, "-nP", "-iTCP", "-sTCP:LISTEN", "-a", "-p", str(process["pid"])],
+                capture_output=True, text=True, timeout=2, check=False,
+            )
+            ports = sorted({int(p) for p in re.findall(r":(\d+)\s+\(LISTEN\)", result.stdout)})
+            endpoints.extend(("https", port, process["csrf_token"], process["kind"] != "cli") for port in ports)
+        except (OSError, subprocess.SubprocessError):
+            pass
+    return list(dict.fromkeys(endpoints))
+
+
+def _antigravity_request(endpoint: tuple[str, int, str, bool]) -> Any:
+    scheme, port, csrf, requires_csrf = endpoint
+    headers = {
+        "Connect-Protocol-Version": "1",
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
+    if requires_csrf:
+        headers["X-Codeium-Csrf-Token"] = csrf
+    if scheme == "https":
+        # AGY's loopback server uses a self-signed certificate; never follow redirects or proxies.
+        connection = http.client.HTTPSConnection(
+            "127.0.0.1", port, timeout=2, context=ssl._create_unverified_context(),
+        )
+    else:
+        connection = http.client.HTTPConnection("127.0.0.1", port, timeout=2)
+    try:
+        connection.request(
+            "POST", "/exa.language_server_pb.LanguageServerService/RetrieveUserQuotaSummary",
+            body=b'{"forceRefresh":true}', headers=headers,
+        )
+        response = connection.getresponse()
+        if response.status != 200:
+            raise ValueError("AGY quota request failed")
+        body = response.read(_AG_MAX_RESPONSE_BYTES + 1)
+        if len(body) > _AG_MAX_RESPONSE_BYTES:
+            raise ValueError("AGY quota response too large")
+        return json.loads(body)
+    finally:
+        connection.close()
+
+
+def _antigravity_number(value: Any) -> float | None:
+    if isinstance(value, bool) or not isinstance(value, (int, float, str)):
+        return None
+    try:
+        number = float(value)
+    except ValueError:
+        return None
+    return number if math.isfinite(number) else None
+
+
+def _antigravity_remaining(bucket: Any) -> float | None:
+    if not isinstance(bucket, dict):
+        return None
+    raw = bucket.get("remainingFraction")
+    if raw is None and bucket.get("case") == "remainingFraction":
+        raw = bucket.get("value")
+    number = _antigravity_number(raw)
+    return max(0.0, min(1.0, number)) if number is not None else None
+
+
+def _normalize_antigravity_quota_summary(payload: Any) -> dict[str, Any]:
+    if not isinstance(payload, dict):
+        return {}
+    root = payload.get("response") if isinstance(payload.get("response"), dict) else payload
+    groups = root.get("groups")
+    if not isinstance(groups, list):
+        return {}
+    matched = {}
+    for group in groups:
+        if not isinstance(group, dict):
+            continue
+        display = str(group.get("displayName") or "").lower()
+        if "gemini" in display:
+            family = "gemini"
+        elif any(name in display for name in ("claude", "gpt", "third")):
+            family = "cg"
+        else:
+            continue
+        buckets = group.get("buckets")
+        if not isinstance(buckets, list):
+            continue
+        for bucket in buckets:
+            if not isinstance(bucket, dict) or bucket.get("disabled") is True:
+                continue
+            cadence = " ".join(str(bucket.get(key) or "") for key in
+                               ("window", "bucketId", "displayName")).lower().replace("_", "-")
+            if any(marker in cadence for marker in ("weekly", "week", "7d")):
+                window = "weekly"
+            elif any(marker in cadence for marker in ("5h", "5-hour", "five hour", "five-hour", "session")):
+                window = "5h"
+            else:
+                continue
+            matched.setdefault(f"{family}-{window}", bucket)
+    rows = []
+    for bucket_id, key, label, minutes in _AG_QUOTA_WINDOWS:
+        bucket = matched.get(bucket_id, {})
+        remaining = _antigravity_remaining(bucket)
+        if remaining is None:
+            remaining = _antigravity_remaining(bucket.get("remaining"))
+        # Unknown windows must not become the frontend's default 100% remaining.
+        if remaining is None:
+            continue
+        reset = bucket.get("resetTime")
+        reset_ts = _antigravity_number(reset)
+        if reset_ts is None:
+            reset_ts = parse_iso_ts(reset)
+        elif reset_ts > 100_000_000_000:
+            reset_ts /= 1000.0
+        rows.append({
+            "key": key, "label": label,
+            "used_percent": round((1.0 - remaining) * 100.0, 6),
+            "window_minutes": minutes,
+            "resets_at": int(reset_ts) if reset_ts is not None and reset_ts > 0 else None,
+        })
+    return {"source": "provider", "buckets": rows} if rows else {}
+
+
+def fetch_antigravity_quota(force: bool = False) -> dict[str, Any]:
+    with _AG_QUOTA_LOCK:
+        for process in _antigravity_running_processes(force=force):
+            endpoints = _antigravity_endpoints(process)
+            if not endpoints:
+                continue
+            marker = hashlib.sha256(json.dumps(
+                [process["pid"], endpoints], separators=(",", ":"),
+            ).encode()).hexdigest()
+            cached = _AG_QUOTA_CACHE.get(marker)
+            if not force and cached and time.monotonic() < cached[0]:
+                if cached[1]:
+                    return cached[1]
+                continue
+            for endpoint in endpoints:
+                try:
+                    quota = _normalize_antigravity_quota_summary(_antigravity_request(endpoint))
+                except (OSError, http.client.HTTPException, ValueError):
+                    continue
+                if quota:
+                    _AG_QUOTA_CACHE[marker] = (time.monotonic() + _AG_QUOTA_TTL, quota)
+                    return quota
+            _AG_QUOTA_CACHE[marker] = (time.monotonic() + _AG_RETRY_TTL, {})
+    return {}
+
+
+def load_local_quota_configs() -> dict[str, dict[str, Any]]:
+    try:
+        with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+            cfg = json.load(f)
+            lq = cfg.get("local_quotas")
+            if isinstance(lq, dict):
+                return lq
+    except Exception:
+        pass
+    return {}
+
+
+def save_local_quota_config(tool: str, entry: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
+    cfg: dict[str, Any] = {}
+    try:
+        with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+            loaded = json.load(f)
+            if isinstance(loaded, dict):
+                cfg = loaded
+    except Exception:
+        pass
+    lq = cfg.get("local_quotas")
+    if not isinstance(lq, dict):
+        lq = {}
+    if entry is None:
+        lq.pop(tool, None)
+    else:
+        lq[tool] = entry
+    cfg["local_quotas"] = lq
+    os.makedirs(CACHE_DIR, exist_ok=True)
+    tmp = CONFIG_FILE + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(cfg, f, ensure_ascii=False, indent=2)
+    os.replace(tmp, CONFIG_FILE)
+    return lq
+
+
+def _agy_pool(model: str) -> str:
+    m = (model or "").lower()
+    if "gemini" in m:
+        return "gemini"
+    if any(k in m for k in ("claude", "gpt", "opus", "sonnet", "haiku", "o1", "o3", "o4", "codex")):
+        return "cg"
+    return "gemini"
+
+
+def _calc_rolling_bucket(
+    tevs: list[dict[str, Any]],
+    tool: str,
+    win_hours: float,
+    unit: str,
+    custom_limit: float | None,
+    base_floor: int,
+    pricing: PricingEngine,
+    now_ts: float,
+) -> dict[str, Any]:
+    win_sec = win_hours * 3600.0
+    cutoff = now_ts - win_sec
+    used_tokens = 0
+    used_cost = 0.0
+    used_reqs = 0
+    oldest_in_win: float | None = None
+    for ev in tevs:
+        if ev["ts"] >= cutoff:
+            if oldest_in_win is None:
+                oldest_in_win = ev["ts"]
+            used_tokens += ev["in"] + ev["out"] + ev["cr"] + ev["cw"] + ev.get("reason", 0)
+            used_reqs += 1
+            if unit == "cost":
+                c, _ = pricing.cost_for(
+                    ev["model"],
+                    inp=ev["in"],
+                    out=ev["out"],
+                    cache_read=ev["cr"],
+                    cache_write=ev.get("cw", 0),
+                    reasoning=ev.get("reason", 0),
+                    native_cost=ev.get("native_cost"),
+                    bill_reasoning=(tool in ("antigravity", "gemini")),
+                )
+                used_cost += c
+
+    peak_tokens = 0
+    j = 0
+    cur_tok = 0
+    for ev in tevs:
+        cur_tok += ev["in"] + ev["out"] + ev["cr"] + ev["cw"] + ev.get("reason", 0)
+        ts_i = ev["ts"]
+        while j < len(tevs) and tevs[j]["ts"] < ts_i - win_sec:
+            ej = tevs[j]
+            cur_tok -= ej["in"] + ej["out"] + ej["cr"] + ej["cw"] + ej.get("reason", 0)
+            j += 1
+        if cur_tok > peak_tokens:
+            peak_tokens = cur_tok
+
+    if custom_limit is not None:
+        limit_val = custom_limit
+        is_custom = True
+    else:
+        unit = "tokens"
+        raw_target = max(base_floor, peak_tokens * 1.15, used_tokens * 1.1)
+        step = 50_000_000 if raw_target < 1_000_000_000 else 100_000_000
+        limit_val = float(math.ceil(raw_target / step) * step)
+        is_custom = False
+
+    used_val = used_cost if unit == "cost" else float(used_tokens)
+    used_pct = round((used_val / limit_val) * 100.0, 1) if limit_val > 0 else 0.0
+    resets_at = (oldest_in_win + win_sec) if oldest_in_win is not None else None
+    return {
+        "is_custom": is_custom,
+        "unit": unit,
+        "used_percent": used_pct,
+        "window_minutes": int(round(win_hours * 60)),
+        "resets_at": resets_at,
+        "used_value": round(used_val, 2),
+        "limit_value": round(limit_val, 2),
+        "used_requests": used_reqs,
+        "hist_peak_tokens": peak_tokens,
+    }
+
+
+def _parse_user_limit(ucfg: dict[str, Any]) -> tuple[str, float | None]:
+    unit = ucfg.get("unit") if ucfg.get("unit") in ("tokens", "cost") else "tokens"
+    custom_limit = ucfg.get("limit")
+    try:
+        custom_limit = float(custom_limit) if custom_limit is not None else None
+        if custom_limit is not None and custom_limit <= 0:
+            custom_limit = None
+    except (TypeError, ValueError):
+        custom_limit = None
+    return unit, custom_limit
+
+
+def _compute_local_rolling_quotas(
+    events: list[dict[str, Any]],
+    official_quotas: dict[str, Any],
+    pricing: PricingEngine,
+) -> dict[str, Any]:
+    """Compute local rolling-window quota stats for tools without official log quotas."""
+    now_ts = time.time()
+    user_cfgs = load_local_quota_configs()
+
+    by_tool: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for ev in events:
+        t = ev["tool"]
+        if t in official_quotas and official_quotas[t]:
+            continue
+        by_tool[t].append(ev)
+
+    out: dict[str, Any] = {}
+    for tool, tevs in by_tool.items():
+        if not tevs:
+            continue
+        tevs.sort(key=lambda x: x["ts"])
+
+        # Antigravity has 4 quota pools: Gemini (5h + Weekly) & Claude/GPT C/G (5h + Weekly)
+        if tool == "antigravity":
+            gem_evs = [e for e in tevs if _agy_pool(e["model"]) == "gemini"]
+            cg_evs = [e for e in tevs if _agy_pool(e["model"]) == "cg"]
+            specs = [
+                ("antigravity:gemini_5h", "Gemini 5h", gem_evs, 5.0, 200_000_000),
+                ("antigravity:gemini_7d", "Gemini 周", gem_evs, 168.0, 1_500_000_000),
+                ("antigravity:cg_5h",     "C/G 5h",    cg_evs,  5.0, 100_000_000),
+                ("antigravity:cg_7d",     "C/G 周",    cg_evs,  168.0, 500_000_000),
+            ]
+            buckets = []
+            for cfg_key, lbl, subset, default_h, floor in specs:
+                ucfg = user_cfgs.get(cfg_key) if isinstance(user_cfgs.get(cfg_key), dict) else {}
+                win_h = float(ucfg.get("window_hours") or default_h)
+                if win_h <= 0:
+                    win_h = default_h
+                unit, custom_limit = _parse_user_limit(ucfg)
+                b = _calc_rolling_bucket(subset, tool, win_h, unit, custom_limit, floor, pricing, now_ts)
+                b["key"] = cfg_key
+                b["label"] = lbl
+                buckets.append(b)
+            out[tool] = {
+                "source": "local",
+                "is_custom": any(b["is_custom"] for b in buckets),
+                "unit": buckets[0]["unit"],
+                "primary": buckets[0],
+                "secondary": buckets[1],
+                "buckets": buckets,
+            }
+            continue
+
+        ucfg = user_cfgs.get(tool) if isinstance(user_cfgs.get(tool), dict) else {}
+        win_hours = float(ucfg.get("window_hours") or 5.0)
+        if win_hours <= 0:
+            win_hours = 5.0
+        unit, custom_limit = _parse_user_limit(ucfg)
+        base_floor = 150_000_000 if win_hours <= 6 else (300_000_000 if win_hours <= 24 else 1_000_000_000)
+        b = _calc_rolling_bucket(tevs, tool, win_hours, unit, custom_limit, base_floor, pricing, now_ts)
+        b["key"] = tool
+        out[tool] = {
+            "source": "local",
+            "is_custom": b["is_custom"],
+            "unit": b["unit"],
+            "primary": b,
+            "secondary": None,
+        }
+    return out
+
+
+def build_telemetry(
+    range_key: str = "7d",
+    tool_filter: str = "all",
+    force: bool = False,
+    rebuild: bool = False,
+) -> dict[str, Any]:
+    global _MEM_OBSERVED_TS, _MEM_OBSERVED_RATES
+    trigger_background_sync_if_stale()
+    events, quotas, scan_ms = scan_all_events(force=force, rebuild=rebuild)
+    # Provider quotas refresh independently of unchanged local log signatures.
+    ag_quota = fetch_antigravity_quota(force=force or rebuild)
+    if ag_quota:
+        quotas = {**quotas, "antigravity": ag_quota}
+
+    # Dynamic 4-layer pricing (overrides -> locally calibrated native logs -> remote OpenRouter/LiteLLM -> fallback)
+    if _MEM_OBSERVED_TS != _MEM_SCAN_TS or force:
+        _MEM_OBSERVED_RATES = calibrate_observed_rates(events)
+        _MEM_OBSERVED_TS = _MEM_SCAN_TS
+    pricing = PricingEngine(observed_rates=_MEM_OBSERVED_RATES)
+
+    now = datetime.now().astimezone()
+    today = now.date()
+    if range_key == "today":
+        min_day = today.isoformat()
+    elif range_key == "7d":
+        min_day = (today - timedelta(days=6)).isoformat()
+    elif range_key == "30d":
+        min_day = (today - timedelta(days=29)).isoformat()
+    else:
+        min_day = "0000-01-01"
+
+    # Available tools summary (across selected time range, before tool_filter)
+    tool_counts: dict[str, int] = defaultdict(int)
+    tool_tokens_all: dict[str, int] = defaultdict(int)
+    today_iso = today.isoformat()
+    today_tokens = 0
+
+    filtered: list[dict[str, Any]] = []
+    for ev in events:
+        dk = ev["day"]
+        tot_tok = ev["in"] + ev["out"] + ev["cr"] + ev["cw"] + ev.get("reason", 0)
+        if dk == today_iso:
+            today_tokens += tot_tok
+        if dk < min_day:
+            continue
+        t = ev["tool"]
+        tool_counts[t] += 1
+        tool_tokens_all[t] += tot_tok
+        if tool_filter != "all" and t != tool_filter:
+            continue
+        filtered.append(ev)
+
+    # Aggregations
+    totals = {"in": 0, "out": 0, "cr": 0, "cw": 0, "reason": 0, "cost": 0.0, "requests": 0}
+    sessions: set[str] = set()
+    overall_perf = empty_perf()
+    by_model: dict[str, dict[str, Any]] = {}
+    by_tool: dict[str, dict[str, Any]] = {}
+    by_day: dict[str, dict[str, Any]] = {}
+    by_hour = [0] * 24
+    by_hour_reqs = [0] * 24
+    by_project: dict[str, dict[str, Any]] = {}
+
+    for ev in filtered:
+        inp = ev["in"]
+        out = ev["out"]
+        cr = ev["cr"]
+        cw = ev["cw"]
+        reas = ev.get("reason", 0)
+        model = ev["model"]
+        tool = ev["tool"]
+        dk = ev["day"]
+        hr = ev["hour"]
+        cost, price_src = pricing.cost_for(
+            model,
+            inp=inp,
+            out=out,
+            cache_read=cr,
+            cache_write=cw,
+            reasoning=reas,
+            native_cost=ev.get("native_cost"),
+            bill_reasoning=(tool in ("antigravity", "gemini")),
+        )
+        tot_tok = inp + out + cr + cw + reas
+
+        totals["in"] += inp
+        totals["out"] += out
+        totals["cr"] += cr
+        totals["cw"] += cw
+        totals["reason"] += reas
+        totals["cost"] += cost
+        totals["requests"] += 1
+        sessions.add(f"{tool}:{ev['session']}")
+
+        by_hour[hr] += tot_tok
+        by_hour_reqs[hr] += 1
+
+        # Per-model
+        mm = by_model.setdefault(model, {
+            "model": model,
+            "tools": set(),
+            "in": 0, "out": 0, "cr": 0, "cw": 0, "reason": 0,
+            "cost": 0.0, "requests": 0,
+            "perf": {},
+        })
+        mm["tools"].add(tool)
+        mm["in"] += inp
+        mm["out"] += out
+        mm["cr"] += cr
+        mm["cw"] += cw
+        mm["reason"] += reas
+        mm["cost"] += cost
+        mm["requests"] += 1
+
+        # Per-tool
+        tm = by_tool.setdefault(tool, {
+            "tool": tool,
+            "label": TOOL_META.get(tool, {}).get("label", tool),
+            "short": TOOL_META.get(tool, {}).get("short", tool.upper()),
+            "accent": TOOL_META.get(tool, {}).get("accent", "#6B7280"),
+            "in": 0, "out": 0, "cr": 0, "cw": 0, "reason": 0,
+            "cost": 0.0, "requests": 0, "sessions": set(),
+            "perf": {},
+        })
+        tm["in"] += inp
+        tm["out"] += out
+        tm["cr"] += cr
+        tm["cw"] += cw
+        tm["reason"] += reas
+        tm["cost"] += cost
+        tm["requests"] += 1
+        tm["sessions"].add(ev["session"])
+
+        # Per-day
+        dm = by_day.setdefault(dk, {
+            "day": dk, "in": 0, "out": 0, "cr": 0, "cw": 0, "reason": 0,
+            "cost": 0.0, "requests": 0, "perf": {},
+        })
+        dm["in"] += inp
+        dm["out"] += out
+        dm["cr"] += cr
+        dm["cw"] += cw
+        dm["reason"] += reas
+        dm["cost"] += cost
+        dm["requests"] += 1
+
+        # Per-project
+        proj = ev.get("project")
+        if proj:
+            pm = by_project.setdefault(proj, {
+                "path": proj,
+                "name": os.path.basename(proj.rstrip("/")) or proj,
+                "tokens": 0, "cost": 0.0, "requests": 0,
+                "sessions": set(), "tools": set(),
+            })
+            pm["tokens"] += tot_tok
+            pm["cost"] += cost
+            pm["requests"] += 1
+            pm["sessions"].add(ev["session"])
+            pm["tools"].add(tool)
+
+        # Perf stats
+        gen = ev.get("gen")
+        ttft = ev.get("ttft")
+        if gen is not None:
+            tmp_perf: dict[str, dict[str, Any]] = {}
+            if perf_add(tmp_perf, model, out, gen, ttft):
+                st = tmp_perf[model]
+                perf_merge(overall_perf, st)
+                perf_merge(mm["perf"].setdefault("_", empty_perf()), st)
+                perf_merge(tm["perf"].setdefault("_", empty_perf()), st)
+                perf_merge(dm["perf"].setdefault("_", empty_perf()), st)
+
+    # Finalize KPIs
+    grand_tokens = totals["in"] + totals["out"] + totals["cr"] + totals["cw"] + totals["reason"]
+    in_denom = totals["in"] + totals["cr"] + totals["cw"]
+    cache_hit_pct = round(totals["cr"] / in_denom * 100.0, 1) if in_denom > 0 else 0.0
+    avg_tps = round(overall_perf["o"] / overall_perf["g"], 1) if overall_perf["g"] > 0 else None
+    ttft_p50 = histogram_percentile(overall_perf["th"], 0.50)
+    ttft_p95 = histogram_percentile(overall_perf["th"], 0.95)
+
+    # Build readable TTFT histogram bins for charting
+    ttft_edges = [
+        (0.0, 0.5, "<0.5s"),
+        (0.5, 1.0, "0.5–1s"),
+        (1.0, 2.0, "1–2s"),
+        (2.0, 4.0, "2–4s"),
+        (4.0, 8.0, "4–8s"),
+        (8.0, 16.0, "8–16s"),
+        (16.0, 120.0, "16s+"),
+    ]
+    ttft_bins = [{"label": lbl, "count": 0} for _, _, lbl in ttft_edges]
+    for b_str, cnt in overall_perf["th"].items():
+        lo, hi = bucket_to_bounds(int(b_str))
+        mid = (lo + hi) / 2.0
+        for idx, (e_lo, e_hi, _) in enumerate(ttft_edges):
+            if e_lo <= mid < e_hi or (idx == len(ttft_edges) - 1 and mid >= e_lo):
+                ttft_bins[idx]["count"] += int(cnt)
+                break
+
+    # Finalize model leaderboard
+    models_out = []
+    for mm in by_model.values():
+        p = mm["perf"].get("_")
+        tps = round(p["o"] / p["g"], 1) if p and p["g"] > 0 else None
+        p50 = histogram_percentile(p["th"], 0.50) if p else None
+        p95 = histogram_percentile(p["th"], 0.95) if p else None
+        m_tot = mm["in"] + mm["out"] + mm["cr"] + mm["cw"] + mm["reason"]
+        m_in = mm["in"] + mm["cr"] + mm["cw"]
+        m_rates, m_src = pricing.resolve(mm["model"])
+        models_out.append({
+            "model": mm["model"],
+            "tools": sorted(mm["tools"]),
+            "tokens": m_tot,
+            "in": mm["in"],
+            "out": mm["out"],
+            "cr": mm["cr"],
+            "cw": mm["cw"],
+            "reason": mm["reason"],
+            "cache_hit": round(mm["cr"] / m_in * 100.0, 1) if m_in > 0 else 0.0,
+            "cost": round(mm["cost"], 4),
+            "price_src": m_src,
+            "unit_rates": m_rates,
+            "requests": mm["requests"],
+            "tps": tps,
+            "ttft_p50": p50,
+            "ttft_p95": p95,
+            "perf_samples": p["n"] if p else 0,
+        })
+    models_out.sort(key=lambda x: x["tokens"], reverse=True)
+
+    # Finalize tool cards (official log quotas take precedence; otherwise local rolling-window quota)
+    local_quotas = _compute_local_rolling_quotas(events, quotas, pricing)
+    tools_out = []
+    for tm in by_tool.values():
+        p = tm["perf"].get("_")
+        tps = round(p["o"] / p["g"], 1) if p and p["g"] > 0 else None
+        p50 = histogram_percentile(p["th"], 0.50) if p else None
+        t_tot = tm["in"] + tm["out"] + tm["cr"] + tm["cw"] + tm["reason"]
+        t_in = tm["in"] + tm["cr"] + tm["cw"]
+        q_info = quotas.get(tm["tool"]) or local_quotas.get(tm["tool"])
+        tools_out.append({
+            "tool": tm["tool"],
+            "label": tm["label"],
+            "short": tm["short"],
+            "accent": tm["accent"],
+            "tokens": t_tot,
+            "in": tm["in"],
+            "out": tm["out"],
+            "cr": tm["cr"],
+            "reason": tm["reason"],
+            "cache_hit": round(tm["cr"] / t_in * 100.0, 1) if t_in > 0 else 0.0,
+            "cost": round(tm["cost"], 4),
+            "requests": tm["requests"],
+            "sessions": len(tm["sessions"]),
+            "tps": tps,
+            "ttft_p50": p50,
+            "perf_samples": p["n"] if p else 0,
+            "quota": q_info,
+        })
+    tools_out.sort(key=lambda x: x["tokens"], reverse=True)
+
+    # Finalize daily series (fill gaps for 7d/30d)
+    if range_key == "7d":
+        day_keys = [(today - timedelta(days=i)).isoformat() for i in range(6, -1, -1)]
+    elif range_key == "30d":
+        day_keys = [(today - timedelta(days=i)).isoformat() for i in range(29, -1, -1)]
+    elif range_key == "today":
+        day_keys = [today.isoformat()]
+    else:
+        day_keys = sorted(by_day.keys())[-45:]
+
+    daily_out = []
+    for dk in day_keys:
+        dm = by_day.get(dk)
+        if dm:
+            p = dm["perf"].get("_")
+            tps = round(p["o"] / p["g"], 1) if p and p["g"] > 0 else None
+            p50 = histogram_percentile(p["th"], 0.50) if p else None
+            daily_out.append({
+                "day": dk,
+                "tokens": dm["in"] + dm["out"] + dm["cr"] + dm["cw"] + dm["reason"],
+                "out": dm["out"],
+                "cost": round(dm["cost"], 4),
+                "requests": dm["requests"],
+                "tps": tps,
+                "ttft_p50": p50,
+            })
+        else:
+            daily_out.append({
+                "day": dk, "tokens": 0, "out": 0, "cost": 0.0,
+                "requests": 0, "tps": None, "ttft_p50": None,
+            })
+
+    # Recent individual calls tape (latest 40 calls with real output)
+    recent_sorted = sorted(filtered, key=lambda x: x["ts"], reverse=True)
+    recent_calls = []
+    for ev in recent_sorted[:60]:
+        out = ev["out"]
+        gen = ev.get("gen")
+        ttft = ev.get("ttft")
+        tps = None
+        if gen and gen > PERF_MIN_SECONDS and out >= PERF_MIN_OUTPUT:
+            v = out / gen
+            if v <= PERF_MAX_TPS:
+                tps = round(v, 1)
+        dt = datetime.fromtimestamp(ev["ts"]).astimezone()
+        rc_cost, _ = pricing.cost_for(
+            ev["model"],
+            inp=ev["in"],
+            out=out,
+            cache_read=ev["cr"],
+            cache_write=ev.get("cw", 0),
+            reasoning=ev.get("reason", 0),
+            native_cost=ev.get("native_cost"),
+            bill_reasoning=(ev["tool"] in ("antigravity", "gemini")),
+        )
+        recent_calls.append({
+            "time": dt.strftime("%m-%d %H:%M:%S"),
+            "ts": ev["ts"],
+            "tool": ev["tool"],
+            "tool_short": TOOL_META.get(ev["tool"], {}).get("short", ev["tool"].upper()),
+            "accent": TOOL_META.get(ev["tool"], {}).get("accent", "#6B7280"),
+            "model": ev["model"],
+            "in": ev["in"],
+            "out": out,
+            "cr": ev["cr"],
+            "gen": round(gen, 2) if gen is not None else None,
+            "ttft": round(ttft, 2) if ttft is not None else None,
+            "tps": tps,
+            "cost": round(rc_cost, 4),
+        })
+        if len(recent_calls) >= 40:
+            break
+
+    # Projects
+    projects_out = sorted(
+        [
+            {
+                "name": p["name"],
+                "path": p["path"],
+                "tokens": p["tokens"],
+                "cost": round(p["cost"], 4),
+                "requests": p["requests"],
+                "sessions": len(p["sessions"]),
+                "tools": sorted(p["tools"]),
+            }
+            for p in by_project.values()
+        ],
+        key=lambda x: x["tokens"],
+        reverse=True,
+    )[:12]
+
+    # Fastest model highlight (with >= 3 samples)
+    eligible_fast = [m for m in models_out if m["tps"] is not None and m["perf_samples"] >= 3]
+    if not eligible_fast:
+        eligible_fast = [m for m in models_out if m["tps"] is not None]
+    fastest_model = max(eligible_fast, key=lambda m: m["tps"]) if eligible_fast else None
+
+    active_hours = sum(1 for v in by_hour if v > 0)
+    peak_hour = max(range(24), key=lambda h: by_hour[h]) if any(by_hour) else None
+
+    available_tools = [
+        {
+            "tool": t,
+            "label": TOOL_META.get(t, {}).get("label", t),
+            "short": TOOL_META.get(t, {}).get("short", t.upper()),
+            "accent": TOOL_META.get(t, {}).get("accent", "#6B7280"),
+            "requests": tool_counts[t],
+            "tokens": tool_tokens_all[t],
+        }
+        for t in TOOL_META.keys()
+        if tool_counts[t] > 0
+    ]
+
+    return {
+        "generated_at": now.strftime("%Y-%m-%d %H:%M:%S"),
+        "scan_ms": scan_ms,
+        "range": range_key,
+        "tool_filter": tool_filter,
+        "today_tokens": today_tokens,
+        "pricing_status": pricing.status(),
+        "available_tools": available_tools,
+        "kpi": {
+            "tokens": grand_tokens,
+            "in": totals["in"],
+            "out": totals["out"],
+            "cr": totals["cr"],
+            "cw": totals["cw"],
+            "reason": totals["reason"],
+            "cache_hit": cache_hit_pct,
+            "cost": round(totals["cost"], 2),
+            "requests": totals["requests"],
+            "sessions": len(sessions),
+            "tps": avg_tps,
+            "ttft_p50": ttft_p50,
+            "ttft_p95": ttft_p95,
+            "perf_samples": overall_perf["n"],
+            "fastest_model": (
+                {"model": fastest_model["model"], "tps": fastest_model["tps"]}
+                if fastest_model
+                else None
+            ),
+            "active_hours": active_hours,
+            "peak_hour": peak_hour,
+        },
+        "ttft_histogram": ttft_bins,
+        "daily": daily_out,
+        "hourly": [{"hour": h, "tokens": by_hour[h], "requests": by_hour_reqs[h]} for h in range(24)],
+        "tools": tools_out,
+        "models": models_out,
+        "projects": projects_out,
+        "recent_calls": recent_calls,
+    }
+
+
+if __name__ == "__main__":
+    data = build_telemetry("7d", "all")
+    print(json.dumps({"scan_ms": data["scan_ms"], "kpi": data["kpi"], "tools": data["tools"]}, indent=2, ensure_ascii=False))

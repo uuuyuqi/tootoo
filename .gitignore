@@ -1,0 +1,35 @@
+# Build outputs & macOS bundles
+dist/
+*.app/
+*.icns
+*.iconset/
+
+# Python caches
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+
+# OS & Editor files
+.DS_Store
+.AppleDouble
+.LSOverride
+.vscode/
+.idea/
+
+# Local runtime data, databases, secrets & credentials
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.db
+*.db-wal
+*.db-shm
+*.sqlite*
+*secret*
+*credential*
+scan_cache*.json
+pricing_remote.json
+pricing_overrides.json

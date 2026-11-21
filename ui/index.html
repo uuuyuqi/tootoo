@@ -1,0 +1,3588 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>tootoo // Vibe Coding Telemetry Console</title>
+<style>
+  :root {
+    --bg: #f3f0e8;
+    --bg-dot: rgba(23, 22, 20, 0.08);
+    --surface: #faf8f3;
+    --surface-2: #ece8de;
+    --border: #d9d3c5;
+    --border-strong: #1d1b18;
+    --ink: #171614;
+    --ink-soft: #4e4b45;
+    --muted: #7a756b;
+    --accent: #e54826;
+    --teal: #0d8a72;
+    --amber: #d97706;
+    --blue: #2563eb;
+    --violet: #7c3aed;
+    --good: #0d8a72;
+    --warn: #c96a08;
+    --bad: #dc2626;
+    --shadow: 0 1px 0 rgba(23, 22, 20, 0.06);
+    --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "PingFang SC", "Helvetica Neue", sans-serif;
+    --font-mono: "JetBrains Mono", "SF Mono", "Menlo", ui-monospace, monospace;
+    --radius: 6px;
+  }
+
+  [data-theme="dark"] {
+    --bg: #0e1013;
+    --bg-dot: rgba(255, 255, 255, 0.055);
+    --surface: #15181d;
+    --surface-2: #1d2128;
+    --border: #2a2f3a;
+    --border-strong: #e8e4db;
+    --ink: #f1eee7;
+    --ink-soft: #c4c0b7;
+    --muted: #848a96;
+    --accent: #ff5b37;
+    --teal: #18b898;
+    --amber: #f59e0b;
+    --blue: #4f8bff;
+    --violet: #a78bfa;
+    --good: #18b898;
+    --warn: #f59e0b;
+    --bad: #f87171;
+    --shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; scrollbar-width: none; }
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar,
+  *::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+  }
+
+  html, body {
+    overflow-x: hidden;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--bg);
+    background-image: radial-gradient(var(--bg-dot) 1px, transparent 1px);
+    background-size: 18px 18px;
+    color: var(--ink);
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+
+  .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+  .shell {
+    max-width: 1420px;
+    margin: 0 auto;
+    padding: 20px 24px 48px;
+  }
+
+  /* ---- Bunny Mascot & 9-Tier Stages ---- */
+  .bunny-wrap {
+    width: 42px;
+    height: 42px;
+    border: 1.5px solid var(--border-strong);
+    border-radius: 9px;
+    display: grid;
+    place-items: center;
+    background: #f5f2ea;
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+    transition: transform 0.14s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  }
+
+  .bunny-wrap.stage-muscle {
+    background: linear-gradient(155deg, #fff5eb, #f7e2cf);
+    border-color: #c2410c;
+  }
+  .bunny-wrap.stage-saiyan {
+    background: radial-gradient(circle at 50% 45%, #fffbeb 0%, #fef08a 60%, #f59e0b 115%);
+    border-color: #d97706;
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.35);
+  }
+  .bunny-wrap.stage-demon {
+    background: radial-gradient(circle at 50% 42%, #3b0a0a 0%, #1c0707 75%, #110303 100%);
+    border-color: #ef4444;
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.38);
+  }
+  .bunny-wrap.stage-hell {
+    background: radial-gradient(circle at 50% 45%, #3b0764 0%, #1e0624 68%, #0f0314 100%);
+    border-color: #c026d3;
+    box-shadow: 0 0 10px rgba(192, 38, 211, 0.42);
+  }
+  .bunny-wrap.stage-king {
+    background: radial-gradient(circle at 50% 35%, #241b35 0%, #141022 80%);
+    border-color: #f59e0b;
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.38);
+  }
+  .bunny-wrap.stage-ascend {
+    background: radial-gradient(circle at 50% 35%, #fffdf5 0%, #fde6cf 55%, #f8d4c4 100%);
+    border-color: #e54826;
+    box-shadow: 0 0 0 2px rgba(229, 72, 38, 0.2), 0 3px 12px rgba(229, 72, 38, 0.32);
+  }
+
+  .bunny-wrap:hover { transform: translateY(-1px); }
+
+  /* ---- 9-Tier Escalating Hover & Click FX ---- */
+  /* Lv.1 软萌兔: gentle tilt */
+  .bunny-wrap[data-lv="1"]:hover .bunny-svg { animation: fxLv1Hover 0.8s ease-in-out infinite; }
+  .bunny-wrap[data-lv="1"].fx-click .bunny-svg { animation: bunnyHop 0.42s cubic-bezier(0.3, 1.4, 0.5, 1); }
+
+  /* Lv.2 热身兔: warmup sway + double hop */
+  .bunny-wrap[data-lv="2"]:hover .bunny-svg { animation: fxLv2Hover 0.55s ease-in-out infinite; }
+  .bunny-wrap[data-lv="2"].fx-click .bunny-svg { animation: fxLv2Click 0.52s ease-out; }
+
+  /* Lv.3 拳击兔: bob & weave + jab combo */
+  .bunny-wrap[data-lv="3"]:hover .bunny-svg { animation: fxLv3Hover 0.45s ease-in-out infinite; }
+  .bunny-wrap[data-lv="3"].fx-click .bunny-svg { animation: fxLv3Click 0.48s cubic-bezier(0.2, 1.3, 0.4, 1); }
+
+  /* Lv.4 肉筋兔: muscle pump swell + power flex quake */
+  .bunny-wrap[data-lv="4"]:hover { box-shadow: 0 0 12px rgba(234, 88, 12, 0.4); }
+  .bunny-wrap[data-lv="4"]:hover .bunny-svg { animation: fxLv4Hover 0.65s ease-in-out infinite; }
+  .bunny-wrap[data-lv="4"].fx-click { animation: fxBoxShake 0.42s ease-out; }
+  .bunny-wrap[data-lv="4"].fx-click .bunny-svg { animation: fxLv4Click 0.55s cubic-bezier(0.2, 1.5, 0.4, 1); }
+
+  /* Lv.5 超赛爆气兔: high-freq charge buzz + super saiyan burst */
+  .bunny-wrap[data-lv="5"]:hover { box-shadow: 0 0 16px rgba(245, 158, 11, 0.72); }
+  .bunny-wrap[data-lv="5"]:hover .bunny-svg { animation: fxLv5Hover 0.22s linear infinite; }
+  .bunny-wrap[data-lv="5"].fx-click { animation: fxBoxShake 0.48s ease-out; box-shadow: 0 0 22px rgba(250, 204, 21, 0.95); }
+  .bunny-wrap[data-lv="5"].fx-click .bunny-svg { animation: fxLv5Click 0.58s ease-out; }
+
+  /* Lv.6 红魔兔: crimson menace pulse + demon burst */
+  .bunny-wrap[data-lv="6"]:hover { box-shadow: 0 0 18px rgba(239, 68, 68, 0.78); transform: scale(1.06); }
+  .bunny-wrap[data-lv="6"]:hover .bunny-svg { animation: fxLv6Hover 0.42s ease-in-out infinite; }
+  .bunny-wrap[data-lv="6"].fx-click { animation: fxBoxShakeHard 0.52s ease-out; box-shadow: 0 0 26px rgba(239, 68, 68, 0.95); }
+  .bunny-wrap[data-lv="6"].fx-click .bunny-svg { animation: fxLv6Click 0.6s ease-out; }
+
+  /* Lv.7 狱火魔神兔: hellfire wing tremor + abyssal quake */
+  .bunny-wrap[data-lv="7"]:hover { box-shadow: 0 0 20px rgba(192, 38, 211, 0.82), 0 0 8px rgba(244, 63, 94, 0.65); transform: scale(1.07); }
+  .bunny-wrap[data-lv="7"]:hover .bunny-svg { animation: fxLv7Hover 0.36s ease-in-out infinite; }
+  .bunny-wrap[data-lv="7"].fx-click { animation: fxBoxShakeHard 0.58s ease-out; box-shadow: 0 0 28px rgba(192, 38, 211, 0.95); }
+  .bunny-wrap[data-lv="7"].fx-click .bunny-svg { animation: fxLv7Click 0.64s ease-out; }
+
+  /* Lv.8 星渊霸王兔: royal levitate + sovereign pulse */
+  .bunny-wrap[data-lv="8"]:hover { box-shadow: 0 0 22px rgba(245, 158, 11, 0.8), 0 0 10px rgba(167, 139, 250, 0.65); transform: translateY(-2px) scale(1.07); }
+  .bunny-wrap[data-lv="8"]:hover .bunny-svg { animation: fxLv8Hover 1.1s ease-in-out infinite; }
+  .bunny-wrap[data-lv="8"].fx-click { animation: fxRoyalGlow 0.68s ease-out; }
+  .bunny-wrap[data-lv="8"].fx-click .bunny-svg { animation: fxLv8Click 0.68s cubic-bezier(0.2, 1.4, 0.4, 1); }
+
+  /* Lv.9 创世飞升兔: transcendent multi-aura + divine spin ascension */
+  .bunny-wrap[data-lv="9"]:hover {
+    box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.55), 0 0 24px rgba(229, 72, 38, 0.72), 0 0 12px rgba(251, 191, 36, 0.7);
+    transform: translateY(-2.5px) scale(1.09);
+  }
+  .bunny-wrap[data-lv="9"]:hover .bunny-svg { animation: fxLv9Hover 0.95s ease-in-out infinite; }
+  .bunny-wrap[data-lv="9"].fx-click { animation: fxAscendGlow 0.82s ease-out; }
+  .bunny-wrap[data-lv="9"].fx-click .bunny-svg { animation: fxLv9Click 0.82s cubic-bezier(0.22, 1.35, 0.36, 1); }
+
+  @keyframes fxLv1Hover { 0%,100% { transform: rotate(0deg); } 40% { transform: rotate(-6deg) translateY(-1px); } 75% { transform: rotate(5deg); } }
+  @keyframes fxLv2Hover { 0%,100% { transform: translateY(0) rotate(0deg); } 25% { transform: translateY(-2px) rotate(-5deg); } 75% { transform: translateY(-2px) rotate(5deg); } }
+  @keyframes fxLv2Click { 0%,100% { transform: translateY(0); } 22% { transform: translateY(-5px) scale(0.96,1.06); } 45% { transform: translateY(0); } 70% { transform: translateY(-4px) rotate(6deg); } }
+  @keyframes fxLv3Hover { 0%,100% { transform: translate(0,0) rotate(0deg); } 30% { transform: translate(-2px,-1.5px) rotate(-6deg); } 70% { transform: translate(2px,-1.5px) rotate(6deg); } }
+  @keyframes fxLv3Click { 0% { transform: scale(1); } 20% { transform: translateX(-3px) rotate(-10deg) scale(1.08); } 48% { transform: translateX(3.5px) rotate(10deg) scale(1.12); } 74% { transform: translateY(-3px) scale(1.04); } 100% { transform: scale(1); } }
+  @keyframes fxLv4Hover { 0%,100% { transform: scale(1); } 50% { transform: scale(1.13, 1.07); } }
+  @keyframes fxLv4Click { 0% { transform: scale(1); } 25% { transform: scale(0.88, 0.92); } 55% { transform: scale(1.24, 1.18); } 80% { transform: scale(0.97); } 100% { transform: scale(1); } }
+  @keyframes fxLv5Hover { 0% { transform: translate(0,0) scale(1.04); } 25% { transform: translate(-1.2px,0.8px) scale(1.07); } 50% { transform: translate(1.2px,-0.8px) scale(1.05); } 75% { transform: translate(-0.8px,-1px) scale(1.08); } 100% { transform: translate(0,0) scale(1.04); } }
+  @keyframes fxLv5Click { 0% { transform: scale(1); filter: brightness(1); } 30% { transform: scale(1.26) translateY(-3px); filter: brightness(1.35); } 65% { transform: scale(0.95); filter: brightness(1.1); } 100% { transform: scale(1); filter: brightness(1); } }
+  @keyframes fxLv6Hover { 0%,100% { transform: scale(1.04) rotate(-3deg); } 50% { transform: scale(1.12) rotate(3deg) translateY(-1.5px); } }
+  @keyframes fxLv6Click { 0% { transform: scale(1); } 25% { transform: scale(1.28) rotate(-8deg); filter: saturate(1.5) brightness(1.2); } 58% { transform: scale(1.18) rotate(8deg); } 100% { transform: scale(1); filter: none; } }
+  @keyframes fxLv7Hover { 0%,100% { transform: translateY(-1px) scale(1.05); } 50% { transform: translateY(-3.5px) scale(1.13); } }
+  @keyframes fxLv7Click { 0% { transform: scale(1); } 25% { transform: scale(1.3) translateY(-4px) rotate(-9deg); filter: brightness(1.35); } 55% { transform: scale(1.15) rotate(9deg); } 100% { transform: scale(1); filter: none; } }
+  @keyframes fxLv8Hover { 0%,100% { transform: translateY(0) scale(1.04); } 50% { transform: translateY(-4px) scale(1.1) rotate(3deg); } }
+  @keyframes fxLv8Click { 0% { transform: scale(1); } 30% { transform: translateY(-5px) scale(1.24) rotate(-6deg); filter: brightness(1.25); } 62% { transform: translateY(-2px) scale(1.12) rotate(6deg); } 100% { transform: scale(1); filter: none; } }
+  @keyframes fxLv9Hover { 0%,100% { transform: translateY(-1px) scale(1.05); filter: drop-shadow(0 0 3px rgba(251,191,36,0.65)); } 50% { transform: translateY(-4.5px) scale(1.12); filter: drop-shadow(0 0 7px rgba(229,72,38,0.8)); } }
+  @keyframes fxLv9Click {
+    0%   { transform: scale(1) rotate(0deg); }
+    28%  { transform: translateY(-9px) scale(1.42) rotate(360deg); filter: brightness(1.5) drop-shadow(0 0 12px rgba(251,191,36,0.98)); }
+    65%  { transform: translateY(-4px) scale(1.18) rotate(720deg); filter: brightness(1.25) drop-shadow(0 0 8px rgba(229,72,38,0.85)); }
+    100% { transform: scale(1) rotate(720deg); filter: none; }
+  }
+
+  @keyframes fxBoxShake { 0%,100% { transform: translate(0,0); } 20% { transform: translate(-2px,1px); } 45% { transform: translate(2px,-1px); } 70% { transform: translate(-1.5px,-1px); } }
+  @keyframes fxBoxShakeHard { 0%,100% { transform: translate(0,0) scale(1); } 15% { transform: translate(-3px,1.5px) scale(1.08); } 35% { transform: translate(3px,-2px) scale(1.1); } 55% { transform: translate(-2.5px,-1.5px) scale(1.06); } 75% { transform: translate(2px,1px) scale(1.03); } }
+  @keyframes fxRoyalGlow { 0% { box-shadow: 0 0 8px rgba(245,158,11,0.4); } 40% { box-shadow: 0 0 28px rgba(245,158,11,0.95), 0 0 12px rgba(167,139,250,0.85); } 100% { box-shadow: 0 0 10px rgba(245,158,11,0.38); } }
+  @keyframes fxAscendGlow { 0% { box-shadow: 0 0 8px rgba(229,72,38,0.4); } 40% { box-shadow: 0 0 0 4px rgba(251,191,36,0.6), 0 0 32px rgba(229,72,38,0.95); } 100% { box-shadow: 0 0 0 2px rgba(229,72,38,0.2), 0 3px 12px rgba(229,72,38,0.32); } }
+
+  /* Dramatic screen-level FX for high tiers (Lv.4+) */
+  .shell.fx-quake-sm { animation: shellQuakeSm 0.34s ease-out; }
+  .shell.fx-quake-lg { animation: shellQuakeLg 0.48s ease-out; }
+
+  @keyframes shellQuakeSm {
+    0%,100% { transform: translate(0, 0); }
+    20% { transform: translate(-2.5px, 1.5px); }
+    45% { transform: translate(2.5px, -1.5px); }
+    70% { transform: translate(-1.5px, -1px); }
+  }
+  @keyframes shellQuakeLg {
+    0%,100% { transform: translate(0, 0); }
+    12% { transform: translate(-5px, 2.5px); }
+    28% { transform: translate(5px, -3px); }
+    46% { transform: translate(-4px, -2px); }
+    64% { transform: translate(3.5px, 2px); }
+    82% { transform: translate(-2px, 1px); }
+  }
+
+  .fx-flash {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    animation: fxScreenFlash var(--dur, 0.5s) ease-out forwards;
+  }
+
+  @keyframes fxScreenFlash {
+    0%   { opacity: 0; }
+    18%  { opacity: var(--peak, 0.28); }
+    100% { opacity: 0; }
+  }
+
+  .fx-ray {
+    position: fixed;
+    pointer-events: none;
+    transform-origin: 0% 50%;
+    border-radius: 999px;
+    animation: fxRayShoot var(--dur, 0.55s) cubic-bezier(0.15, 0.85, 0.25, 1) forwards;
+  }
+
+  @keyframes fxRayShoot {
+    0%   { transform: translate(0, -50%) rotate(var(--ang)) scaleX(0.1); opacity: 0.95; }
+    55%  { transform: translate(0, -50%) rotate(var(--ang)) scaleX(1.15); opacity: 0.85; }
+    100% { transform: translate(0, -50%) rotate(var(--ang)) scaleX(1.55); opacity: 0; }
+  }
+
+  .fx-callout {
+    position: fixed;
+    pointer-events: none;
+    font-family: var(--font-mono);
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+    transform: translate(-50%, -50%);
+    animation: fxCalloutUp var(--dur, 0.9s) cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes fxCalloutUp {
+    0%   { transform: translate(-50%, -40%) scale(0.6); opacity: 0; }
+    20%  { transform: translate(-50%, -115%) scale(1.12); opacity: 1; }
+    72%  { transform: translate(-50%, -165%) scale(1.0); opacity: 1; }
+    100% { transform: translate(-50%, -210%) scale(0.94); opacity: 0; }
+  }
+
+  /* Floating burst particles & shockwave rings */
+  .fx-layer {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 999;
+    overflow: hidden;
+  }
+
+  .fx-ring {
+    position: fixed;
+    border-radius: 50%;
+    pointer-events: none;
+    transform: translate(-50%, -50%) scale(0.25);
+    opacity: 0.9;
+    animation: fxRingOut var(--dur, 0.55s) cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes fxRingOut {
+    to { transform: translate(-50%, -50%) scale(var(--end-scale, 2.4)); opacity: 0; }
+  }
+
+  .fx-particle {
+    position: fixed;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    animation: fxPartFly var(--dur, 0.6s) cubic-bezier(0.15, 0.85, 0.3, 1) forwards;
+  }
+
+  @keyframes fxPartFly {
+    0%   { transform: translate(-50%, -50%) scale(0.4) rotate(0deg); opacity: 1; }
+    65%  { opacity: 1; }
+    100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.05) rotate(var(--rot, 120deg)); opacity: 0; }
+  }
+
+  .bunny-svg {
+    width: 34px;
+    height: 34px;
+    overflow: visible;
+  }
+
+  .b-blink { transform-origin: 18px 22px; animation: bunnyBlink 4.8s infinite; }
+  .b-twitch { transform-origin: 23px 15px; animation: earTwitch 3.8s ease-in-out infinite; }
+  .b-float { animation: floatY 2.5s ease-in-out infinite; }
+  .b-aura { transform-origin: 18px 18px; animation: auraPulse 1.6s ease-in-out infinite; }
+  .b-pump { transform-origin: 18px 23px; animation: flexPump 2.2s ease-in-out infinite; }
+
+  @keyframes earTwitch {
+    0%, 82%, 100% { transform: rotate(0deg); }
+    87% { transform: rotate(8deg); }
+    92% { transform: rotate(-4deg); }
+  }
+  @keyframes bunnyBlink {
+    0%, 92%, 100% { transform: scaleY(1); }
+    95% { transform: scaleY(0.12); }
+  }
+  @keyframes floatY {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-2.2px); }
+  }
+  @keyframes auraPulse {
+    0%, 100% { opacity: 0.72; transform: scale(0.98); }
+    50% { opacity: 1; transform: scale(1.04); }
+  }
+  @keyframes flexPump {
+    0%, 75%, 100% { transform: scale(1); }
+    86% { transform: scale(1.06); }
+  }
+  @keyframes bunnyHop {
+    0%   { transform: translateY(0) scale(1, 1); }
+    30%  { transform: translateY(-6px) scale(0.95, 1.07); }
+    65%  { transform: translateY(1px) scale(1.06, 0.94); }
+    100% { transform: translateY(0) scale(1, 1); }
+  }
+
+  /* ---- 9-Tier Evolution Gallery Modal ---- */
+  .evo-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 14, 12, 0.56);
+    backdrop-filter: blur(3px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    z-index: 100;
+  }
+  .evo-backdrop.open { display: flex; }
+
+  .evo-dialog {
+    width: min(620px, 100%);
+    max-height: 92vh;
+    overflow-y: auto;
+    background: var(--surface);
+    border: 1.5px solid var(--border-strong);
+    border-radius: 10px;
+    padding: 14px 16px 16px;
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.28);
+  }
+
+  .evo-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .evo-progress-box {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 9px 11px;
+    margin-bottom: 12px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+  }
+
+  .evo-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .evo-card {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 9px 7px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 4px;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .evo-card.unlocked { background: var(--surface); }
+  .evo-card.current {
+    background: var(--surface);
+    border: 1.5px solid var(--accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
+  }
+
+  .evo-card.locked .bunny-wrap {
+    background: var(--surface-2) !important;
+    border: 1.5px dashed var(--border) !important;
+    box-shadow: none !important;
+    color: var(--muted);
+  }
+  .evo-card.locked .bunny-svg {
+    pointer-events: none;
+  }
+  .evo-card.locked .evo-name { color: var(--muted); }
+  .evo-card.locked.shake { animation: fxBoxShake 0.35s ease-out; }
+
+  .evo-card .bunny-wrap { width: 48px; height: 48px; cursor: pointer; }
+  .evo-card .bunny-svg { width: 40px; height: 40px; }
+  .evo-card .evo-name { font-size: 11.5px; font-weight: 700; }
+  .evo-card .evo-rng { font-family: var(--font-mono); font-size: 9.5px; color: var(--muted); }
+  .evo-foot {
+    margin-top: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  /* ---- Header ---- */
+  .topbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 12px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--border-strong);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 14px;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+  }
+
+  .brand-title {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .mood-tag {
+    font-size: 9.5px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--accent) 13%, transparent);
+    color: var(--accent);
+    letter-spacing: 0.04em;
+    border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+    cursor: pointer;
+    transition: all 0.14s ease;
+  }
+  .mood-tag:hover { background: var(--accent); color: #fff; }
+
+  .brand-sub {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.03em;
+  }
+
+  .xp-wrap {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 4px;
+    cursor: pointer;
+  }
+
+  .xp-track {
+    width: 78px;
+    height: 5px;
+    border-radius: 3px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .xp-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--amber));
+    transition: width 0.35s ease;
+  }
+
+  .xp-text {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .xp-text strong { color: var(--ink-soft); font-weight: 600; }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .seg {
+    display: inline-flex;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 2px;
+  }
+
+  .seg button {
+    border: none;
+    background: transparent;
+    color: var(--ink-soft);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.14s ease;
+  }
+
+  .seg button:hover { color: var(--ink); }
+
+  .seg button.active {
+    background: var(--border-strong);
+    color: var(--surface);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--ink);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: border-color 0.14s ease, transform 0.1s ease;
+  }
+
+  .btn:hover { border-color: var(--border-strong); }
+  .btn:active { transform: translateY(1px); }
+
+  .scan-badge {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--muted);
+    padding: 4px 7px;
+    border: 1px dashed var(--border);
+    border-radius: 4px;
+  }
+
+  /* ---- Tool Filter Bar ---- */
+  .filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 14px;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 11px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--ink-soft);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.14s ease;
+  }
+
+  .chip:hover { border-color: var(--border-strong); color: var(--ink); }
+
+  .chip.active {
+    background: var(--border-strong);
+    border-color: var(--border-strong);
+    color: var(--surface);
+  }
+
+  .chip .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .chip .cnt {
+    opacity: 0.65;
+    font-weight: 500;
+  }
+
+  /* ---- Popover Sub-Nav (Hidden in full desktop mode) ---- */
+  .pop-tabs {
+    display: none;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    margin-bottom: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 4px;
+  }
+
+  .pop-tabs button {
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 6px 4px;
+    border-radius: 4px;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+  }
+
+  .pop-tabs button.active {
+    background: var(--border-strong);
+    color: var(--surface);
+  }
+
+  /* ---- Hero 4-Instrument Strip ---- */
+  .hero-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 15px 17px;
+    box-shadow: var(--shadow);
+  }
+
+  .card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-sans);
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: var(--ink);
+    line-height: 1.2;
+  }
+
+  .kicker::before {
+    content: "";
+    width: 3px;
+    height: 11px;
+    border-radius: 2px;
+    background: var(--k-col, var(--border-strong));
+    flex-shrink: 0;
+  }
+
+  .kicker.k-teal   { --k-col: var(--teal); }
+  .kicker.k-accent { --k-col: var(--accent); }
+  .kicker.k-amber  { --k-col: var(--amber); }
+  .kicker.k-blue   { --k-col: var(--blue); }
+
+  .pill {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 3px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--ink-soft);
+  }
+
+  .pill.teal { color: var(--teal); border-color: color-mix(in srgb, var(--teal) 40%, transparent); background: color-mix(in srgb, var(--teal) 10%, transparent); }
+  .pill.accent { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, transparent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+  .pill.amber { color: var(--amber); border-color: color-mix(in srgb, var(--amber) 40%, transparent); background: color-mix(in srgb, var(--amber) 10%, transparent); }
+
+  .hero-val {
+    font-family: var(--font-mono);
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+    margin-bottom: 10px;
+  }
+
+  .hero-val .unit {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    margin-left: 4px;
+    letter-spacing: 0;
+  }
+
+  .hero-sub {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .stack-bar {
+    height: 7px;
+    border-radius: 3px;
+    overflow: hidden;
+    display: flex;
+    background: var(--surface-2);
+    margin-bottom: 8px;
+    gap: 1px;
+  }
+
+  .gauge-track {
+    height: 7px;
+    border-radius: 3px;
+    background: var(--surface-2);
+    overflow: hidden;
+    position: relative;
+    margin-bottom: 8px;
+  }
+
+  .gauge-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--teal), var(--accent));
+    transition: width 0.35s ease;
+  }
+
+  .mini-spark {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 20px;
+    margin-bottom: 6px;
+  }
+
+  .mini-spark span {
+    flex: 1;
+    border-radius: 2px 2px 0 0;
+    background: color-mix(in srgb, var(--amber) 65%, var(--surface-2));
+    min-height: 2px;
+    transition: height 0.3s ease;
+  }
+
+  /* ---- Main 2-Column Analytical Deck ---- */
+  .deck {
+    display: grid;
+    grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+
+  .col {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-width: 0;
+  }
+
+  /* ---- Charts ---- */
+  .chart-wrap {
+    position: relative;
+    width: 100%;
+    height: 205px;
+  }
+
+  .chart-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    overflow: visible;
+  }
+
+  .tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: var(--border-strong);
+    color: var(--surface);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 7px 10px;
+    border-radius: 4px;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translate(-50%, -105%);
+    transition: opacity 0.1s ease;
+    z-index: 20;
+  }
+
+  .tooltip.show { opacity: 1; }
+
+  /* ---- Model Speed Leaderboard ---- */
+  .sort-tabs {
+    display: inline-flex;
+    gap: 4px;
+  }
+
+  .sort-tabs button {
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 7px;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+
+  .sort-tabs button.active {
+    background: var(--surface-2);
+    border-color: var(--border-strong);
+    color: var(--ink);
+  }
+
+  .model-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .model-row {
+    display: grid;
+    grid-template-columns: minmax(150px, 1.35fr) minmax(110px, 1.15fr) 92px;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 11px;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    background: color-mix(in srgb, var(--surface-2) 38%, var(--surface));
+    font-family: var(--font-mono);
+    font-size: 11px;
+  }
+
+  .primary-metric {
+    font-size: 13.5px;
+    font-weight: 700;
+    line-height: 1.15;
+  }
+
+  .model-name {
+    font-weight: 700;
+    color: var(--ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .model-meta {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .tag {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 2px;
+    letter-spacing: 0.04em;
+    color: #fff;
+  }
+
+  .race-track {
+    height: 8px;
+    background: var(--surface-2);
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .race-bar {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.35s ease;
+  }
+
+  .num-cell { text-align: right; }
+  .num-label { display: block; font-size: 9px; color: var(--muted); }
+
+  /* ---- 24h Rhythm Bar Chart + Period Strip ---- */
+  .period-strip {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  .period-pill {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 5px 7px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .period-pill .p-name { color: var(--muted); font-size: 9.5px; }
+  .period-pill .p-val { font-weight: 700; color: var(--ink); font-size: 11px; }
+  .period-pill.top { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 9%, var(--surface)); }
+  .period-pill.top .p-val { color: var(--accent); }
+
+  /* ---- Agent Cards ---- */
+  .agent-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .agent-item {
+    border: 1px solid var(--border);
+    border-left: 3.5px solid var(--accent);
+    border-radius: 6px;
+    padding: 10px 11px;
+    background: color-mix(in srgb, var(--surface-2) 26%, var(--surface));
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .agent-item:hover {
+    border-color: color-mix(in srgb, var(--border-strong) 38%, var(--border));
+  }
+
+  .agent-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .agent-name {
+    font-weight: 750;
+    font-size: 13px;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+
+  .agent-vol {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .agent-vol-num {
+    font-size: 13.5px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+
+  .agent-vol-num .u {
+    font-style: normal;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--muted);
+    margin-left: 1px;
+  }
+
+  .agent-share-pill {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1.5px 6px;
+    border-radius: 999px;
+    line-height: 1.3;
+    border: 1px solid transparent;
+  }
+
+  .agent-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .stat-cell {
+    background: var(--surface);
+    border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+    border-radius: 5px;
+    padding: 5.5px 7px 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .stat-cell.is-good {
+    border-color: color-mix(in srgb, var(--good) 32%, var(--border));
+    background: color-mix(in srgb, var(--good) 4.5%, var(--surface));
+  }
+  .stat-cell.is-warn {
+    border-color: color-mix(in srgb, var(--warn) 36%, var(--border));
+    background: color-mix(in srgb, var(--warn) 5%, var(--surface));
+  }
+  .stat-cell.is-bad {
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+    background: color-mix(in srgb, var(--accent) 5.5%, var(--surface));
+  }
+  .stat-cell.is-cost {
+    border-color: color-mix(in srgb, var(--amber) 34%, var(--border));
+    background: color-mix(in srgb, var(--amber) 4.5%, var(--surface));
+  }
+
+  .stat-lbl {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-sans);
+    font-size: 9.5px;
+    font-weight: 600;
+    color: var(--muted);
+    line-height: 1.2;
+  }
+
+  .stat-dot {
+    width: 4.5px;
+    height: 4.5px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    opacity: 0.85;
+  }
+
+  .stat-val {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    line-height: 1.25;
+    white-space: nowrap;
+    color: var(--ink);
+  }
+
+  .stat-val .u {
+    font-style: normal;
+    font-size: 9.5px;
+    font-weight: 650;
+    opacity: 0.62;
+    margin-left: 1px;
+  }
+
+  .stat-val .u.pre {
+    margin-left: 0;
+    margin-right: 1px;
+    opacity: 0.78;
+  }
+
+  .stat-val.tone-good { color: var(--good); }
+  .stat-val.tone-blue { color: var(--blue); }
+  .stat-val.tone-warn { color: var(--warn); }
+  .stat-val.tone-bad  { color: var(--accent); }
+  .stat-val.tone-cost { color: var(--amber); }
+  .stat-val.tone-muted { color: var(--muted); font-weight: 600; }
+
+  .quota-row {
+    margin-top: 8px;
+    padding-top: 7px;
+    border-top: 1px dashed var(--border);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--muted);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .quota-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+  }
+
+  .quota-fold-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+    background: var(--surface-2);
+    color: var(--ink-soft);
+    font-family: var(--font-sans);
+    font-size: 9.5px;
+    font-weight: 600;
+    padding: 1.5px 6px;
+    border-radius: 999px;
+    cursor: pointer;
+    line-height: 1.3;
+    transition: border-color 0.14s ease, color 0.14s ease;
+  }
+  .quota-fold-btn:hover {
+    border-color: var(--border-strong);
+    color: var(--ink);
+  }
+  .quota-fold-btn .chev {
+    display: inline-block;
+    font-size: 9px;
+    transition: transform 0.16s ease;
+  }
+  .quota-row.collapsed .quota-fold-btn .chev {
+    transform: rotate(-90deg);
+  }
+  .quota-row.collapsed .quota-list {
+    display: none;
+  }
+  .quota-row:not(.collapsed) .quota-collapsed-sum {
+    display: none;
+  }
+
+  .quota-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .quota-item {
+    display: flex;
+    align-items: center;
+    gap: 5.5px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .quota-lbl {
+    color: var(--ink-soft);
+    font-weight: 600;
+    white-space: nowrap;
+    min-width: 52px;
+  }
+
+  .quota-track {
+    flex: 1;
+    min-width: 38px;
+    max-width: 110px;
+    height: 5px;
+    border-radius: 999px;
+    background: var(--surface-2);
+    border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+    overflow: hidden;
+  }
+
+  .quota-fill {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.3s ease;
+  }
+
+  .quota-pct {
+    font-weight: 800;
+    font-size: 10.5px;
+    white-space: nowrap;
+  }
+
+  .quota-rst {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-soft);
+    font-size: 9.5px;
+    font-weight: 600;
+    white-space: nowrap;
+    margin-left: auto;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: var(--surface-2);
+    border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  }
+
+  .quota-sub {
+    color: var(--muted);
+    font-size: 9.5px;
+    white-space: nowrap;
+  }
+
+  .quota-badge {
+    font-family: var(--font-sans);
+    font-size: 8.5px;
+    font-weight: 700;
+    padding: 0.5px 4px;
+    border-radius: 3px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    line-height: 1.3;
+  }
+
+  .quota-edit-btn {
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--muted);
+    font-size: 10.5px;
+    line-height: 1;
+    padding: 2px 4px;
+    border-radius: 3px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: color 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+  }
+  .quota-edit-btn:hover {
+    color: var(--ink);
+    border-color: var(--border);
+    background: var(--surface-2);
+  }
+
+  .qcfg-dialog {
+    width: min(360px, 92vw);
+    background: var(--surface);
+    border: 1.5px solid var(--border-strong);
+    border-radius: 10px;
+    padding: 15px 16px;
+    box-shadow: 0 18px 46px rgba(0, 0, 0, 0.28);
+  }
+  .qcfg-row {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 11px;
+    font-size: 11px;
+  }
+  .qcfg-row label {
+    color: var(--ink-soft);
+    font-weight: 600;
+  }
+  .qcfg-input {
+    width: 100%;
+    padding: 6px 9px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--ink);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    outline: none;
+  }
+  .qcfg-input:focus { border-color: var(--accent); }
+  .qcfg-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  /* ---- Bottom Deck ---- */
+  .bottom-deck {
+    display: grid;
+    grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .tape-scroll {
+    max-height: 360px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+
+  table.tape {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-mono);
+    font-size: 11px;
+  }
+
+  table.tape thead th {
+    position: sticky;
+    top: 0;
+    background: var(--surface-2);
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 700;
+    text-align: left;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--border);
+    letter-spacing: 0.05em;
+  }
+
+  table.tape thead th.r, table.tape tbody td.r { text-align: right; }
+
+  table.tape tbody td {
+    padding: 5.5px 8px;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+    white-space: nowrap;
+  }
+
+  table.tape tbody tr:hover {
+    background: color-mix(in srgb, var(--surface-2) 65%, transparent);
+  }
+
+  .speed-fast { color: var(--good); font-weight: 700; }
+  .speed-mid  { color: var(--ink); font-weight: 600; }
+  .speed-slow { color: var(--warn); font-weight: 700; }
+
+  .proj-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .proj-row {
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--surface-2) 25%, var(--surface));
+  }
+
+  .proj-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    margin-bottom: 4px;
+  }
+
+  .proj-path {
+    font-size: 10px;
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-bottom: 5px;
+  }
+
+  .empty {
+    padding: 24px 12px;
+    text-align: center;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+  }
+
+  .mb-cfg-bar {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    margin-top: 8px;
+    padding: 7px 9px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+  }
+  .mb-cfg-bar.open { display: flex; flex-wrap: wrap; }
+  .mb-cfg-chips { display: flex; gap: 5px; flex-wrap: wrap; }
+  .mb-cfg-chips button {
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 7px;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .mb-cfg-chips button.on {
+    background: var(--border-strong);
+    border-color: var(--border-strong);
+    color: var(--surface);
+  }
+  .pop-only { display: none; }
+  .pop-only-block { display: none; }
+  body.popover-mode .hide-in-pop { display: none !important; }
+
+  .pop-footer {
+    display: none;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--border);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  /* ---- POPOVER COMPACT MODE (?mode=popover) ---- */
+  body.popover-mode {
+    background-size: 14px 14px;
+  }
+
+  body.popover-mode .shell {
+    max-width: 100%;
+    padding: 10px 12px 14px;
+  }
+
+  body.popover-mode .topbar {
+    padding: 9px 11px;
+    gap: 8px;
+    margin-bottom: 9px;
+  }
+
+  body.popover-mode .bunny-wrap { width: 38px; height: 38px; }
+  body.popover-mode .bunny-svg { width: 31px; height: 31px; }
+  body.popover-mode .brand-title { font-size: 13px; }
+  body.popover-mode .brand-sub { display: none; }
+  body.popover-mode .xp-track { width: 64px; }
+  body.popover-mode .xp-text { font-size: 9.5px; }
+  body.popover-mode .scan-badge { display: none; }
+  body.popover-mode .pop-only { display: inline-flex; }
+  body.popover-mode .pop-footer { display: flex; }
+
+  body.popover-mode .controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  body.popover-mode .seg button { padding: 4px 8px; font-size: 10.5px; }
+  body.popover-mode .btn { padding: 4px 8px; font-size: 10.5px; }
+
+  body.popover-mode .filter-bar {
+    gap: 5px;
+    margin-bottom: 10px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  body.popover-mode .chip {
+    padding: 4px 9px;
+    font-size: 10.5px;
+    white-space: nowrap;
+  }
+
+  body.popover-mode .hero-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  body.popover-mode .card { padding: 11px 12px; }
+  body.popover-mode .hero-val { font-size: 22px; margin-bottom: 6px; }
+  body.popover-mode .hero-sub { font-size: 9.5px; }
+  body.popover-mode .kicker { font-size: 11.5px; gap: 5px; }
+  body.popover-mode .kicker::before { height: 10px; }
+  body.popover-mode .pill { font-size: 9px; padding: 1px 5px; }
+
+  body.popover-mode .pop-tabs { display: grid; }
+  body.popover-mode .deck,
+  body.popover-mode .bottom-deck {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 0;
+  }
+
+  body.popover-mode [data-pop-panel] { display: none; }
+  body.popover-mode[data-pop-tab="overview"] [data-pop-panel~="overview"] { display: block; }
+  body.popover-mode[data-pop-tab="speed"]    [data-pop-panel~="speed"]    { display: block; }
+  body.popover-mode[data-pop-tab="live"]     [data-pop-panel~="live"]     { display: block; }
+  body.popover-mode[data-pop-tab="rhythm"]   [data-pop-panel~="rhythm"]   { display: block; }
+
+  body.popover-mode .model-row {
+    grid-template-columns: minmax(0, 1fr) 84px;
+    gap: 8px;
+    padding: 8px 10px;
+    font-size: 10.5px;
+  }
+  body.popover-mode .model-row .hide-pop { display: none; }
+  .pop-inline-bar { display: none; margin-top: 5px; }
+  body.popover-mode .pop-inline-bar { display: block; }
+  body.popover-mode .chart-wrap { height: 155px; }
+  body.popover-mode .tape-scroll { max-height: 290px; }
+  body.popover-mode table.tape { font-size: 10px; }
+  body.popover-mode table.tape .hide-pop { display: none; }
+  body.popover-mode .agent-stats { gap: 5px; }
+  body.popover-mode .stat-cell { padding: 5px 6px 5.5px; }
+  body.popover-mode .stat-val { font-size: 12px; }
+  body.popover-mode .agent-vol-num { font-size: 13px; }
+
+  @media (max-width: 1100px) {
+    .hero-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .deck, .bottom-deck { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 640px) {
+    .model-row { grid-template-columns: minmax(0, 1fr) 84px; }
+    .model-row .hide-sm { display: none; }
+  }
+
+  /* ---- Initial Boot Loader & Inline Fetching Bar ---- */
+  .top-load-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2.5px;
+    z-index: 950;
+    pointer-events: none;
+    opacity: 0;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    transition: opacity 0.18s ease;
+  }
+
+  .top-load-bar::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -38%;
+    width: 38%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, transparent, var(--accent), var(--teal), transparent);
+    animation: topSweep 1.05s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  }
+
+  body.is-fetching:not(.is-booting) .top-load-bar {
+    opacity: 1;
+  }
+
+  body.is-fetching:not(.is-booting) .hero-val,
+  body.is-fetching:not(.is-booting) .agent-list {
+    opacity: 0.56;
+    transition: opacity 0.14s ease;
+  }
+
+  #refreshBtn.spinning {
+    color: var(--accent);
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  }
+  #refreshBtn.spinning .spin-ico {
+    display: inline-block;
+    animation: icoSpin 0.72s linear infinite;
+  }
+
+  @keyframes topSweep {
+    0%   { left: -38%; }
+    100% { left: 100%; }
+  }
+
+  @keyframes icoSpin {
+    to { transform: rotate(360deg); }
+  }
+
+  .boot-loader {
+    position: fixed;
+    inset: 0;
+    z-index: 900;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 24px;
+    background-color: color-mix(in srgb, var(--bg) 94%, transparent);
+    background-image: radial-gradient(var(--bg-dot) 1px, transparent 1px);
+    background-size: 16px 16px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    opacity: 1;
+    transition: opacity 0.28s ease, transform 0.28s ease;
+  }
+
+  body:not(.is-booting) .boot-loader {
+    opacity: 0;
+    transform: scale(0.985);
+    pointer-events: none;
+  }
+
+  .boot-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 24px 28px 20px;
+    width: min(320px, 88vw);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 8px 28px rgba(23, 22, 20, 0.08), var(--shadow);
+  }
+
+  [data-theme="dark"] .boot-card {
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.42);
+  }
+
+  .boot-orbit {
+    position: relative;
+    width: 68px;
+    height: 68px;
+    display: grid;
+    place-items: center;
+  }
+
+  .boot-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px dashed color-mix(in srgb, var(--accent) 52%, var(--border));
+    animation: bootRingSpin 4.2s linear infinite;
+  }
+
+  .boot-ring-inner {
+    position: absolute;
+    inset: 7px;
+    border-radius: 50%;
+    border: 1.5px solid transparent;
+    border-top-color: var(--teal);
+    border-right-color: var(--accent);
+    animation: bootRingSpin 1.15s cubic-bezier(0.55, 0.15, 0.45, 0.85) infinite reverse;
+  }
+
+  .boot-bunny {
+    width: 38px;
+    height: 38px;
+    animation: bootHop 0.92s cubic-bezier(0.35, 1.35, 0.45, 1) infinite;
+    filter: drop-shadow(0 2px 4px rgba(23, 22, 20, 0.1));
+  }
+
+  @keyframes bootRingSpin {
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes bootHop {
+    0%, 100% { transform: translateY(2px) scale(1.03, 0.96); }
+    42%      { transform: translateY(-6px) scale(0.95, 1.07); }
+    68%      { transform: translateY(0px) scale(1.02, 0.98); }
+  }
+
+  .boot-title {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: var(--ink);
+  }
+
+  .boot-status {
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    min-height: 17px;
+    text-align: center;
+  }
+
+  .boot-track {
+    width: 100%;
+    height: 5px;
+    border-radius: 999px;
+    background: var(--surface-2);
+    border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+    overflow: hidden;
+    position: relative;
+  }
+
+  .boot-bar {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -42%;
+    width: 42%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--accent), var(--amber), var(--teal));
+    animation: bootSweep 1.25s cubic-bezier(0.42, 0, 0.25, 1) infinite;
+  }
+
+  @keyframes bootSweep {
+    0%   { left: -42%; }
+    100% { left: 100%; }
+  }
+
+  .boot-tools {
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    opacity: 0.85;
+  }
+</style>
+</head>
+<body data-pop-tab="overview" class="is-booting">
+<div class="top-load-bar" id="topLoadBar"></div>
+<div class="boot-loader" id="bootLoader" aria-live="polite">
+  <div class="boot-card">
+    <div class="boot-orbit">
+      <div class="boot-ring"></div>
+      <div class="boot-ring-inner"></div>
+      <svg class="boot-bunny" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <g transform="rotate(-10 13 15)"><rect x="9.6" y="3.2" width="5.6" height="13.8" rx="2.8" fill="#181715"/><rect x="11.1" y="5.5" width="2.6" height="9.2" rx="1.3" fill="#E54826"/></g>
+        <g transform="rotate(12 23 15)"><rect x="20.6" y="3.6" width="5.6" height="13.4" rx="2.8" fill="#181715"/><rect x="22.1" y="5.8" width="2.6" height="8.8" rx="1.3" fill="#E54826"/></g>
+        <rect x="6.5" y="13.5" width="23" height="18.2" rx="9.1" fill="#181715"/>
+        <rect x="8.2" y="15.1" width="19.6" height="15" rx="7.5" fill="#FAF8F3"/>
+        <ellipse cx="11.2" cy="24.2" rx="2.1" ry="1.2" fill="#E54826" opacity="0.32"/>
+        <ellipse cx="24.8" cy="24.2" rx="2.1" ry="1.2" fill="#E54826" opacity="0.32"/>
+        <ellipse cx="13.6" cy="21.4" rx="1.45" ry="1.85" fill="#181715"/>
+        <ellipse cx="22.4" cy="21.4" rx="1.45" ry="1.85" fill="#181715"/>
+        <circle cx="14.0" cy="20.7" r="0.5" fill="#FAF8F3"/>
+        <circle cx="22.8" cy="20.7" r="0.5" fill="#FAF8F3"/>
+        <rect x="16.8" y="23.0" width="2.4" height="1.5" rx="0.75" fill="#E54826"/>
+        <path d="M15.7 25.5 Q16.8 26.8 18 25.4 Q19.2 26.8 20.3 25.5" stroke="#181715" stroke-width="1.15" stroke-linecap="round" fill="none"/>
+      </svg>
+    </div>
+    <div class="boot-title">TOOTOO 正在加载</div>
+    <div class="boot-status" id="bootStatus">兔兔正在统计本地 Token…</div>
+    <div class="boot-track"><div class="boot-bar"></div></div>
+    <div class="boot-tools">AGY · CODEX · OMP · DEVIN · CLAUDE</div>
+  </div>
+</div>
+<div class="shell">
+  <!-- TOP INSTRUMENT BAR -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="bunny-wrap" id="bunnyMascot" title="点点兔兔刷新数据">
+        <svg class="bunny-svg" id="bunnySvg" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+      <div>
+        <div class="brand-title">
+          TOOTOO
+          <button class="mood-tag" id="bunnyMood" title="点击查看九阶兔兔进化图鉴">今日 Lv.1 软萌兔 ▸</button>
+        </div>
+        <div class="xp-wrap" id="xpWrap" title="点击查看九阶战力进化图鉴">
+          <div class="xp-track"><div class="xp-fill" id="xpFill" style="width:0%"></div></div>
+          <span class="xp-text" id="xpText">今日升级进度 —</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="seg" id="rangeSeg">
+        <button data-range="today">今日</button>
+        <button data-range="7d" class="active">7天</button>
+        <button data-range="30d">30天</button>
+        <button data-range="all">全部</button>
+      </div>
+      <span class="scan-badge" id="scanBadge">扫描 —</span>
+      <button class="btn" id="refreshBtn" title="重新扫描本地日志"><span class="spin-ico">↻</span></button>
+      <button class="btn" id="themeBtn" title="切换浅色/深色主题">◐</button>
+      <button class="btn pop-only" id="expandBtn" title="打开完整大屏窗口">⤢ 大屏</button>
+    </div>
+  </header>
+
+  <!-- TOOL FILTER CHIPS -->
+  <div class="filter-bar" id="toolBar"></div>
+
+  <!-- HERO 4-INSTRUMENT STRIP -->
+  <section class="hero-grid">
+    <div class="card">
+      <div class="card-head">
+        <span class="kicker k-teal">总用量</span>
+        <span class="pill teal" id="cachePill">缓存 —%</span>
+      </div>
+      <div class="hero-val" id="kpiTokens">—</div>
+      <div class="stack-bar" id="tokenStack"></div>
+      <div class="hero-sub">
+        <span id="kpiInOut">输入 — · 输出 —</span>
+        <span id="kpiCache">缓存 —</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <span class="kicker k-accent">输出速度</span>
+        <span class="pill accent" id="fastestPill">峰值 —</span>
+      </div>
+      <div class="hero-val"><span id="kpiTps">—</span><span class="unit">tok/s</span></div>
+      <div class="gauge-track"><div class="gauge-fill" id="tpsGauge" style="width:0%"></div></div>
+      <div class="hero-sub">
+        <span id="kpiPerfSamples">— 次采样</span>
+        <span>加权均值</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <span class="kicker k-amber">首字延迟</span>
+        <span class="pill amber" id="p95Pill">P95 —</span>
+      </div>
+      <div class="hero-val"><span id="kpiTtft">—</span><span class="unit">s 中位</span></div>
+      <div class="mini-spark" id="ttftMini"></div>
+      <div class="hero-sub">
+        <span>TTFT P50</span>
+        <span>延迟分布</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <span class="kicker k-blue">估算成本</span>
+        <span class="pill" id="peakHourPill">高峰 —</span>
+      </div>
+      <div class="hero-val" id="kpiCost">—</div>
+      <div class="hero-sub" style="margin-top:12px">
+        <span id="kpiReqs">— 次请求</span>
+        <span id="kpiSessions">— 个会话</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- POPOVER SECTION TABS -->
+  <nav class="pop-tabs" id="popTabs">
+    <button data-tab="overview" class="active">总览</button>
+    <button data-tab="speed">模型排行</button>
+    <button data-tab="live">实时调用</button>
+    <button data-tab="rhythm">节律/项目</button>
+  </nav>
+
+  <!-- MAIN ANALYTICAL DECK -->
+  <section class="deck">
+    <div class="col">
+      <!-- Agent Breakdown (shown first on popover overview) -->
+      <div class="card pop-only-block" data-pop-panel="overview" id="agentCardPop">
+        <div class="card-head">
+          <span class="kicker">各工具明细</span>
+          <span class="pill" id="agentCountPillPop">— 个活跃</span>
+        </div>
+        <div class="agent-list" id="agentListPop"></div>
+      </div>
+
+      <!-- Daily Trend Chart -->
+      <div class="card" data-pop-panel="overview">
+        <div class="card-head">
+          <span class="kicker" id="dailyChartKicker">每日用量与速度趋势</span>
+          <div class="sort-tabs" id="chartModeTabs">
+            <button data-mode="tokens" class="active">用量</button>
+            <button data-mode="tps">速度</button>
+            <button data-mode="cost">成本</button>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <svg class="chart-svg" id="dailySvg" viewBox="0 0 760 205" preserveAspectRatio="none"></svg>
+          <div class="tooltip" id="dailyTip"></div>
+        </div>
+      </div>
+
+      <!-- Model Velocity Leaderboard -->
+      <div class="card" data-pop-panel="speed">
+        <div class="card-head">
+          <span class="kicker">模型排行</span>
+          <div class="sort-tabs" id="modelSortTabs">
+            <button data-sort="tokens" class="active">用量</button>
+            <button data-sort="tps">速度</button>
+            <button data-sort="ttft_p50">首字</button>
+            <button data-sort="cost">成本</button>
+          </div>
+        </div>
+        <div class="model-list" id="modelList"></div>
+      </div>
+    </div>
+
+    <div class="col">
+      <!-- Agent Breakdown (desktop right column) -->
+      <div class="card hide-in-pop" data-pop-panel="none">
+        <div class="card-head">
+          <span class="kicker">各工具明细</span>
+          <span class="pill" id="agentCountPill">— 个活跃</span>
+        </div>
+        <div class="agent-list" id="agentList"></div>
+      </div>
+
+      <!-- TTFT Distribution Histogram -->
+      <div class="card" data-pop-panel="speed">
+        <div class="card-head">
+          <span class="kicker">首字延迟分布 (TTFT)</span>
+          <span class="pill" id="histSummary">中位 —</span>
+        </div>
+        <div class="chart-wrap" style="height: 150px;">
+          <svg class="chart-svg" id="histSvg" viewBox="0 0 420 150" preserveAspectRatio="none"></svg>
+        </div>
+      </div>
+
+      <!-- 24-Hour Coding Rhythm -->
+      <div class="card" data-pop-panel="rhythm">
+        <div class="card-head">
+          <span class="kicker">24 小时活跃分布（本地时间）</span>
+          <span class="pill accent" id="hourActivePill">高峰 —</span>
+        </div>
+        <div class="chart-wrap" style="height: 128px;">
+          <svg class="chart-svg" id="hourSvg" viewBox="0 0 420 128" preserveAspectRatio="none"></svg>
+          <div class="tooltip" id="hourTip"></div>
+        </div>
+        <div class="period-strip" id="periodStrip"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BOTTOM DECK -->
+  <section class="bottom-deck">
+    <div class="card" data-pop-panel="live">
+      <div class="card-head">
+        <span class="kicker">实时调用流水（最新 40 条）</span>
+        <span class="pill" id="updatedPill">更新于 —</span>
+      </div>
+      <div class="tape-scroll">
+        <table class="tape">
+          <thead>
+            <tr>
+              <th>时间</th>
+              <th>工具</th>
+              <th>模型</th>
+              <th class="r hide-pop">输出</th>
+              <th class="r hide-pop">耗时</th>
+              <th class="r">速度</th>
+              <th class="r">首字</th>
+            </tr>
+          </thead>
+          <tbody id="tapeBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" data-pop-panel="rhythm">
+      <div class="card-head">
+        <span class="kicker">工作区消耗排行</span>
+        <span class="pill">本地目录</span>
+      </div>
+      <div class="proj-list" id="projList"></div>
+    </div>
+  </section>
+
+  <!-- MENU BAR DISPLAY CONFIG BAR (toggled from footer) -->
+  <div class="mb-cfg-bar" id="mbCfgBar">
+    <span style="color:var(--muted)">顶部栏显示:</span>
+    <div class="mb-cfg-chips" id="mbCfgChips">
+      <button data-field="tokens" class="on">用量</button>
+      <button data-field="cost" class="on">花费</button>
+      <button data-field="tps">速度</button>
+      <button data-field="ttft">首字</button>
+    </div>
+  </div>
+
+  <!-- POPOVER FOOTER -->
+  <footer class="pop-footer">
+    <span id="popScanInfo">SCAN — · 本地只读零侵入</span>
+    <span style="display:flex;gap:10px">
+      <a href="#" id="popMbCfgLink" style="color:var(--ink-soft);text-decoration:none" title="自定义顶部菜单栏显示项">菜单栏</a>
+      <a href="#" id="popPricingLink" style="color:var(--ink-soft);text-decoration:none" title="立即从 OpenRouter + LiteLLM 拉取最新模型价格">同步价格</a>
+      <a href="#" id="popBrowserLink" style="color:var(--ink-soft);text-decoration:none">浏览器</a>
+      <a href="#" id="popQuitLink" style="color:var(--muted);text-decoration:none">退出</a>
+    </span>
+  </footer>
+</div>
+
+<!-- 9-TIER BUNNY EVOLUTION GALLERY MODAL -->
+<div class="evo-backdrop" id="evoModal">
+  <div class="evo-dialog">
+    <div class="evo-head">
+      <span class="kicker" style="font-size:11px;color:var(--ink)">TOOTOO 九阶战力进化图鉴</span>
+      <button class="btn" id="evoCloseBtn">✕ 关闭</button>
+    </div>
+    <div class="evo-progress-box" id="evoProgressBox"></div>
+    <div class="evo-grid" id="evoGrid"></div>
+    <div class="evo-foot" style="justify-content:center">
+      <span id="evoHint">已解锁形态可悬浮/点击触发专属动效 · 更高阶形态达成后自动揭晓</span>
+    </div>
+  </div>
+</div>
+<div class="evo-backdrop" id="quotaModal">
+  <div class="qcfg-dialog">
+    <div class="evo-head" style="margin-bottom:10px">
+      <span class="kicker" id="qcfgTitle">本地额度设置</span>
+      <button class="btn" id="qcfgCloseBtn">✕</button>
+    </div>
+    <div class="qcfg-row">
+      <label>滚动周期</label>
+      <div class="seg" id="qcfgWinSeg" style="width:100%;display:grid;grid-template-columns:repeat(3,1fr)">
+        <button data-win="5" class="active">5小时</button>
+        <button data-win="24">24小时</button>
+        <button data-win="168">7天</button>
+      </div>
+    </div>
+    <div class="qcfg-row">
+      <label>计量方式</label>
+      <div class="seg" id="qcfgUnitSeg" style="width:100%;display:grid;grid-template-columns:repeat(2,1fr)">
+        <button data-unit="tokens" class="active">Token (百万 M)</button>
+        <button data-unit="cost">费用 ($)</button>
+      </div>
+    </div>
+    <div class="qcfg-row">
+      <label id="qcfgLimitLbl">周期上限（百万 Tokens，留空按历史峰值自动估算）</label>
+      <input class="qcfg-input" id="qcfgLimitInput" type="number" step="any" min="0" placeholder="例如 200（代表 200M）" />
+    </div>
+    <div class="qcfg-actions">
+      <button class="btn" id="qcfgResetBtn">恢复自动估算</button>
+      <button class="btn" id="qcfgSaveBtn" style="background:var(--border-strong);color:var(--surface);border-color:var(--border-strong)">保存设置</button>
+    </div>
+  </div>
+</div>
+<div class="fx-layer" id="fxLayer"></div>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const isPopover = params.get("mode") === "popover";
+if (isPopover) {
+  document.body.classList.add("popover-mode");
+}
+
+function postNative(action, extra = {}) {
+  try {
+    if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.tootoo) {
+      window.webkit.messageHandlers.tootoo.postMessage({ action, ...extra });
+      return true;
+    }
+  } catch {}
+  return false;
+}
+
+let menuBarFields = ["tokens", "cost"];
+function renderMenuBarCfgChips() {
+  document.querySelectorAll("#mbCfgChips button").forEach(btn => {
+    btn.classList.toggle("on", menuBarFields.includes(btn.dataset.field));
+  });
+}
+window.__onMenuBarFields = (fields) => {
+  if (Array.isArray(fields)) {
+    menuBarFields = fields;
+    renderMenuBarCfgChips();
+  }
+};
+
+const state = {
+  range: isPopover ? "today" : "7d",
+  tool: "all",
+  chartMode: "tokens",
+  modelSort: "tokens",
+  data: null,
+  es: null,
+};
+
+if (isPopover) {
+  document.querySelectorAll("#rangeSeg button").forEach(b => {
+    b.classList.toggle("active", b.dataset.range === "today");
+  });
+}
+
+const BUNNY_TIERS = [
+  {
+    level: 1, min: 0, max: 10e6, range: "0 – 10M", name: "软萌兔", stage: "",
+    svg: `
+      <g transform="rotate(-9 13 15)"><rect x="9.6" y="3.2" width="5.6" height="13.8" rx="2.8" fill="#181715"/><rect x="11.1" y="5.5" width="2.6" height="9.2" rx="1.3" fill="#E54826"/></g>
+      <g class="b-twitch"><g transform="rotate(13 23 15)"><rect x="20.6" y="3.6" width="5.6" height="13.4" rx="2.8" fill="#181715"/><rect x="22.1" y="5.8" width="2.6" height="8.8" rx="1.3" fill="#E54826"/></g></g>
+      <rect x="6.5" y="13.5" width="23" height="18.2" rx="9.1" fill="#181715"/>
+      <rect x="8.2" y="15.1" width="19.6" height="15" rx="7.5" fill="#FAF8F3"/>
+      <ellipse cx="11.2" cy="24.2" rx="2.1" ry="1.2" fill="#E54826" opacity="0.28"/>
+      <ellipse cx="24.8" cy="24.2" rx="2.1" ry="1.2" fill="#E54826" opacity="0.28"/>
+      <g class="b-blink"><ellipse cx="13.6" cy="21.4" rx="1.45" ry="1.85" fill="#181715"/><ellipse cx="22.4" cy="21.4" rx="1.45" ry="1.85" fill="#181715"/><circle cx="14.0" cy="20.7" r="0.5" fill="#FAF8F3"/><circle cx="22.8" cy="20.7" r="0.5" fill="#FAF8F3"/></g>
+      <rect x="16.8" y="23.0" width="2.4" height="1.5" rx="0.75" fill="#E54826"/>
+      <path d="M15.7 25.5 Q16.8 26.8 18 25.4 Q19.2 26.8 20.3 25.5" stroke="#181715" stroke-width="1.15" stroke-linecap="round" fill="none"/>
+    `
+  },
+  {
+    level: 2, min: 10e6, max: 30e6, range: "10 – 30M", name: "热身兔", stage: "",
+    svg: `
+      <g transform="rotate(-11 13 15)"><rect x="9.6" y="3.2" width="5.6" height="13.8" rx="2.8" fill="#181715"/><rect x="11.1" y="5.5" width="2.6" height="9.2" rx="1.3" fill="#E54826"/></g>
+      <g class="b-twitch"><g transform="rotate(11 23 15)"><rect x="20.6" y="3.2" width="5.6" height="13.8" rx="2.8" fill="#181715"/><rect x="22.1" y="5.5" width="2.6" height="9.2" rx="1.3" fill="#E54826"/></g></g>
+      <path d="M28.5 17.5 Q33 16 34.5 18.2" stroke="#E54826" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+      <path d="M28.3 19.2 Q32.2 19.6 33.8 21.5" stroke="#E54826" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+      <rect x="6.5" y="13.5" width="23" height="18.2" rx="9.1" fill="#181715"/>
+      <rect x="8.2" y="15.1" width="19.6" height="15" rx="7.5" fill="#FAF8F3"/>
+      <path d="M7.6 18.6 Q18 16.5 28.4 18.6 L28.2 20.6 Q18 18.6 7.8 20.6 Z" fill="#E54826"/>
+      <circle cx="18" cy="18.5" r="1.2" fill="#FAF8F3"/>
+      <ellipse cx="11.2" cy="25.2" rx="2.2" ry="1.2" fill="#E54826" opacity="0.34"/>
+      <ellipse cx="24.8" cy="25.2" rx="2.2" ry="1.2" fill="#E54826" opacity="0.34"/>
+      <g class="b-blink"><ellipse cx="13.6" cy="22.7" rx="1.45" ry="1.75" fill="#181715"/><ellipse cx="22.4" cy="22.7" rx="1.45" ry="1.75" fill="#181715"/><circle cx="14.1" cy="22.0" r="0.55" fill="#FAF8F3"/><circle cx="22.9" cy="22.0" r="0.55" fill="#FAF8F3"/></g>
+      <rect x="16.9" y="24.1" width="2.2" height="1.35" rx="0.65" fill="#E54826"/>
+      <path d="M15.8 26.4 Q18 28.0 20.2 26.4" stroke="#181715" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+    `
+  },
+  {
+    level: 3, min: 30e6, max: 100e6, range: "30 – 100M", name: "拳击兔", stage: "",
+    svg: `
+      <g transform="rotate(-12 13 15)"><rect x="9.8" y="2.8" width="5.3" height="13.4" rx="2.65" fill="#181715"/><rect x="11.2" y="5.0" width="2.5" height="8.8" rx="1.25" fill="#E54826"/></g>
+      <g transform="rotate(12 23 15)"><rect x="20.9" y="2.8" width="5.3" height="13.4" rx="2.65" fill="#181715"/><rect x="22.3" y="5.0" width="2.5" height="8.8" rx="1.25" fill="#E54826"/></g>
+      <rect x="7.4" y="13.2" width="21.2" height="17.2" rx="8.4" fill="#181715"/>
+      <rect x="9.0" y="14.7" width="18.0" height="14.2" rx="7.0" fill="#FAF8F3"/>
+      <path d="M8.4 17.6 Q18 15.8 27.6 17.6 L27.4 19.3 Q18 17.6 8.6 19.3 Z" fill="#E54826"/>
+      <path d="M11.6 19.6 L15.6 20.8 M24.4 19.6 L20.4 20.8" stroke="#181715" stroke-width="1.5" stroke-linecap="round"/>
+      <ellipse cx="13.8" cy="22.0" rx="1.3" ry="1.55" fill="#181715"/>
+      <ellipse cx="22.2" cy="22.0" rx="1.3" ry="1.55" fill="#181715"/>
+      <circle cx="14.2" cy="21.4" r="0.45" fill="#FAF8F3"/>
+      <circle cx="22.6" cy="21.4" r="0.45" fill="#FAF8F3"/>
+      <rect x="17.0" y="23.4" width="2.0" height="1.2" rx="0.6" fill="#E54826"/>
+      <path d="M16.0 25.8 L20.0 25.8" stroke="#181715" stroke-width="1.25" stroke-linecap="round"/>
+      <g class="b-pump">
+        <circle cx="5.8" cy="25.2" r="4.3" fill="#E54826" stroke="#181715" stroke-width="1.4"/>
+        <circle cx="8.6" cy="23.4" r="1.7" fill="#E54826" stroke="#181715" stroke-width="1.2"/>
+        <path d="M4.0 23.4 Q5.2 22.2 6.8 22.8" stroke="#FAF8F3" stroke-width="1.1" stroke-linecap="round" fill="none"/>
+        <rect x="3.5" y="28.6" width="4.6" height="2.4" rx="1.0" fill="#FAF8F3" stroke="#181715" stroke-width="1.1"/>
+        <circle cx="30.2" cy="25.2" r="4.3" fill="#E54826" stroke="#181715" stroke-width="1.4"/>
+        <circle cx="27.4" cy="23.4" r="1.7" fill="#E54826" stroke="#181715" stroke-width="1.2"/>
+        <path d="M32.0 23.4 Q30.8 22.2 29.2 22.8" stroke="#FAF8F3" stroke-width="1.1" stroke-linecap="round" fill="none"/>
+        <rect x="27.9" y="28.6" width="4.6" height="2.4" rx="1.0" fill="#FAF8F3" stroke="#181715" stroke-width="1.1"/>
+      </g>
+    `
+  },
+  {
+    level: 4, min: 100e6, max: 300e6, range: "100 – 300M", name: "肉筋兔", stage: "stage-muscle",
+    svg: `
+      <g class="b-pump">
+        <path d="M9.5 29.8 C4.2 30.2 1.2 27.6 1.4 23.8 C1.6 20.5 3.6 18.2 5.4 18.2 C7.2 18.2 7.8 20.2 6.8 21.8 C5.5 22.8 5.6 24.4 7.0 24.6 C8.4 24.8 9.2 23.4 10.2 24.0 Z" fill="#FAF8F3" stroke="#181715" stroke-width="1.5" stroke-linejoin="round"/>
+        <circle cx="4.8" cy="19.2" r="2.1" fill="#FAF8F3" stroke="#181715" stroke-width="1.4"/>
+        <path d="M5.6 25.4 Q7.2 24.0 8.5 25.4" stroke="#E54826" stroke-width="1.1" stroke-linecap="round" fill="none"/>
+        <path d="M26.5 29.8 C31.8 30.2 34.8 27.6 34.6 23.8 C34.4 20.5 32.4 18.2 30.6 18.2 C28.8 18.2 28.2 20.2 29.2 21.8 C30.5 22.8 30.4 24.4 29.0 24.6 C27.6 24.8 26.8 23.4 25.8 24.0 Z" fill="#FAF8F3" stroke="#181715" stroke-width="1.5" stroke-linejoin="round"/>
+        <circle cx="31.2" cy="19.2" r="2.1" fill="#FAF8F3" stroke="#181715" stroke-width="1.4"/>
+        <path d="M30.4 25.4 Q28.8 24.0 27.5 25.4" stroke="#E54826" stroke-width="1.1" stroke-linecap="round" fill="none"/>
+      </g>
+      <g transform="rotate(-10 13 14)"><rect x="10.2" y="2.4" width="5.0" height="12.6" rx="2.5" fill="#181715"/><rect x="11.6" y="4.5" width="2.2" height="8.2" rx="1.1" fill="#EA580C"/></g>
+      <g transform="rotate(10 23 14)"><rect x="20.8" y="2.4" width="5.0" height="12.6" rx="2.5" fill="#181715"/><rect x="22.2" y="4.5" width="2.2" height="8.2" rx="1.1" fill="#EA580C"/></g>
+      <rect x="8.8" y="12.4" width="18.4" height="16.2" rx="6.8" fill="#181715"/>
+      <rect x="10.3" y="13.8" width="15.4" height="13.4" rx="5.5" fill="#FAF8F3"/>
+      <path d="M12.2 29.6 Q15.0 32.0 18.0 29.8 Q21.0 32.0 23.8 29.6 L23.5 33.4 L12.5 33.4 Z" fill="#FAF8F3" stroke="#181715" stroke-width="1.4" stroke-linejoin="round"/>
+      <line x1="18" y1="29.8" x2="18" y2="33.0" stroke="#181715" stroke-width="1.2"/>
+      <path d="M11.6 17.6 L16.2 19.2 M24.4 17.6 L19.8 19.2" stroke="#181715" stroke-width="1.8" stroke-linecap="round"/>
+      <ellipse cx="14.2" cy="20.5" rx="1.25" ry="1.4" fill="#181715"/>
+      <ellipse cx="21.8" cy="20.5" rx="1.25" ry="1.4" fill="#181715"/>
+      <rect x="17.0" y="21.8" width="2.0" height="1.2" rx="0.6" fill="#EA580C"/>
+      <path d="M15.4 24.4 Q18.4 25.8 21.0 23.8" stroke="#181715" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+    `
+  },
+  {
+    level: 5, min: 300e6, max: 600e6, range: "300 – 600M", name: "超赛爆气兔", stage: "stage-saiyan",
+    svg: `
+      <path class="b-aura" d="M18 0.8 L21.2 6.0 L27.5 3.8 L26.2 10.5 L33.2 11.2 L29.5 17.5 L34.5 23.0 L28.5 27.0 L30.8 33.2 L18 31.2 L5.2 33.2 L7.5 27.0 L1.5 23.0 L6.5 17.5 L2.8 11.2 L9.8 10.5 L8.5 3.8 L14.8 6.0 Z" fill="#F59E0B" opacity="0.45"/>
+      <g transform="rotate(-15 13 15)"><rect x="9.6" y="3.0" width="5.4" height="13.8" rx="2.2" fill="#B45309"/><rect x="11.0" y="5.0" width="2.6" height="9.4" rx="1.2" fill="#FDE047"/></g>
+      <g transform="rotate(15 23 15)"><rect x="21.0" y="3.0" width="5.4" height="13.8" rx="2.2" fill="#B45309"/><rect x="22.4" y="5.0" width="2.6" height="9.4" rx="1.2" fill="#FDE047"/></g>
+      <path d="M13.5 14.5 L15.5 8.5 L17.6 13.0 L18.5 7.2 L20.4 13.2 L22.5 9.2 L22.2 14.8 Z" fill="#FACC15" stroke="#92400E" stroke-width="1.1" stroke-linejoin="round"/>
+      <rect x="6.8" y="13.8" width="22.4" height="17.8" rx="8.6" fill="#92400E"/>
+      <rect x="8.4" y="15.3" width="19.2" height="14.8" rx="7.2" fill="#FFFDF2"/>
+      <path d="M10.8 18.8 L15.8 20.4 M25.2 18.8 L20.2 20.4" stroke="#B45309" stroke-width="1.7" stroke-linecap="round"/>
+      <ellipse cx="13.6" cy="21.6" rx="1.5" ry="1.8" fill="#0D9488"/>
+      <ellipse cx="22.4" cy="21.6" rx="1.5" ry="1.8" fill="#0D9488"/>
+      <circle cx="14.0" cy="21.0" r="0.55" fill="#FFF"/>
+      <circle cx="22.8" cy="21.0" r="0.55" fill="#FFF"/>
+      <path d="M15.6 26.4 Q18 24.4 20.4 26.4 Q18 28.4 15.6 26.4 Z" fill="#D97706"/>
+    `
+  },
+  {
+    level: 6, min: 600e6, max: 1e9, range: "600M – 1B", name: "红魔兔", stage: "stage-demon",
+    svg: `
+      <path class="b-aura" d="M6 26 Q2 18 7 13 Q6 19 9 21 Z M30 26 Q34 18 29 13 Q30 19 27 21 Z" fill="#EF4444" opacity="0.75"/>
+      <g transform="rotate(-18 12 15)"><rect x="8.4" y="3.8" width="5.2" height="13.5" rx="2.6" fill="#7F1D1D" stroke="#EF4444" stroke-width="1.1"/><rect x="9.9" y="6.0" width="2.2" height="8.6" rx="1.1" fill="#FCA5A5" opacity="0.45"/></g>
+      <g transform="rotate(18 24 15)"><rect x="22.4" y="3.8" width="5.2" height="13.5" rx="2.6" fill="#7F1D1D" stroke="#EF4444" stroke-width="1.1"/><rect x="23.9" y="6.0" width="2.2" height="8.6" rx="1.1" fill="#FCA5A5" opacity="0.45"/></g>
+      <path d="M13.5 14.5 Q11.5 8.5 15.2 6.0 Q14.2 10.2 16.5 13.8 Z" fill="#181715" stroke="#FCA5A5" stroke-width="0.9" stroke-linejoin="round"/>
+      <path d="M22.5 14.5 Q24.5 8.5 20.8 6.0 Q21.8 10.2 19.5 13.8 Z" fill="#181715" stroke="#FCA5A5" stroke-width="0.9" stroke-linejoin="round"/>
+      <rect x="6.5" y="13.6" width="23" height="18.2" rx="8.8" fill="#450A0A" stroke="#EF4444" stroke-width="1.2"/>
+      <rect x="8.1" y="15.1" width="19.8" height="15.2" rx="7.4" fill="#DC2626"/>
+      <path d="M10.6 19.4 L16.2 21.4 L11.4 23.0 Z M25.4 19.4 L19.8 21.4 L24.6 23.0 Z" fill="#FEF08A"/>
+      <circle cx="13.5" cy="21.4" r="0.85" fill="#7F1D1D"/>
+      <circle cx="22.5" cy="21.4" r="0.85" fill="#7F1D1D"/>
+      <path d="M13.2 25.4 Q18 28.6 22.8 25.4" stroke="#450A0A" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+      <path d="M14.8 26.2 L15.6 28.2 L16.5 26.7 Z M21.2 26.2 L20.4 28.2 L19.5 26.7 Z" fill="#FFFDF7"/>
+    `
+  },
+  {
+    level: 7, min: 1e9, max: 1.5e9, range: "1B – 1.5B", name: "狱火魔神兔", stage: "stage-hell",
+    svg: `
+      <path class="b-aura" d="M7.0 21.5 L1.0 14.5 L3.2 20.5 L1.4 24.5 L4.6 24.8 L3.2 27.6 L7.5 26.2 Z" fill="#C026D3" stroke="#F43F5E" stroke-width="0.9" stroke-linejoin="round"/>
+      <path class="b-aura" d="M29.0 21.5 L35.0 14.5 L32.8 20.5 L34.6 24.5 L31.4 24.8 L32.8 27.6 L28.5 26.2 Z" fill="#C026D3" stroke="#F43F5E" stroke-width="0.9" stroke-linejoin="round"/>
+      <g transform="rotate(-22 12 15)"><rect x="8.2" y="4.2" width="5.0" height="13.0" rx="2.5" fill="#1E102B" stroke="#E879F9" stroke-width="1.0"/><rect x="9.7" y="6.2" width="2.0" height="8.4" rx="1.0" fill="#F43F5E" opacity="0.7"/></g>
+      <g transform="rotate(22 24 15)"><rect x="22.8" y="4.2" width="5.0" height="13.0" rx="2.5" fill="#1E102B" stroke="#E879F9" stroke-width="1.0"/><rect x="24.3" y="6.2" width="2.0" height="8.4" rx="1.0" fill="#F43F5E" opacity="0.7"/></g>
+      <path d="M13.2 14.8 C10.4 9.5 11.2 4.0 15.8 2.4 C14.0 6.2 14.6 8.2 16.4 13.8 Z" fill="#F59E0B" stroke="#450A0A" stroke-width="1.0" stroke-linejoin="round"/>
+      <path d="M22.8 14.8 C25.6 9.5 24.8 4.0 20.2 2.4 C22.0 6.2 21.4 8.2 19.6 13.8 Z" fill="#F59E0B" stroke="#450A0A" stroke-width="1.0" stroke-linejoin="round"/>
+      <rect x="6.6" y="13.8" width="22.8" height="18.0" rx="8.6" fill="#190A24" stroke="#F43F5E" stroke-width="1.3"/>
+      <path d="M18 15.4 L19.6 17.6 L18 19.8 L16.4 17.6 Z" fill="#F43F5E"/>
+      <circle cx="18" cy="17.6" r="0.65" fill="#FEF08A"/>
+      <path d="M10.4 20.2 L16.2 22.0 L11.4 23.8 Z M25.6 20.2 L19.8 22.0 L24.6 23.8 Z" fill="#FDE047"/>
+      <circle cx="13.4" cy="22.0" r="0.75" fill="#9D174D"/>
+      <circle cx="22.6" cy="22.0" r="0.75" fill="#9D174D"/>
+      <path d="M13.0 26.2 Q18 29.0 23.0 26.2" stroke="#F43F5E" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+      <path d="M14.7 26.8 L15.5 28.9 L16.4 27.3 Z M21.3 26.8 L20.5 28.9 L19.6 27.3 Z" fill="#FEF08A"/>
+    `
+  },
+  {
+    level: 8, min: 1.5e9, max: 3e9, range: "1.5B – 3B", name: "星渊霸王兔", stage: "stage-king",
+    svg: `
+      <ellipse cx="18" cy="12.0" rx="15.5" ry="4.0" transform="rotate(-12 18 12.0)" fill="none" stroke="#A78BFA" stroke-width="1.3" stroke-dasharray="3 2" opacity="0.85"/>
+      <g transform="rotate(-16 12 16)"><rect x="8.6" y="4.2" width="5.4" height="13.2" rx="2.7" fill="#F1EEE7"/><rect x="10.1" y="6.2" width="2.4" height="8.6" rx="1.2" fill="#F59E0B"/></g>
+      <g transform="rotate(16 24 16)"><rect x="22.0" y="4.2" width="5.4" height="13.2" rx="2.7" fill="#F1EEE7"/><rect x="23.5" y="6.2" width="2.4" height="8.6" rx="1.2" fill="#F59E0B"/></g>
+      <path d="M12.5 14.4 L13.4 7.6 L16.2 10.6 L18.0 6.0 L19.8 10.6 L22.6 7.6 L23.5 14.4 Z" fill="#F59E0B" stroke="#181715" stroke-width="1.1" stroke-linejoin="round"/>
+      <circle cx="18.0" cy="11.6" r="1.25" fill="#E54826"/>
+      <rect x="6.5" y="14.2" width="23" height="17.8" rx="8.9" fill="#F1EEE7"/>
+      <path d="M13.6 19.6 L14.3 21.1 L15.8 21.7 L14.3 22.3 L13.6 23.8 L12.9 22.3 L11.4 21.7 L12.9 21.1 Z" fill="#D97706"/>
+      <path d="M22.4 19.6 L23.1 21.1 L24.6 21.7 L23.1 22.3 L22.4 23.8 L21.7 22.3 L20.2 21.7 L21.7 21.1 Z" fill="#D97706"/>
+      <rect x="16.8" y="23.6" width="2.4" height="1.35" rx="0.65" fill="#D97706"/>
+      <path d="M15.4 26.2 Q18 28.0 20.6 26.2" stroke="#181715" stroke-width="1.25" stroke-linecap="round" fill="none"/>
+    `
+  },
+  {
+    level: 9, min: 3e9, max: Infinity, range: "3B+", name: "创世飞升兔", stage: "stage-ascend",
+    svg: `
+      <g class="b-float">
+        <ellipse cx="18" cy="3.2" rx="8.4" ry="2.2" fill="none" stroke="#E54826" stroke-width="1.8"/>
+        <ellipse cx="18" cy="3.2" rx="8.4" ry="2.2" fill="none" stroke="#FBBF24" stroke-width="0.9"/>
+        <path d="M6.8 21.5 L1.2 16.5 L2.8 21.8 L1.6 25.0 L6.8 25.6 Z" fill="#F59E0B" stroke="#181715" stroke-width="1.0" stroke-linejoin="round"/>
+        <path d="M29.2 21.5 L34.8 16.5 L33.2 21.8 L34.4 25.0 L29.2 25.6 Z" fill="#F59E0B" stroke="#181715" stroke-width="1.0" stroke-linejoin="round"/>
+        <g transform="rotate(-11 13 16)"><rect x="9.6" y="5.6" width="5.5" height="12.5" rx="2.75" fill="#181715"/><rect x="11.1" y="7.6" width="2.5" height="8.2" rx="1.25" fill="#E54826"/></g>
+        <g transform="rotate(11 23 16)"><rect x="20.9" y="5.6" width="5.5" height="12.5" rx="2.75" fill="#181715"/><rect x="22.4" y="7.6" width="2.5" height="8.2" rx="1.25" fill="#E54826"/></g>
+        <rect x="6.5" y="14.5" width="23" height="17.4" rx="8.7" fill="#181715"/>
+        <rect x="8.1" y="16.0" width="19.8" height="14.4" rx="7.2" fill="#FFFDF9"/>
+        <path d="M18 16.8 L19.5 18.7 L18 20.6 L16.5 18.7 Z" fill="#E54826"/>
+        <path d="M13.5 20.4 L14.2 21.8 L15.6 22.4 L14.2 23.0 L13.5 24.4 L12.8 23.0 L11.4 22.4 L12.8 21.8 Z" fill="#E54826"/>
+        <path d="M22.5 20.4 L23.2 21.8 L24.6 22.4 L23.2 23.0 L22.5 24.4 L21.8 23.0 L20.4 22.4 L21.8 21.8 Z" fill="#E54826"/>
+        <path d="M15.8 26.5 Q18 28.2 20.2 26.5" stroke="#181715" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+      </g>
+    `
+  }
+];
+
+function getBunnyTier(tokens) {
+  let cur = BUNNY_TIERS[0];
+  for (const t of BUNNY_TIERS) {
+    if (tokens >= t.min) cur = t;
+  }
+  return cur;
+}
+
+function renderBunnyState(tokens) {
+  const val = tokens || 0;
+  const tier = getBunnyTier(val);
+  const next = BUNNY_TIERS.find(t => t.level === tier.level + 1);
+  const wrap = document.getElementById("bunnyMascot");
+  const svg = document.getElementById("bunnySvg");
+  const mood = document.getElementById("bunnyMood");
+  const xpFill = document.getElementById("xpFill");
+  const xpText = document.getElementById("xpText");
+
+  wrap.className = "bunny-wrap" + (tier.stage ? " " + tier.stage : "");
+  wrap.dataset.lv = String(tier.level);
+  svg.innerHTML = tier.svg;
+  mood.textContent = `今日 Lv.${tier.level} ${tier.name} ▸`;
+
+  if (next) {
+    const pct = Math.max(3, Math.min(100, Math.round(((val - tier.min) / (next.min - tier.min)) * 100)));
+    if (xpFill) xpFill.style.width = pct + "%";
+    if (xpText) xpText.innerHTML = `<strong>${fmtNum(val)}</strong> / ${fmtNum(next.min)} → Lv.${next.level}`;
+  } else {
+    if (xpFill) xpFill.style.width = "100%";
+    if (xpText) xpText.innerHTML = `<strong>${fmtNum(val)}</strong> · 今日已满阶 ✨`;
+  }
+}
+
+// True escalating 9-tier click FX:
+// Lv.1-4 stay clean & restrained (classic hop/particles -> 1 ring),
+// Lv.5 unlocks rays + light quake + callout, Lv.6 unlocks screen flash + heavy quake,
+// Lv.7-9 escalate dramatically to god-rays, glowing rings & 48-particle spiral bursts!
+const TIER_FX_PALETTES = {
+  1: { colors: ["#E54826", "#F59E0B"], rings: 0, count: 2, spread: 20, rays: 0, flash: null, quake: null, callout: null, glyphs: ["•", "·"] },
+  2: { colors: ["#E54826", "#FB923C"], rings: 0, count: 4, spread: 26, rays: 0, flash: null, quake: null, callout: null, glyphs: ["•", "✦"] },
+  3: { colors: ["#E54826", "#F59E0B", "#181715"], rings: 1, count: 6, spread: 34, rays: 0, flash: null, quake: null, callout: null, glyphs: ["✦", "•", "★"] },
+  4: { colors: ["#EA580C", "#F59E0B", "#E54826"], rings: 1, count: 9, spread: 42, rays: 0, flash: null, quake: null, callout: null, glyphs: ["★", "✦", "•"] },
+  5: { colors: ["#FACC15", "#F59E0B", "#14B8A6"], rings: 2, count: 15, spread: 64, rays: 6, flash: null, quake: "sm", callout: "⚡ 爆气！", glyphs: ["⚡", "✦", "★"] },
+  6: { colors: ["#EF4444", "#DC2626", "#FEF08A"], rings: 3, count: 22, spread: 78, rays: 10, flash: "rgba(220,38,38,0.34)", quake: "lg", callout: "红魔降临", glyphs: ["✦", "◆", "▲"] },
+  7: { colors: ["#C026D3", "#F43F5E", "#FDE047"], rings: 3, count: 28, spread: 92, rays: 14, flash: "rgba(192,38,211,0.36)", quake: "lg", callout: "狱火觉醒", glyphs: ["◆", "✦", "⚡", "★"] },
+  8: { colors: ["#F59E0B", "#A78BFA", "#FEF08A"], rings: 4, count: 36, spread: 112, rays: 18, flash: "rgba(167,139,250,0.36)", quake: "lg", callout: "★ 星渊降临 ★", glyphs: ["✦", "★", "◈", "✧"] },
+  9: { colors: ["#E54826", "#FBBF24", "#FFFDF9", "#F43F5E"], rings: 5, count: 48, spread: 136, rays: 24, flash: "rgba(251,191,36,0.44)", quake: "lg", callout: "✦ 创世飞升 ✦", glyphs: ["✦", "★", "◈", "✧"] },
+};
+
+function triggerBunnyFx(el, level) {
+  const lv = Math.max(1, Math.min(9, Number(level) || 1));
+  el.classList.remove("fx-click");
+  void el.offsetWidth;
+  el.classList.add("fx-click");
+  clearTimeout(el._fxTimer);
+  el._fxTimer = setTimeout(() => el.classList.remove("fx-click"), 920);
+
+  const layer = document.getElementById("fxLayer");
+  if (!layer) return;
+  const rect = el.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const cfg = TIER_FX_PALETTES[lv] || TIER_FX_PALETTES[1];
+
+  // Screen-level quake for Lv.3+
+  if (cfg.quake) {
+    const shell = document.querySelector(".shell");
+    if (shell) {
+      const cls = cfg.quake === "lg" ? "fx-quake-lg" : "fx-quake-sm";
+      shell.classList.remove("fx-quake-sm", "fx-quake-lg");
+      void shell.offsetWidth;
+      shell.classList.add(cls);
+      setTimeout(() => shell.classList.remove(cls), 520);
+    }
+  }
+
+  // Screen-level aura flash for Lv.4+
+  if (cfg.flash) {
+    const fl = document.createElement("div");
+    fl.className = "fx-flash";
+    fl.style.background = `radial-gradient(circle at ${cx}px ${cy}px, ${cfg.flash}, transparent 72%)`;
+    fl.style.setProperty("--peak", lv >= 8 ? "0.95" : "0.85");
+    fl.style.setProperty("--dur", (0.45 + lv * 0.04) + "s");
+    layer.appendChild(fl);
+    setTimeout(() => fl.remove(), 950);
+  }
+
+  // Radial energy / god rays for Lv.3+
+  for (let i = 0; i < cfg.rays; i++) {
+    const ray = document.createElement("div");
+    ray.className = "fx-ray";
+    const ang = (360 / cfg.rays) * i + (Math.random() - 0.5) * 10;
+    const len = 32 + lv * 9 + Math.random() * 24;
+    const col = cfg.colors[i % cfg.colors.length];
+    ray.style.left = cx + "px";
+    ray.style.top = cy + "px";
+    ray.style.width = len.toFixed(0) + "px";
+    ray.style.height = (lv >= 7 ? 3 : 2) + "px";
+    ray.style.background = `linear-gradient(90deg, ${col}, transparent)`;
+    ray.style.setProperty("--ang", ang.toFixed(1) + "deg");
+    ray.style.setProperty("--dur", (0.42 + lv * 0.035) + "s");
+    layer.appendChild(ray);
+    setTimeout(() => ray.remove(), 900);
+  }
+
+  // Expanding shockwave ring(s)
+  for (let r = 0; r < cfg.rings; r++) {
+    const ring = document.createElement("div");
+    ring.className = "fx-ring";
+    const col = cfg.colors[r % cfg.colors.length];
+    const base = rect.width * (0.95 + r * 0.18);
+    ring.style.left = cx + "px";
+    ring.style.top = cy + "px";
+    ring.style.width = base + "px";
+    ring.style.height = base + "px";
+    ring.style.border = `${lv >= 6 ? 2.6 : 1.8}px solid ${col}`;
+    if (lv >= 7) ring.style.boxShadow = `0 0 12px ${col}`;
+    ring.style.setProperty("--dur", (0.48 + r * 0.15) + "s");
+    ring.style.setProperty("--end-scale", (2.1 + lv * 0.22 + r * 0.45).toFixed(2));
+    ring.style.animationDelay = (r * 0.07) + "s";
+    layer.appendChild(ring);
+    setTimeout(() => ring.remove(), 1100);
+  }
+
+  // Floating dramatic callout banner for Lv.2+
+  if (cfg.callout) {
+    const tag = document.createElement("div");
+    tag.className = "fx-callout";
+    tag.textContent = cfg.callout;
+    tag.style.left = cx + "px";
+    tag.style.top = (cy - 10) + "px";
+    tag.style.fontSize = (10 + Math.min(5, Math.floor(lv * 0.55))) + "px";
+    tag.style.color = cfg.colors[0];
+    tag.style.textShadow = `0 1px 8px ${cfg.colors[1] || cfg.colors[0]}`;
+    tag.style.setProperty("--dur", (0.78 + lv * 0.03) + "s");
+    layer.appendChild(tag);
+    setTimeout(() => tag.remove(), 1150);
+  }
+
+  // Radial / spiral burst particles scaling with tier complexity
+  for (let i = 0; i < cfg.count; i++) {
+    const p = document.createElement("span");
+    p.className = "fx-particle";
+    const spiralOffset = lv >= 8 ? (i * 0.18) : 0;
+    const angle = (Math.PI * 2 * i) / cfg.count + spiralOffset + (Math.random() - 0.5) * 0.35;
+    const dist = cfg.spread * (0.55 + Math.random() * 0.72);
+    const dx = Math.cos(angle) * dist;
+    const dy = Math.sin(angle) * dist - (lv >= 6 ? 14 : 3);
+    const col = cfg.colors[i % cfg.colors.length];
+    p.textContent = cfg.glyphs[i % cfg.glyphs.length];
+    p.style.left = cx + "px";
+    p.style.top = cy + "px";
+    p.style.color = col;
+    p.style.fontSize = (10 + Math.min(8, Math.floor(lv * 0.85)) + Math.random() * 4).toFixed(1) + "px";
+    p.style.textShadow = lv >= 5 ? `0 0 8px ${col}` : "none";
+    p.style.setProperty("--dx", dx.toFixed(1) + "px");
+    p.style.setProperty("--dy", dy.toFixed(1) + "px");
+    p.style.setProperty("--rot", ((Math.random() - 0.5) * 380).toFixed(0) + "deg");
+    p.style.setProperty("--dur", (0.52 + Math.random() * 0.38 + lv * 0.03).toFixed(2) + "s");
+    layer.appendChild(p);
+    setTimeout(() => p.remove(), 1250);
+  }
+}
+
+function renderEvoModal() {
+  const tokens = (state.data && state.data.today_tokens != null) ? state.data.today_tokens : 0;
+  const cur = getBunnyTier(tokens);
+  const next = BUNNY_TIERS.find(t => t.level === cur.level + 1);
+  const box = document.getElementById("evoProgressBox");
+
+  if (next) {
+    const pct = Math.max(2, Math.min(100, Math.round(((tokens - cur.min) / (next.min - cur.min)) * 100)));
+    const remain = Math.max(0, next.min - tokens);
+    box.innerHTML = `
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+        <span>今日：<strong>Lv.${cur.level} ${cur.name}</strong> (${fmtNum(tokens)})</span>
+        <span style="color:var(--accent)">距「Lv.${next.level} 神秘形态」还差 ${fmtNum(remain)}</span>
+      </div>
+      <div class="race-track" style="height:6px"><div class="race-bar" style="width:${pct}%;background:var(--accent)"></div></div>
+    `;
+  } else {
+    box.innerHTML = `<div style="display:flex;justify-content:space-between">
+      <span>今日：<strong>Lv.9 ${cur.name}</strong> (${fmtNum(tokens)})</span>
+      <span style="color:var(--accent)">今日已达满阶巅峰 ✨</span>
+    </div>`;
+  }
+
+  const grid = document.getElementById("evoGrid");
+  grid.innerHTML = BUNNY_TIERS.map(t => {
+    const isLocked = t.level > cur.level;
+    const cls = t.level === cur.level
+      ? "evo-card current"
+      : (isLocked ? "evo-card locked" : "evo-card unlocked");
+    if (isLocked) {
+      return `<div class="${cls}" data-locked="1" data-min="${t.min}">
+        <div class="bunny-wrap" title="今日达到 ${t.range.split(" ")[0]} 自动解锁">
+          <svg class="bunny-svg" viewBox="0 0 36 36" fill="none">
+            <rect x="10.5" y="16" width="15" height="11.5" rx="3" stroke="currentColor" stroke-width="1.8" opacity="0.45"/>
+            <path d="M13.5 16 V12.5 A4.5 4.5 0 0 1 22.5 12.5 V16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" opacity="0.45"/>
+            <circle cx="18" cy="21.5" r="1.6" fill="currentColor" opacity="0.5"/>
+          </svg>
+        </div>
+        <div class="evo-name">Lv.${t.level} 待解锁</div>
+        <div class="evo-rng">${t.range}</div>
+      </div>`;
+    }
+    return `<div class="${cls}" data-locked="0" data-min="${t.min}">
+      <div class="bunny-wrap ${t.stage}" data-lv="${t.level}" title="点击触发 Lv.${t.level} ${t.name} 专属动效">
+        <svg class="bunny-svg" viewBox="0 0 36 36" fill="none">${t.svg}</svg>
+      </div>
+      <div class="evo-name">Lv.${t.level} ${t.name}</div>
+      <div class="evo-rng">${t.range}</div>
+    </div>`;
+  }).join("");
+
+  const hintEl = document.getElementById("evoHint");
+  grid.querySelectorAll(".evo-card").forEach(card => {
+    const wrap = card.querySelector(".bunny-wrap");
+    wrap.addEventListener("click", () => {
+      if (card.dataset.locked === "1") {
+        card.classList.remove("shake");
+        void card.offsetWidth;
+        card.classList.add("shake");
+        const need = Math.max(0, Number(card.dataset.min) - tokens);
+        if (hintEl) hintEl.textContent = `🔒 尚未解锁，今日还差 ${fmtNum(need)} 即可点亮`;
+      } else {
+        triggerBunnyFx(wrap, wrap.dataset.lv);
+      }
+    });
+  });
+}
+
+function openEvoModal() {
+  renderEvoModal();
+  document.getElementById("evoModal").classList.add("open");
+}
+
+const TOOL_COLORS = {
+  antigravity: "#E54826",
+  codex: "#0D8A72",
+  omp: "#DB2777",
+  devin: "#0284C7",
+  qoder: "#059669",
+  copilot: "#4F46E5",
+  droid: "#EA580C",
+  opencode: "#D97706",
+  grok: "#52525B",
+  claude: "#2563EB",
+  gemini: "#7C3AED",
+  hermes: "#0891B2",
+  qwencode: "#6D28D9",
+  kimicode: "#0F766E",
+  mimocode: "#B45309",
+  cline: "#BE123C",
+};
+
+function fmtNum(n) {
+  if (n == null || isNaN(n)) return "—";
+  n = Number(n);
+  if (n >= 1e9) return (n / 1e9).toFixed(2) + "B";
+  if (n >= 1e6) return (n / 1e6).toFixed(2) + "M";
+  if (n >= 1e3) return (n / 1e3).toFixed(1) + "K";
+  return Math.round(n).toString();
+}
+
+function fmtCost(v) {
+  if (v == null || isNaN(v)) return "—";
+  return "$" + Number(v).toFixed(v >= 100 ? 0 : 2);
+}
+
+function esc(s) {
+  return String(s ?? "").replace(/[&<>"']/g, c => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[c]));
+}
+
+function initTheme() {
+  const saved = localStorage.getItem("tootoo_theme");
+  if (saved === "dark" || saved === "light") {
+    document.documentElement.dataset.theme = saved;
+  } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+    document.documentElement.dataset.theme = "dark";
+  }
+}
+
+document.getElementById("themeBtn").addEventListener("click", () => {
+  const cur = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+  document.documentElement.dataset.theme = cur;
+  localStorage.setItem("tootoo_theme", cur);
+  if (state.data) renderAll(state.data);
+});
+
+function hopBunny() {
+  const el = document.getElementById("bunnyMascot");
+  triggerBunnyFx(el, el.dataset.lv || 1);
+}
+
+document.getElementById("bunnyMascot").addEventListener("click", () => {
+  hopBunny();
+  fetchTelemetry(true);
+});
+
+document.getElementById("bunnyMood").addEventListener("click", openEvoModal);
+document.getElementById("xpWrap").addEventListener("click", openEvoModal);
+document.getElementById("evoCloseBtn").addEventListener("click", () => {
+  document.getElementById("evoModal").classList.remove("open");
+});
+document.getElementById("evoModal").addEventListener("click", (e) => {
+  if (e.target === e.currentTarget) e.currentTarget.classList.remove("open");
+});
+
+let fetchSeq = 0;
+let lastFetchTs = 0;
+let bootRetryTimer = null;
+
+const BOOT_STEPS = [
+  "兔兔正在统计本地 Token…",
+  "正在扫描本地 AI 工具会话日志…",
+  "正在计算输出速度与首字延迟…",
+  "正在校准实时模型成本…",
+];
+let bootStepIdx = 0;
+const bootStepTimer = setInterval(() => {
+  if (!document.body.classList.contains("is-booting")) {
+    clearInterval(bootStepTimer);
+    return;
+  }
+  bootStepIdx = (bootStepIdx + 1) % BOOT_STEPS.length;
+  const el = document.getElementById("bootStatus");
+  if (el) el.textContent = BOOT_STEPS[bootStepIdx];
+}, 1100);
+
+function finishBoot() {
+  if (document.body.classList.contains("is-booting")) {
+    document.body.classList.remove("is-booting");
+    clearInterval(bootStepTimer);
+  }
+  if (bootRetryTimer) {
+    clearTimeout(bootRetryTimer);
+    bootRetryTimer = null;
+  }
+}
+
+let activeFetchCtrl = null;
+
+async function fetchTelemetry(force = false) {
+  const seq = ++fetchSeq;
+  if (activeFetchCtrl) {
+    try { activeFetchCtrl.abort(); } catch {}
+  }
+  const ctrl = new AbortController();
+  activeFetchCtrl = ctrl;
+  const timeoutId = setTimeout(() => ctrl.abort(), 10000);
+
+  const btn = document.getElementById("refreshBtn");
+  document.body.classList.add("is-fetching");
+  btn.classList.add("spinning");
+  try {
+    const url = `/api/telemetry?range=${encodeURIComponent(state.range)}&tool=${encodeURIComponent(state.tool)}&force=${force ? 1 : 0}`;
+    const res = await fetch(url, { signal: ctrl.signal });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    if (seq !== fetchSeq) return;
+    // If popover defaults to today and today has 0 requests, smoothly switch to 7d on initial load
+    if (isPopover && !state.data && state.range === "today" && data.kpi.requests === 0) {
+      state.range = "7d";
+      document.querySelectorAll("#rangeSeg button").forEach(b => b.classList.toggle("active", b.dataset.range === "7d"));
+      const res7 = await fetch(`/api/telemetry?range=7d&tool=${encodeURIComponent(state.tool)}`, { signal: ctrl.signal });
+      const data7 = await res7.json();
+      if (seq !== fetchSeq) return;
+      state.data = data7;
+      lastFetchTs = Date.now();
+      renderAll(data7);
+      finishBoot();
+      connectStream(true);
+      return;
+    }
+    const isFirst = !state.data;
+    state.data = data;
+    lastFetchTs = Date.now();
+    renderAll(data);
+    finishBoot();
+    if (isFirst) connectStream(true);
+    if (force) postNative("refreshed");
+  } catch (err) {
+    if (err && err.name === "AbortError") {
+      // Aborted by newer request or timeout
+    } else {
+      console.error(err);
+    }
+    if (!state.data && seq === fetchSeq) {
+      const el = document.getElementById("bootStatus");
+      if (el) el.textContent = "正在唤醒本地扫描引擎…";
+      bootRetryTimer = setTimeout(() => fetchTelemetry(false), 350);
+    }
+  } finally {
+    clearTimeout(timeoutId);
+    if (seq === fetchSeq) {
+      activeFetchCtrl = null;
+      document.body.classList.remove("is-fetching");
+      btn.classList.remove("spinning");
+    }
+  }
+}
+
+let popoverVisible = !isPopover;
+
+function disconnectStream() {
+  if (state.es) {
+    state.es.close();
+    state.es = null;
+  }
+}
+
+window.__onPopoverOpen = () => {
+  popoverVisible = true;
+  tickQuotaCountdowns();
+  if (state.data) {
+    connectStream(true);
+    // If popover was idle >12s, silently refresh with top progress bar
+    if (Date.now() - lastFetchTs > 12000) {
+      fetchTelemetry(false);
+    }
+  }
+};
+
+window.__onPopoverClose = () => {
+  popoverVisible = false;
+  disconnectStream();
+};
+
+document.addEventListener("visibilitychange", () => {
+  if (isPopover) return;
+  if (document.hidden) {
+    disconnectStream();
+  } else if (state.data) {
+    connectStream(true);
+    if (Date.now() - lastFetchTs > 15000) fetchTelemetry(false);
+  }
+});
+
+function connectStream(skipInitial = true) {
+  disconnectStream();
+  // Keep background pre-warmed popover completely quiet until opened
+  if (isPopover && !popoverVisible) return;
+  if (!isPopover && document.hidden) return;
+  const url = `/api/stream?range=${encodeURIComponent(state.range)}&tool=${encodeURIComponent(state.tool)}&skip_initial=${skipInitial ? 1 : 0}`;
+  const es = new EventSource(url);
+  es.onmessage = (ev) => {
+    try {
+      const data = JSON.parse(ev.data);
+      state.data = data;
+      lastFetchTs = Date.now();
+      renderAll(data);
+      finishBoot();
+    } catch {}
+  };
+  state.es = es;
+}
+
+function renderAll(d) {
+  document.getElementById("scanBadge").textContent = `扫描 ${d.scan_ms}ms`;
+  document.getElementById("updatedPill").textContent = `更新于 ${d.generated_at.slice(11)}`;
+  const popInfo = document.getElementById("popScanInfo");
+  if (popInfo) {
+    const ps = d.pricing_status || {};
+    const pTxt = ps.remote_count ? `${ps.remote_count}价目` : "离线价目";
+    popInfo.textContent = `${d.scan_ms}ms · ${pTxt}`;
+  }
+
+  // 9-Tier Bunny evolution strictly tracks TODAY's total tokens across all agents
+  renderBunnyState(d.today_tokens != null ? d.today_tokens : 0);
+
+  renderToolChips(d);
+  renderHero(d);
+  renderDailyChart(d);
+  renderModelList(d);
+  renderHistogram(d);
+  renderHours(d);
+  renderAgents(d);
+  renderTape(d);
+  renderProjects(d);
+}
+
+function renderToolChips(d) {
+  const bar = document.getElementById("toolBar");
+  const totalReqs = d.available_tools.reduce((a, b) => a + b.requests, 0);
+  let html = `<button class="chip ${state.tool === "all" ? "active" : ""}" data-tool="all">
+    <span class="dot" style="background:currentColor"></span>全部<span class="cnt">${totalReqs}</span>
+  </button>`;
+  for (const t of d.available_tools) {
+    const active = state.tool === t.tool ? "active" : "";
+    const lbl = isPopover ? t.short : t.label;
+    html += `<button class="chip ${active}" data-tool="${esc(t.tool)}">
+      <span class="dot" style="background:${esc(t.accent)}"></span>
+      ${esc(lbl)}
+      <span class="cnt">${fmtNum(t.tokens)}</span>
+    </button>`;
+  }
+  bar.innerHTML = html;
+  bar.querySelectorAll(".chip").forEach(btn => {
+    btn.addEventListener("click", () => {
+      state.tool = btn.dataset.tool;
+      fetchTelemetry(false);
+      connectStream();
+    });
+  });
+}
+
+function renderHero(d) {
+  const k = d.kpi;
+  document.getElementById("kpiTokens").textContent = fmtNum(k.tokens);
+  document.getElementById("cachePill").textContent = `缓存 ${k.cache_hit}%`;
+  document.getElementById("kpiInOut").textContent = `输入 ${fmtNum(k.in)} · 输出 ${fmtNum(k.out)}`;
+  document.getElementById("kpiCache").textContent = `命中 ${fmtNum(k.cr)}`;
+
+  const tot = Math.max(k.tokens, 1);
+  const segs = [
+    { v: k.cr, c: "var(--teal)" },
+    { v: k.in, c: "var(--blue)" },
+    { v: k.out, c: "var(--accent)" },
+    { v: k.reason, c: "var(--amber)" },
+  ];
+  document.getElementById("tokenStack").innerHTML = segs
+    .filter(s => s.v > 0)
+    .map(s => `<div style="width:${(s.v / tot * 100).toFixed(2)}%;background:${s.c}"></div>`)
+    .join("");
+
+  document.getElementById("kpiTps").textContent = k.tps != null ? k.tps.toFixed(1) : "—";
+  document.getElementById("kpiPerfSamples").textContent = `${k.perf_samples} 次采样`;
+  const gaugePct = k.tps != null ? Math.min(100, Math.round((k.tps / 160) * 100)) : 0;
+  document.getElementById("tpsGauge").style.width = gaugePct + "%";
+  document.getElementById("fastestPill").textContent = k.fastest_model
+    ? `峰值 ${k.fastest_model.tps}/s`
+    : "暂无样本";
+
+  document.getElementById("kpiTtft").textContent = k.ttft_p50 != null ? k.ttft_p50.toFixed(2) : "—";
+  document.getElementById("p95Pill").textContent = k.ttft_p95 != null ? `P95 ${k.ttft_p95.toFixed(1)}s` : "P95 —";
+
+  const maxBin = Math.max(1, ...d.ttft_histogram.map(b => b.count));
+  document.getElementById("ttftMini").innerHTML = d.ttft_histogram
+    .map(b => `<span style="height:${Math.max(8, Math.round((b.count / maxBin) * 100))}%" title="${b.label}: ${b.count}"></span>`)
+    .join("");
+
+  document.getElementById("kpiCost").textContent = fmtCost(k.cost);
+  document.getElementById("kpiReqs").textContent = `${k.requests.toLocaleString()} 次请求`;
+  document.getElementById("kpiSessions").textContent = `${k.sessions} 个会话`;
+  document.getElementById("peakHourPill").textContent = k.peak_hour != null
+    ? `${String(k.peak_hour).padStart(2, "0")}:00 高峰`
+    : "高峰 —";
+}
+
+function renderDailyChart(d) {
+  const svg = document.getElementById("dailySvg");
+  const tip = document.getElementById("dailyTip");
+  const kicker = document.getElementById("dailyChartKicker");
+  const mode = state.chartMode;
+
+  // When viewing TODAY in tokens mode, plot 24h hourly curve instead of a single lonely bar
+  const useHourly = d.range === "today" && mode === "tokens" && (d.hourly || []).length === 24;
+  if (kicker) {
+    kicker.textContent = useHourly ? "今日分时用量 (00–23点)" : "每日用量与速度趋势";
+  }
+
+  const rows = useHourly
+    ? d.hourly.map(h => ({
+        day: String(h.hour).padStart(2, "0") + ":00",
+        label: String(h.hour).padStart(2, "0"),
+        tokens: h.tokens,
+        cost: 0,
+        requests: h.requests,
+        tps: null,
+        ttft_p50: null,
+      }))
+    : (d.daily || []);
+
+  if (!rows.length) {
+    svg.innerHTML = `<text x="380" y="100" text-anchor="middle" fill="var(--muted)" font-size="12" font-family="var(--font-mono)">当前范围暂无数据</text>`;
+    return;
+  }
+
+  const W = 760, H = 205, padL = 48, padR = 14, padT = 18, padB = 26;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+  const vals = rows.map(r => (mode === "tokens" ? r.tokens : mode === "cost" ? r.cost : (r.tps || 0)));
+  const maxVal = Math.max(mode === "tps" ? 10 : 1, ...vals) * 1.12;
+
+  const cs = getComputedStyle(document.documentElement);
+  const borderCol = cs.getPropertyValue("--border").trim();
+  const mutedCol = cs.getPropertyValue("--muted").trim();
+  const barCol = mode === "tokens"
+    ? cs.getPropertyValue("--teal").trim()
+    : mode === "tps"
+      ? cs.getPropertyValue("--accent").trim()
+      : cs.getPropertyValue("--amber").trim();
+
+  let parts = [];
+  for (let i = 0; i <= 3; i++) {
+    const y = padT + (plotH * i) / 3;
+    const v = maxVal * (1 - i / 3);
+    const lbl = mode === "tokens" ? fmtNum(v) : mode === "cost" ? "$" + v.toFixed(v >= 10 ? 0 : 1) : v.toFixed(0) + "/s";
+    parts.push(`<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="${borderCol}" stroke-dasharray="3 3" />`);
+    parts.push(`<text x="${padL - 8}" y="${y + 3}" text-anchor="end" fill="${mutedCol}" font-size="10" font-family="var(--font-mono)">${lbl}</text>`);
+  }
+
+  const step = plotW / rows.length;
+  const barW = Math.max(4, Math.min(34, step * 0.62));
+  const labelEvery = useHourly ? 4 : (rows.length > 14 ? Math.ceil(rows.length / 8) : 1);
+
+  if (mode === "tps") {
+    const pts = [];
+    rows.forEach((r, i) => {
+      if (r.tps != null) {
+        const cx = padL + step * i + step / 2;
+        const cy = padT + plotH - (r.tps / maxVal) * plotH;
+        pts.push(`${cx.toFixed(1)},${cy.toFixed(1)}`);
+      }
+    });
+    if (pts.length > 1) {
+      parts.push(`<polyline fill="none" stroke="${barCol}" stroke-width="2.4" points="${pts.join(" ")}" />`);
+    }
+  }
+
+  rows.forEach((r, i) => {
+    const v = vals[i];
+    const h = Math.max(v > 0 ? 2 : 0, (v / maxVal) * plotH);
+    const x = padL + step * i + (step - barW) / 2;
+    const y = padT + plotH - h;
+    if (mode === "tps") {
+      if (r.tps != null) {
+        parts.push(`<circle cx="${(x + barW / 2).toFixed(1)}" cy="${y.toFixed(1)}" r="4.5" fill="${barCol}" />`);
+      }
+    } else {
+      parts.push(`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="${barCol}" opacity="0.88" />`);
+    }
+
+    if (i % labelEvery === 0 || i === rows.length - 1) {
+      const cx = padL + step * i + step / 2;
+      const xLbl = useHourly ? r.label : r.day.slice(5);
+      parts.push(`<text x="${cx.toFixed(1)}" y="${H - 7}" text-anchor="middle" fill="${mutedCol}" font-size="10" font-family="var(--font-mono)">${xLbl}</text>`);
+    }
+
+    parts.push(`<rect class="hit" data-idx="${i}" x="${(padL + step * i).toFixed(1)}" y="${padT}" width="${step.toFixed(1)}" height="${plotH}" fill="transparent" />`);
+  });
+
+  svg.innerHTML = parts.join("");
+
+  svg.querySelectorAll(".hit").forEach(el => {
+    el.addEventListener("mouseenter", (e) => {
+      const r = rows[Number(el.dataset.idx)];
+      const rect = svg.getBoundingClientRect();
+      const box = el.getBoundingClientRect();
+      tip.innerHTML = useHourly
+        ? `<strong>今日 ${r.day}</strong><br>用量: ${fmtNum(r.tokens)} · 请求: ${r.requests} 次`
+        : `<strong>${r.day}</strong><br>用量: ${fmtNum(r.tokens)} · 请求: ${r.requests} 次<br>速度: ${r.tps != null ? r.tps + " tok/s" : "—"} · 首字: ${r.ttft_p50 != null ? r.ttft_p50 + "s" : "—"} · 成本: ${fmtCost(r.cost)}`;
+      tip.style.left = Math.min(rect.width - 90, Math.max(90, box.left - rect.left + box.width / 2)) + "px";
+      tip.style.top = (Math.max(46, e.clientY - rect.top)) + "px";
+      tip.classList.add("show");
+    });
+    el.addEventListener("mouseleave", () => tip.classList.remove("show"));
+  });
+}
+
+function renderModelList(d) {
+  const el = document.getElementById("modelList");
+  const list = [...(d.models || [])];
+  if (!list.length) {
+    el.innerHTML = `<div class="empty">当前筛选范围内没有模型记录</div>`;
+    return;
+  }
+
+  const key = state.modelSort;
+  list.sort((a, b) => {
+    if (key === "ttft_p50") {
+      const av = a.ttft_p50 ?? 9999, bv = b.ttft_p50 ?? 9999;
+      return av - bv;
+    }
+    return (b[key] ?? -1) - (a[key] ?? -1);
+  });
+
+  const maxTok = Math.max(1, ...list.map(m => m.tokens || 0));
+  const maxTps = Math.max(10, ...list.map(m => m.tps || 0));
+  const maxTtft = Math.max(1, ...list.map(m => m.ttft_p50 || 0));
+  const maxCost = Math.max(0.01, ...list.map(m => m.cost || 0));
+
+  el.innerHTML = list.slice(0, 12).map(m => {
+    const primaryTool = m.tools[0] || "codex";
+    const col = TOOL_COLORS[primaryTool] || "#6B7280";
+    const tags = m.tools.map(t => `<span class="tag" style="background:${TOOL_COLORS[t] || "#6B7280"}">${t === "antigravity" ? "AGY" : t.toUpperCase()}</span>`).join("");
+
+    let primaryVal = "—";
+    let primaryLbl = "";
+    let primaryCls = "speed-mid";
+    let barPct = 0;
+    let barCol = col;
+    let subLeft = "";
+    let subRight = "";
+
+    if (key === "tokens") {
+      primaryVal = fmtNum(m.tokens);
+      primaryLbl = "总用量";
+      barPct = Math.round((m.tokens / maxTok) * 100);
+      subLeft = `${m.requests} 次 · 缓存 ${m.cache_hit}%`;
+      subRight = `输出 ${fmtNum(m.out)} · ${fmtCost(m.cost)}`;
+    } else if (key === "tps") {
+      primaryVal = m.tps != null ? m.tps.toFixed(1) + "/s" : "—";
+      primaryLbl = `输出速度 (${m.perf_samples})`;
+      primaryCls = m.tps == null ? "" : m.tps >= 70 ? "speed-fast" : m.tps < 25 ? "speed-slow" : "speed-mid";
+      barPct = m.tps != null ? Math.round((m.tps / maxTps) * 100) : 0;
+      barCol = m.tps != null && m.tps >= 70 ? "var(--teal)" : col;
+      subLeft = `首字 ${m.ttft_p50 != null ? m.ttft_p50.toFixed(2) + "s" : "—"}`;
+      subRight = `输出 ${fmtNum(m.out)} · ${fmtNum(m.tokens)}`;
+    } else if (key === "ttft_p50") {
+      primaryVal = m.ttft_p50 != null ? m.ttft_p50.toFixed(2) + "s" : "—";
+      primaryLbl = "首字 P50";
+      primaryCls = m.ttft_p50 == null ? "" : m.ttft_p50 <= 2.0 ? "speed-fast" : m.ttft_p50 >= 6.0 ? "speed-slow" : "speed-mid";
+      barPct = m.ttft_p50 != null ? Math.round((m.ttft_p50 / maxTtft) * 100) : 0;
+      barCol = m.ttft_p50 != null && m.ttft_p50 <= 2.0 ? "var(--teal)" : "var(--amber)";
+      subLeft = `P95 ${m.ttft_p95 != null ? m.ttft_p95.toFixed(1) + "s" : "—"}`;
+      subRight = `速度 ${m.tps != null ? m.tps.toFixed(1) + "/s" : "—"}`;
+    } else {
+      primaryVal = fmtCost(m.cost);
+      primaryLbl = "估算成本";
+      barPct = Math.round((m.cost / maxCost) * 100);
+      barCol = "var(--amber)";
+      subLeft = `用量 ${fmtNum(m.tokens)} · 缓存 ${m.cache_hit}%`;
+      subRight = `${m.requests} 次请求`;
+    }
+
+    const barWidth = Math.max(barPct > 0 ? 4 : 0, barPct);
+
+    return `<div class="model-row">
+      <div style="min-width:0">
+        <div class="model-name" title="${esc(m.model)}">${esc(m.model)}</div>
+        <div class="model-meta">${tags} <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${subLeft}</span></div>
+        <div class="pop-inline-bar">
+          <div class="race-track" style="height:4.5px"><div class="race-bar" style="width:${barWidth}%;background:${barCol}"></div></div>
+        </div>
+      </div>
+      <div class="hide-sm hide-pop">
+        <div class="race-track"><div class="race-bar" style="width:${barWidth}%;background:${barCol}"></div></div>
+        <div class="model-meta" style="justify-content:space-between">
+          <span>${subLeft}</span>
+          <span>${subRight}</span>
+        </div>
+      </div>
+      <div class="num-cell">
+        <span class="primary-metric ${primaryCls}">${primaryVal}</span>
+        <span class="num-label">${primaryLbl}</span>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function renderHistogram(d) {
+  const svg = document.getElementById("histSvg");
+  const bins = d.ttft_histogram || [];
+  const total = bins.reduce((s, b) => s + b.count, 0);
+  document.getElementById("histSummary").textContent = d.kpi.ttft_p50 != null
+    ? `中位 ${d.kpi.ttft_p50}s · ${total} 条`
+    : "暂无数据";
+
+  if (!total) {
+    svg.innerHTML = `<text x="210" y="75" text-anchor="middle" fill="var(--muted)" font-size="11" font-family="var(--font-mono)">暂无首字延迟样本</text>`;
+    return;
+  }
+
+  const W = 420, H = 150, padL = 12, padR = 12, padT = 22, padB = 24;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const maxC = Math.max(1, ...bins.map(b => b.count));
+  const step = plotW / bins.length;
+  const bw = step * 0.64;
+
+  const cs = getComputedStyle(document.documentElement);
+  const amber = cs.getPropertyValue("--amber").trim();
+  const muted = cs.getPropertyValue("--muted").trim();
+  const ink = cs.getPropertyValue("--ink").trim();
+
+  svg.innerHTML = bins.map((b, i) => {
+    const h = Math.max(b.count > 0 ? 3 : 0, (b.count / maxC) * plotH);
+    const x = padL + i * step + (step - bw) / 2;
+    const y = padT + plotH - h;
+    const cx = x + bw / 2;
+    const pct = total > 0 ? Math.round((b.count / total) * 100) : 0;
+    return `
+      <rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${amber}" opacity="${(0.35 + 0.65 * (b.count / maxC)).toFixed(2)}" />
+      <text x="${cx.toFixed(1)}" y="${(y - 5).toFixed(1)}" text-anchor="middle" fill="${ink}" font-size="9.5" font-family="var(--font-mono)">${b.count > 0 ? pct + "%" : ""}</text>
+      <text x="${cx.toFixed(1)}" y="${H - 6}" text-anchor="middle" fill="${muted}" font-size="9.5" font-family="var(--font-mono)">${b.label}</text>
+    `;
+  }).join("");
+}
+
+function renderHours(d) {
+  const svg = document.getElementById("hourSvg");
+  const tip = document.getElementById("hourTip");
+  const strip = document.getElementById("periodStrip");
+  const hrs = d.hourly || [];
+  const total = hrs.reduce((s, h) => s + h.tokens, 0);
+  const maxT = Math.max(1, ...hrs.map(h => h.tokens));
+
+  const pill = document.getElementById("hourActivePill");
+  if (pill) {
+    pill.textContent = d.kpi.peak_hour != null && total > 0
+      ? `高峰 ${String(d.kpi.peak_hour).padStart(2, "0")}:00`
+      : "暂无数据";
+  }
+
+  if (!total) {
+    svg.innerHTML = `<text x="210" y="68" text-anchor="middle" fill="var(--muted)" font-size="11" font-family="var(--font-mono)">当前范围暂无分时数据</text>`;
+    strip.innerHTML = "";
+    return;
+  }
+
+  const W = 420, H = 128, padL = 8, padR = 8, padT = 14, padB = 22;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const step = plotW / 24;
+  const bw = step * 0.68;
+
+  const cs = getComputedStyle(document.documentElement);
+  const accent = cs.getPropertyValue("--accent").trim();
+  const teal = cs.getPropertyValue("--teal").trim();
+  const border = cs.getPropertyValue("--border").trim();
+  const muted = cs.getPropertyValue("--muted").trim();
+
+  let parts = [
+    `<line x1="${padL}" y1="${padT + plotH}" x2="${W - padR}" y2="${padT + plotH}" stroke="${border}" />`,
+  ];
+
+  hrs.forEach((h, i) => {
+    const ratio = h.tokens / maxT;
+    const bh = h.tokens > 0 ? Math.max(3, ratio * plotH) : 2;
+    const x = padL + i * step + (step - bw) / 2;
+    const y = padT + plotH - bh;
+    const isPeak = d.kpi.peak_hour === h.hour && h.tokens > 0;
+    const fill = h.tokens === 0 ? border : (isPeak ? accent : teal);
+    const op = h.tokens === 0 ? 0.35 : (isPeak ? 0.95 : (0.35 + ratio * 0.55));
+    parts.push(`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="2" fill="${fill}" opacity="${op.toFixed(2)}" />`);
+    if (i % 3 === 0 || i === 23) {
+      const cx = x + bw / 2;
+      parts.push(`<text x="${cx.toFixed(1)}" y="${H - 6}" text-anchor="middle" fill="${isPeak ? accent : muted}" font-size="9.5" font-weight="${isPeak ? 700 : 400}" font-family="var(--font-mono)">${String(i).padStart(2, "0")}</text>`);
+    }
+    parts.push(`<rect class="h-hit" data-idx="${i}" x="${(padL + i * step).toFixed(1)}" y="${padT}" width="${step.toFixed(1)}" height="${plotH}" fill="transparent" />`);
+  });
+
+  svg.innerHTML = parts.join("");
+
+  svg.querySelectorAll(".h-hit").forEach(el => {
+    el.addEventListener("mouseenter", (e) => {
+      const h = hrs[Number(el.dataset.idx)];
+      const rect = svg.getBoundingClientRect();
+      const box = el.getBoundingClientRect();
+      const hh = String(h.hour).padStart(2, "0");
+      tip.innerHTML = `<strong>${hh}:00 – ${hh}:59</strong><br>用量: ${fmtNum(h.tokens)} · ${h.requests} 次请求`;
+      tip.style.left = Math.min(rect.width - 75, Math.max(75, box.left - rect.left + box.width / 2)) + "px";
+      tip.style.top = (Math.max(42, e.clientY - rect.top)) + "px";
+      tip.classList.add("show");
+    });
+    el.addEventListener("mouseleave", () => tip.classList.remove("show"));
+  });
+
+  // 4 time-of-day buckets for instant readability
+  const buckets = [
+    { name: "凌晨 0-5", sum: hrs.slice(0, 6).reduce((a, b) => a + b.tokens, 0) },
+    { name: "上午 6-11", sum: hrs.slice(6, 12).reduce((a, b) => a + b.tokens, 0) },
+    { name: "下午 12-17", sum: hrs.slice(12, 18).reduce((a, b) => a + b.tokens, 0) },
+    { name: "晚间 18-23", sum: hrs.slice(18, 24).reduce((a, b) => a + b.tokens, 0) },
+  ];
+  const topSum = Math.max(...buckets.map(b => b.sum));
+  strip.innerHTML = buckets.map(b => {
+    const pct = total > 0 ? Math.round((b.sum / total) * 100) : 0;
+    const cls = b.sum === topSum && topSum > 0 ? "period-pill top" : "period-pill";
+    return `<div class="${cls}" title="用量 ${fmtNum(b.sum)}">
+      <span class="p-name">${b.name}</span>
+      <span class="p-val">${pct}% · ${fmtNum(b.sum)}</span>
+    </div>`;
+  }).join("");
+}
+
+function splitNumUnit(str) {
+  const m = String(str).match(/^([0-9.,]+)([A-Za-z%]+)$/);
+  if (!m) return esc(str);
+  return `${esc(m[1])}<em class="u">${esc(m[2])}</em>`;
+}
+
+function fmtCostRich(n) {
+  const s = fmtCost(n);
+  if (s.startsWith("$")) return `<em class="u pre">$</em>${esc(s.slice(1))}`;
+  return esc(s);
+}
+
+function fmtCountdown(tsSec) {
+  const r = Number(tsSec);
+  if (!Number.isFinite(r) || r <= 0) return "";
+  const diff = Math.max(0, Math.floor(r - Date.now() / 1000));
+  if (diff <= 0) return "已重置";
+  const d = Math.floor(diff / 86400);
+  const h = Math.floor((diff % 86400) / 3600);
+  const m = Math.floor((diff % 3600) / 60);
+  const s = diff % 60;
+  const pad = n => String(n).padStart(2, "0");
+  if (d > 0) return `⏱ ${d}天 ${pad(h)}:${pad(m)}:${pad(s)}`;
+  return `⏱ ${pad(h)}:${pad(m)}:${pad(s)}`;
+}
+
+function tickQuotaCountdowns() {
+  if (isPopover && !popoverVisible) return;
+  if (!isPopover && document.hidden) return;
+  document.querySelectorAll(".quota-rst[data-reset-ts]").forEach(el => {
+    const ts = Number(el.dataset.resetTs);
+    const txt = fmtCountdown(ts);
+    if (txt) el.textContent = txt;
+  });
+}
+
+setInterval(tickQuotaCountdowns, 1000);
+
+function renderAgents(d) {
+  const targets = [
+    [document.getElementById("agentList"), document.getElementById("agentCountPill")],
+    [document.getElementById("agentListPop"), document.getElementById("agentCountPillPop")],
+  ];
+  const tools = d.tools || [];
+  const grand = Math.max(1, d.kpi.tokens);
+
+  const html = !tools.length
+    ? `<div class="empty">暂无本地会话数据</div>`
+    : tools.map(t => {
+        const share = Math.round((t.tokens / grand) * 100);
+        const accent = esc(t.accent || "#6B7280");
+
+        // Semantic tones for instant numeric scannability
+        const tpsTone = t.tps == null ? "tone-muted" : t.tps >= 70 ? "tone-good" : t.tps < 25 ? "tone-warn" : "";
+        const tpsBox = t.tps == null ? "" : t.tps >= 70 ? "is-good" : t.tps < 25 ? "is-warn" : "";
+        const tpsHtml = t.tps != null ? `${t.tps.toFixed(1)}<em class="u">/s</em>` : "—";
+
+        const ttftTone = t.ttft_p50 == null ? "tone-muted" : t.ttft_p50 <= 2.0 ? "tone-good" : t.ttft_p50 >= 6.0 ? "tone-bad" : t.ttft_p50 >= 3.5 ? "tone-warn" : "";
+        const ttftBox = t.ttft_p50 == null ? "" : t.ttft_p50 <= 2.0 ? "is-good" : t.ttft_p50 >= 6.0 ? "is-bad" : t.ttft_p50 >= 3.5 ? "is-warn" : "";
+        const ttftHtml = t.ttft_p50 != null ? `${t.ttft_p50.toFixed(2)}<em class="u">s</em>` : "—";
+
+        const cacheVal = Number(t.cache_hit || 0);
+        const cacheTone = cacheVal >= 90 ? "tone-good" : cacheVal >= 75 ? "tone-blue" : "tone-warn";
+        const cacheBox = cacheVal >= 90 ? "is-good" : cacheVal < 70 ? "is-warn" : "";
+        const cacheHtml = `${t.cache_hit}<em class="u">%</em>`;
+
+        const costVal = Number(t.cost || 0);
+        const costTone = costVal >= 50 ? "tone-bad" : costVal >= 15 ? "tone-cost" : "";
+        const costBox = costVal >= 15 ? "is-cost" : "";
+        const costHtml = fmtCostRich(t.cost);
+
+        let quotaHtml = "";
+        if (t.quota && (t.quota.primary || t.quota.secondary || (t.quota.buckets && t.quota.buckets.length))) {
+          const isLocal = t.quota.source === "local";
+          const quotaLabel = (obj, fallback) => {
+            if (obj && obj.label) return obj.label;
+            const wm = Number(obj && obj.window_minutes);
+            if (!Number.isFinite(wm) || wm <= 0) return fallback;
+            if (wm === 10080) return "周额度";
+            if (wm === 1440) return "日额度";
+            if (wm >= 1440 && wm % 1440 === 0) return `${wm / 1440}天额度`;
+            if (wm >= 60 && wm % 60 === 0) return `${wm / 60}h额度`;
+            return `${wm}分额度`;
+          };
+          const makeQuota = (obj, fallback) => {
+            const usedPct = Math.max(0, Number(obj.used_percent || 0));
+            const remPct = Math.max(0, Math.min(100, Math.round(100 - usedPct)));
+            const col = remPct <= 15 ? "var(--bad)" : remPct <= 30 ? "var(--warn)" : "var(--teal)";
+            const lbl = quotaLabel(obj, fallback);
+            const qUnit = obj.unit || t.quota.unit || "tokens";
+            const isCustom = obj.is_custom != null ? !!obj.is_custom : !!t.quota.is_custom;
+            const cfgKey = obj.key || t.tool;
+            let rightHtml = "";
+            let tipTxt = "";
+            if (isLocal && obj.limit_value) {
+              const remVal = Math.max(0, Number(obj.limit_value) - Number(obj.used_value || 0));
+              const usedStr = qUnit === "cost" ? fmtCost(obj.used_value || 0) : fmtNum(obj.used_value || 0);
+              const remStr = qUnit === "cost" ? fmtCost(remVal) : fmtNum(remVal);
+              const limStr = qUnit === "cost" ? fmtCost(obj.limit_value) : fmtNum(obj.limit_value);
+              const peakStr = obj.hist_peak_tokens ? ` · 历史峰值 ${fmtNum(obj.hist_peak_tokens)}` : "";
+              tipTxt = `${lbl}（${isCustom ? "自定义" : "本地估算"}）：已用 ${usedStr} / 上限 ${limStr}，剩余 ${remStr}（${obj.used_requests || 0}次请求${peakStr}），点击 ⚙ 可修改上限`;
+              rightHtml = `<span class="quota-sub" style="margin-left:auto">${usedStr} / ${limStr}</span>`;
+            } else {
+              const rst = obj.resets_at ? fmtCountdown(obj.resets_at) : "";
+              tipTxt = `${lbl}：已用 ${Math.round(usedPct)}%，剩余 ${remPct}%`;
+              if (rst) {
+                rightHtml = `<span class="quota-rst" data-reset-ts="${esc(obj.resets_at)}" title="距离额度重置倒计时">${rst}</span>`;
+              }
+            }
+            const editBtn = isLocal
+              ? `<button class="quota-edit-btn" data-qtool="${esc(cfgKey)}" data-qlabel="${esc(t.label + " · " + lbl)}" data-qparent="${esc(t.tool)}" title="自定义 ${esc(lbl)} 上限与周期">⚙</button>`
+              : "";
+            return `<div class="quota-item" title="${esc(tipTxt)}">
+              <span class="quota-lbl">${esc(lbl)}</span>
+              <div class="quota-track"><div class="quota-fill" style="width:${remPct}%;background:${col}"></div></div>
+              <span class="quota-pct" style="color:${col}">剩 ${remPct}%</span>
+              ${rightHtml}
+              ${editBtn}
+            </div>`;
+          };
+
+          const rawBuckets = (t.quota.buckets && t.quota.buckets.length)
+            ? t.quota.buckets
+            : [t.quota.primary, t.quota.secondary].filter(x => x && x.used_percent != null);
+
+          if (rawBuckets.length > 0) {
+            const foldKey = `tootoo_qfold_${t.tool}`;
+            const isFolded = localStorage.getItem(foldKey) === "1";
+            // Compact summary shown ONLY when folded
+            const worst = rawBuckets.reduce((a, b) => (Number(b.used_percent || 0) > Number(a.used_percent || 0) ? b : a), rawBuckets[0]);
+            const worstRem = Math.max(0, Math.min(100, Math.round(100 - Number(worst.used_percent || 0))));
+            const worstCol = worstRem <= 15 ? "var(--bad)" : worstRem <= 30 ? "var(--warn)" : "var(--teal)";
+            const badgeHtml = isLocal
+              ? `<span class="quota-badge">${t.quota.is_custom ? "自定义" : "本地估算"}</span>`
+              : "";
+            const summaryTxt = rawBuckets.length > 1
+              ? `<span class="quota-collapsed-sum" style="color:var(--muted);font-size:9.5px">${esc(quotaLabel(worst, ""))} <strong style="color:${worstCol}">剩 ${worstRem}%</strong></span>`
+              : `<span class="quota-collapsed-sum" style="color:${worstCol};font-weight:700;font-size:10px">剩 ${worstRem}%</span>`;
+
+            quotaHtml = `<div class="quota-row ${isFolded ? "collapsed" : ""}" data-qfold="${esc(t.tool)}">
+              <div class="quota-head">
+                <button class="quota-fold-btn" data-qfold-btn="${esc(t.tool)}" title="点击展开或隐藏额度">
+                  <span class="chev">▾</span>
+                  <span>额度</span>
+                </button>
+                <span style="display:inline-flex;align-items:center;gap:6px">${summaryTxt}${badgeHtml}</span>
+              </div>
+              <div class="quota-list">${rawBuckets.map((b, idx) => makeQuota(b, idx === 0 ? "主额度" : "次额度")).join("")}</div>
+            </div>`;
+          }
+        }
+
+        return `<div class="agent-item" style="border-left-color:${accent}">
+          <div class="agent-top">
+            <span class="agent-name">${esc(t.label)}</span>
+            <span class="agent-vol">
+              <span class="agent-vol-num">${splitNumUnit(fmtNum(t.tokens))}</span>
+              <span class="agent-share-pill" style="color:${accent};background:color-mix(in srgb, ${accent} 12%, transparent);border-color:color-mix(in srgb, ${accent} 28%, transparent)">${share}%</span>
+            </span>
+          </div>
+          <div class="race-track" style="height:4.5px"><div class="race-bar" style="width:${Math.max(2, share)}%;background:${accent}"></div></div>
+          <div class="agent-stats">
+            <div class="stat-cell ${tpsBox}">
+              <span class="stat-lbl"><i class="stat-dot" style="background:var(--teal)"></i>速度</span>
+              <strong class="stat-val ${tpsTone}">${tpsHtml}</strong>
+            </div>
+            <div class="stat-cell ${ttftBox}">
+              <span class="stat-lbl"><i class="stat-dot" style="background:var(--accent)"></i>首字</span>
+              <strong class="stat-val ${ttftTone}">${ttftHtml}</strong>
+            </div>
+            <div class="stat-cell ${cacheBox}">
+              <span class="stat-lbl"><i class="stat-dot" style="background:var(--blue)"></i>缓存</span>
+              <strong class="stat-val ${cacheTone}">${cacheHtml}</strong>
+            </div>
+            <div class="stat-cell ${costBox}">
+              <span class="stat-lbl"><i class="stat-dot" style="background:var(--amber)"></i>成本</span>
+              <strong class="stat-val ${costTone}">${costHtml}</strong>
+            </div>
+          </div>
+          ${quotaHtml}
+        </div>`;
+      }).join("");
+
+  for (const [el, pill] of targets) {
+    if (pill) pill.textContent = `${tools.length} 个活跃`;
+    if (el) {
+      el.innerHTML = html;
+      el.querySelectorAll(".quota-edit-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          openQuotaModal(btn.dataset.qtool, btn.dataset.qlabel, btn.dataset.qparent);
+        });
+      });
+      el.querySelectorAll(".quota-fold-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const toolKey = btn.dataset.qfoldBtn;
+          const row = btn.closest(".quota-row");
+          if (!row) return;
+          const nextCollapsed = !row.classList.contains("collapsed");
+          // Keep both popover & desktop card in sync
+          document.querySelectorAll(`.quota-row[data-qfold="${CSS.escape(toolKey)}"]`).forEach(r => {
+            r.classList.toggle("collapsed", nextCollapsed);
+          });
+          localStorage.setItem(`tootoo_qfold_${toolKey}`, nextCollapsed ? "1" : "0");
+        });
+      });
+    }
+  }
+}
+
+let qcfgState = { tool: "", win: 5, unit: "tokens" };
+
+function syncQcfgUI() {
+  document.querySelectorAll("#qcfgWinSeg button").forEach(b => {
+    b.classList.toggle("active", Number(b.dataset.win) === qcfgState.win);
+  });
+  document.querySelectorAll("#qcfgUnitSeg button").forEach(b => {
+    b.classList.toggle("active", b.dataset.unit === qcfgState.unit);
+  });
+  const lbl = document.getElementById("qcfgLimitLbl");
+  const inp = document.getElementById("qcfgLimitInput");
+  if (qcfgState.unit === "cost") {
+    lbl.textContent = "周期上限（美元 $，留空按自动估算）";
+    inp.placeholder = "例如 50（代表 $50）";
+  } else {
+    lbl.textContent = "周期上限（百万 Tokens，留空按历史峰值自动估算）";
+    inp.placeholder = "例如 200（代表 200M）";
+  }
+}
+
+function openQuotaModal(cfgKey, label, parentTool) {
+  const tObj = (state.data && state.data.tools || []).find(x => x.tool === (parentTool || cfgKey));
+  const q = tObj && tObj.quota;
+  let b = q && q.primary;
+  if (q && q.buckets && q.buckets.length) {
+    b = q.buckets.find(x => x.key === cfgKey) || b;
+  }
+  qcfgState.tool = cfgKey;
+  qcfgState.win = b && b.window_minutes ? Math.round(b.window_minutes / 60) : 5;
+  if (![5, 24, 168].includes(qcfgState.win)) qcfgState.win = 5;
+  qcfgState.unit = (b && b.unit === "cost") ? "cost" : "tokens";
+  document.getElementById("qcfgTitle").textContent = `${label || cfgKey} · 额度上限`;
+  const inp = document.getElementById("qcfgLimitInput");
+  if (b && b.is_custom && b.limit_value) {
+    inp.value = qcfgState.unit === "cost"
+      ? String(b.limit_value)
+      : String(Math.round((b.limit_value / 1e6) * 10) / 10);
+  } else {
+    inp.value = "";
+  }
+  syncQcfgUI();
+  document.getElementById("quotaModal").classList.add("open");
+}
+
+document.querySelectorAll("#qcfgWinSeg button").forEach(b => {
+  b.addEventListener("click", () => { qcfgState.win = Number(b.dataset.win); syncQcfgUI(); });
+});
+document.querySelectorAll("#qcfgUnitSeg button").forEach(b => {
+  b.addEventListener("click", () => { qcfgState.unit = b.dataset.unit; syncQcfgUI(); });
+});
+document.getElementById("qcfgCloseBtn").addEventListener("click", () => {
+  document.getElementById("quotaModal").classList.remove("open");
+});
+document.getElementById("quotaModal").addEventListener("click", (e) => {
+  if (e.target === e.currentTarget) e.currentTarget.classList.remove("open");
+});
+document.getElementById("qcfgResetBtn").addEventListener("click", async () => {
+  await fetch("/api/quota/config", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tool: qcfgState.tool, reset: true }),
+  });
+  document.getElementById("quotaModal").classList.remove("open");
+  fetchTelemetry(false);
+});
+document.getElementById("qcfgSaveBtn").addEventListener("click", async () => {
+  const raw = parseFloat(document.getElementById("qcfgLimitInput").value);
+  const limit = Number.isFinite(raw) && raw > 0
+    ? (qcfgState.unit === "cost" ? raw : raw * 1e6)
+    : null;
+  await fetch("/api/quota/config", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      tool: qcfgState.tool,
+      window_hours: qcfgState.win,
+      unit: qcfgState.unit,
+      limit,
+    }),
+  });
+  document.getElementById("quotaModal").classList.remove("open");
+  fetchTelemetry(false);
+});
+
+function renderTape(d) {
+  const tb = document.getElementById("tapeBody");
+  const calls = d.recent_calls || [];
+  if (!calls.length) {
+    tb.innerHTML = `<tr><td colspan="7" class="empty">暂无请求记录</td></tr>`;
+    return;
+  }
+  tb.innerHTML = calls.map(c => {
+    const tpsCls = c.tps == null ? "" : c.tps >= 70 ? "speed-fast" : c.tps < 25 ? "speed-slow" : "speed-mid";
+    const ttftCls = c.ttft == null ? "" : c.ttft <= 1.2 ? "speed-fast" : c.ttft >= 6 ? "speed-slow" : "speed-mid";
+    const tShort = isPopover ? c.time.slice(6) : c.time;
+    const mShort = isPopover ? c.model.slice(0, 16) : c.model.slice(0, 26);
+    return `<tr>
+      <td style="color:var(--muted)">${esc(tShort)}</td>
+      <td><span class="tag" style="background:${esc(c.accent)}">${esc(c.tool_short)}</span></td>
+      <td title="${esc(c.model)}">${esc(mShort)}</td>
+      <td class="r hide-pop">${c.out.toLocaleString()}</td>
+      <td class="r hide-pop" style="color:var(--muted)">${c.gen != null ? c.gen.toFixed(1) + "s" : "—"}</td>
+      <td class="r ${tpsCls}">${c.tps != null ? c.tps.toFixed(1) + "/s" : "—"}</td>
+      <td class="r ${ttftCls}">${c.ttft != null ? c.ttft.toFixed(2) + "s" : "—"}</td>
+    </tr>`;
+  }).join("");
+}
+
+function renderProjects(d) {
+  const el = document.getElementById("projList");
+  const projs = d.projects || [];
+  if (!projs.length) {
+    el.innerHTML = `<div class="empty">当前范围暂无带目录信息的会话</div>`;
+    return;
+  }
+  const maxT = Math.max(1, projs[0].tokens);
+  el.innerHTML = projs.slice(0, 8).map(p => {
+    const pct = Math.max(4, Math.round((p.tokens / maxT) * 100));
+    const tags = p.tools.map(t => `<span class="tag" style="background:${TOOL_COLORS[t] || "#6B7280"}">${t === "antigravity" ? "AGY" : t.toUpperCase()}</span>`).join(" ");
+    return `<div class="proj-row">
+      <div class="proj-top">
+        <strong>${esc(p.name)}</strong>
+        <span>${fmtNum(p.tokens)} · ${fmtCost(p.cost)}</span>
+      </div>
+      <div class="proj-path" title="${esc(p.path)}">${esc(p.path)}</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="race-track" style="flex:1;height:4.5px"><div class="race-bar" style="width:${pct}%;background:var(--border-strong)"></div></div>
+        ${tags}
+      </div>
+    </div>`;
+  }).join("");
+}
+
+// Event bindings
+document.getElementById("rangeSeg").querySelectorAll("button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("#rangeSeg button").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    state.range = btn.dataset.range;
+    fetchTelemetry(false);
+    connectStream();
+  });
+});
+
+document.getElementById("chartModeTabs").querySelectorAll("button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("#chartModeTabs button").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    state.chartMode = btn.dataset.mode;
+    if (state.data) renderDailyChart(state.data);
+  });
+});
+
+document.getElementById("modelSortTabs").querySelectorAll("button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("#modelSortTabs button").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    state.modelSort = btn.dataset.sort;
+    if (state.data) renderModelList(state.data);
+  });
+});
+
+document.getElementById("popTabs").querySelectorAll("button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("#popTabs button").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    document.body.dataset.popTab = btn.dataset.tab;
+  });
+});
+
+document.getElementById("refreshBtn").addEventListener("click", () => {
+  hopBunny();
+  fetchTelemetry(true);
+});
+
+document.getElementById("expandBtn").addEventListener("click", () => {
+  if (!postNative("openWindow")) {
+    window.open(window.location.origin + "/", "_blank");
+  }
+});
+
+document.getElementById("popMbCfgLink").addEventListener("click", (e) => {
+  e.preventDefault();
+  document.getElementById("mbCfgBar").classList.toggle("open");
+  postNative("getMenuBarFields");
+});
+
+document.querySelectorAll("#mbCfgChips button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const f = btn.dataset.field;
+    if (menuBarFields.includes(f)) {
+      menuBarFields = menuBarFields.filter(x => x !== f);
+    } else {
+      menuBarFields = [...menuBarFields, f];
+    }
+    renderMenuBarCfgChips();
+    postNative("setMenuBarFields", { fields: menuBarFields });
+  });
+});
+
+document.getElementById("popPricingLink").addEventListener("click", async (e) => {
+  e.preventDefault();
+  const a = e.currentTarget;
+  a.textContent = "同步中…";
+  try {
+    const r = await fetch("/api/pricing/refresh");
+    const j = await r.json();
+    a.textContent = j.ok ? `已同步(${j.count})` : "同步失败";
+    await fetchTelemetry(false);
+    setTimeout(() => { a.textContent = "同步价格"; }, 2500);
+  } catch {
+    a.textContent = "同步失败";
+    setTimeout(() => { a.textContent = "同步价格"; }, 2000);
+  }
+});
+
+document.getElementById("popBrowserLink").addEventListener("click", (e) => {
+  e.preventDefault();
+  if (!postNative("openBrowser")) window.open(window.location.origin + "/", "_blank");
+});
+
+document.getElementById("popQuitLink").addEventListener("click", (e) => {
+  e.preventDefault();
+  postNative("quit");
+});
+
+initTheme();
+postNative("getMenuBarFields");
+fetchTelemetry(false);
+</script>
+</body>
+</html>
