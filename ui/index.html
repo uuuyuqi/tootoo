@@ -274,6 +274,11 @@
     font-weight: 800;
     letter-spacing: 0.06em;
     white-space: nowrap;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: rgba(24, 23, 21, 0.9);
+    border: 1px solid color-mix(in srgb, currentColor 65%, transparent);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
     transform: translate(-50%, -50%);
     animation: fxCalloutUp var(--dur, 0.9s) cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
@@ -4061,19 +4066,19 @@ function triggerBunnyFx(el, level) {
     setTimeout(() => ring.remove(), 1100);
   }
 
-  // Floating dramatic callout banner for Lv.2+
+  // Floating dramatic callout banner for Lv.5+
   if (cfg.callout) {
     const tag = document.createElement("div");
     tag.className = "fx-callout";
     tag.textContent = cfg.callout;
     tag.style.left = cx + "px";
     tag.style.top = (cy - 10) + "px";
-    tag.style.fontSize = (10 + Math.min(5, Math.floor(lv * 0.55))) + "px";
-    tag.style.color = cfg.colors[0];
-    tag.style.textShadow = `0 1px 8px ${cfg.colors[1] || cfg.colors[0]}`;
-    tag.style.setProperty("--dur", (0.78 + lv * 0.03) + "s");
+    tag.style.fontSize = (10 + Math.min(4, Math.floor(lv * 0.45))) + "px";
+    tag.style.color = lv === 5 ? "#FDE047" : lv === 6 ? "#FCA5A5" : lv === 7 ? "#F0ABFC" : lv === 8 ? "#FDE68A" : "#FEF08A";
+    tag.style.textShadow = `0 0 8px ${cfg.colors[0]}`;
+    tag.style.setProperty("--dur", (0.85 + lv * 0.03) + "s");
     layer.appendChild(tag);
-    setTimeout(() => tag.remove(), 1150);
+    setTimeout(() => tag.remove(), 1200);
   }
 
   // Radial / spiral burst particles scaling with tier complexity
