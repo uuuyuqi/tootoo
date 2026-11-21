@@ -1007,7 +1007,11 @@
     background: var(--active-bg);
   }
   #patrolBtn.patrolling .ico-paw {
-    animation: patrolHop 0.42s ease-in-out infinite;
+    animation: pawBtnHop 0.48s ease-in-out infinite;
+  }
+  @keyframes pawBtnHop {
+    0%, 100% { transform: translateY(0) rotate(-4deg); }
+    50%      { transform: translateY(-2.5px) rotate(6deg); }
   }
   #arcadeBtn:hover .ico-more {
     transform: scale(1.14);
@@ -1414,19 +1418,9 @@
     100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.15); }
   }
 
-  /* Two-way -> Full Clockwise Perimeter Patrol from Avatar + Empty Avatar While Away */
-  .bunny-wrap.is-away {
-    background: var(--surface-2) !important;
-    border: 1.5px dashed color-mix(in srgb, var(--border-strong) 75%, var(--border)) !important;
-    box-shadow: none !important;
-  }
-  .bunny-wrap.is-away::before,
-  .bunny-wrap.is-away::after {
-    opacity: 0 !important;
-  }
+  /* Full Clockwise Perimeter Patrol from Avatar (Avatar frame stays untouched, bunny leaves it empty!) */
   .bunny-wrap.is-away .bunny-svg {
     opacity: 0 !important;
-    transform: scale(0.35) !important;
     animation: none !important;
   }
   .patrol-bunny {
