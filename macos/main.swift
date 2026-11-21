@@ -89,18 +89,24 @@ func makeBunnyMenuBarIcon(tier: Int = 1, compactForBar: Bool = false) -> NSImage
             NSBezierPath(ovalIn: NSRect(x: 12.1, y: 21.4, width: 3.3, height: 3.3)).fill()
             NSBezierPath(ovalIn: NSRect(x: 20.6, y: 21.4, width: 3.3, height: 3.3)).fill()
 
-        case 3: // 认真兔: clean round head + sleek focus glasses
-            rotatedEar(cx: 13, cy: 15, deg: -10, x: 9.6, y: 3.0, w: 5.4, h: 13.8, r: 2.7)
-            rotatedEar(cx: 23, cy: 15, deg: 10, x: 21.0, y: 3.0, w: 5.4, h: 13.8, r: 2.7)
+        case 3: // 认真兔: headband + flowing tails + sharp focused brows & locked-in eyes
+            rotatedEar(cx: 13, cy: 15, deg: -12, x: 9.5, y: 2.8, w: 5.4, h: 13.6, r: 2.7)
+            rotatedEar(cx: 23, cy: 15, deg: 12, x: 21.1, y: 2.8, w: 5.4, h: 13.6, r: 2.7)
+            let tail = NSBezierPath()
+            tail.lineWidth = 2.4; tail.lineCapStyle = .round
+            tail.move(to: NSPoint(x: 27.5, y: 17.6)); tail.line(to: NSPoint(x: 34.8, y: 15.8))
+            tail.move(to: NSPoint(x: 27.6, y: 19.6)); tail.line(to: NSPoint(x: 34.2, y: 22.0))
+            tail.stroke()
             fillRect(6.5, 13.8, 23.0, 17.8, 8.9)
             ctx.setBlendMode(.clear)
-            fillRect(9.2, 19.0, 7.2, 5.2, 1.5)
-            fillRect(19.6, 19.0, 7.2, 5.2, 1.5)
-            fillRect(16.2, 20.6, 3.6, 1.6, 0.7)
-            ctx.setBlendMode(.normal)
-            NSColor.black.setFill()
-            NSBezierPath(ovalIn: NSRect(x: 11.7, y: 20.4, width: 2.4, height: 2.4)).fill()
-            NSBezierPath(ovalIn: NSRect(x: 21.9, y: 20.4, width: 2.4, height: 2.4)).fill()
+            fillRect(7.4, 17.3, 21.2, 2.2, 0.8)
+            let brows = NSBezierPath()
+            brows.lineWidth = 2.0; brows.lineCapStyle = .round
+            brows.move(to: NSPoint(x: 10.4, y: 20.2)); brows.line(to: NSPoint(x: 15.6, y: 21.6))
+            brows.move(to: NSPoint(x: 25.6, y: 20.2)); brows.line(to: NSPoint(x: 20.4, y: 21.6))
+            brows.stroke()
+            NSBezierPath(ovalIn: NSRect(x: 11.8, y: 22.0, width: 3.0, height: 3.0)).fill()
+            NSBezierPath(ovalIn: NSRect(x: 21.2, y: 22.0, width: 3.0, height: 3.0)).fill()
 
         case 4: // 暴击兔: clean round head + blazing lightning crest + crit eyes
             rotatedEar(cx: 12, cy: 15, deg: -16, x: 8.8, y: 3.8, w: 5.2, h: 13.2, r: 2.6)
