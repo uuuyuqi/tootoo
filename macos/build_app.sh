@@ -31,6 +31,7 @@ cp "$ROOT/scanner.py" "$RES/scanner.py"
 cp "$ROOT/pricing.py" "$RES/pricing.py"
 cp "$ROOT/server.py" "$RES/server.py"
 cp "$ROOT/ui/index.html" "$RES/ui/index.html"
+cp "$ROOT/ui/bunny_lines.json" "$RES/ui/bunny_lines.json"
 
 cat > "$CONTENTS/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>

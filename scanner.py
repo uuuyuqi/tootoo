@@ -35,6 +35,58 @@ HOME = os.path.expanduser("~")
 CACHE_DIR = os.path.join(HOME, ".tootoo")
 CACHE_FILE = os.path.join(CACHE_DIR, "scan_cache_v5.json")
 CONFIG_FILE = os.path.join(CACHE_DIR, "config.json")
+EVO_STATE_FILE = os.path.join(CACHE_DIR, "evo_state.json")
+_MEM_EVO_STATE: dict[str, Any] | None = None
+
+
+def _update_evo_peak_tokens(today_iso: str, today_tokens: int) -> int:
+    """Track highest single-day tokens achieved since TooToo was first enabled.
+
+    Never backfills pre-install historical logs so higher evolution tiers keep
+    their mystery until earned live, while preserving unlocks across days.
+    """
+    global _MEM_EVO_STATE
+    if _MEM_EVO_STATE is None:
+        loaded: dict[str, Any] | None = None
+        try:
+            if os.path.exists(EVO_STATE_FILE):
+                with open(EVO_STATE_FILE, "r", encoding="utf-8") as f:
+                    obj = json.load(f)
+                if isinstance(obj, dict) and isinstance(obj.get("peak_daily_tokens"), (int, float)):
+                    loaded = {
+                        "since": str(obj.get("since") or today_iso),
+                        "peak_daily_tokens": int(obj["peak_daily_tokens"]),
+                        "peak_day": str(obj.get("peak_day") or today_iso),
+                    }
+        except Exception:
+            loaded = None
+        if loaded is None:
+            loaded = {
+                "since": today_iso,
+                "peak_daily_tokens": int(today_tokens),
+                "peak_day": today_iso,
+            }
+            _MEM_EVO_STATE = loaded
+            _save_evo_state(loaded)
+        else:
+            _MEM_EVO_STATE = loaded
+
+    if today_tokens > int(_MEM_EVO_STATE.get("peak_daily_tokens", 0)):
+        _MEM_EVO_STATE["peak_daily_tokens"] = int(today_tokens)
+        _MEM_EVO_STATE["peak_day"] = today_iso
+        _save_evo_state(_MEM_EVO_STATE)
+    return int(_MEM_EVO_STATE.get("peak_daily_tokens", today_tokens))
+
+
+def _save_evo_state(state: dict[str, Any]) -> None:
+    try:
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        tmp = EVO_STATE_FILE + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(state, f, ensure_ascii=False, indent=2)
+        os.replace(tmp, EVO_STATE_FILE)
+    except OSError:
+        pass
 
 # Performance outlier guards & TTFT log-histogram parameters
 PERF_MIN_OUTPUT = 20
@@ -85,7 +137,7 @@ MODEL_PRICING: list[tuple[str, tuple[float, float, float, float]]] = [
 
 TOOL_META = {
     "antigravity": {"label": "Antigravity (agy)", "short": "AGY", "accent": "#E54826"},
-    "codex": {"label": "Codex CLI", "short": "CODEX", "accent": "#0D8A72"},
+    "codex": {"label": "Codex CLI", "short": "CODEX", "accent": "#3B6CF6"},
     "omp": {"label": "OMP / Pi", "short": "OMP", "accent": "#DB2777"},
     "devin": {"label": "Devin CLI", "short": "DEVIN", "accent": "#0284C7"},
     "qoder": {"label": "Qoder CLI", "short": "QODER", "accent": "#059669"},
@@ -93,7 +145,7 @@ TOOL_META = {
     "droid": {"label": "Factory Droid", "short": "DROID", "accent": "#EA580C"},
     "opencode": {"label": "OpenCode", "short": "OPENCODE", "accent": "#D97706"},
     "grok": {"label": "Grok CLI", "short": "GROK", "accent": "#52525B"},
-    "claude": {"label": "Claude Code", "short": "CLAUDE", "accent": "#2563EB"},
+    "claude": {"label": "Claude Code", "short": "CLAUDE", "accent": "#D97757"},
     "gemini": {"label": "Gemini CLI", "short": "GEMINI", "accent": "#7C3AED"},
     "hermes": {"label": "Hermes", "short": "HERMES", "accent": "#0891B2"},
     "qwencode": {"label": "Qwen Code", "short": "QWEN", "accent": "#6D28D9"},
@@ -1529,26 +1581,104 @@ def _flush_cache_if_needed(force_disk: bool = False) -> None:
 atexit.register(lambda: _flush_cache_if_needed(force_disk=True))
 
 
-def _hydrate_parsed(tool: str, path: str, parsed: dict[str, Any]) -> None:
+def _pick_workspace_uri(uris: Any) -> str | None:
+    if not isinstance(uris, list):
+        return None
+    from urllib.parse import unquote, urlparse
+    paths: list[str] = []
+    for u in uris:
+        if not isinstance(u, str):
+            continue
+        if u.startswith("file://"):
+            p = unquote(urlparse(u).path).rstrip("/")
+            if p:
+                paths.append(p)
+        elif u.startswith("/"):
+            paths.append(u.rstrip("/"))
+    # Prefer actual workspace over internal T3 Code attachment folder
+    real = [p for p in paths if "/.t3/userdata/attachments" not in p]
+    return real[0] if real else (paths[0] if paths else None)
+
+
+def _load_antigravity_workspaces() -> dict[str, str]:
+    wmap: dict[str, str] = {}
+    summary_patterns = [
+        os.path.join(HOME, ".gemini", "antigravity", "conversation_summaries.db"),
+        os.path.join(HOME, ".gemini", "antigravity-cli", "conversation_summaries.db"),
+        os.path.join(HOME, ".t3", "userdata", "providers", "antigravity", "*", "antigravity-acp", "conversation_summaries.db"),
+    ]
+    for pat in summary_patterns:
+        for db_path in glob.glob(pat):
+            try:
+                conn = sqlite_open_ro(db_path)
+            except Exception:
+                continue
+            try:
+                for cid, uris_json in conn.execute("SELECT conversation_id, workspace_uris FROM conversation_summaries"):
+                    if not cid or not uris_json:
+                        continue
+                    try:
+                        uris = json.loads(uris_json)
+                    except Exception:
+                        continue
+                    proj = _pick_workspace_uri(uris)
+                    if proj:
+                        wmap[str(cid)] = proj
+            except sqlite3.Error:
+                pass
+            finally:
+                conn.close()
+
+    # Fallback: CLI conversation_metadata.json
+    meta_json = os.path.join(HOME, ".gemini", "antigravity-cli", "cache", "conversation_metadata.json")
+    if os.path.exists(meta_json):
+        try:
+            with open(meta_json, "r", encoding="utf-8") as f:
+                md = json.load(f)
+            convs = md.get("conversations") if isinstance(md, dict) else None
+            if isinstance(convs, dict):
+                for cid, item in convs.items():
+                    if cid in wmap or not isinstance(item, dict):
+                        continue
+                    summ = item.get("summary") or {}
+                    proj = _pick_workspace_uri(summ.get("WorkspaceURIs"))
+                    if proj:
+                        wmap[str(cid)] = proj
+        except Exception:
+            pass
+    return wmap
+
+
+def _hydrate_parsed(tool: str, path: str, parsed: dict[str, Any], fallback_proj: str | None = None) -> bool:
+    """Hydrate event metadata in-place. Returns True if project was newly backfilled."""
     evs = parsed.get("events")
     if not evs:
-        return
-    # Already hydrated in-place? Skip O(N) loop completely
+        return False
+    backfilled = False
+    file_proj = parsed.get("project") or fallback_proj
+    if file_proj and not parsed.get("project"):
+        parsed["project"] = file_proj
+        backfilled = True
+
     first = evs[0]
-    if "day" in first and "tool" in first and "session" in first:
-        return
-    file_proj = parsed.get("project")
+    already_hydrated = "day" in first and "tool" in first and "session" in first
+    if already_hydrated and (not file_proj or first.get("project")):
+        return backfilled
+
     session_id = hashlib.md5(path.encode("utf-8")).hexdigest()[:10]
     for ev in evs:
-        ev["tool"] = tool
-        if "day" not in ev or "hour" not in ev:
-            dk, hr = local_day_hour(ev["ts"])
-            ev["day"] = dk
-            ev["hour"] = hr
+        if not already_hydrated:
+            ev["tool"] = tool
+            if "day" not in ev or "hour" not in ev:
+                dk, hr = local_day_hour(ev["ts"])
+                ev["day"] = dk
+                ev["hour"] = hr
+            if not ev.get("session"):
+                ev["session"] = session_id
         if not ev.get("project") and file_proj:
             ev["project"] = file_proj
-        if not ev.get("session"):
-            ev["session"] = session_id
+            backfilled = True
+    return backfilled
 
 
 def scan_all_events(force: bool = False, rebuild: bool = False) -> tuple[list[dict[str, Any]], dict[str, Any], float]:
@@ -1714,12 +1844,20 @@ def scan_all_events(force: bool = False, rebuild: bool = False) -> tuple[list[di
 
         all_events: list[dict[str, Any]] = []
         quotas: dict[str, Any] = {}
+        agy_ws: dict[str, str] | None = None
         for tool, path, key in valid_sources:
             entry = fcache.get(key)
             if not entry:
                 continue
             parsed = entry["data"]
-            _hydrate_parsed(tool, path, parsed)
+            fb_proj: str | None = None
+            if tool == "antigravity" and not parsed.get("project"):
+                if agy_ws is None:
+                    agy_ws = _load_antigravity_workspaces()
+                cid = os.path.splitext(os.path.basename(path))[0]
+                fb_proj = agy_ws.get(cid)
+            if _hydrate_parsed(tool, path, parsed, fallback_proj=fb_proj):
+                dirty = True
             q = parsed.get("quota")
             if q and isinstance(q, dict):
                 prev_q = quotas.get(tool)
@@ -2225,6 +2363,8 @@ def build_telemetry(
             continue
         filtered.append(ev)
 
+    evo_peak_tokens = _update_evo_peak_tokens(today_iso, today_tokens)
+
     # Aggregations
     totals = {"in": 0, "out": 0, "cr": 0, "cw": 0, "reason": 0, "cost": 0.0, "requests": 0}
     sessions: set[str] = set()
@@ -2404,8 +2544,7 @@ def build_telemetry(
         })
     models_out.sort(key=lambda x: x["tokens"], reverse=True)
 
-    # Finalize tool cards (official log quotas take precedence; otherwise local rolling-window quota)
-    local_quotas = _compute_local_rolling_quotas(events, quotas, pricing)
+    # Finalize tool cards (only real verified quotas; never display guessed local estimates)
     tools_out = []
     for tm in by_tool.values():
         p = tm["perf"].get("_")
@@ -2413,7 +2552,7 @@ def build_telemetry(
         p50 = histogram_percentile(p["th"], 0.50) if p else None
         t_tot = tm["in"] + tm["out"] + tm["cr"] + tm["cw"] + tm["reason"]
         t_in = tm["in"] + tm["cr"] + tm["cw"]
-        q_info = quotas.get(tm["tool"]) or local_quotas.get(tm["tool"])
+        q_info = quotas.get(tm["tool"])
         tools_out.append({
             "tool": tm["tool"],
             "label": tm["label"],
@@ -2554,6 +2693,7 @@ def build_telemetry(
         "range": range_key,
         "tool_filter": tool_filter,
         "today_tokens": today_tokens,
+        "evo_peak_tokens": evo_peak_tokens,
         "pricing_status": pricing.status(),
         "available_tools": available_tools,
         "kpi": {
@@ -2582,6 +2722,7 @@ def build_telemetry(
         "ttft_histogram": ttft_bins,
         "daily": daily_out,
         "hourly": [{"hour": h, "tokens": by_hour[h], "requests": by_hour_reqs[h]} for h in range(24)],
+        "quotas": quotas,
         "tools": tools_out,
         "models": models_out,
         "projects": projects_out,

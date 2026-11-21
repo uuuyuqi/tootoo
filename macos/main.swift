@@ -32,14 +32,21 @@ func bunnyTier(for tokens: Double) -> BunnyTierInfo {
 
 // MARK: - 9-Tier Bunny Menu Bar Icon (Retina CoreGraphics Template)
 
-func makeBunnyMenuBarIcon(tier: Int = 1) -> NSImage {
+func makeBunnyMenuBarIcon(tier: Int = 1, compactForBar: Bool = false) -> NSImage {
     let size = NSSize(width: 22, height: 18)
     let image = NSImage(size: size, flipped: false) { _ in
         guard let ctx = NSGraphicsContext.current?.cgContext else { return false }
         // Work in a 36x36 coordinate space (flipped vertically from SVG -> CoreGraphics bottom-up)
-        let scale: CGFloat = 18.0 / 36.0
-        ctx.translateBy(x: 2.0, y: 18.0)
-        ctx.scaleBy(x: scale, y: -scale)
+        if compactForBar {
+            // Shrink & lift slightly so the bottom 2pt quota bar has clean breathing room below the bunny
+            let scale: CGFloat = 14.2 / 36.0
+            ctx.translateBy(x: (22.0 - 14.2) / 2.0, y: 17.5)
+            ctx.scaleBy(x: scale, y: -scale)
+        } else {
+            let scale: CGFloat = 18.0 / 36.0
+            ctx.translateBy(x: 2.0, y: 18.0)
+            ctx.scaleBy(x: scale, y: -scale)
+        }
 
         func fillRect(_ x: CGFloat, _ y: CGFloat, _ w: CGFloat, _ h: CGFloat, _ r: CGFloat) {
             NSBezierPath(roundedRect: NSRect(x: x, y: y, width: w, height: h), xRadius: r, yRadius: r).fill()
@@ -278,12 +285,16 @@ class TelemetryWebViewController: NSViewController, WKScriptMessageHandler, WKNa
 
 // MARK: - Main App Delegate
 
-// Configurable menu bar fields in display order: tokens, cost, tps, ttft
+// Configurable menu bar fields in display order
 let ALL_MENUBAR_FIELDS: [(key: String, label: String)] = [
-    ("tokens", "用量 (Tokens)"),
-    ("cost",   "花费 ($)"),
-    ("tps",    "速度 (TPS)"),
-    ("ttft",   "首字 (TTFT)"),
+    ("tokens",  "用量 (Tokens)"),
+    ("cost",    "花费 ($)"),
+    ("tps",     "速度 (TPS)"),
+    ("ttft",    "首字 (TTFT)"),
+    ("q_gem5h", "Gemini 5h 剩余额度"),
+    ("q_gem7d", "Gemini 周 剩余额度"),
+    ("q_cg5h",  "C/G 5h 剩余额度"),
+    ("q_codex", "Codex 剩余额度"),
 ]
 
 struct TodayMetrics {
@@ -291,10 +302,62 @@ struct TodayMetrics {
     let cost: Double
     let tps: Double?
     let ttft: Double?
+    let gem5hRem: Int?
+    let gem7dRem: Int?
+    let cg5hRem: Int?
+    let codexRem: Int?
+}
+
+// Bottom micro quota bar options for menu bar
+let ALL_QUOTA_BAR_MODES: [(key: String, label: String)] = [
+    ("none",  "关闭"),
+    ("gem5h", "Gemini 5h"),
+    ("gem7d", "Gemini 周"),
+    ("cg5h",  "C/G 5h"),
+    ("codex", "Codex 周"),
+]
+
+class MenuBarQuotaBarView: NSView {
+    var percent: Int? = nil { didSet { needsDisplay = true } }
+
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+
+    override func draw(_ dirtyRect: NSRect) {
+        guard let pct = percent else { return }
+        let clamped = CGFloat(max(0, min(100, pct))) / 100.0
+        let barRect = NSRect(x: 0, y: 0, width: bounds.width, height: bounds.height)
+        guard barRect.width >= 8 else { return }
+        let radius = barRect.height / 2.0
+
+        // Subtle track that adapts to light/dark menu bar
+        let isDark = effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+        let trackColor = isDark
+            ? NSColor.white.withAlphaComponent(0.24)
+            : NSColor.black.withAlphaComponent(0.18)
+        trackColor.setFill()
+        NSBezierPath(roundedRect: barRect, xRadius: radius, yRadius: radius).fill()
+
+        // Remaining quota fill (healthy teal/green -> low amber -> critical red)
+        let fillW = max(barRect.height, barRect.width * clamped)
+        let fillRect = NSRect(x: 0, y: 0, width: min(barRect.width, fillW), height: barRect.height)
+        let fillColor: NSColor
+        if pct <= 15 {
+            fillColor = NSColor(srgbRed: 0.94, green: 0.27, blue: 0.27, alpha: 0.98)
+        } else if pct <= 30 {
+            fillColor = NSColor(srgbRed: 0.96, green: 0.62, blue: 0.05, alpha: 0.98)
+        } else {
+            fillColor = isDark
+                ? NSColor(srgbRed: 0.20, green: 0.85, blue: 0.65, alpha: 0.98)
+                : NSColor(srgbRed: 0.05, green: 0.58, blue: 0.45, alpha: 0.98)
+        }
+        fillColor.setFill()
+        NSBezierPath(roundedRect: fillRect, xRadius: radius, yRadius: radius).fill()
+    }
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private var statusItem: NSStatusItem!
+    private var quotaBarView: MenuBarQuotaBarView?
     private var popover: NSPopover!
     private var popoverVC: TelemetryWebViewController?
     private var fullWindow: NSWindow?
@@ -304,8 +367,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private var statusTimer: Timer?
     private var eventMonitor: Any?
     private var menuBarFields: [String] = ["tokens", "cost"]
+    private var menuBarQuotaBar: String = "gem5h"
     private var currentTier: BunnyTierInfo = BUNNY_TIERS[0]
     private var lastMetrics: TodayMetrics?
+    private var debugTierOverride: Int? = nil
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -314,6 +379,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         } else {
             // Default: Tokens · Cost (configurable anytime)
             menuBarFields = ["tokens", "cost"]
+        }
+        if let savedBar = UserDefaults.standard.string(forKey: "tootoo_menubar_quota_bar") {
+            menuBarQuotaBar = savedBar
+        } else {
+            menuBarQuotaBar = "gem5h"
         }
 
         port = findFreePort(preferred: 17891)
@@ -411,6 +481,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         button.target = self
         button.action = #selector(statusBarClicked(_:))
         button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+
+        let qv = MenuBarQuotaBarView(frame: .zero)
+        qv.isHidden = true
+        button.addSubview(qv)
+        self.quotaBarView = qv
     }
 
     @objc private func statusBarClicked(_ sender: NSStatusBarButton) {
@@ -440,8 +515,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         // Quick presets
         let presets: [(String, [String])] = [
             ("预设：用量 · 花费 (推荐)", ["tokens", "cost"]),
+            ("预设：用量 · 花费 · Gemini 5h", ["tokens", "cost", "q_gem5h"]),
+            ("预设：用量 · 花费 · Codex", ["tokens", "cost", "q_codex"]),
+            ("预设：用量 · Gemini · Codex", ["tokens", "q_gem5h", "q_codex"]),
             ("预设：速度 · 用量", ["tps", "tokens"]),
-            ("预设：用量 · 速度 · 花费", ["tokens", "tps", "cost"]),
             ("预设：仅小兔子图标", []),
         ]
         for (title, fields) in presets {
@@ -456,6 +533,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             let item = NSMenuItem(title: "显示 \(f.label)", action: #selector(toggleField(_:)), keyEquivalent: "")
             item.representedObject = f.key
             item.state = menuBarFields.contains(f.key) ? .on : .off
+            modeMenu.addItem(item)
+        }
+        modeMenu.addItem(NSMenuItem.separator())
+        let qBarHeader = NSMenuItem(title: "底部额度进度条", action: nil, keyEquivalent: "")
+        qBarHeader.isEnabled = false
+        modeMenu.addItem(qBarHeader)
+        for q in ALL_QUOTA_BAR_MODES {
+            let item = NSMenuItem(title: "  \(q.label)", action: #selector(selectQuotaBarMode(_:)), keyEquivalent: "")
+            item.representedObject = q.key
+            item.state = (menuBarQuotaBar == q.key) ? .on : .off
             modeMenu.addItem(item)
         }
         let modeParent = NSMenuItem(title: "菜单栏显示配置", action: nil, keyEquivalent: "")
@@ -487,6 +574,23 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         setMenuBarFields(next)
     }
 
+    @objc private func selectQuotaBarMode(_ sender: NSMenuItem) {
+        if let mode = sender.representedObject as? String {
+            setMenuBarQuotaBar(mode)
+        }
+    }
+
+    private func setMenuBarQuotaBar(_ mode: String) {
+        menuBarQuotaBar = mode
+        UserDefaults.standard.set(mode, forKey: "tootoo_menubar_quota_bar")
+        if let m = lastMetrics {
+            applyMenuBarMetrics(m)
+        } else {
+            refreshMenuBarSummary()
+        }
+        syncFieldsToWeb()
+    }
+
     private func setMenuBarFields(_ fields: [String]) {
         menuBarFields = fields
         UserDefaults.standard.set(fields, forKey: "tootoo_menubar_fields")
@@ -501,7 +605,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private func syncFieldsToWeb() {
         if let data = try? JSONSerialization.data(withJSONObject: menuBarFields),
            let jsonStr = String(data: data, encoding: .utf8) {
-            let js = "window.__onMenuBarFields && window.__onMenuBarFields(\(jsonStr));"
+            let escapedBar = menuBarQuotaBar.replacingOccurrences(of: "\"", with: "")
+            let js = "window.__onMenuBarFields && window.__onMenuBarFields(\(jsonStr), \"\(escapedBar)\");"
             popoverVC?.evalJS(js)
             fullWindowVC?.evalJS(js)
         }
@@ -629,6 +734,24 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             if let fields = payload["fields"] as? [String] {
                 setMenuBarFields(fields)
             }
+        case "setMenuBarQuotaBar":
+            if let mode = payload["mode"] as? String {
+                setMenuBarQuotaBar(mode)
+            }
+        case "setDebugTier":
+            if let lv = payload["level"] as? Int, (1...9).contains(lv) {
+                debugTierOverride = lv
+                let tier = BUNNY_TIERS.first(where: { $0.level == lv }) ?? BUNNY_TIERS[0]
+                self.currentTier = tier
+                self.statusItem.button?.image = makeBunnyMenuBarIcon(tier: lv)
+            } else {
+                debugTierOverride = nil
+                if let m = lastMetrics {
+                    applyMenuBarMetrics(m)
+                } else {
+                    refreshMenuBarSummary()
+                }
+            }
         default:
             break
         }
@@ -666,6 +789,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         }
     }
 
+    private func remPct(from usedNum: Any?) -> Int? {
+        guard let used = (usedNum as? NSNumber)?.doubleValue else { return nil }
+        return max(0, min(100, Int((100.0 - used).rounded())))
+    }
+
     private func fetchSummary(range: String, completion: @escaping (TodayMetrics?) -> Void) {
         guard let url = URL(string: "http://127.0.0.1:\(port)/api/telemetry?range=\(range)&tool=all") else {
             completion(nil); return
@@ -680,12 +808,37 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             let cost = (kpi["cost"] as? NSNumber)?.doubleValue ?? 0
             let tps = (kpi["tps"] as? NSNumber)?.doubleValue
             let ttft = (kpi["ttft_p50"] as? NSNumber)?.doubleValue
-            completion(TodayMetrics(tokens: tok, cost: cost, tps: tps, ttft: ttft))
+
+            var gem5h: Int? = nil
+            var gem7d: Int? = nil
+            var cg5h: Int? = nil
+            var codex: Int? = nil
+
+            let quotas = obj["quotas"] as? [String: Any] ?? [:]
+            if let agy = quotas["antigravity"] as? [String: Any],
+               let buckets = agy["buckets"] as? [[String: Any]] {
+                for b in buckets {
+                    let key = (b["key"] as? String) ?? ""
+                    if key == "antigravity:gemini_5h" { gem5h = self.remPct(from: b["used_percent"]) }
+                    else if key == "antigravity:gemini_7d" { gem7d = self.remPct(from: b["used_percent"]) }
+                    else if key == "antigravity:cg_5h" { cg5h = self.remPct(from: b["used_percent"]) }
+                }
+            }
+            if let cx = quotas["codex"] as? [String: Any],
+               let pri = cx["primary"] as? [String: Any] {
+                codex = self.remPct(from: pri["used_percent"])
+            }
+
+            completion(TodayMetrics(
+                tokens: tok, cost: cost, tps: tps, ttft: ttft,
+                gem5hRem: gem5h, gem7dRem: gem7d, cg5hRem: cg5h, codexRem: codex
+            ))
         }.resume()
     }
 
     private func applyMenuBarMetrics(_ m: TodayMetrics) {
         let tier = bunnyTier(for: m.tokens)
+        let bothGem = menuBarFields.contains("q_gem5h") && menuBarFields.contains("q_gem7d")
         var parts: [String] = []
         for f in menuBarFields {
             switch f {
@@ -697,16 +850,100 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
                 if let t = m.tps { parts.append(String(format: "%.0f/s", t)) }
             case "ttft":
                 if let l = m.ttft { parts.append(String(format: "%.1fs", l)) }
+            case "q_gem5h":
+                if let v = m.gem5hRem { parts.append(bothGem ? "Gem5h \(v)%" : "Gem \(v)%") }
+            case "q_gem7d":
+                if let v = m.gem7dRem { parts.append("Gem周 \(v)%") }
+            case "q_cg5h":
+                if let v = m.cg5hRem { parts.append("C/G \(v)%") }
+            case "q_codex":
+                if let v = m.codexRem { parts.append("Codex \(v)%") }
             default:
                 break
             }
         }
         let title = parts.isEmpty ? "" : (" " + parts.joined(separator: " · "))
 
+        // Resolve bottom micro quota bar value & tooltip
+        var barPct: Int? = nil
+        var barName: String = ""
+        switch menuBarQuotaBar {
+        case "gem5h": barPct = m.gem5hRem; barName = "Gemini 5h"
+        case "gem7d": barPct = m.gem7dRem; barName = "Gemini 周"
+        case "cg5h":  barPct = m.cg5hRem;  barName = "C/G 5h"
+        case "codex": barPct = m.codexRem; barName = "Codex 周"
+        default: break
+        }
+
         DispatchQueue.main.async {
-            self.currentTier = tier
-            self.statusItem.button?.image = makeBunnyMenuBarIcon(tier: tier.level)
-            self.statusItem.button?.title = title
+            guard let button = self.statusItem.button else { return }
+            let hasText = !title.isEmpty
+            let compactIcon = (!hasText && barPct != nil)
+            if let dbg = self.debugTierOverride {
+                let dbgTier = BUNNY_TIERS.first(where: { $0.level == dbg }) ?? tier
+                self.currentTier = dbgTier
+                button.image = makeBunnyMenuBarIcon(tier: dbg, compactForBar: compactIcon)
+            } else {
+                self.currentTier = tier
+                button.image = makeBunnyMenuBarIcon(tier: tier.level, compactForBar: compactIcon)
+            }
+
+            if let pct = barPct {
+                let attrs: [NSAttributedString.Key: Any] = [
+                    .font: NSFont.monospacedDigitSystemFont(ofSize: 11.0, weight: .medium),
+                    .baselineOffset: 2.0,
+                ]
+                let attrStr = NSAttributedString(string: title, attributes: attrs)
+                button.attributedTitle = attrStr
+                button.toolTip = "TooToo · \(barName) 剩余 \(pct)%"
+
+                let positionBar = {
+                    guard let btn = self.statusItem.button,
+                          let qv = self.quotaBarView else { return }
+                    let b = btn.bounds
+                    guard b.width > 0, b.height > 0 else { return }
+                    let barH: CGFloat = 2.0
+                    let barY: CGFloat = btn.isFlipped ? (b.height - barH - 1.5) : 1.5
+                    let barX: CGFloat
+                    let targetW: CGFloat
+
+                    if hasText, let cell = btn.cell as? NSButtonCell {
+                        let tRect = cell.titleRect(forBounds: b)
+                        let trimmed = title.trimmingCharacters(in: .whitespaces)
+                        let leadSpaces = title.prefix { $0 == " " }
+                        let leadW = NSAttributedString(string: String(leadSpaces), attributes: attrs).size().width
+                        let glyphW = NSAttributedString(string: trimmed, attributes: attrs).size().width
+                        let rawX = tRect.minX + leadW
+                        let maxW = max(12.0, b.width - rawX - 4.0)
+                        targetW = max(12.0, min(glyphW, maxW))
+                        barX = rawX
+                    } else if let cell = btn.cell as? NSButtonCell {
+                        let iRect = cell.imageRect(forBounds: b)
+                        targetW = 14.0
+                        barX = iRect.midX - targetW / 2.0
+                    } else {
+                        targetW = 14.0
+                        barX = (b.width - targetW) / 2.0
+                    }
+
+                    qv.frame = NSRect(x: barX.rounded(.toNearestOrAwayFromZero), y: barY, width: targetW.rounded(.toNearestOrAwayFromZero), height: barH)
+                    qv.percent = pct
+                    qv.isHidden = false
+                }
+
+                button.layoutSubtreeIfNeeded()
+                positionBar()
+                // Re-align on next runloop tick once NSStatusBar finishes resizing the item width
+                DispatchQueue.main.async { positionBar() }
+            } else {
+                button.attributedTitle = NSAttributedString(
+                    string: title,
+                    attributes: [.font: NSFont.monospacedDigitSystemFont(ofSize: 11.5, weight: .medium)]
+                )
+                button.toolTip = "TooToo"
+                self.quotaBarView?.percent = nil
+                self.quotaBarView?.isHidden = true
+            }
         }
     }
 }

@@ -11,7 +11,12 @@
     --surface: #faf8f3;
     --surface-2: #ece8de;
     --border: #d9d3c5;
-    --border-strong: #1d1b18;
+    --border-strong: #9c9486;
+    --active-bg: rgba(229, 72, 38, 0.11);
+    --active-border: rgba(229, 72, 38, 0.42);
+    --active-fg: #c93818;
+    --tip-bg: #23211e;
+    --tip-fg: #faf8f3;
     --ink: #171614;
     --ink-soft: #4e4b45;
     --muted: #7a756b;
@@ -35,7 +40,12 @@
     --surface: #15181d;
     --surface-2: #1d2128;
     --border: #2a2f3a;
-    --border-strong: #e8e4db;
+    --border-strong: #4e5668;
+    --active-bg: rgba(255, 91, 55, 0.18);
+    --active-border: rgba(255, 91, 55, 0.48);
+    --active-fg: #ff8a70;
+    --tip-bg: #232833;
+    --tip-fg: #f1eee7;
     --ink: #f1eee7;
     --ink-soft: #c4c0b7;
     --muted: #848a96;
@@ -386,10 +396,88 @@
     background: var(--surface-2);
     border: 1px solid var(--border);
     border-radius: 6px;
-    padding: 9px 11px;
+    padding: 10px 12px;
     margin-bottom: 12px;
     font-family: var(--font-mono);
     font-size: 11px;
+  }
+
+  .evo-prog-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .evo-prog-rem {
+    color: var(--accent);
+    text-align: right;
+    transition: transform 0.28s cubic-bezier(0.22, 1.3, 0.36, 1), filter 0.28s ease;
+  }
+  .evo-prog-rem.pulse {
+    animation: evoRemPop 0.55s cubic-bezier(0.22, 1.35, 0.36, 1);
+  }
+  @keyframes evoRemPop {
+    0%   { transform: scale(1); filter: brightness(1); }
+    40%  { transform: scale(1.06); filter: brightness(1.22); }
+    100% { transform: scale(1); filter: brightness(1); }
+  }
+
+  .evo-prog-track {
+    position: relative;
+    height: 8px;
+    width: 100%;
+    border-radius: 999px;
+  }
+
+  .evo-prog-fill {
+    position: relative;
+    z-index: 2;
+    height: 100%;
+    width: 0%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--amber) 68%, var(--accent)));
+    overflow: hidden;
+    transition: width 0.62s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease;
+  }
+  .evo-prog-fill.is-growing {
+    box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 55%, transparent);
+  }
+  .evo-prog-fill::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(100deg, transparent 15%, rgba(255, 255, 255, 0.62) 50%, transparent 85%);
+    transform: translateX(-120%);
+    animation: evoFillShine 0.72s ease-out 0.08s 1;
+  }
+  @keyframes evoFillShine {
+    0%   { transform: translateX(-120%); }
+    100% { transform: translateX(140%); }
+  }
+
+  .evo-prog-gap {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 20%, var(--border));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 26%, transparent);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .evo-prog-gap.show {
+    animation: evoGapBlinkTwice 1.25s ease-in-out forwards;
+  }
+  @keyframes evoGapBlinkTwice {
+    0%   { opacity: 0; }
+    14%  { opacity: 0.92; }
+    28%  { opacity: 0.88; }
+    43%  { opacity: 0.14; }
+    57%  { opacity: 0.92; }
+    72%  { opacity: 0.85; }
+    100% { opacity: 0; }
   }
 
   .evo-grid {
@@ -429,6 +517,7 @@
     pointer-events: none;
   }
   .evo-card.locked .evo-name { color: var(--muted); }
+  .evo-card.locked .evo-rng { letter-spacing: 0.14em; opacity: 0.72; }
   .evo-card.locked.shake { animation: fxBoxShake 0.35s ease-out; }
 
   .evo-card .bunny-wrap { width: 48px; height: 48px; cursor: pointer; }
@@ -452,19 +541,195 @@
     align-items: center;
     justify-content: space-between;
     gap: 14px;
-    padding: 12px 16px;
+    padding: 4px 2px 12px;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    margin-bottom: 10px;
+  }
+
+  .topbar .seg,
+  .topbar .btn {
     background: var(--surface);
-    border: 1px solid var(--border);
-    border-top: 3px solid var(--border-strong);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    margin-bottom: 14px;
+  }
+
+  .brand-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-width: 0;
   }
 
   .brand {
     display: flex;
     align-items: center;
     gap: 11px;
+    min-width: 0;
+  }
+
+  .top-quota {
+    display: none;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4.5px;
+    padding: 3px 6px 3px 14px;
+    border-left: 1px solid var(--border);
+    cursor: pointer;
+    flex-shrink: 0;
+    border-radius: 0 5px 5px 0;
+    transition: background 0.14s ease;
+  }
+  .top-quota.show { display: flex; }
+  .top-quota:hover { background: color-mix(in srgb, var(--surface) 72%, transparent); }
+
+  .tq-top {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+  .tq-name { color: var(--ink-soft); font-weight: 600; }
+  .tq-pct  { font-weight: 800; font-size: 11px; }
+
+  .tq-bot {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .tq-track {
+    width: 68px;
+    height: 5px;
+    border-radius: 3px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .tq-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+    position: relative;
+  }
+
+  /* ---- Cute Quota -> Bunny XP Siphon Hover FX ---- */
+  .top-quota.siphoning .tq-fill {
+    animation: tqDrainPulse 0.65s ease-in-out infinite;
+  }
+  .bunny-wrap.is-siphoning {
+    box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 42%, transparent);
+  }
+  .bunny-wrap.is-siphoning .bunny-svg {
+    animation: bunnySipInhale 0.56s ease-in-out infinite;
+  }
+  .xp-fill.is-charging {
+    box-shadow: 0 0 8px color-mix(in srgb, var(--amber) 75%, transparent);
+    animation: xpChargePulse 0.56s ease-in-out infinite;
+  }
+
+  @keyframes tqDrainPulse {
+    0%, 100% { filter: brightness(1); opacity: 1; }
+    50%      { filter: brightness(1.18); opacity: 0.72; }
+  }
+  @keyframes bunnySipInhale {
+    0%, 100% { transform: translateX(0) scale(1, 1); }
+    38%      { transform: translateX(1.8px) scale(1.08, 0.94); }
+    72%      { transform: translateX(-0.8px) scale(0.96, 1.07) translateY(-1.2px); }
+  }
+  @keyframes xpChargePulse {
+    0%, 100% { filter: brightness(1); }
+    50%      { filter: brightness(1.32); }
+  }
+
+  .fx-siphon-orb {
+    position: fixed;
+    pointer-events: none;
+    border-radius: 999px;
+    transform: translate(-50%, -50%);
+    animation: siphonOrbFly var(--dur, 0.62s) cubic-bezier(0.32, 0.08, 0.28, 1) forwards;
+  }
+
+  @keyframes siphonOrbFly {
+    0%   { transform: translate(-50%, -50%) scale(0.4); opacity: 0; }
+    15%  { opacity: 0.95; }
+    52%  { transform: translate(calc(-50% + var(--mx)), calc(-50% + var(--my))) scale(1.08); opacity: 1; }
+    86%  { opacity: 0.92; }
+    100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.28); opacity: 0; }
+  }
+
+  .fx-absorb-pop {
+    position: fixed;
+    pointer-events: none;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 800;
+    transform: translate(-50%, -50%);
+    animation: absorbPopUp 0.48s ease-out forwards;
+  }
+
+  @keyframes absorbPopUp {
+    0%   { transform: translate(-50%, -50%) scale(0.6); opacity: 0.95; }
+    100% { transform: translate(-50%, -155%) scale(1.05); opacity: 0; }
+  }
+
+  .bunny-speech {
+    position: fixed;
+    pointer-events: none;
+    z-index: 999;
+    padding: 5.5px 10.5px;
+    border-radius: 10px 10px 10px 0;
+    background: var(--surface);
+    border: 1.5px solid var(--active-border);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.3;
+    overflow: visible;
+    box-shadow: 0 6px 18px rgba(23, 22, 20, 0.14);
+    transform-origin: -6px 100%;
+    animation: speechPopIn 0.28s cubic-bezier(0.22, 1.45, 0.36, 1) forwards;
+    transition: opacity 0.24s ease, transform 0.24s ease;
+  }
+
+  .bunny-speech .bs-txt {
+    display: block;
+    max-width: 224px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  [data-theme="dark"] .bunny-speech {
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
+  }
+
+  .bunny-speech .bs-tail {
+    position: absolute;
+    left: -10px;
+    bottom: -1.5px;
+    width: 12px;
+    height: 11px;
+    overflow: visible;
+    pointer-events: none;
+  }
+
+  .bunny-speech.out {
+    opacity: 0;
+    transform: translateX(-4px) scale(0.92);
+  }
+
+  @keyframes speechPopIn {
+    0%   { opacity: 0; transform: translateX(-6px) scale(0.76); }
+    100% { opacity: 1; transform: translateX(0) scale(1); }
   }
 
   .brand-title {
@@ -519,7 +784,119 @@
     height: 100%;
     border-radius: 2px;
     background: linear-gradient(90deg, var(--accent), var(--amber));
-    transition: width 0.35s ease;
+    transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .xp-fill::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(105deg, transparent 30%, rgba(255, 255, 255, 0.48) 50%, transparent 70%);
+    transform: translateX(-120%);
+    animation: xpBarSweep 3.2s ease-in-out infinite;
+  }
+
+  @keyframes xpBarSweep {
+    0%, 58% { transform: translateX(-120%); }
+    100%    { transform: translateX(140%); }
+  }
+
+  .bunny-mood.levelup-pop {
+    animation: moodLevelUpPop 0.72s cubic-bezier(0.22, 1.35, 0.36, 1);
+  }
+  @keyframes moodLevelUpPop {
+    0%   { transform: scale(1); box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent); }
+    35%  { transform: scale(1.1); box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 22%, transparent); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 transparent; }
+  }
+
+  /* ---- Tactile UI Micro-Animations ---- */
+  .seg button:active,
+  .chip:active,
+  .pop-tabs button:active,
+  .sort-tabs button:active,
+  .mb-cfg-chips button:active,
+  .quota-fold-btn:active {
+    transform: scale(0.95);
+  }
+
+  .card {
+    transition: border-color 0.16s ease, box-shadow 0.18s ease, transform 0.16s ease;
+  }
+  .hero-grid .card:hover {
+    border-color: color-mix(in srgb, var(--border-strong) 45%, var(--border));
+    transform: translateY(-1px);
+  }
+
+  .stack-bar > div {
+    transition: width 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .gauge-fill {
+    transition: width 0.48s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .stat-cell {
+    transition: transform 0.14s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+  }
+  .stat-cell:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(23, 22, 20, 0.06);
+  }
+
+  .model-row {
+    transition: transform 0.14s ease, border-color 0.15s ease, background 0.15s ease;
+  }
+  .model-row:hover {
+    transform: translateX(2px);
+    border-color: color-mix(in srgb, var(--border-strong) 40%, var(--border));
+  }
+
+  @keyframes panelFadeUp {
+    0%   { opacity: 0; transform: translateY(6px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  .panel-enter {
+    animation: panelFadeUp 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  @keyframes barGrowUp {
+    0%   { transform: scaleY(0.05); opacity: 0.35; }
+    100% { transform: scaleY(1); opacity: var(--op, 0.9); }
+  }
+  .svg-bar-grow {
+    transform-box: fill-box;
+    transform-origin: bottom center;
+    animation: barGrowUp 0.36s cubic-bezier(0.22, 1.18, 0.36, 1) both;
+    animation-delay: var(--d, 0ms);
+    transition: filter 0.14s ease;
+  }
+  .svg-bar-static {
+    opacity: var(--op, 0.9);
+    transition: filter 0.14s ease;
+  }
+  .svg-bar-grow:hover,
+  .svg-bar-static:hover {
+    filter: brightness(1.14);
+  }
+
+  @keyframes rowNewFlash {
+    0%   { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+    100% { background: transparent; }
+  }
+  table.tape tbody tr.is-new-call {
+    animation: rowNewFlash 1.3s ease-out forwards;
+  }
+
+  .evo-backdrop.open .evo-dialog,
+  .evo-backdrop.open .qcfg-dialog {
+    animation: modalPopIn 0.22s cubic-bezier(0.22, 1.25, 0.36, 1);
+  }
+  @keyframes modalPopIn {
+    0%   { opacity: 0; transform: translateY(8px) scale(0.95); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
   }
 
   .xp-text {
@@ -562,8 +939,9 @@
   .seg button:hover { color: var(--ink); }
 
   .seg button.active {
-    background: var(--border-strong);
-    color: var(--surface);
+    background: var(--active-bg);
+    color: var(--active-fg);
+    box-shadow: inset 0 0 0 1px var(--active-border);
   }
 
   .btn {
@@ -622,9 +1000,9 @@
   .chip:hover { border-color: var(--border-strong); color: var(--ink); }
 
   .chip.active {
-    background: var(--border-strong);
-    border-color: var(--border-strong);
-    color: var(--surface);
+    background: var(--active-bg);
+    border-color: var(--active-border);
+    color: var(--active-fg);
   }
 
   .chip .dot {
@@ -665,8 +1043,9 @@
   }
 
   .pop-tabs button.active {
-    background: var(--border-strong);
-    color: var(--surface);
+    background: var(--active-bg);
+    color: var(--active-fg);
+    box-shadow: inset 0 0 0 1px var(--active-border);
   }
 
   /* ---- Hero 4-Instrument Strip ---- */
@@ -835,8 +1214,9 @@
   .tooltip {
     position: absolute;
     pointer-events: none;
-    background: var(--border-strong);
-    color: var(--surface);
+    background: var(--tip-bg);
+    color: var(--tip-fg);
+    border: 1px solid var(--border);
     font-family: var(--font-mono);
     font-size: 11px;
     padding: 7px 10px;
@@ -869,9 +1249,9 @@
   }
 
   .sort-tabs button.active {
-    background: var(--surface-2);
-    border-color: var(--border-strong);
-    color: var(--ink);
+    background: var(--active-bg);
+    border-color: var(--active-border);
+    color: var(--active-fg);
   }
 
   .model-list {
@@ -1222,15 +1602,11 @@
   .quota-rst {
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
-    color: var(--ink-soft);
+    color: var(--muted);
     font-size: 9.5px;
-    font-weight: 600;
+    font-weight: 500;
     white-space: nowrap;
     margin-left: auto;
-    padding: 1px 5px;
-    border-radius: 3px;
-    background: var(--surface-2);
-    border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
   }
 
   .quota-sub {
@@ -1424,9 +1800,58 @@
     cursor: pointer;
   }
   .mb-cfg-chips button.on {
-    background: var(--border-strong);
-    border-color: var(--border-strong);
-    color: var(--surface);
+    background: var(--active-bg);
+    border-color: var(--active-border);
+    color: var(--active-fg);
+  }
+  .dbg-bar {
+    display: none;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: color-mix(in srgb, var(--amber) 7%, var(--surface));
+    border: 1px dashed var(--amber);
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+  }
+  .dbg-bar.open { display: flex; }
+  .dbg-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    color: var(--amber);
+    font-weight: 700;
+  }
+  .dbg-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .dbg-chips button {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--ink-soft);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 6.5px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.12s ease;
+  }
+  .dbg-chips button:hover { border-color: var(--amber); color: var(--ink); }
+  .dbg-chips button.on {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .dbg-chips button.real-btn.on {
+    background: var(--teal);
+    border-color: var(--teal);
+    color: #fff;
   }
   .pop-only { display: none; }
   .pop-only-block { display: none; }
@@ -1455,28 +1880,80 @@
   }
 
   body.popover-mode .topbar {
-    padding: 9px 11px;
-    gap: 8px;
-    margin-bottom: 9px;
+    padding: 4px 2px 6px;
+    gap: 9px;
+    margin-bottom: 8px;
   }
 
+  body.popover-mode .brand-row {
+    width: 100%;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  body.popover-mode .top-quota {
+    border-left: none;
+    padding: 3px 4px;
+    border-radius: 5px;
+  }
+  body.popover-mode .tq-track { width: 58px; }
   body.popover-mode .bunny-wrap { width: 38px; height: 38px; }
   body.popover-mode .bunny-svg { width: 31px; height: 31px; }
   body.popover-mode .brand-title { font-size: 13px; }
   body.popover-mode .brand-sub { display: none; }
-  body.popover-mode .xp-track { width: 64px; }
+  body.popover-mode .xp-track { width: 52px; }
   body.popover-mode .xp-text { font-size: 9.5px; }
   body.popover-mode .scan-badge { display: none; }
   body.popover-mode .pop-only { display: inline-flex; }
   body.popover-mode .pop-footer { display: flex; }
 
+  .ctrl-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .btn-ico {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    justify-content: center;
+  }
+
   body.popover-mode .controls {
     width: 100%;
     justify-content: space-between;
+    align-items: center;
+    gap: 8px;
   }
 
-  body.popover-mode .seg button { padding: 4px 8px; font-size: 10.5px; }
-  body.popover-mode .btn { padding: 4px 8px; font-size: 10.5px; }
+  body.popover-mode .ctrl-actions {
+    gap: 5px;
+  }
+
+  body.popover-mode .seg {
+    height: 26px;
+    align-items: center;
+  }
+
+  body.popover-mode .seg button {
+    padding: 0 8px;
+    height: 20px;
+    line-height: 20px;
+    font-size: 10.5px;
+  }
+
+  body.popover-mode .btn {
+    height: 26px;
+    padding: 0 8px;
+    font-size: 10.5px;
+  }
+
+  body.popover-mode .btn-ico {
+    width: 26px;
+    height: 26px;
+    padding: 0;
+  }
 
   body.popover-mode .filter-bar {
     gap: 5px;
@@ -1506,13 +1983,13 @@
   body.popover-mode .pill { font-size: 9px; padding: 1px 5px; }
 
   body.popover-mode .pop-tabs { display: grid; }
-  body.popover-mode .deck,
-  body.popover-mode .bottom-deck {
+  body.popover-mode .deck {
     display: flex;
     flex-direction: column;
     gap: 10px;
     margin-bottom: 0;
   }
+  body.popover-mode .deck > .col { display: contents; }
 
   body.popover-mode [data-pop-panel] { display: none; }
   body.popover-mode[data-pop-tab="overview"] [data-pop-panel~="overview"] { display: block; }
@@ -1769,33 +2246,49 @@
 <div class="shell">
   <!-- TOP INSTRUMENT BAR -->
   <header class="topbar">
-    <div class="brand">
-      <div class="bunny-wrap" id="bunnyMascot" title="点点兔兔刷新数据">
-        <svg class="bunny-svg" id="bunnySvg" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg"></svg>
-      </div>
-      <div>
-        <div class="brand-title">
-          TOOTOO
-          <button class="mood-tag" id="bunnyMood" title="点击查看九阶兔兔进化图鉴">今日 Lv.1 软萌兔 ▸</button>
+    <div class="brand-row">
+      <div class="brand">
+        <div class="bunny-wrap" id="bunnyMascot" title="点点兔兔刷新数据">
+          <svg class="bunny-svg" id="bunnySvg" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg"></svg>
         </div>
-        <div class="xp-wrap" id="xpWrap" title="点击查看九阶战力进化图鉴">
-          <div class="xp-track"><div class="xp-fill" id="xpFill" style="width:0%"></div></div>
-          <span class="xp-text" id="xpText">今日升级进度 —</span>
+        <div style="min-width:0">
+          <div class="brand-title">
+            <span id="brandLogo" style="cursor:default;user-select:none">TOOTOO</span>
+            <button class="mood-tag" id="bunnyMood" title="点击查看九阶兔兔进化图鉴">今日 Lv.1 软萌兔 ▸</button>
+          </div>
+          <div class="xp-wrap" id="xpWrap" title="点击查看九阶战力进化图鉴">
+            <div class="xp-track"><div class="xp-fill" id="xpFill" style="width:0%"></div></div>
+            <span class="xp-text" id="xpText">今日升级进度 —</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="top-quota" id="topQuota" title="当前置顶关注额度（点击切换）">
+        <div class="tq-top">
+          <span class="tq-name" id="tqName">—</span>
+          <span class="tq-pct" id="tqPct">—</span>
+        </div>
+        <div class="tq-bot">
+          <div class="tq-track"><div class="tq-fill" id="tqFill" style="width:0%"></div></div>
+          <span id="tqRst"></span>
         </div>
       </div>
     </div>
 
     <div class="controls">
       <div class="seg" id="rangeSeg">
-        <button data-range="today">今日</button>
-        <button data-range="7d" class="active">7天</button>
+        <button data-range="today" class="active">今日</button>
+        <button data-range="7d">7天</button>
         <button data-range="30d">30天</button>
         <button data-range="all">全部</button>
       </div>
-      <span class="scan-badge" id="scanBadge">扫描 —</span>
-      <button class="btn" id="refreshBtn" title="重新扫描本地日志"><span class="spin-ico">↻</span></button>
-      <button class="btn" id="themeBtn" title="切换浅色/深色主题">◐</button>
-      <button class="btn pop-only" id="expandBtn" title="打开完整大屏窗口">⤢ 大屏</button>
+      <div class="ctrl-actions">
+        <span class="scan-badge" id="scanBadge">扫描 —</span>
+        <button class="btn btn-ico" id="refreshBtn" title="重新扫描本地日志"><span class="spin-ico">↻</span></button>
+        <button class="btn btn-ico" id="themeBtn" title="切换浅色/深色主题">◐</button>
+        <button class="btn btn-ico" id="settingsBtn" title="设置">⚙</button>
+        <button class="btn pop-only" id="expandBtn" title="打开完整窗口，一探究竟！">⤢ 一探究竟!</button>
+      </div>
     </div>
   </header>
 
@@ -1819,6 +2312,18 @@
 
     <div class="card">
       <div class="card-head">
+        <span class="kicker k-blue">估算成本</span>
+        <span class="pill" id="peakHourPill">高峰 —</span>
+      </div>
+      <div class="hero-val" id="kpiCost">—</div>
+      <div class="hero-sub" style="margin-top:12px">
+        <span id="kpiReqs">— 次请求</span>
+        <span id="kpiSessions">— 个会话</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
         <span class="kicker k-accent">输出速度</span>
         <span class="pill accent" id="fastestPill">峰值 —</span>
       </div>
@@ -1836,22 +2341,11 @@
         <span class="pill amber" id="p95Pill">P95 —</span>
       </div>
       <div class="hero-val"><span id="kpiTtft">—</span><span class="unit">s 中位</span></div>
-      <div class="mini-spark" id="ttftMini"></div>
-      <div class="hero-sub">
-        <span>TTFT P50</span>
-        <span>延迟分布</span>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-head">
-        <span class="kicker k-blue">估算成本</span>
-        <span class="pill" id="peakHourPill">高峰 —</span>
-      </div>
-      <div class="hero-val" id="kpiCost">—</div>
-      <div class="hero-sub" style="margin-top:12px">
-        <span id="kpiReqs">— 次请求</span>
-        <span id="kpiSessions">— 个会话</span>
+      <div class="stack-bar" id="ttftStack"></div>
+      <div class="hero-sub" id="ttftLegend">
+        <span>≤2s —%</span>
+        <span>2-8s —%</span>
+        <span>&gt;8s —%</span>
       </div>
     </div>
   </section>
@@ -1905,6 +2399,30 @@
         </div>
         <div class="model-list" id="modelList"></div>
       </div>
+
+      <!-- Recent Live Calls Tape (flows directly below Model Leaderboard on desktop) -->
+      <div class="card" data-pop-panel="live">
+        <div class="card-head">
+          <span class="kicker">实时调用流水（最新 40 条）</span>
+          <span class="pill" id="updatedPill">更新于 —</span>
+        </div>
+        <div class="tape-scroll">
+          <table class="tape">
+            <thead>
+              <tr>
+                <th>时间</th>
+                <th>工具</th>
+                <th>模型</th>
+                <th class="r hide-pop">输出</th>
+                <th class="r hide-pop">耗时</th>
+                <th class="r">速度</th>
+                <th class="r">首字</th>
+              </tr>
+            </thead>
+            <tbody id="tapeBody"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
     <div class="col">
@@ -1940,64 +2458,95 @@
         </div>
         <div class="period-strip" id="periodStrip"></div>
       </div>
+
+      <!-- Projects Leaderboard -->
+      <div class="card" data-pop-panel="rhythm">
+        <div class="card-head">
+          <span class="kicker">工作区消耗排行</span>
+          <span class="pill">本地目录</span>
+        </div>
+        <div class="proj-list" id="projList"></div>
+      </div>
     </div>
   </section>
 
-  <!-- BOTTOM DECK -->
-  <section class="bottom-deck">
-    <div class="card" data-pop-panel="live">
-      <div class="card-head">
-        <span class="kicker">实时调用流水（最新 40 条）</span>
-        <span class="pill" id="updatedPill">更新于 —</span>
-      </div>
-      <div class="tape-scroll">
-        <table class="tape">
-          <thead>
-            <tr>
-              <th>时间</th>
-              <th>工具</th>
-              <th>模型</th>
-              <th class="r hide-pop">输出</th>
-              <th class="r hide-pop">耗时</th>
-              <th class="r">速度</th>
-              <th class="r">首字</th>
-            </tr>
-          </thead>
-          <tbody id="tapeBody"></tbody>
-        </table>
-      </div>
+  <!-- HIDDEN DEVELOPER DEBUG BAR -->
+  <div class="dbg-bar" id="debugBar">
+    <div class="dbg-head">
+      <span>🛠 本地调试 · 头像/动效/菜单栏预览</span>
+      <span style="display:flex;gap:5px;flex-wrap:wrap">
+        <button class="btn" id="dbgFxBtn" style="padding:2px 6px;font-size:9.5px">⚡ 播特效</button>
+        <button class="btn" id="dbgLevelUpBtn" style="padding:2px 6px;font-size:9.5px">🎉 模拟升级</button>
+        <button class="btn" id="dbgUnlockBtn" style="padding:2px 6px;font-size:9.5px">全解锁: 关</button>
+        <button class="btn" id="dbgCloseBtn" style="padding:2px 6px;font-size:9.5px">✕</button>
+      </span>
     </div>
-
-    <div class="card" data-pop-panel="rhythm">
-      <div class="card-head">
-        <span class="kicker">工作区消耗排行</span>
-        <span class="pill">本地目录</span>
-      </div>
-      <div class="proj-list" id="projList"></div>
-    </div>
-  </section>
-
-  <!-- MENU BAR DISPLAY CONFIG BAR (toggled from footer) -->
-  <div class="mb-cfg-bar" id="mbCfgBar">
-    <span style="color:var(--muted)">顶部栏显示:</span>
-    <div class="mb-cfg-chips" id="mbCfgChips">
-      <button data-field="tokens" class="on">用量</button>
-      <button data-field="cost" class="on">花费</button>
-      <button data-field="tps">速度</button>
-      <button data-field="ttft">首字</button>
+    <div class="dbg-chips" id="dbgLvChips">
+      <button data-lv="0" class="real-btn on">真实</button>
+      <button data-lv="1">Lv.1</button>
+      <button data-lv="2">Lv.2</button>
+      <button data-lv="3">Lv.3</button>
+      <button data-lv="4">Lv.4</button>
+      <button data-lv="5">Lv.5</button>
+      <button data-lv="6">Lv.6</button>
+      <button data-lv="7">Lv.7</button>
+      <button data-lv="8">Lv.8</button>
+      <button data-lv="9">Lv.9</button>
     </div>
   </div>
 
   <!-- POPOVER FOOTER -->
   <footer class="pop-footer">
     <span id="popScanInfo">SCAN — · 本地只读零侵入</span>
-    <span style="display:flex;gap:10px">
-      <a href="#" id="popMbCfgLink" style="color:var(--ink-soft);text-decoration:none" title="自定义顶部菜单栏显示项">菜单栏</a>
-      <a href="#" id="popPricingLink" style="color:var(--ink-soft);text-decoration:none" title="立即从 OpenRouter + LiteLLM 拉取最新模型价格">同步价格</a>
-      <a href="#" id="popBrowserLink" style="color:var(--ink-soft);text-decoration:none">浏览器</a>
+    <span style="display:flex;gap:12px;align-items:center">
+      <a href="#" id="popSettingsLink" style="color:var(--ink-soft);text-decoration:none" title="打开设置面板">⚙ 设置</a>
       <a href="#" id="popQuitLink" style="color:var(--muted);text-decoration:none">退出</a>
     </span>
   </footer>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="evo-backdrop" id="settingsModal">
+  <div class="qcfg-dialog" style="width:min(380px, 92vw)">
+    <div class="evo-head" style="margin-bottom:12px">
+      <span class="kicker">设置</span>
+      <button class="btn" id="settingsCloseBtn" style="height:24px;padding:0 8px">✕</button>
+    </div>
+
+    <div class="qcfg-row">
+      <label>顶部菜单栏文字（可多选）</label>
+      <div class="mb-cfg-chips" id="mbCfgChips">
+        <button data-field="tokens" class="on">用量</button>
+        <button data-field="cost" class="on">花费</button>
+        <button data-field="tps">速度</button>
+        <button data-field="ttft">首字</button>
+        <button data-field="q_gem5h">Gemini 5h</button>
+        <button data-field="q_gem7d">Gemini 周</button>
+        <button data-field="q_cg5h">C/G 5h</button>
+        <button data-field="q_codex">Codex</button>
+      </div>
+    </div>
+
+    <div class="qcfg-row" style="padding-top:8px;border-top:1px dashed var(--border)">
+      <label>顶部栏底部额度条（单选）</label>
+      <div class="mb-cfg-chips" id="mbQuotaBarChips">
+        <button data-qbar="none">关闭</button>
+        <button data-qbar="gem5h" class="on">Gemini 5h</button>
+        <button data-qbar="gem7d">Gemini 周</button>
+        <button data-qbar="cg5h">C/G 5h</button>
+        <button data-qbar="codex">Codex</button>
+      </div>
+    </div>
+
+    <div class="qcfg-row" style="padding-top:8px;border-top:1px dashed var(--border);margin-bottom:0">
+      <label>数据与窗口</label>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        <button class="btn" id="popPricingLink" title="立即从 OpenRouter + LiteLLM 拉取最新模型价格">↻ 同步价格</button>
+        <button class="btn" id="popBrowserLink">↗ 在浏览器打开</button>
+        <button class="btn pop-only" id="settingsQuitBtn" style="color:var(--bad)">退出 TooToo</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- 9-TIER BUNNY EVOLUTION GALLERY MODAL -->
@@ -2010,7 +2559,7 @@
     <div class="evo-progress-box" id="evoProgressBox"></div>
     <div class="evo-grid" id="evoGrid"></div>
     <div class="evo-foot" style="justify-content:center">
-      <span id="evoHint">已解锁形态可悬浮/点击触发专属动效 · 更高阶形态达成后自动揭晓</span>
+      <span id="evoHint">已解锁形态永久保留 · 点击可触发专属动效 · 更高阶形态达成后自动揭晓</span>
     </div>
   </div>
 </div>
@@ -2041,7 +2590,7 @@
     </div>
     <div class="qcfg-actions">
       <button class="btn" id="qcfgResetBtn">恢复自动估算</button>
-      <button class="btn" id="qcfgSaveBtn" style="background:var(--border-strong);color:var(--surface);border-color:var(--border-strong)">保存设置</button>
+      <button class="btn" id="qcfgSaveBtn" style="background:var(--active-bg);color:var(--active-fg);border-color:var(--active-border)">保存设置</button>
     </div>
   </div>
 </div>
@@ -2065,32 +2614,30 @@ function postNative(action, extra = {}) {
 }
 
 let menuBarFields = ["tokens", "cost"];
+let menuBarQuotaBar = localStorage.getItem("tootoo_qbar") || "gem5h";
 function renderMenuBarCfgChips() {
   document.querySelectorAll("#mbCfgChips button").forEach(btn => {
     btn.classList.toggle("on", menuBarFields.includes(btn.dataset.field));
   });
+  document.querySelectorAll("#mbQuotaBarChips button").forEach(btn => {
+    btn.classList.toggle("on", btn.dataset.qbar === menuBarQuotaBar);
+  });
 }
-window.__onMenuBarFields = (fields) => {
-  if (Array.isArray(fields)) {
-    menuBarFields = fields;
-    renderMenuBarCfgChips();
-  }
+window.__onMenuBarFields = (fields, qbar) => {
+  if (Array.isArray(fields)) menuBarFields = fields;
+  if (typeof qbar === "string") menuBarQuotaBar = qbar;
+  renderMenuBarCfgChips();
+  if (state.data) renderTopQuota(state.data);
 };
 
 const state = {
-  range: isPopover ? "today" : "7d",
+  range: "today",
   tool: "all",
   chartMode: "tokens",
   modelSort: "tokens",
   data: null,
   es: null,
 };
-
-if (isPopover) {
-  document.querySelectorAll("#rangeSeg button").forEach(b => {
-    b.classList.toggle("active", b.dataset.range === "today");
-  });
-}
 
 const BUNNY_TIERS = [
   {
@@ -2273,6 +2820,64 @@ function getBunnyTier(tokens) {
   return cur;
 }
 
+const debugState = {
+  level: null,     // null = real today_tokens; 1..9 = simulated tier
+  unlockAll: false,
+};
+
+function getEffectiveTodayTokens() {
+  if (debugState.level != null) {
+    const t = BUNNY_TIERS.find(x => x.level === debugState.level);
+    if (t) {
+      const next = BUNNY_TIERS.find(x => x.level === t.level + 1);
+      // Place nicely at ~55% inside the simulated tier so progress bar looks vivid
+      return next ? Math.round(t.min + (next.min - t.min) * 0.55) : Math.round(t.min * 1.15);
+    }
+  }
+  return (state.data && state.data.today_tokens != null) ? state.data.today_tokens : 0;
+}
+
+function applyDebugOverride(lv) {
+  debugState.level = (lv >= 1 && lv <= 9) ? lv : null;
+  document.querySelectorAll("#dbgLvChips button").forEach(b => {
+    const blv = Number(b.dataset.lv);
+    b.classList.toggle("on", debugState.level == null ? blv === 0 : blv === debugState.level);
+  });
+  const effTok = getEffectiveTodayTokens();
+  renderBunnyState(effTok);
+  if (document.getElementById("evoModal").classList.contains("open")) {
+    renderEvoModal();
+  }
+  postNative("setDebugTier", { level: debugState.level || 0 });
+}
+
+let lastRealBunnyLv = null;
+try { localStorage.removeItem("tootoo_max_unlocked_lv"); } catch {}
+
+function getMaxUnlockedLevel() {
+  const peakTok = (state.data && state.data.evo_peak_tokens != null) ? state.data.evo_peak_tokens : 0;
+  const realTodayTok = (state.data && state.data.today_tokens != null) ? state.data.today_tokens : 0;
+  const realMax = getBunnyTier(Math.max(peakTok, realTodayTok)).level;
+  return debugState.level != null ? Math.max(realMax, debugState.level) : realMax;
+}
+
+function celebrateLevelUp(tier) {
+  if (!tier) return;
+  const wrap = document.getElementById("bunnyMascot");
+  const mood = document.getElementById("bunnyMood");
+  if (wrap) triggerBunnyFx(wrap, tier.level);
+  if (mood) {
+    mood.classList.remove("levelup-pop");
+    void mood.offsetWidth;
+    mood.classList.add("levelup-pop");
+    setTimeout(() => mood.classList.remove("levelup-pop"), 760);
+  }
+  showBunnySpeech(`🎉 进化成功！今日达成 Lv.${tier.level} ${tier.name}！`);
+  if (document.getElementById("evoModal").classList.contains("open")) {
+    renderEvoModal();
+  }
+}
+
 function renderBunnyState(tokens) {
   const val = tokens || 0;
   const tier = getBunnyTier(val);
@@ -2283,15 +2888,38 @@ function renderBunnyState(tokens) {
   const xpFill = document.getElementById("xpFill");
   const xpText = document.getElementById("xpText");
 
-  wrap.className = "bunny-wrap" + (tier.stage ? " " + tier.stage : "");
+  if (debugState.level == null && state.data) {
+    getMaxUnlockedLevel();
+  }
+
+  // Celebrate real level-up live when today's tokens cross a tier threshold!
+  if (debugState.level == null && lastRealBunnyLv != null && tier.level > lastRealBunnyLv) {
+    setTimeout(() => celebrateLevelUp(tier), 180);
+  }
+  if (debugState.level == null && state.data) {
+    lastRealBunnyLv = tier.level;
+  }
+
+  // Preserve active transient FX classes (fx-click / siphoning) across SSE refreshes
+  const keepFxClick = wrap.classList.contains("fx-click");
+  const keepSiphon = wrap.classList.contains("siphoning");
+  wrap.className = "bunny-wrap"
+    + (tier.stage ? " " + tier.stage : "")
+    + (keepFxClick ? " fx-click" : "")
+    + (keepSiphon ? " siphoning" : "");
+  const prevLv = wrap.dataset.lv;
   wrap.dataset.lv = String(tier.level);
-  svg.innerHTML = tier.svg;
-  mood.textContent = `今日 Lv.${tier.level} ${tier.name} ▸`;
+  if (prevLv !== String(tier.level) || !svg.innerHTML) {
+    svg.innerHTML = tier.svg;
+  }
+  const dbgPrefix = debugState.level != null ? "[调试] " : "";
+  mood.textContent = `${dbgPrefix}今日 Lv.${tier.level} ${tier.name} ▸`;
 
   if (next) {
-    const pct = Math.max(3, Math.min(100, Math.round(((val - tier.min) / (next.min - tier.min)) * 100)));
+    const pct = Math.max(3, Math.min(100, Math.round((val / next.min) * 100)));
+    const nextLbl = fmtNum(next.min).replace(/\.00([BMK])$/, "$1");
     if (xpFill) xpFill.style.width = pct + "%";
-    if (xpText) xpText.innerHTML = `<strong>${fmtNum(val)}</strong> / ${fmtNum(next.min)} → Lv.${next.level}`;
+    if (xpText) xpText.innerHTML = `<strong>${fmtNum(val)}</strong> / ${nextLbl}`;
   } else {
     if (xpFill) xpFill.style.width = "100%";
     if (xpText) xpText.innerHTML = `<strong>${fmtNum(val)}</strong> · 今日已满阶 ✨`;
@@ -2429,38 +3057,80 @@ function triggerBunnyFx(el, level) {
   }
 }
 
+let evoProgTimer = null;
+
 function renderEvoModal() {
-  const tokens = (state.data && state.data.today_tokens != null) ? state.data.today_tokens : 0;
+  const tokens = getEffectiveTodayTokens();
   const cur = getBunnyTier(tokens);
+  const maxUnlockedLv = getMaxUnlockedLevel();
   const next = BUNNY_TIERS.find(t => t.level === cur.level + 1);
   const box = document.getElementById("evoProgressBox");
+  if (evoProgTimer) {
+    clearTimeout(evoProgTimer);
+    evoProgTimer = null;
+  }
 
   if (next) {
-    const pct = Math.max(2, Math.min(100, Math.round(((tokens - cur.min) / (next.min - cur.min)) * 100)));
+    const rawPct = Math.round((tokens / next.min) * 100);
     const remain = Math.max(0, next.min - tokens);
+    const pct = remain > 0 ? Math.max(4, Math.min(95, rawPct)) : 100;
+    const nextUnlocked = debugState.unlockAll || next.level <= maxUnlockedLv;
+    const nextName = nextUnlocked ? `Lv.${next.level} ${next.name}` : `Lv.${next.level} 神秘形态`;
     box.innerHTML = `
-      <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+      <div class="evo-prog-head">
         <span>今日：<strong>Lv.${cur.level} ${cur.name}</strong> (${fmtNum(tokens)})</span>
-        <span style="color:var(--accent)">距「Lv.${next.level} 神秘形态」还差 ${fmtNum(remain)}</span>
+        <span class="evo-prog-rem" id="evoProgRem">距「${nextName}」还差 ${fmtNum(remain)}</span>
       </div>
-      <div class="race-track" style="height:6px"><div class="race-bar" style="width:${pct}%;background:var(--accent)"></div></div>
+      <div class="evo-prog-track">
+        <div class="evo-prog-fill is-growing" id="evoProgFill" style="width:0%"></div>
+        ${remain > 0 ? `<div class="evo-prog-gap" id="evoProgGap" title="还差 ${fmtNum(remain)} 升级"></div>` : ""}
+      </div>
     `;
+    const fillEl = document.getElementById("evoProgFill");
+    const gapEl = document.getElementById("evoProgGap");
+    const remEl = document.getElementById("evoProgRem");
+    // Stage 1: surge progress bar from 0% -> pct%
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (fillEl) fillEl.style.width = pct + "%";
+      });
+    });
+    // Stage 2: after bar reaches pct%, reveal dashed remaining-gap box + gentle cue
+    evoProgTimer = setTimeout(() => {
+      if (fillEl) fillEl.classList.remove("is-growing");
+      if (gapEl) gapEl.classList.add("show");
+      if (remEl) remEl.classList.add("pulse");
+    }, 640);
   } else {
-    box.innerHTML = `<div style="display:flex;justify-content:space-between">
-      <span>今日：<strong>Lv.9 ${cur.name}</strong> (${fmtNum(tokens)})</span>
-      <span style="color:var(--accent)">今日已达满阶巅峰 ✨</span>
-    </div>`;
+    box.innerHTML = `
+      <div class="evo-prog-head">
+        <span>今日：<strong>Lv.9 ${cur.name}</strong> (${fmtNum(tokens)})</span>
+        <span class="evo-prog-rem">今日已达满阶巅峰 ✨</span>
+      </div>
+      <div class="evo-prog-track">
+        <div class="evo-prog-fill is-growing" id="evoProgFill" style="width:0%"></div>
+      </div>
+    `;
+    const fillEl = document.getElementById("evoProgFill");
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (fillEl) fillEl.style.width = "100%";
+      });
+    });
+    evoProgTimer = setTimeout(() => {
+      if (fillEl) fillEl.classList.remove("is-growing");
+    }, 640);
   }
 
   const grid = document.getElementById("evoGrid");
   grid.innerHTML = BUNNY_TIERS.map(t => {
-    const isLocked = t.level > cur.level;
+    const isLocked = !debugState.unlockAll && t.level > maxUnlockedLv;
     const cls = t.level === cur.level
       ? "evo-card current"
       : (isLocked ? "evo-card locked" : "evo-card unlocked");
     if (isLocked) {
-      return `<div class="${cls}" data-locked="1" data-min="${t.min}">
-        <div class="bunny-wrap" title="今日达到 ${t.range.split(" ")[0]} 自动解锁">
+      return `<div class="${cls}" data-locked="1" data-lv="${t.level}">
+        <div class="bunny-wrap" title="神秘形态 · 达成隐藏门槛后永久解锁">
           <svg class="bunny-svg" viewBox="0 0 36 36" fill="none">
             <rect x="10.5" y="16" width="15" height="11.5" rx="3" stroke="currentColor" stroke-width="1.8" opacity="0.45"/>
             <path d="M13.5 16 V12.5 A4.5 4.5 0 0 1 22.5 12.5 V16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" opacity="0.45"/>
@@ -2468,10 +3138,10 @@ function renderEvoModal() {
           </svg>
         </div>
         <div class="evo-name">Lv.${t.level} 待解锁</div>
-        <div class="evo-rng">${t.range}</div>
+        <div class="evo-rng">???</div>
       </div>`;
     }
-    return `<div class="${cls}" data-locked="0" data-min="${t.min}">
+    return `<div class="${cls}" data-locked="0" data-lv="${t.level}">
       <div class="bunny-wrap ${t.stage}" data-lv="${t.level}" title="点击触发 Lv.${t.level} ${t.name} 专属动效">
         <svg class="bunny-svg" viewBox="0 0 36 36" fill="none">${t.svg}</svg>
       </div>
@@ -2481,6 +3151,11 @@ function renderEvoModal() {
   }).join("");
 
   const hintEl = document.getElementById("evoHint");
+  if (hintEl) {
+    hintEl.textContent = maxUnlockedLv > cur.level
+      ? `历史最高已永久解锁至 Lv.${maxUnlockedLv} · 点击任意已解锁形态可重温专属动效`
+      : "已解锁形态永久保留 · 点击可触发专属动效 · 更高阶形态达成后自动揭晓";
+  }
   grid.querySelectorAll(".evo-card").forEach(card => {
     const wrap = card.querySelector(".bunny-wrap");
     wrap.addEventListener("click", () => {
@@ -2488,8 +3163,7 @@ function renderEvoModal() {
         card.classList.remove("shake");
         void card.offsetWidth;
         card.classList.add("shake");
-        const need = Math.max(0, Number(card.dataset.min) - tokens);
-        if (hintEl) hintEl.textContent = `🔒 尚未解锁，今日还差 ${fmtNum(need)} 即可点亮`;
+        if (hintEl) hintEl.textContent = `🔒 Lv.${card.dataset.lv} 神秘形态封印中 · 达成隐藏门槛后永久解锁`;
       } else {
         triggerBunnyFx(wrap, wrap.dataset.lv);
       }
@@ -2504,7 +3178,7 @@ function openEvoModal() {
 
 const TOOL_COLORS = {
   antigravity: "#E54826",
-  codex: "#0D8A72",
+  codex: "#3B6CF6",
   omp: "#DB2777",
   devin: "#0284C7",
   qoder: "#059669",
@@ -2512,7 +3186,7 @@ const TOOL_COLORS = {
   droid: "#EA580C",
   opencode: "#D97706",
   grok: "#52525B",
-  claude: "#2563EB",
+  claude: "#D97757",
   gemini: "#7C3AED",
   hermes: "#0891B2",
   qwencode: "#6D28D9",
@@ -2681,7 +3355,6 @@ function disconnectStream() {
 
 window.__onPopoverOpen = () => {
   popoverVisible = true;
-  tickQuotaCountdowns();
   if (state.data) {
     connectStream(true);
     // If popover was idle >12s, silently refresh with top progress bar
@@ -2693,6 +3366,8 @@ window.__onPopoverOpen = () => {
 
 window.__onPopoverClose = () => {
   popoverVisible = false;
+  if (typeof stopQuotaSiphon === "function") stopQuotaSiphon();
+  if (typeof clearBunnySpeech === "function") clearBunnySpeech();
   disconnectStream();
 };
 
@@ -2725,6 +3400,8 @@ function connectStream(skipInitial = true) {
   state.es = es;
 }
 
+let shouldAnimateCharts = true;
+
 function renderAll(d) {
   document.getElementById("scanBadge").textContent = `扫描 ${d.scan_ms}ms`;
   document.getElementById("updatedPill").textContent = `更新于 ${d.generated_at.slice(11)}`;
@@ -2735,8 +3412,9 @@ function renderAll(d) {
     popInfo.textContent = `${d.scan_ms}ms · ${pTxt}`;
   }
 
-  // 9-Tier Bunny evolution strictly tracks TODAY's total tokens across all agents
-  renderBunnyState(d.today_tokens != null ? d.today_tokens : 0);
+  // 9-Tier Bunny evolution strictly tracks TODAY's total tokens across all agents (or debug preview level)
+  renderBunnyState(getEffectiveTodayTokens());
+  renderTopQuota(d);
 
   renderToolChips(d);
   renderHero(d);
@@ -2747,6 +3425,7 @@ function renderAll(d) {
   renderAgents(d);
   renderTape(d);
   renderProjects(d);
+  shouldAnimateCharts = false;
 }
 
 function renderToolChips(d) {
@@ -2768,15 +3447,113 @@ function renderToolChips(d) {
   bar.querySelectorAll(".chip").forEach(btn => {
     btn.addEventListener("click", () => {
       state.tool = btn.dataset.tool;
+      shouldAnimateCharts = true;
+      lastSeenCallTs = 0;
       fetchTelemetry(false);
       connectStream();
     });
   });
 }
 
+function renderTopQuota(d) {
+  const box = document.getElementById("topQuota");
+  if (!box) return;
+  const mode = menuBarQuotaBar;
+  if (!d || !mode || mode === "none") {
+    box.classList.remove("show");
+    return;
+  }
+  const quotas = d.quotas || {};
+  let name = "";
+  let usedPct = null;
+  let resetsAt = null;
+
+  if (mode === "codex") {
+    const p = quotas.codex && quotas.codex.primary;
+    if (p && p.used_percent != null) {
+      name = Number(p.window_minutes) === 10080 ? "Codex 周" : "Codex";
+      usedPct = Number(p.used_percent);
+      resetsAt = p.resets_at;
+    }
+  } else {
+    const keyMap = {
+      gem5h: ["antigravity:gemini_5h", "Gemini 5h"],
+      gem7d: ["antigravity:gemini_7d", "Gemini 周"],
+      cg5h:  ["antigravity:cg_5h", "C/G 5h"],
+    };
+    const spec = keyMap[mode];
+    const buckets = (quotas.antigravity && quotas.antigravity.buckets) || [];
+    if (spec) {
+      const b = buckets.find(x => x.key === spec[0]);
+      if (b && b.used_percent != null) {
+        name = b.label || spec[1];
+        usedPct = Number(b.used_percent);
+        resetsAt = b.resets_at;
+      }
+    }
+  }
+
+  if (usedPct == null) {
+    box.classList.remove("show");
+    return;
+  }
+
+  const remPct = Math.max(0, Math.min(100, Math.round(100 - usedPct)));
+  const col = remPct <= 15 ? "var(--bad)" : remPct <= 30 ? "var(--warn)" : "var(--teal)";
+  document.getElementById("tqName").textContent = name;
+  const pctEl = document.getElementById("tqPct");
+  pctEl.textContent = `剩 ${remPct}%`;
+  pctEl.style.color = col;
+  const fillEl = document.getElementById("tqFill");
+  fillEl.style.width = remPct + "%";
+  fillEl.style.background = col;
+  const rst = resetsAt ? fmtResetTime(resetsAt) : "";
+  document.getElementById("tqRst").textContent = rst;
+  box.removeAttribute("title");
+  box.classList.add("show");
+}
+
+const numAnimState = {};
+function animateMetric(id, targetVal, formatter) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (el._raf) {
+    cancelAnimationFrame(el._raf);
+    el._raf = null;
+  }
+  if (targetVal == null || isNaN(targetVal)) {
+    numAnimState[id] = null;
+    el.textContent = "—";
+    return;
+  }
+  const to = Number(targetVal);
+  const prev = numAnimState[id];
+  if (prev == null || Math.abs(to - prev) < 0.001) {
+    numAnimState[id] = to;
+    el.textContent = formatter(to);
+    return;
+  }
+  const from = prev;
+  numAnimState[id] = to;
+  const start = performance.now();
+  const dur = 340;
+  const step = (now) => {
+    const p = Math.min(1, (now - start) / dur);
+    const eased = 1 - Math.pow(1 - p, 3);
+    el.textContent = formatter(from + (to - from) * eased);
+    if (p < 1) {
+      el._raf = requestAnimationFrame(step);
+    } else {
+      el.textContent = formatter(to);
+      el._raf = null;
+    }
+  };
+  el._raf = requestAnimationFrame(step);
+}
+
 function renderHero(d) {
   const k = d.kpi;
-  document.getElementById("kpiTokens").textContent = fmtNum(k.tokens);
+  animateMetric("kpiTokens", k.tokens, fmtNum);
   document.getElementById("cachePill").textContent = `缓存 ${k.cache_hit}%`;
   document.getElementById("kpiInOut").textContent = `输入 ${fmtNum(k.in)} · 输出 ${fmtNum(k.out)}`;
   document.getElementById("kpiCache").textContent = `命中 ${fmtNum(k.cr)}`;
@@ -2793,7 +3570,7 @@ function renderHero(d) {
     .map(s => `<div style="width:${(s.v / tot * 100).toFixed(2)}%;background:${s.c}"></div>`)
     .join("");
 
-  document.getElementById("kpiTps").textContent = k.tps != null ? k.tps.toFixed(1) : "—";
+  animateMetric("kpiTps", k.tps, v => v.toFixed(1));
   document.getElementById("kpiPerfSamples").textContent = `${k.perf_samples} 次采样`;
   const gaugePct = k.tps != null ? Math.min(100, Math.round((k.tps / 160) * 100)) : 0;
   document.getElementById("tpsGauge").style.width = gaugePct + "%";
@@ -2801,15 +3578,41 @@ function renderHero(d) {
     ? `峰值 ${k.fastest_model.tps}/s`
     : "暂无样本";
 
-  document.getElementById("kpiTtft").textContent = k.ttft_p50 != null ? k.ttft_p50.toFixed(2) : "—";
+  animateMetric("kpiTtft", k.ttft_p50, v => v.toFixed(2));
   document.getElementById("p95Pill").textContent = k.ttft_p95 != null ? `P95 ${k.ttft_p95.toFixed(1)}s` : "P95 —";
 
-  const maxBin = Math.max(1, ...d.ttft_histogram.map(b => b.count));
-  document.getElementById("ttftMini").innerHTML = d.ttft_histogram
-    .map(b => `<span style="height:${Math.max(8, Math.round((b.count / maxBin) * 100))}%" title="${b.label}: ${b.count}"></span>`)
-    .join("");
+  // 3-tier semantic TTFT breakdown (fast <=2s / normal 2-8s / slow >8s) for instant readability
+  const bins = d.ttft_histogram || [];
+  const fastC = (bins[0]?.count || 0) + (bins[1]?.count || 0) + (bins[2]?.count || 0);
+  const midC  = (bins[3]?.count || 0) + (bins[4]?.count || 0);
+  const slowC = (bins[5]?.count || 0) + (bins[6]?.count || 0);
+  const ttftTot = fastC + midC + slowC;
+  const ttftStackEl = document.getElementById("ttftStack");
+  const ttftLegEl = document.getElementById("ttftLegend");
+  if (ttftTot > 0) {
+    const fPct = Math.round((fastC / ttftTot) * 100);
+    const sPct = Math.round((slowC / ttftTot) * 100);
+    const mPct = Math.max(0, 100 - fPct - sPct);
+    const tSegs = [
+      { v: fastC, c: "var(--teal)",   t: `极快 ≤2s: ${fPct}% (${fastC}次)` },
+      { v: midC,  c: "var(--amber)",  t: `正常 2–8s: ${mPct}% (${midC}次)` },
+      { v: slowC, c: "var(--accent)", t: `偏慢 >8s: ${sPct}% (${slowC}次)` },
+    ];
+    ttftStackEl.innerHTML = tSegs
+      .filter(s => s.v > 0)
+      .map(s => `<div style="width:${(s.v / ttftTot * 100).toFixed(2)}%;background:${s.c}" title="${s.t}"></div>`)
+      .join("");
+    ttftLegEl.innerHTML = `
+      <span style="color:var(--teal)">≤2s ${fPct}%</span>
+      <span style="color:var(--amber)">2-8s ${mPct}%</span>
+      <span style="color:var(--accent)">&gt;8s ${sPct}%</span>
+    `;
+  } else {
+    ttftStackEl.innerHTML = "";
+    ttftLegEl.innerHTML = `<span>暂无首字样本</span>`;
+  }
 
-  document.getElementById("kpiCost").textContent = fmtCost(k.cost);
+  animateMetric("kpiCost", k.cost, fmtCost);
   document.getElementById("kpiReqs").textContent = `${k.requests.toLocaleString()} 次请求`;
   document.getElementById("kpiSessions").textContent = `${k.sessions} 个会话`;
   document.getElementById("peakHourPill").textContent = k.peak_hour != null
@@ -2898,7 +3701,9 @@ function renderDailyChart(d) {
         parts.push(`<circle cx="${(x + barW / 2).toFixed(1)}" cy="${y.toFixed(1)}" r="4.5" fill="${barCol}" />`);
       }
     } else {
-      parts.push(`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="${barCol}" opacity="0.88" />`);
+      const delay = Math.min(240, i * 12);
+      const cls = shouldAnimateCharts ? "svg-bar-grow" : "svg-bar-static";
+      parts.push(`<rect class="${cls}" style="--d:${delay}ms;--op:0.88" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="${barCol}" />`);
     }
 
     if (i % labelEvery === 0 || i === rows.length - 1) {
@@ -3049,8 +3854,10 @@ function renderHistogram(d) {
     const y = padT + plotH - h;
     const cx = x + bw / 2;
     const pct = total > 0 ? Math.round((b.count / total) * 100) : 0;
+    const op = (0.35 + 0.65 * (b.count / maxC)).toFixed(2);
+    const cls = shouldAnimateCharts ? "svg-bar-grow" : "svg-bar-static";
     return `
-      <rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${amber}" opacity="${(0.35 + 0.65 * (b.count / maxC)).toFixed(2)}" />
+      <rect class="${cls}" style="--d:${i * 28}ms;--op:${op}" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${amber}" />
       <text x="${cx.toFixed(1)}" y="${(y - 5).toFixed(1)}" text-anchor="middle" fill="${ink}" font-size="9.5" font-family="var(--font-mono)">${b.count > 0 ? pct + "%" : ""}</text>
       <text x="${cx.toFixed(1)}" y="${H - 6}" text-anchor="middle" fill="${muted}" font-size="9.5" font-family="var(--font-mono)">${b.label}</text>
     `;
@@ -3101,7 +3908,8 @@ function renderHours(d) {
     const isPeak = d.kpi.peak_hour === h.hour && h.tokens > 0;
     const fill = h.tokens === 0 ? border : (isPeak ? accent : teal);
     const op = h.tokens === 0 ? 0.35 : (isPeak ? 0.95 : (0.35 + ratio * 0.55));
-    parts.push(`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="2" fill="${fill}" opacity="${op.toFixed(2)}" />`);
+    const cls = shouldAnimateCharts ? "svg-bar-grow" : "svg-bar-static";
+    parts.push(`<rect class="${cls}" style="--d:${Math.min(240, i * 10)}ms;--op:${op.toFixed(2)}" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="2" fill="${fill}" />`);
     if (i % 3 === 0 || i === 23) {
       const cx = x + bw / 2;
       parts.push(`<text x="${cx.toFixed(1)}" y="${H - 6}" text-anchor="middle" fill="${isPeak ? accent : muted}" font-size="9.5" font-weight="${isPeak ? 700 : 400}" font-family="var(--font-mono)">${String(i).padStart(2, "0")}</text>`);
@@ -3155,31 +3963,18 @@ function fmtCostRich(n) {
   return esc(s);
 }
 
-function fmtCountdown(tsSec) {
+function fmtResetTime(tsSec) {
   const r = Number(tsSec);
   if (!Number.isFinite(r) || r <= 0) return "";
-  const diff = Math.max(0, Math.floor(r - Date.now() / 1000));
+  const diff = Math.floor(r - Date.now() / 1000);
   if (diff <= 0) return "已重置";
   const d = Math.floor(diff / 86400);
   const h = Math.floor((diff % 86400) / 3600);
   const m = Math.floor((diff % 3600) / 60);
-  const s = diff % 60;
-  const pad = n => String(n).padStart(2, "0");
-  if (d > 0) return `⏱ ${d}天 ${pad(h)}:${pad(m)}:${pad(s)}`;
-  return `⏱ ${pad(h)}:${pad(m)}:${pad(s)}`;
+  if (d > 0) return `${d}天${h > 0 ? h + "h" : ""}`;
+  if (h > 0) return `${h}h${m > 0 ? m + "m" : ""}`;
+  return `${Math.max(1, m)}m`;
 }
-
-function tickQuotaCountdowns() {
-  if (isPopover && !popoverVisible) return;
-  if (!isPopover && document.hidden) return;
-  document.querySelectorAll(".quota-rst[data-reset-ts]").forEach(el => {
-    const ts = Number(el.dataset.resetTs);
-    const txt = fmtCountdown(ts);
-    if (txt) el.textContent = txt;
-  });
-}
-
-setInterval(tickQuotaCountdowns, 1000);
 
 function renderAgents(d) {
   const targets = [
@@ -3246,10 +4041,10 @@ function renderAgents(d) {
               tipTxt = `${lbl}（${isCustom ? "自定义" : "本地估算"}）：已用 ${usedStr} / 上限 ${limStr}，剩余 ${remStr}（${obj.used_requests || 0}次请求${peakStr}），点击 ⚙ 可修改上限`;
               rightHtml = `<span class="quota-sub" style="margin-left:auto">${usedStr} / ${limStr}</span>`;
             } else {
-              const rst = obj.resets_at ? fmtCountdown(obj.resets_at) : "";
+              const rst = obj.resets_at ? fmtResetTime(obj.resets_at) : "";
               tipTxt = `${lbl}：已用 ${Math.round(usedPct)}%，剩余 ${remPct}%`;
               if (rst) {
-                rightHtml = `<span class="quota-rst" data-reset-ts="${esc(obj.resets_at)}" title="距离额度重置倒计时">${rst}</span>`;
+                rightHtml = `<span class="quota-rst" title="额度重置时间">${rst}</span>`;
               }
             }
             const editBtn = isLocal
@@ -3438,6 +4233,8 @@ document.getElementById("qcfgSaveBtn").addEventListener("click", async () => {
   fetchTelemetry(false);
 });
 
+let lastSeenCallTs = 0;
+
 function renderTape(d) {
   const tb = document.getElementById("tapeBody");
   const calls = d.recent_calls || [];
@@ -3445,12 +4242,15 @@ function renderTape(d) {
     tb.innerHTML = `<tr><td colspan="7" class="empty">暂无请求记录</td></tr>`;
     return;
   }
+  const prevTop = lastSeenCallTs;
+  const newestTs = calls[0] ? (calls[0].ts || 0) : 0;
   tb.innerHTML = calls.map(c => {
     const tpsCls = c.tps == null ? "" : c.tps >= 70 ? "speed-fast" : c.tps < 25 ? "speed-slow" : "speed-mid";
     const ttftCls = c.ttft == null ? "" : c.ttft <= 1.2 ? "speed-fast" : c.ttft >= 6 ? "speed-slow" : "speed-mid";
     const tShort = isPopover ? c.time.slice(6) : c.time;
     const mShort = isPopover ? c.model.slice(0, 16) : c.model.slice(0, 26);
-    return `<tr>
+    const isNew = prevTop > 0 && (c.ts || 0) > prevTop;
+    return `<tr class="${isNew ? "is-new-call" : ""}">
       <td style="color:var(--muted)">${esc(tShort)}</td>
       <td><span class="tag" style="background:${esc(c.accent)}">${esc(c.tool_short)}</span></td>
       <td title="${esc(c.model)}">${esc(mShort)}</td>
@@ -3460,6 +4260,7 @@ function renderTape(d) {
       <td class="r ${ttftCls}">${c.ttft != null ? c.ttft.toFixed(2) + "s" : "—"}</td>
     </tr>`;
   }).join("");
+  if (newestTs > lastSeenCallTs) lastSeenCallTs = newestTs;
 }
 
 function renderProjects(d) {
@@ -3480,7 +4281,7 @@ function renderProjects(d) {
       </div>
       <div class="proj-path" title="${esc(p.path)}">${esc(p.path)}</div>
       <div style="display:flex;align-items:center;gap:8px">
-        <div class="race-track" style="flex:1;height:4.5px"><div class="race-bar" style="width:${pct}%;background:var(--border-strong)"></div></div>
+        <div class="race-track" style="flex:1;height:4.5px"><div class="race-bar" style="width:${pct}%;background:var(--teal)"></div></div>
         ${tags}
       </div>
     </div>`;
@@ -3493,6 +4294,8 @@ document.getElementById("rangeSeg").querySelectorAll("button").forEach(btn => {
     document.querySelectorAll("#rangeSeg button").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
     state.range = btn.dataset.range;
+    shouldAnimateCharts = true;
+    lastSeenCallTs = 0;
     fetchTelemetry(false);
     connectStream();
   });
@@ -3503,7 +4306,11 @@ document.getElementById("chartModeTabs").querySelectorAll("button").forEach(btn 
     document.querySelectorAll("#chartModeTabs button").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
     state.chartMode = btn.dataset.mode;
-    if (state.data) renderDailyChart(state.data);
+    if (state.data) {
+      shouldAnimateCharts = true;
+      renderDailyChart(state.data);
+      shouldAnimateCharts = false;
+    }
   });
 });
 
@@ -3520,12 +4327,19 @@ document.getElementById("popTabs").querySelectorAll("button").forEach(btn => {
   btn.addEventListener("click", () => {
     document.querySelectorAll("#popTabs button").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
-    document.body.dataset.popTab = btn.dataset.tab;
+    const tab = btn.dataset.tab;
+    document.body.dataset.popTab = tab;
+    document.querySelectorAll(`[data-pop-panel~="${tab}"]`).forEach(panel => {
+      panel.classList.remove("panel-enter");
+      void panel.offsetWidth;
+      panel.classList.add("panel-enter");
+    });
   });
 });
 
 document.getElementById("refreshBtn").addEventListener("click", () => {
   hopBunny();
+  shouldAnimateCharts = true;
   fetchTelemetry(true);
 });
 
@@ -3535,10 +4349,220 @@ document.getElementById("expandBtn").addEventListener("click", () => {
   }
 });
 
-document.getElementById("popMbCfgLink").addEventListener("click", (e) => {
-  e.preventDefault();
-  document.getElementById("mbCfgBar").classList.toggle("open");
+function openSettingsModal() {
+  renderMenuBarCfgChips();
   postNative("getMenuBarFields");
+  document.getElementById("settingsModal").classList.add("open");
+}
+
+document.getElementById("settingsBtn").addEventListener("click", openSettingsModal);
+const topQuotaEl = document.getElementById("topQuota");
+topQuotaEl.addEventListener("click", openSettingsModal);
+
+// ---- Cute Quota -> Bunny XP Siphon Animation on Hover ----
+let siphonTimer = null;
+let siphonSpeakTimer = null;
+let activeSpeechEl = null;
+let activeSpeechHideTimer = null;
+let lastSpeechIdx = -1;
+let siphonTick = 0;
+
+let bunnyLinesPool = [
+  "你的额度都被我承包了！",
+  "让我狠狠吸收咯！",
+  "拿来吧 token！",
+  "吨吨吨…真香，再来亿点！",
+  "正在把额度转化成战力～",
+  "别看啦，都是兔兔的口粮！",
+  "吸溜！离下一阶又近一步啦！",
+  "好喝！今天的 token 格外甜！",
+];
+let bunnyDeck = [];
+
+(async function loadBunnyLines() {
+  try {
+    const r = await fetch("/api/bunny_lines");
+    if (!r.ok) return;
+    const j = await r.json();
+    if (Array.isArray(j.lines) && j.lines.length > 0) {
+      bunnyLinesPool = j.lines.filter(x => typeof x === "string" && x.trim());
+      bunnyDeck = [];
+    }
+  } catch {}
+})();
+
+function nextBunnyLine() {
+  if (!bunnyDeck.length) {
+    bunnyDeck = bunnyLinesPool.map((_, i) => i);
+    for (let i = bunnyDeck.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [bunnyDeck[i], bunnyDeck[j]] = [bunnyDeck[j], bunnyDeck[i]];
+    }
+    if (bunnyDeck.length > 1 && bunnyDeck[bunnyDeck.length - 1] === lastSpeechIdx) {
+      [bunnyDeck[0], bunnyDeck[bunnyDeck.length - 1]] = [bunnyDeck[bunnyDeck.length - 1], bunnyDeck[0]];
+    }
+  }
+  const idx = bunnyDeck.pop();
+  lastSpeechIdx = idx;
+  return bunnyLinesPool[idx] || "拿来吧 token！";
+}
+
+function clearBunnySpeech() {
+  if (activeSpeechHideTimer) {
+    clearTimeout(activeSpeechHideTimer);
+    activeSpeechHideTimer = null;
+  }
+  if (activeSpeechEl) {
+    activeSpeechEl.remove();
+    activeSpeechEl = null;
+  }
+}
+
+function showBunnySpeech(customText) {
+  const layer = document.getElementById("fxLayer");
+  const bunny = document.getElementById("bunnyMascot");
+  if (!layer || !bunny) return;
+  clearBunnySpeech();
+
+  const bRect = bunny.getBoundingClientRect();
+  const bubble = document.createElement("div");
+  bubble.className = "bunny-speech";
+  bubble.innerHTML = `<svg class="bs-tail" viewBox="0 0 12 11" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <polygon points="10.2,1.2 1.4,10.25 12,10.25 12,1.2" fill="var(--surface)"/>
+    <path d="M9.75,1.2 L1.4,10.25 L11.6,10.25" stroke="var(--active-border)" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+  </svg>`;
+  const txt = document.createElement("span");
+  txt.className = "bs-txt";
+  txt.textContent = customText || nextBunnyLine();
+  bubble.appendChild(txt);
+  // Position beside the upper-right of the bunny avatar (above the time range row, never covering buttons!)
+  bubble.style.left = (bRect.right + 11) + "px";
+  bubble.style.top = Math.max(6, bRect.top + 3) + "px";
+  layer.appendChild(bubble);
+  activeSpeechEl = bubble;
+
+  // Stay visible for 3 seconds, then fade out cleanly
+  activeSpeechHideTimer = setTimeout(() => {
+    if (!bubble.isConnected) return;
+    bubble.classList.add("out");
+    setTimeout(() => {
+      if (activeSpeechEl === bubble) activeSpeechEl = null;
+      bubble.remove();
+    }, 260);
+  }, 3000);
+}
+
+function spawnSiphonOrb() {
+  const layer = document.getElementById("fxLayer");
+  const tqFill = document.getElementById("tqFill");
+  const tqTrack = document.querySelector(".tq-track");
+  const bunny = document.getElementById("bunnyMascot");
+  const xpFill = document.getElementById("xpFill");
+  if (!layer || !tqTrack || !bunny || !topQuotaEl.classList.contains("show")) return;
+
+  const srcRect = (tqFill && tqFill.getBoundingClientRect().width > 4)
+    ? tqFill.getBoundingClientRect()
+    : tqTrack.getBoundingClientRect();
+  const bRect = bunny.getBoundingClientRect();
+  const xRect = xpFill ? xpFill.getBoundingClientRect() : bRect;
+
+  // Alternate destination between Bunny mouth/center and XP progress tip
+  const toXp = (siphonTick++ % 2 === 1) && xRect.width > 2;
+  const sx = srcRect.left + Math.random() * Math.min(18, Math.max(4, srcRect.width * 0.5));
+  const sy = srcRect.top + srcRect.height / 2 + (Math.random() - 0.5) * 3;
+  const ex = toXp ? (xRect.right) : (bRect.left + bRect.width * 0.62);
+  const ey = toXp ? (xRect.top + xRect.height / 2) : (bRect.top + bRect.height * 0.56);
+
+  const dx = ex - sx;
+  const dy = ey - sy;
+  const arcLift = -10 - Math.random() * 14;
+  const mx = dx * 0.52;
+  const my = dy * 0.5 + arcLift;
+
+  const cs = getComputedStyle(document.documentElement);
+  const palette = [
+    (tqFill && tqFill.style.background) || cs.getPropertyValue("--teal").trim(),
+    cs.getPropertyValue("--amber").trim(),
+    cs.getPropertyValue("--accent").trim(),
+  ];
+  const col = palette[siphonTick % palette.length];
+  const dur = 0.54 + Math.random() * 0.16;
+
+  const orb = document.createElement("span");
+  orb.className = "fx-siphon-orb";
+  const sz = (3.8 + Math.random() * 2.6).toFixed(1);
+  orb.style.width = sz + "px";
+  orb.style.height = sz + "px";
+  orb.style.left = sx.toFixed(1) + "px";
+  orb.style.top = sy.toFixed(1) + "px";
+  orb.style.background = col;
+  orb.style.boxShadow = `0 0 6px ${col}`;
+  orb.style.setProperty("--mx", mx.toFixed(1) + "px");
+  orb.style.setProperty("--my", my.toFixed(1) + "px");
+  orb.style.setProperty("--dx", dx.toFixed(1) + "px");
+  orb.style.setProperty("--dy", dy.toFixed(1) + "px");
+  orb.style.setProperty("--dur", dur.toFixed(2) + "s");
+  layer.appendChild(orb);
+  setTimeout(() => orb.remove(), Math.round(dur * 1000) + 80);
+
+  // Subtle cute "+XP" / sparkle pop every 3rd orb arrival
+  if (siphonTick % 3 === 0) {
+    setTimeout(() => {
+      if (!siphonTimer) return;
+      const pop = document.createElement("span");
+      pop.className = "fx-absorb-pop";
+      pop.textContent = siphonTick % 6 === 0 ? "+XP" : "✦";
+      pop.style.left = (ex + (Math.random() - 0.5) * 8).toFixed(1) + "px";
+      pop.style.top = (ey - 4).toFixed(1) + "px";
+      pop.style.color = col;
+      layer.appendChild(pop);
+      setTimeout(() => pop.remove(), 520);
+    }, Math.round(dur * 860));
+  }
+}
+
+function startQuotaSiphon() {
+  if (siphonTimer) return;
+  topQuotaEl.classList.add("siphoning");
+  document.getElementById("bunnyMascot")?.classList.add("is-siphoning");
+  document.getElementById("xpFill")?.classList.add("is-charging");
+  spawnSiphonOrb();
+  siphonTimer = setInterval(spawnSiphonOrb, 115);
+  clearTimeout(siphonSpeakTimer);
+  siphonSpeakTimer = setTimeout(() => {
+    if (siphonTimer) showBunnySpeech();
+  }, 2000);
+}
+
+function stopQuotaSiphon() {
+  if (siphonTimer) {
+    clearInterval(siphonTimer);
+    siphonTimer = null;
+  }
+  if (siphonSpeakTimer) {
+    clearTimeout(siphonSpeakTimer);
+    siphonSpeakTimer = null;
+  }
+  topQuotaEl.classList.remove("siphoning");
+  document.getElementById("bunnyMascot")?.classList.remove("is-siphoning");
+  document.getElementById("xpFill")?.classList.remove("is-charging");
+}
+
+topQuotaEl.addEventListener("mouseenter", startQuotaSiphon);
+topQuotaEl.addEventListener("mouseleave", stopQuotaSiphon);
+topQuotaEl.addEventListener("click", stopQuotaSiphon);
+document.getElementById("popSettingsLink").addEventListener("click", (e) => {
+  e.preventDefault();
+  openSettingsModal();
+});
+document.getElementById("settingsCloseBtn").addEventListener("click", () => {
+  document.getElementById("settingsModal").classList.remove("open");
+});
+document.getElementById("settingsModal").addEventListener("click", (e) => {
+  if (e.target === e.currentTarget) e.currentTarget.classList.remove("open");
+});
+document.getElementById("settingsQuitBtn").addEventListener("click", () => {
+  postNative("quit");
 });
 
 document.querySelectorAll("#mbCfgChips button").forEach(btn => {
@@ -3554,6 +4578,16 @@ document.querySelectorAll("#mbCfgChips button").forEach(btn => {
   });
 });
 
+document.querySelectorAll("#mbQuotaBarChips button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    menuBarQuotaBar = btn.dataset.qbar;
+    try { localStorage.setItem("tootoo_qbar", menuBarQuotaBar); } catch {}
+    renderMenuBarCfgChips();
+    if (state.data) renderTopQuota(state.data);
+    postNative("setMenuBarQuotaBar", { mode: menuBarQuotaBar });
+  });
+});
+
 document.getElementById("popPricingLink").addEventListener("click", async (e) => {
   e.preventDefault();
   const a = e.currentTarget;
@@ -3561,12 +4595,12 @@ document.getElementById("popPricingLink").addEventListener("click", async (e) =>
   try {
     const r = await fetch("/api/pricing/refresh");
     const j = await r.json();
-    a.textContent = j.ok ? `已同步(${j.count})` : "同步失败";
+    a.textContent = j.ok ? `✓ 已同步(${j.count})` : "同步失败";
     await fetchTelemetry(false);
-    setTimeout(() => { a.textContent = "同步价格"; }, 2500);
+    setTimeout(() => { a.textContent = "↻ 同步价格"; }, 2500);
   } catch {
     a.textContent = "同步失败";
-    setTimeout(() => { a.textContent = "同步价格"; }, 2000);
+    setTimeout(() => { a.textContent = "↻ 同步价格"; }, 2000);
   }
 });
 
@@ -3578,6 +4612,73 @@ document.getElementById("popBrowserLink").addEventListener("click", (e) => {
 document.getElementById("popQuitLink").addEventListener("click", (e) => {
   e.preventDefault();
   postNative("quit");
+});
+
+// ---- Hidden Developer Debug Mode Controls ----
+function toggleDebugBar(forceState) {
+  const bar = document.getElementById("debugBar");
+  if (!bar) return;
+  const open = forceState != null ? forceState : !bar.classList.contains("open");
+  bar.classList.toggle("open", open);
+  if (open) bar.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+// Secret combo only: Control + Option + Command + D (use e.code since Option+D produces '∂' on macOS)
+document.addEventListener("keydown", (e) => {
+  if (e.ctrlKey && e.altKey && e.metaKey && !e.shiftKey && e.code === "KeyD") {
+    e.preventDefault();
+    toggleDebugBar();
+  }
+});
+
+document.querySelectorAll("#dbgLvChips button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const lv = Number(btn.dataset.lv);
+    applyDebugOverride(lv);
+    if (lv >= 1) hopBunny();
+  });
+});
+
+document.getElementById("dbgFxBtn").addEventListener("click", () => hopBunny());
+
+let dbgLevelUpTimer = null;
+document.getElementById("dbgLevelUpBtn").addEventListener("click", () => {
+  if (dbgLevelUpTimer) clearTimeout(dbgLevelUpTimer);
+  const curReal = getBunnyTier((state.data && state.data.today_tokens) || 0);
+  const targetLv = debugState.level != null ? debugState.level : Math.min(9, curReal.level + 1);
+  const prevLv = Math.max(1, targetLv - 1);
+  const targetTier = BUNNY_TIERS.find(t => t.level === targetLv) || BUNNY_TIERS[0];
+
+  // Scroll to top so the user immediately sees the full evolution sequence
+  if (window.scrollY > 12) {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  // Stage 1: show previous tier surging XP bar to 100%, then morph & celebrate!
+  if (targetLv > 1) {
+    applyDebugOverride(prevLv);
+    const xpFill = document.getElementById("xpFill");
+    if (xpFill) xpFill.style.width = "100%";
+  }
+  const delay = window.scrollY > 12 ? 320 : 220;
+  dbgLevelUpTimer = setTimeout(() => {
+    applyDebugOverride(targetLv);
+    celebrateLevelUp(targetTier);
+    dbgLevelUpTimer = null;
+  }, delay);
+});
+
+document.getElementById("dbgUnlockBtn").addEventListener("click", (e) => {
+  debugState.unlockAll = !debugState.unlockAll;
+  e.currentTarget.textContent = debugState.unlockAll ? "全解锁: 开" : "全解锁: 关";
+  if (document.getElementById("evoModal").classList.contains("open")) renderEvoModal();
+});
+
+document.getElementById("dbgCloseBtn").addEventListener("click", () => {
+  debugState.unlockAll = false;
+  document.getElementById("dbgUnlockBtn").textContent = "全解锁: 关";
+  applyDebugOverride(0);
+  toggleDebugBar(false);
 });
 
 initTheme();

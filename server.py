@@ -22,6 +22,7 @@ from scanner import build_telemetry, save_local_quota_config
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UI_FILE = os.path.join(BASE_DIR, "ui", "index.html")
+BUNNY_LINES_FILE = os.path.join(BASE_DIR, "ui", "bunny_lines.json")
 
 
 def fmt_num(n: int | float) -> str:
@@ -116,6 +117,17 @@ class TooTooHandler(BaseHTTPRequestHandler):
                 self.wfile.write(html)
             except OSError as e:
                 self._send_json({"error": str(e)}, status=500)
+            return
+
+        if parsed.path == "/api/bunny_lines":
+            try:
+                with open(BUNNY_LINES_FILE, "r", encoding="utf-8") as f:
+                    lines = json.load(f)
+                if not isinstance(lines, list):
+                    lines = []
+                self._send_json({"lines": lines})
+            except OSError:
+                self._send_json({"lines": []})
             return
 
         if parsed.path == "/api/pricing/refresh":
