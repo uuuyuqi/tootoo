@@ -93,7 +93,7 @@ CARROT_STATE_FILE = os.path.join(CACHE_DIR, "carrot_state.json")
 
 
 def load_carrot_state() -> dict[str, Any]:
-    default: dict[str, Any] = {"days": {}, "collection": []}
+    default: dict[str, Any] = {"balance": None, "starter_day": "", "days": {}, "collection": []}
     try:
         if os.path.exists(CARROT_STATE_FILE):
             with open(CARROT_STATE_FILE, "r", encoding="utf-8") as f:
@@ -102,7 +102,10 @@ def load_carrot_state() -> dict[str, Any]:
                 days = data.get("days") if isinstance(data.get("days"), dict) else {}
                 coll = data.get("collection") if isinstance(data.get("collection"), list) else []
                 clean_coll = sorted({int(x) for x in coll if isinstance(x, (int, float))})
-                return {"days": days, "collection": clean_coll}
+                bal = data.get("balance")
+                clean_bal = max(0, int(bal)) if isinstance(bal, (int, float)) else None
+                starter_day = str(data.get("starter_day") or "")
+                return {"balance": clean_bal, "starter_day": starter_day, "days": days, "collection": clean_coll}
     except Exception:
         pass
     return default
@@ -110,6 +113,13 @@ def load_carrot_state() -> dict[str, Any]:
 
 def save_carrot_state(patch: dict[str, Any]) -> dict[str, Any]:
     cur = load_carrot_state()
+    if "balance" in patch and patch["balance"] is not None:
+        try:
+            cur["balance"] = max(0, int(patch["balance"]))
+        except (TypeError, ValueError):
+            pass
+    if "starter_day" in patch and isinstance(patch["starter_day"], str) and len(patch["starter_day"]) == 10:
+        cur["starter_day"] = patch["starter_day"]
     day = str(patch.get("day") or "").strip()
     if len(day) == 10 and day[4] == "-" and day[7] == "-":
         d_ent = cur["days"].get(day)
@@ -122,7 +132,6 @@ def save_carrot_state(patch: dict[str, Any]) -> dict[str, Any]:
                 except (TypeError, ValueError):
                     pass
         cur["days"][day] = d_ent
-        # Keep most recent 90 days
         if len(cur["days"]) > 90:
             for old_k in sorted(cur["days"].keys())[:-90]:
                 cur["days"].pop(old_k, None)
