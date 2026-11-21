@@ -8247,7 +8247,7 @@ function renderGachaMeta() {
 
   const gBtn = document.getElementById("gachaBtn");
   if (gBtn) {
-    gBtn.classList.toggle("has-coins", cs.balance > 0 || cs.claimable > 0);
+    gBtn.classList.toggle("has-coins", cs.claimable > 0);
     gBtn.title = cs.claimable > 0
       ? `算力扭蛋 · 余额 ${cs.balance} 枚萝卜币（还有 +${cs.claimable} 枚可兑换！）`
       : `算力扭蛋 · 当前余额 ${cs.balance} 枚萝卜币`;
