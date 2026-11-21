@@ -1215,6 +1215,96 @@
     100% { opacity: 0; transform: translate(-50%, -50%) scale(8.5); }
   }
 
+  /* Matrix Token Rain inside Total Tokens card */
+  .fx-matrix-drop {
+    position: absolute;
+    top: -12px;
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 800;
+    pointer-events: none;
+    z-index: 5;
+    opacity: 0;
+    animation: matrixFall var(--dur, 0.78s) cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  }
+  @keyframes matrixFall {
+    0%   { opacity: 0; transform: translateY(0) scale(0.85); }
+    18%  { opacity: 0.95; }
+    80%  { opacity: 0.75; }
+    100% { opacity: 0; transform: translateY(105px) scale(1.05); }
+  }
+
+  /* TTFT Thinking -> First-Token Pop & Laser Sweep */
+  .fx-laser-sweep {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -18%;
+    width: 24%;
+    pointer-events: none;
+    z-index: 4;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--amber) 34%, transparent), color-mix(in srgb, var(--teal) 42%, transparent), transparent);
+    animation: laserScan 0.46s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  @keyframes laserScan {
+    0%   { left: -24%; opacity: 0.95; }
+    100% { left: 112%; opacity: 0; }
+  }
+  .fx-ttft-think {
+    position: absolute;
+    right: 12px;
+    top: 34px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-strong);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--amber);
+    pointer-events: none;
+    z-index: 6;
+    animation: ttftThinkBob 0.44s ease-in-out forwards;
+  }
+  @keyframes ttftThinkBob {
+    0%   { opacity: 0; transform: translateY(4px) scale(0.82); }
+    25%  { opacity: 1; transform: translateY(-2px) scale(1.05); }
+    75%  { opacity: 1; transform: translateY(0) scale(0.98); }
+    100% { opacity: 0; transform: translateY(-4px) scale(0.9); }
+  }
+  .fx-ttft-pop {
+    position: fixed;
+    pointer-events: none;
+    z-index: 999;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: rgba(24, 23, 21, 0.9);
+    color: #5EEAD4;
+    border: 1px solid rgba(94, 234, 212, 0.55);
+    box-shadow: 0 4px 16px rgba(14, 138, 120, 0.35);
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    font-weight: 800;
+    white-space: nowrap;
+    animation: ttftWordPop 0.95s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  @keyframes ttftWordPop {
+    0%   { opacity: 0; transform: translate(-50%, -20%) scale(0.55); }
+    18%  { opacity: 1; transform: translate(-50%, -100%) scale(1.12); }
+    72%  { opacity: 1; transform: translate(-50%, -135%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -175%) scale(0.94); }
+  }
+  .stack-bar.wave-pop > div {
+    animation: segWaveBounce 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+  .stack-bar.wave-pop > div:nth-child(2) { animation-delay: 65ms; }
+  .stack-bar.wave-pop > div:nth-child(3) { animation-delay: 130ms; }
+  .stack-bar.wave-pop > div:nth-child(4) { animation-delay: 195ms; }
+  @keyframes segWaveBounce {
+    0%, 100% { transform: scaleY(1); filter: brightness(1); }
+    45%      { transform: scaleY(1.9); filter: brightness(1.22); }
+  }
+
   .fx-stardust {
     position: fixed;
     pointer-events: none;
@@ -3187,7 +3277,7 @@
 
   <!-- HERO 4-INSTRUMENT STRIP -->
   <section class="hero-grid">
-    <div class="card" data-kpi="tokens" title="双击立即同步最新用量">
+    <div class="card" data-kpi="tokens" title="双击触发 Token 矩阵雨并同步最新用量">
       <div class="card-head">
         <span class="kicker k-teal">总用量</span>
         <span class="pill teal" id="cachePill">缓存 —%</span>
@@ -3225,7 +3315,7 @@
       </div>
     </div>
 
-    <div class="card" data-kpi="ttft" title="双击触发声呐雷达彩蛋">
+    <div class="card" data-kpi="ttft" title="双击触发首字破壳瞬爆彩蛋">
       <div class="card-head">
         <span class="kicker k-amber">首字延迟</span>
         <span class="pill amber" id="p95Pill">P95 —</span>
@@ -6153,19 +6243,46 @@ document.querySelectorAll(".hero-grid .card[data-kpi]").forEach(card => {
     const kind = card.dataset.kpi;
     const r = card.getBoundingClientRect();
     if (kind === "tokens") {
-      // Trigger a real live scan: only float a +delta badge if real tokens actually increased!
-      const before = prevLiveTodayTokens;
+      // 1. Matrix Token Rain pouring across the card (matching 4 real token-type colors)
       playSfx("cache");
-      fetchTelemetry(true).then(() => {
-        if (prevLiveTodayTokens === before) {
-          // Pure visual sparkle ring with zero fabricated numbers when already up to date
-          const ring = document.createElement("div");
-          ring.className = "fx-sonar";
-          ring.style.borderColor = "var(--teal)";
-          card.appendChild(ring);
-          setTimeout(() => ring.remove(), 900);
-        }
-      });
+      const glyphs = ["01", "tok", "{}", "λ", "✦", "[]", "AI", "⚡", ">>", "0x"];
+      const cols = ["var(--teal)", "var(--blue)", "var(--accent)", "var(--amber)"];
+      for (let i = 0; i < 16; i++) {
+        const drop = document.createElement("span");
+        drop.className = "fx-matrix-drop";
+        drop.textContent = glyphs[i % glyphs.length];
+        drop.style.left = (6 + (i * 5.8) + (Math.random() - 0.5) * 3).toFixed(1) + "%";
+        drop.style.color = cols[i % cols.length];
+        drop.style.animationDelay = (i * 26 + Math.random() * 60).toFixed(0) + "ms";
+        drop.style.setProperty("--dur", (0.62 + Math.random() * 0.28).toFixed(2) + "s");
+        card.appendChild(drop);
+        setTimeout(() => drop.remove(), 1100);
+      }
+      // 2. Stack bar wave bounce + brief terminal scramble settling back on exact real value
+      const stack = document.getElementById("tokenStack");
+      if (stack) {
+        stack.classList.remove("wave-pop");
+        void stack.offsetWidth;
+        stack.classList.add("wave-pop");
+        setTimeout(() => stack.classList.remove("wave-pop"), 700);
+      }
+      const kpiEl = document.getElementById("kpiTokens");
+      if (kpiEl && state.data && state.data.kpi) {
+        const realText = fmtNum(state.data.kpi.tokens);
+        const chars = "0123456789ABCDEF";
+        let frame = 0;
+        const scram = setInterval(() => {
+          frame++;
+          if (frame >= 7) {
+            clearInterval(scram);
+            kpiEl.textContent = fmtNum(state.data.kpi.tokens);
+            return;
+          }
+          kpiEl.textContent = realText.replace(/\d/g, () => chars[Math.floor(Math.random() * 10)]);
+        }, 38);
+      }
+      // 3. Real live sync (only floats +delta if genuine new tokens arrived!)
+      fetchTelemetry(true);
     } else if (kind === "cost") {
       playSfx("gold");
       for (let i = 0; i < 12; i++) {
@@ -6194,14 +6311,64 @@ document.querySelectorAll(".hero-grid .card[data-kpi]").forEach(card => {
         setTimeout(() => line.remove(), 680);
       }
     } else if (kind === "ttft") {
-      playSfx("go");
-      for (let i = 0; i < 2; i++) {
-        const ring = document.createElement("div");
-        ring.className = "fx-sonar";
-        ring.style.animationDelay = (i * 180) + "ms";
-        card.appendChild(ring);
-        setTimeout(() => ring.remove(), 1100);
-      }
+      // Stage 1: AI thinking bubble + laser scan across the card
+      playTone(440, 0.08, "sine", 0.05);
+      const laser = document.createElement("div");
+      laser.className = "fx-laser-sweep";
+      card.appendChild(laser);
+      setTimeout(() => laser.remove(), 520);
+
+      const think = document.createElement("div");
+      think.className = "fx-ttft-think";
+      think.textContent = "思考中 ···";
+      card.appendChild(think);
+      setTimeout(() => think.remove(), 460);
+
+      // Stage 2: First-Token breakout pop!
+      setTimeout(() => {
+        playSfx("go");
+        const words = ["⚡ 秒回! ▌", "⚡ 首字出炉! ▌", "⚡ Hello! ▌", "⚡ 好的! ▌", "⚡ 丝滑! ▌", "⚡ Done! ▌"];
+        const pop = document.createElement("div");
+        pop.className = "fx-ttft-pop";
+        pop.textContent = words[Math.floor(Math.random() * words.length)];
+        pop.style.left = (r.left + r.width * 0.56) + "px";
+        pop.style.top = (r.top + r.height * 0.48) + "px";
+        document.body.appendChild(pop);
+        setTimeout(() => pop.remove(), 1000);
+
+        const stack = document.getElementById("ttftStack");
+        if (stack) {
+          stack.classList.remove("wave-pop");
+          void stack.offsetWidth;
+          stack.classList.add("wave-pop");
+          setTimeout(() => stack.classList.remove("wave-pop"), 700);
+        }
+
+        const layer = document.getElementById("fxLayer");
+        if (layer) {
+          const cx = r.left + r.width * 0.56;
+          const cy = r.top + r.height * 0.48;
+          const sparks = ["⚡", "✦", "★", "·"];
+          const pCols = ["#0E8A78", "#F59E0B", "#E54826", "#5EEAD4"];
+          for (let i = 0; i < 10; i++) {
+            const p = document.createElement("span");
+            p.className = "fx-particle";
+            const ang = (Math.PI * 2 * i) / 10 + (Math.random() - 0.5) * 0.3;
+            const dist = 28 + Math.random() * 34;
+            p.textContent = sparks[i % sparks.length];
+            p.style.left = cx + "px";
+            p.style.top = cy + "px";
+            p.style.color = pCols[i % pCols.length];
+            p.style.fontSize = (10 + Math.random() * 4).toFixed(1) + "px";
+            p.style.setProperty("--dx", (Math.cos(ang) * dist).toFixed(1) + "px");
+            p.style.setProperty("--dy", (Math.sin(ang) * dist - 8).toFixed(1) + "px");
+            p.style.setProperty("--rot", ((Math.random() - 0.5) * 240).toFixed(0) + "deg");
+            p.style.setProperty("--dur", (0.5 + Math.random() * 0.25).toFixed(2) + "s");
+            layer.appendChild(p);
+            setTimeout(() => p.remove(), 850);
+          }
+        }
+      }, 360);
     }
   });
 });
