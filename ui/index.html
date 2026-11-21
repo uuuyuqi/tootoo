@@ -1215,7 +1215,7 @@
     100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.15); }
   }
 
-  /* Bottom-edge Bunny Patrol runner */
+  /* Two-way Bunny Patrol runner (bottom L->R, then top R->L) + surprise gacha capsule */
   .patrol-bunny {
     position: fixed;
     bottom: 6px;
@@ -1225,16 +1225,31 @@
     z-index: 997;
     pointer-events: none;
     filter: drop-shadow(0 3px 6px rgba(23, 22, 20, 0.22));
-    animation: patrolCross 4.4s linear forwards;
+    animation: patrolCrossLR 3.6s linear forwards;
+  }
+  .patrol-bunny.top-return {
+    bottom: auto;
+    top: 8px;
+    left: calc(100vw + 48px);
+    animation: patrolCrossRL 3.6s linear forwards;
+  }
+  .patrol-bunny.top-return .pb-flip {
+    width: 100%;
+    height: 100%;
+    transform: scaleX(-1);
   }
   .patrol-bunny .pb-inner {
     width: 100%;
     height: 100%;
-    animation: patrolHop 0.38s ease-in-out infinite;
+    animation: patrolHop 0.36s ease-in-out infinite;
   }
-  @keyframes patrolCross {
+  @keyframes patrolCrossLR {
     0%   { left: -46px; }
     100% { left: calc(100vw + 46px); }
+  }
+  @keyframes patrolCrossRL {
+    0%   { left: calc(100vw + 46px); }
+    100% { left: -46px; }
   }
   @keyframes patrolHop {
     0%, 100% { transform: translateY(0) rotate(-4deg); }
@@ -1248,9 +1263,97 @@
     z-index: 996;
     animation: printFade 1.5s ease-out forwards;
   }
+  .patrol-print.top-print {
+    bottom: auto;
+    top: 16px;
+  }
   @keyframes printFade {
     0%   { opacity: 0.85; transform: translateY(0) scale(0.85); }
     100% { opacity: 0; transform: translateY(-8px) scale(1.1); }
+  }
+
+  /* Collectible surprise Gacha Capsule dropped during patrol */
+  .patrol-capsule {
+    position: fixed;
+    top: 38px;
+    z-index: 1002;
+    cursor: pointer;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    user-select: none;
+    -webkit-user-select: none;
+    animation: capsuleDropBounce 0.72s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  .patrol-capsule .cap-orb {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    position: relative;
+    background: linear-gradient(180deg, #E54826 0%, #E54826 48%, #181715 48%, #181715 54%, #FAF8F3 54%, #FAF8F3 100%);
+    border: 2px solid #181715;
+    box-shadow: 0 4px 16px rgba(245, 158, 11, 0.55), 0 0 0 3px rgba(245, 158, 11, 0.22);
+    animation: capsuleWiggle 1.2s ease-in-out 0.72s infinite;
+    transition: transform 0.16s ease;
+  }
+  .patrol-capsule:hover .cap-orb {
+    transform: scale(1.16);
+    box-shadow: 0 6px 20px rgba(229, 72, 38, 0.65), 0 0 0 4px rgba(245, 158, 11, 0.34);
+  }
+  .patrol-capsule .cap-orb::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 51%;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #F59E0B;
+    border: 2px solid #181715;
+    transform: translate(-50%, -50%);
+  }
+  .patrol-capsule .cap-orb::after {
+    content: "";
+    position: absolute;
+    top: 4px;
+    left: 6px;
+    width: 8px;
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.65);
+    transform: rotate(-28deg);
+  }
+  .patrol-capsule .cap-tag {
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--accent);
+    border: 1px solid var(--active-border);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.16);
+    white-space: nowrap;
+  }
+  .patrol-capsule.fading {
+    opacity: 0;
+    transform: translateY(10px) scale(0.8);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+  }
+  @keyframes capsuleDropBounce {
+    0%   { opacity: 0; transform: translate(-50%, -24px) scale(0.5) rotate(-25deg); }
+    45%  { opacity: 1; transform: translate(-50%, 16px) scale(1.08) rotate(12deg); }
+    70%  { opacity: 1; transform: translate(-50%, 2px) scale(0.96) rotate(-6deg); }
+    88%  { opacity: 1; transform: translate(-50%, 8px) scale(1.02) rotate(3deg); }
+    100% { opacity: 1; transform: translate(-50%, 6px) scale(1) rotate(0deg); }
+  }
+  @keyframes capsuleWiggle {
+    0%, 100% { transform: rotate(0deg); }
+    20%      { transform: rotate(-10deg) translateY(-2px); }
+    40%      { transform: rotate(10deg) translateY(-2px); }
+    60%      { transform: rotate(-6deg); }
+    80%      { transform: rotate(4deg); }
   }
 
   /* ---- TooToo Arcade Modal ---- */
@@ -5917,28 +6020,122 @@ document.addEventListener("mousemove", (e) => {
   setTimeout(() => dot.remove(), 680);
 });
 
-// ---- Bottom-Edge Bunny Patrol ----
+// ---- Two-Way Bunny Patrol (Bottom L->R, then Top R->L) + Surprise Gacha Capsule ----
+function spawnPatrolCapsule(xPx) {
+  const cap = document.createElement("div");
+  cap.className = "patrol-capsule";
+  const clampedX = Math.max(76, Math.min(window.innerWidth - 76, xPx));
+  cap.style.left = clampedX + "px";
+  cap.innerHTML = `<div class="cap-orb"></div><span class="cap-tag">✨ 巡逻掉扭蛋! 点我 +1 币</span>`;
+  document.body.appendChild(cap);
+  playSfx("gold");
+
+  let collected = false;
+  const cleanupTimer = setTimeout(() => {
+    if (collected) return;
+    cap.classList.add("fading");
+    setTimeout(() => cap.remove(), 380);
+  }, 12000);
+
+  cap.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (collected) return;
+    collected = true;
+    clearTimeout(cleanupTimer);
+    spawnConfettiBurst(cap, 24);
+    activateStardust(3600);
+    playSfx("ssr");
+
+    // Credit +1 bonus gacha coin for today (persisted & synced with Gacha HUD)
+    const bKey = "tootoo_gacha_bonus_" + getTodayKey();
+    let bonus = 0;
+    try { bonus = Math.max(0, Number(localStorage.getItem(bKey) || 0) || 0); } catch {}
+    try { localStorage.setItem(bKey, String(bonus + 1)); } catch {}
+    if (typeof renderGachaMeta === "function") renderGachaMeta();
+
+    // Floating celebratory toast
+    document.querySelectorAll(".levelup-toast").forEach(n => n.remove());
+    const toast = document.createElement("div");
+    toast.className = "levelup-toast";
+    toast.textContent = "🥚 巡逻奇遇！拾取算力扭蛋 · 算力币 +1！";
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 2900);
+
+    cap.remove();
+  });
+}
+
 function summonBunnyPatrol() {
   const tier = getBunnyTier(getEffectiveTodayTokens());
-  const runner = document.createElement("div");
-  runner.className = "patrol-bunny";
-  runner.innerHTML = `<div class="pb-inner"><svg viewBox="0 0 36 36" fill="none" style="width:100%;height:100%">${tier.svg}</svg></div>`;
-  document.body.appendChild(runner);
+
+  // Leg 1: Bottom edge Left -> Right
+  const botRunner = document.createElement("div");
+  botRunner.className = "patrol-bunny";
+  botRunner.innerHTML = `<div class="pb-inner"><svg viewBox="0 0 36 36" fill="none" style="width:100%;height:100%">${tier.svg}</svg></div>`;
+  document.body.appendChild(botRunner);
   playSfx("token");
-  const prints = ["🐾", "🥕", "🐾", "✦", "🐾"];
-  prints.forEach((glyph, i) => {
+
+  const botPrints = ["🐾", "🥕", "🐾", "✦", "🐾"];
+  botPrints.forEach((glyph, i) => {
     setTimeout(() => {
-      const r = runner.getBoundingClientRect();
+      const r = botRunner.getBoundingClientRect();
       if (r.left < 0 || r.left > window.innerWidth) return;
       const p = document.createElement("span");
       p.className = "patrol-print";
       p.textContent = glyph;
       p.style.left = (r.left + 8) + "px";
       document.body.appendChild(p);
-      setTimeout(() => p.remove(), 1550);
-    }, 650 + i * 720);
+      setTimeout(() => p.remove(), 1500);
+    }, 520 + i * 620);
   });
-  setTimeout(() => runner.remove(), 4600);
+  setTimeout(() => botRunner.remove(), 3800);
+
+  // Leg 2: Top edge Right -> Left return patrol!
+  setTimeout(() => {
+    const topRunner = document.createElement("div");
+    topRunner.className = "patrol-bunny top-return";
+    topRunner.innerHTML = `<div class="pb-flip"><div class="pb-inner"><svg viewBox="0 0 36 36" fill="none" style="width:100%;height:100%">${tier.svg}</svg></div></div>`;
+    document.body.appendChild(topRunner);
+    playSfx("token");
+
+    const topPrints = ["🐾", "✦", "🥕", "🐾"];
+    topPrints.forEach((glyph, i) => {
+      setTimeout(() => {
+        const r = topRunner.getBoundingClientRect();
+        if (r.left < 0 || r.left > window.innerWidth) return;
+        const p = document.createElement("span");
+        p.className = "patrol-print top-print";
+        p.textContent = glyph;
+        p.style.left = (r.left + 12) + "px";
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 1500);
+      }, 600 + i * 700);
+    });
+
+    // Surprise gacha capsule drop: guaranteed on first-ever patrol, ~32% chance afterwards (up to 5/day)
+    let isFirst = true;
+    try { isFirst = localStorage.getItem("tootoo_patrol_egg_seen") !== "1"; } catch {}
+    const bKey = "tootoo_gacha_bonus_" + getTodayKey();
+    let todayBonus = 0;
+    try { todayBonus = Math.max(0, Number(localStorage.getItem(bKey) || 0) || 0); } catch {}
+    const shouldDrop = isFirst || (todayBonus < 5 && Math.random() < 0.32);
+
+    if (shouldDrop) {
+      if (isFirst) {
+        try { localStorage.setItem("tootoo_patrol_egg_seen", "1"); } catch {}
+      }
+      const dropDelay = 1250 + Math.round(Math.random() * 900);
+      setTimeout(() => {
+        const r = topRunner.getBoundingClientRect();
+        const dropX = (r.left > 40 && r.left < window.innerWidth - 40)
+          ? r.left + 17
+          : window.innerWidth * (0.35 + Math.random() * 0.3);
+        spawnPatrolCapsule(dropX);
+      }, dropDelay);
+    }
+
+    setTimeout(() => topRunner.remove(), 3800);
+  }, 3650);
 }
 document.getElementById("arcPatrolBtn").addEventListener("click", summonBunnyPatrol);
 
@@ -7031,11 +7228,15 @@ function getTodayKey() {
 
 function getGachaCoinState() {
   const todayTok = getEffectiveTodayTokens();
-  const earned = 3 + Math.floor(todayTok / 10e6); // Daily 3 starter coins + 1 coin per 10M real tokens
-  const key = "tootoo_gacha_spent_" + getTodayKey();
+  const todayKey = getTodayKey();
+  const bKey = "tootoo_gacha_bonus_" + todayKey;
+  let bonus = 0;
+  try { bonus = Math.max(0, Number(localStorage.getItem(bKey) || 0) || 0); } catch {}
+  const earned = 3 + Math.floor(todayTok / 10e6) + bonus; // Daily 3 starter + 1 per 10M tokens + patrol egg drops
+  const key = "tootoo_gacha_spent_" + todayKey;
   let spent = 0;
   try { spent = Math.max(0, Number(localStorage.getItem(key) || 0) || 0); } catch {}
-  return { earned, spent, balance: Math.max(0, earned - spent), key };
+  return { earned, spent, bonus, balance: Math.max(0, earned - spent), key };
 }
 
 function renderGachaMeta() {
