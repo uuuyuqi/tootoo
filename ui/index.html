@@ -939,7 +939,9 @@
     transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.14s ease, color 0.18s ease;
   }
   #expandBtn .ico-exp {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     transition: transform 0.24s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
   #expandBtn:hover {
@@ -948,7 +950,7 @@
     box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 16%, transparent);
   }
   #expandBtn:hover .ico-exp {
-    transform: translate(1.5px, -1.5px) scale(1.16);
+    transform: scale(1.16) rotate(-8deg);
   }
 
   .theme-ripple {
@@ -3165,7 +3167,7 @@
         <button class="btn btn-ico" id="themeBtn" title="切换浅色/深色主题"><span class="ico-theme">◐</span></button>
         <button class="btn btn-ico" id="arcadeBtn" title="打开 TOOTOO 算力游乐场"><span class="ico-pad">🎮</span></button>
         <button class="btn btn-ico" id="settingsBtn" title="设置"><span class="ico-gear">⚙</span></button>
-        <button class="btn pop-only" id="expandBtn" title="打开完整窗口，一探究竟！"><span class="ico-exp">⤢</span> 一探究竟!</button>
+        <button class="btn btn-ico pop-only" id="expandBtn" title="打开完整窗口"><span class="ico-exp"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.2" cy="7.2" r="4.6"/><path d="M10.7 10.7L14 14"/></svg></span></button>
       </div>
     </div>
   </header>
