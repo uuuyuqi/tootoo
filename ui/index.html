@@ -1216,6 +1216,7 @@
   #settingsBtn .ico-gear,
   #themeBtn .ico-theme,
   #expandBtn .ico-exp,
+  #homeBtn .ico-home,
   #gachaBtn .ico-gacha,
   #patrolBtn .ico-paw,
   #arcadeBtn .ico-more {
@@ -1237,18 +1238,21 @@
     transform: rotate(180deg);
   }
   #expandBtn,
+  #homeBtn,
   #gachaBtn,
   #patrolBtn,
   #arcadeBtn {
     transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.14s ease, color 0.18s ease;
   }
   #expandBtn .ico-exp,
+  #homeBtn .ico-home,
   #gachaBtn .ico-gacha,
   #patrolBtn .ico-paw,
   #arcadeBtn .ico-more {
     transition: transform 0.24s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
   #expandBtn:hover,
+  #homeBtn:hover,
   #gachaBtn:hover,
   #patrolBtn:hover,
   #arcadeBtn:hover {
@@ -1258,6 +1262,24 @@
   }
   #expandBtn:hover .ico-exp {
     transform: scale(1.16) rotate(-8deg);
+  }
+  #homeBtn {
+    position: relative;
+  }
+  #homeBtn:hover .ico-home {
+    transform: translateY(-1.5px) scale(1.14);
+  }
+  #homeBtn.has-checkin::after {
+    content: "";
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--teal);
+    box-shadow: 0 0 0 1.5px var(--surface);
+    pointer-events: none;
   }
   #gachaBtn {
     position: relative;
@@ -2302,6 +2324,403 @@
     flex-shrink: 0;
     font-weight: 700;
     color: var(--active-fg);
+  }
+
+  /* ---- Daily Check-in Strip & TooToo Cozy Home Studio ---- */
+  .checkin-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 7px 10px;
+    margin-bottom: 9px;
+    border-radius: 8px;
+    background: linear-gradient(95deg, color-mix(in srgb, var(--teal) 10%, var(--surface-2)), color-mix(in srgb, var(--amber) 9%, var(--surface-2)));
+    border: 1px solid color-mix(in srgb, var(--teal) 32%, var(--border));
+    font-family: var(--font-mono);
+    font-size: 10px;
+  }
+  .checkin-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5px;
+    min-width: 0;
+  }
+  .checkin-title {
+    font-weight: 800;
+    color: var(--ink);
+    font-size: 10.5px;
+  }
+  .checkin-sub {
+    color: var(--muted);
+    font-size: 9.5px;
+  }
+  .checkin-btn {
+    flex-shrink: 0;
+    border: 1px solid color-mix(in srgb, var(--teal) 55%, var(--border));
+    background: var(--teal);
+    color: #fff;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 800;
+    padding: 4.5px 11px;
+    border-radius: 999px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--teal) 28%, transparent);
+    transition: transform 0.14s ease, filter 0.15s ease;
+  }
+  .checkin-btn:hover:not(:disabled) {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+  }
+  .checkin-btn:active:not(:disabled) { transform: scale(0.95); }
+  .checkin-btn:disabled {
+    background: var(--surface);
+    border-color: var(--border);
+    color: var(--muted);
+    box-shadow: none;
+    cursor: default;
+  }
+
+  .home-dialog {
+    width: min(500px, 95vw);
+    max-height: 90vh;
+    overflow-y: auto;
+    background: var(--surface);
+    border: 1.5px solid var(--border-strong);
+    border-radius: 12px;
+    padding: 13px 14px 14px;
+    box-shadow: 0 22px 54px rgba(23, 22, 20, 0.28);
+    animation: modalPopIn 0.24s cubic-bezier(0.22, 1.25, 0.36, 1);
+  }
+  .home-stage-wrap {
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1.5px solid var(--border);
+    background: var(--surface-2);
+    margin-bottom: 9px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .home-stage-wrap.fx-building {
+    animation: homeBuildShake 0.62s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  @keyframes homeBuildShake {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    15% { transform: translate(-3px, 2px) scale(0.99); }
+    35% { transform: translate(3px, -2px) scale(1.015); }
+    55% { transform: translate(-2px, 1px) scale(1.005); }
+    75% { transform: translate(2px, -1px) scale(1); }
+  }
+  .home-stage-svg {
+    display: block;
+    width: 100%;
+    height: 208px;
+    cursor: pointer;
+  }
+  .home-stage-svg.fx-house-rise {
+    animation: houseRisePop 0.68s cubic-bezier(0.22, 1.38, 0.36, 1);
+    transform-origin: 50% 85%;
+  }
+  @keyframes houseRisePop {
+    0%   { opacity: 0.35; transform: scale(0.84, 0.68) translateY(18px); filter: brightness(1.35); }
+    55%  { opacity: 1; transform: scale(1.03, 1.04) translateY(-3px); filter: brightness(1.12); }
+    100% { opacity: 1; transform: scale(1, 1) translateY(0); filter: brightness(1); }
+  }
+  .home-stage-svg .decor-pop {
+    animation: decorDropIn 0.48s cubic-bezier(0.22, 1.45, 0.36, 1);
+    transform-box: fill-box;
+    transform-origin: center bottom;
+  }
+  @keyframes decorDropIn {
+    0%   { opacity: 0; transform: translateY(-16px) scale(0.65); }
+    65%  { opacity: 1; transform: translateY(2px) scale(1.08); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .home-stage-svg .bunny-twirl {
+    animation: bunnyDressTwirl 0.56s cubic-bezier(0.22, 1.45, 0.36, 1);
+    transform-box: fill-box;
+    transform-origin: center center;
+  }
+  @keyframes bunnyDressTwirl {
+    0%   { transform: scale(1) translateY(0); }
+    35%  { transform: scale(1.18, 0.88) translateY(-10px) rotate(-10deg); }
+    70%  { transform: scale(0.95, 1.1) translateY(-4px) rotate(10deg); }
+    100% { transform: scale(1) translateY(0) rotate(0deg); }
+  }
+  .home-stage-hud {
+    position: absolute;
+    top: 7px;
+    left: 8px;
+    right: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    pointer-events: none;
+    z-index: 4;
+  }
+  .home-stage-pill {
+    pointer-events: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: rgba(23, 22, 20, 0.72);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    color: #faf8f3;
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 700;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+  }
+  .home-shimmer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 6;
+    background: linear-gradient(112deg, transparent 18%, rgba(255, 248, 220, 0.65) 48%, rgba(245, 158, 11, 0.35) 56%, transparent 82%);
+    transform: translateX(-120%);
+    animation: homeShimmerSweep 0.78s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  @keyframes homeShimmerSweep {
+    0%   { transform: translateX(-120%); opacity: 0.9; }
+    100% { transform: translateX(130%); opacity: 0; }
+  }
+  .home-fx-banner {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    z-index: 8;
+    pointer-events: none;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: rgba(20, 18, 16, 0.9);
+    border: 1.5px solid #f59e0b;
+    color: #fef08a;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    font-weight: 800;
+    white-space: nowrap;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35), 0 0 18px rgba(245, 158, 11, 0.45);
+    animation: homeBannerPop 1.45s cubic-bezier(0.18, 1.35, 0.36, 1) forwards;
+  }
+  @keyframes homeBannerPop {
+    0%   { opacity: 0; transform: translate(-50%, -35%) scale(0.55); }
+    18%  { opacity: 1; transform: translate(-50%, -52%) scale(1.08); }
+    74%  { opacity: 1; transform: translate(-50%, -58%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -78%) scale(0.92); }
+  }
+  .home-fx-part {
+    position: absolute;
+    z-index: 7;
+    pointer-events: none;
+    font-size: 13px;
+    animation: homePartFly var(--dur, 0.85s) cubic-bezier(0.16, 0.88, 0.3, 1) forwards;
+  }
+  @keyframes homePartFly {
+    0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.4) rotate(0deg); }
+    20%  { opacity: 1; transform: translate(calc(-50% + var(--dx) * 0.35), calc(-50% + var(--dy) * 0.35)) scale(1.15) rotate(calc(var(--rot) * 0.4)); }
+    100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.65) rotate(var(--rot)); }
+  }
+  @keyframes homeWaterDrift {
+    0%, 100% { transform: translateX(0); }
+    50%      { transform: translateX(6px); }
+  }
+  @keyframes homeFloatSlow {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-4px); }
+  }
+  @keyframes homePortalSpin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+  .h-drift { animation: homeWaterDrift 3.4s ease-in-out infinite; }
+  .h-float { animation: homeFloatSlow 2.8s ease-in-out infinite; }
+  .h-spin  { animation: homePortalSpin 9s linear infinite; transform-box: fill-box; transform-origin: center; }
+
+  .home-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 3px;
+    margin-bottom: 8px;
+  }
+  .home-tabs button {
+    border: none;
+    background: transparent;
+    color: var(--ink-soft);
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 6px 4px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .home-tabs button.active {
+    background: var(--active-bg);
+    color: var(--active-fg);
+    box-shadow: inset 0 0 0 1px var(--active-border);
+  }
+  .home-subbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .home-slot-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .home-slot-pill {
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--ink-soft);
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.14s ease;
+  }
+  .home-slot-pill:hover { border-color: var(--active-border); color: var(--ink); }
+  .home-slot-pill.active {
+    background: var(--active-bg);
+    border-color: var(--active-border);
+    color: var(--active-fg);
+  }
+  .home-slot-pill.locked {
+    opacity: 0.52;
+  }
+  .home-shop-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+    max-height: 248px;
+    overflow-y: auto;
+    padding-right: 1px;
+  }
+  .home-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 8px 9px;
+    border-radius: 8px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    transition: border-color 0.15s ease, transform 0.14s ease, box-shadow 0.16s ease;
+  }
+  .home-card:hover {
+    border-color: color-mix(in srgb, var(--active-border) 75%, var(--border));
+    transform: translateY(-1px);
+  }
+  .home-card.equipped {
+    background: var(--surface);
+    border-color: var(--active-border);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent);
+  }
+  .home-card.tier-locked {
+    opacity: 0.68;
+  }
+  .hc-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 6px;
+  }
+  .hc-name {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--ink);
+    line-height: 1.25;
+  }
+  .hc-desc {
+    font-size: 9.5px;
+    color: var(--muted);
+    line-height: 1.38;
+  }
+  .hc-tag {
+    flex-shrink: 0;
+    font-family: var(--font-mono);
+    font-size: 8.5px;
+    font-weight: 800;
+    padding: 1.5px 5.5px;
+    border-radius: 999px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .hc-tag.eq { background: var(--active-bg); border-color: var(--active-border); color: var(--active-fg); }
+  .hc-tag.own { background: color-mix(in srgb, var(--teal) 14%, var(--surface)); border-color: color-mix(in srgb, var(--teal) 45%, var(--border)); color: var(--teal); }
+  .hc-tag.vip { background: color-mix(in srgb, var(--violet) 14%, var(--surface)); border-color: color-mix(in srgb, var(--violet) 42%, var(--border)); color: var(--violet); }
+  .hc-act {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    margin-top: 2px;
+  }
+  .hc-price {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--accent);
+  }
+  .hc-btn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--ink);
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 800;
+    padding: 3.5px 9px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.14s ease;
+  }
+  .hc-btn.buy {
+    background: var(--accent);
+    border-color: var(--active-border);
+    color: #fff;
+  }
+  .hc-btn.buy:hover:not(:disabled) { filter: brightness(1.08); }
+  .hc-btn.equip {
+    background: var(--surface);
+    border-color: color-mix(in srgb, var(--teal) 50%, var(--border));
+    color: var(--teal);
+  }
+  .hc-btn.equip:hover { background: color-mix(in srgb, var(--teal) 12%, var(--surface)); }
+  .hc-btn.unequip {
+    background: var(--surface-2);
+    color: var(--muted);
+  }
+  .hc-btn:disabled {
+    opacity: 0.48;
+    cursor: not-allowed;
+  }
+  .home-notice {
+    padding: 12px 10px;
+    border-radius: 8px;
+    background: var(--surface-2);
+    border: 1px dashed var(--border);
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--muted);
+    grid-column: 1 / -1;
+    line-height: 1.55;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -3873,6 +4292,7 @@
       <div class="ctrl-actions">
         <span class="scan-badge" id="scanBadge">扫描 —</span>
         <button class="btn btn-ico pop-only" id="expandBtn" title="打开完整窗口"><span class="ico-exp"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.2" cy="7.2" r="4.6"/><path d="M10.7 10.7L14 14"/></svg></span></button>
+        <button class="btn btn-ico" id="homeBtn" title="TooToo 小家 · 盖房/装潢/衣橱/签到"><span class="ico-home"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round"><path d="M2.4 7.4 8 2.6l5.6 4.8"/><path d="M4.1 6.3v6.6a1 1 0 0 0 1 1h5.8a1 1 0 0 0 1-1V6.3"/><path d="M6.6 13.9v-3.5a1.4 1.4 0 0 1 2.8 0v3.5"/></svg></span></button>
         <button class="btn btn-ico" id="gachaBtn" title="算力扭蛋 · 算力炼金"><span class="ico-gacha"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="5.6"/><path d="M2.5 8h3.6M9.9 8h3.6"/><circle cx="8" cy="8" r="1.9"/><circle cx="8" cy="8" r="0.55" fill="currentColor" stroke="none"/><path d="M5.4 5.1a3.5 3.5 0 0 1 2.2-1.1" stroke-width="1.3"/></svg></span></button>
         <button class="btn btn-ico" id="patrolBtn" title="召唤小兔兔巡逻（偶尔能捡到算力扭蛋）"><span class="ico-paw"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.45" stroke-linecap="round" stroke-linejoin="round"><path d="M5.1 11.4c0-1.55 1.3-2.75 2.9-2.75s2.9 1.2 2.9 2.75c0 1-.72 1.75-1.68 1.75-.46 0-.84-.16-1.22-.16s-.76.16-1.22.16c-.96 0-1.68-.75-1.68-1.75Z"/><circle cx="3.5" cy="7.4" r="1.15"/><circle cx="6.2" cy="4.7" r="1.2"/><circle cx="9.8" cy="4.7" r="1.2"/><circle cx="12.5" cy="7.4" r="1.15"/></svg></span></button>
         <button class="btn btn-ico" id="arcadeBtn" title="更多玩法 · 算力游乐场"><span class="ico-more"><svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" stroke="none"><circle cx="3.6" cy="8" r="1.35"/><circle cx="8" cy="8" r="1.35"/><circle cx="12.4" cy="8" r="1.35"/></svg></span></button>
@@ -4092,6 +4512,8 @@
       <span class="dbg-tag">🎲 扭蛋/游戏:</span>
       <button class="dbg-mini-btn" id="dbgDropEggBtn" title="立刻弹出巡逻偶遇的可收集萝卜币扭蛋">🎁 掉巡逻扭蛋</button>
       <button class="dbg-mini-btn" id="dbgAddCoinsBtn" title="沙盒加10枚萝卜币（不扣真实币）">🥕 +10萝卜币</button>
+      <button class="dbg-mini-btn" id="dbgAddBigCoinsBtn" title="沙盒加500枚萝卜币方便试买豪宅与奢饰">💰 +500沙盒币</button>
+      <button class="dbg-mini-btn" id="dbgOpenHomeBtn">🏠 测小家</button>
       <button class="dbg-mini-btn" id="dbgOpenGachaBtn">🎰 测扭蛋</button>
       <button class="dbg-mini-btn" id="dbgOpenArcadeBtn">🎮 测游戏</button>
       <button class="dbg-mini-btn" id="dbgGodModeBtn" title="无限弹药+三管极速+护盾+无敌（不覆盖真实纪录）">🔥 无双: 关</button>
@@ -4153,15 +4575,75 @@
   </div>
 </div>
 
+<!-- CORE: TOOTOO COZY HOME STUDIO MODAL (HOUSES + DECOR + WARDROBE + DAILY CHECK-IN) -->
+<div class="evo-backdrop" id="homeModal">
+  <div class="home-dialog">
+    <div class="evo-head" style="margin-bottom:9px">
+      <span class="kicker" style="font-size:11px;color:var(--ink)">🏠 TooToo 小家 · 置业与装潢</span>
+      <span style="display:flex;gap:5px;align-items:center">
+        <button class="carrot-wallet-pill" id="homeWalletBtn" title="当前萝卜币余额（点击去兑换 / 扭蛋）">🥕 <span id="homeHeaderCoins">0</span> 萝卜币</button>
+        <button class="btn" id="homeCloseBtn" style="padding:3px 8px;font-size:10.5px">✕</button>
+      </span>
+    </div>
+
+    <div class="checkin-strip" id="homeCheckinStrip">
+      <div class="checkin-info">
+        <span class="checkin-title">📅 每日签到 · 领 +1 枚萝卜币</span>
+        <span class="checkin-sub" id="homeCheckinSub">今天还没签到，签一下领 1 枚萝卜币 🥕</span>
+      </div>
+      <button class="checkin-btn" id="homeCheckinBtn">🥕 签到 +1</button>
+    </div>
+
+    <div class="home-stage-wrap" id="homeStageWrap">
+      <div class="home-stage-hud">
+        <span class="home-stage-pill" id="homeStageTitle">🛣️ 露宿马路边</span>
+        <span class="home-stage-pill" id="homeStageSlots">装潢槽位 0/0</span>
+      </div>
+      <svg class="home-stage-svg" id="homeStageSvg" viewBox="0 0 420 208" preserveAspectRatio="xMidYMid slice" title="点点家里的兔兔互动一下"></svg>
+    </div>
+
+    <div class="home-tabs" id="homeTabs">
+      <button data-htab="houses" class="active">🏠 置业盖房</button>
+      <button data-htab="decor">🛋️ 室内装潢</button>
+      <button data-htab="wear">👗 兔兔衣橱</button>
+    </div>
+
+    <div class="home-subbar" id="homeSubbar">
+      <div class="home-slot-pills" id="homeSlotPills"></div>
+      <button class="dbg-mini-btn" id="homeAvatarWearToggle" title="是否将已穿戴的衣服饰品同步显示在顶部主头像上">头像同步穿戴: 开</button>
+    </div>
+
+    <div class="home-shop-grid" id="homeShopGrid"></div>
+
+    <div class="dbg-only dbg-inline" id="dbgHomePanel">
+      <div class="dbg-inline-row">
+        <span class="dbg-tag">🛠 小家沙盒(不改真实存档)</span>
+        <button class="dbg-mini-btn" id="dbgHomePlus500Btn">💰 +500币</button>
+        <button class="dbg-mini-btn" id="dbgHomePlus3000Btn">💎 +3000币</button>
+        <button class="dbg-mini-btn" id="dbgHomeUnlockAllBtn">🔑 沙盒全买全解锁</button>
+        <button class="dbg-mini-btn" id="dbgHomeResetCheckinBtn">📅 重置临时签到</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- CORE: TOOTOO COMPUTE GACHA & CARROT COIN EXCHANGE MODAL -->
 <div class="evo-backdrop" id="gachaModal">
   <div class="arcade-dialog" style="width:min(440px, 94vw)">
     <div class="evo-head">
       <span class="kicker" style="font-size:11px;color:var(--ink)">🎰 算力扭蛋 · 萝卜币兑换</span>
-      <span style="display:flex;gap:6px;align-items:center">
+      <span style="display:flex;gap:5px;align-items:center">
+        <button class="btn" id="gachaGoHomeBtn" style="padding:3px 7px;font-size:10px" title="用萝卜币去 TooToo 小家盖房买装饰">🏠 去小家</button>
         <span class="carrot-wallet-pill" id="gachaWalletPill" title="当前可用萝卜币余额">🥕 <span id="gachaHeaderCoins">0</span> 萝卜币</span>
         <button class="btn" id="gachaCloseBtn" style="padding:3px 8px;font-size:10.5px">✕</button>
       </span>
+    </div>
+    <div class="checkin-strip" id="gachaCheckinStrip">
+      <div class="checkin-info">
+        <span class="checkin-title">📅 每日签到领萝卜币</span>
+        <span class="checkin-sub" id="gachaCheckinSub">每日打卡稳定领取 +1 枚萝卜币</span>
+      </div>
+      <button class="checkin-btn" id="gachaCheckinBtn">🥕 签到 +1</button>
     </div>
     <div class="carrot-mint-card" id="carrotMintCard">
       <div class="carrot-mint-head">
@@ -4701,11 +5183,14 @@ function getBunnyTier(tokens) {
 
 const debugState = {
   active: false,     // true while #debugBar is open
-  level: null,       // null = real today_tokens; 1..9 = simulated tier
+  level: null,       // null = real today_tokens; 1..10 = simulated tier
   unlockAll: false,
   gachaCoins: 0,     // extra sandbox carrot coins (memory-only, never persisted)
   gachaSpent: 0,     // sandbox spends (never touches real localStorage)
   carrotClaimed: null,// sandbox claimed carrot-coin count while debug active
+  checkinDay: null,  // sandbox check-in day override
+  checkinStreak: null,// sandbox check-in streak override
+  homeSandbox: null, // deep-cloned home state while debug is active
   gachaForce: "auto",// "auto" | "SSR" | "SR" | "R"
   gachaColl: null,   // memory-only gacha collection clone while debug is active
   godMode: false,    // games: infinite ammo, max fire rate/cannons, shields, invincible, no real best overwrite
@@ -4868,21 +5353,28 @@ function renderBunnyState(tokens) {
     + (keepIsSiphon ? " is-siphoning" : "")
     + (keepNibble ? " nibble" : "")
     + (keepAway ? " is-away" : "");
-  const prevKey = wrap.dataset.lv + ":" + (wrap.dataset.skin || "");
+  const prevKey = wrap.dataset.lv + ":" + (wrap.dataset.skin || "") + ":" + (wrap.dataset.wear || "");
   const curSkinId = vis.skin ? vis.skin.id : "";
-  const curKey = String(tier.level) + ":" + curSkinId;
+  const wearSig = (typeof getAvatarWearSig === "function") ? getAvatarWearSig() : "";
+  const curKey = String(tier.level) + ":" + curSkinId + ":" + wearSig;
   wrap.dataset.lv = String(tier.level);
   wrap.dataset.skin = curSkinId;
+  wrap.dataset.wear = wearSig;
   if (prevKey !== curKey || !svg.innerHTML) {
-    svg.innerHTML = vis.svg;
+    const wearSvg = (typeof getAvatarWearOverlaySvg === "function") ? getAvatarWearOverlaySvg() : "";
+    const fullSvg = vis.svg + wearSvg;
+    svg.innerHTML = fullSvg;
     if (keepAway) {
       const patrolSvg = document.querySelector(".patrol-bunny svg");
-      if (patrolSvg) patrolSvg.innerHTML = vis.svg;
+      if (patrolSvg) patrolSvg.innerHTML = fullSvg;
     }
   }
   const dbgPrefix = debugState.level != null ? "[调试] " : "";
   const lvLabel = tier.secret ? "EX" : `Lv.${tier.level}`;
   mood.textContent = `${dbgPrefix}今日 ${lvLabel} ${tier.name} ▸`;
+  if (typeof renderHomeStage === "function" && document.getElementById("homeModal")?.classList.contains("open")) {
+    renderHomeStage();
+  }
 
   if (next) {
     const pct = Math.max(3, Math.min(100, Math.round((val / next.min) * 100)));
@@ -6986,6 +7478,9 @@ function resetAllDebugState() {
   debugState.gachaCoins = 0;
   debugState.gachaSpent = 0;
   debugState.carrotClaimed = null;
+  debugState.checkinDay = null;
+  debugState.checkinStreak = null;
+  debugState.homeSandbox = null;
   debugState.gachaForce = "auto";
   debugState.gachaColl = null;
   debugState.godMode = false;
@@ -7007,10 +7502,19 @@ function toggleDebugBar(forceState) {
     debugState.active = true;
     document.body.classList.add("debug-mode");
     if (!debugState.gachaColl) debugState.gachaColl = getRealGachaCollected().slice();
+    if (!debugState.homeSandbox && typeof cloneHomeState === "function") {
+      debugState.homeSandbox = cloneHomeState(getRealHomeState());
+    }
     syncDebugUi();
+    if (typeof renderHomeModal === "function" && document.getElementById("homeModal")?.classList.contains("open")) {
+      renderHomeModal();
+    }
     bar.scrollIntoView({ behavior: "smooth", block: "nearest" });
   } else {
     resetAllDebugState();
+    if (typeof renderHomeModal === "function" && document.getElementById("homeModal")?.classList.contains("open")) {
+      renderHomeModal();
+    }
   }
 }
 
@@ -7197,7 +7701,8 @@ function summonBunnyPatrol() {
 
   const runner = document.createElement("div");
   runner.className = "patrol-bunny";
-  runner.innerHTML = `<div class="pb-flip"><div class="pb-inner"><svg viewBox="0 0 36 36" fill="none" style="width:100%;height:100%">${getTierVisual(tier).svg}</svg></div></div>`;
+  const wearSvgPatrol = (typeof getAvatarWearOverlaySvg === "function") ? getAvatarWearOverlaySvg() : "";
+  runner.innerHTML = `<div class="pb-flip"><div class="pb-inner"><svg viewBox="0 0 36 36" fill="none" style="width:100%;height:100%">${getTierVisual(tier).svg}${wearSvgPatrol}</svg></div></div>`;
   runner.style.transform = `translate3d(${startX.toFixed(1)}px, ${startY.toFixed(1)}px, 0)`;
   document.body.appendChild(runner);
   playSfx("token");
@@ -8595,7 +9100,52 @@ const GACHA_POOL = [
   { id: 24, r: "R",  icon: "🎉", name: "提前下班预言兔", desc: "效率太高提前收工，快奖励自己吃顿好的！" },
 ];
 
-let carrotDiskState = { balance: null, starter_day: "", secret_skin: "prism", days: {}, collection: [] };
+const DEFAULT_HOME_STATE = {
+  house: "street",
+  owned_houses: ["street"],
+  decor: { bed: null, light: null, floor: null, garden: null, pool: null },
+  owned_decor: [],
+  wear: { hat: null, outfit: null, acc: null },
+  owned_wear: [],
+  show_on_avatar: true,
+};
+
+function cloneHomeState(src) {
+  const s = (src && typeof src === "object") ? src : DEFAULT_HOME_STATE;
+  const oh = Array.isArray(s.owned_houses) ? Array.from(new Set(["street", ...s.owned_houses])) : ["street"];
+  const house = (typeof s.house === "string" && s.house) ? s.house : "street";
+  if (!oh.includes(house)) oh.push(house);
+  return {
+    house,
+    owned_houses: oh,
+    decor: {
+      bed: (s.decor && s.decor.bed) || null,
+      light: (s.decor && s.decor.light) || null,
+      floor: (s.decor && s.decor.floor) || null,
+      garden: (s.decor && s.decor.garden) || null,
+      pool: (s.decor && s.decor.pool) || null,
+    },
+    owned_decor: Array.isArray(s.owned_decor) ? Array.from(new Set(s.owned_decor)) : [],
+    wear: {
+      hat: (s.wear && s.wear.hat) || null,
+      outfit: (s.wear && s.wear.outfit) || null,
+      acc: (s.wear && s.wear.acc) || null,
+    },
+    owned_wear: Array.isArray(s.owned_wear) ? Array.from(new Set(s.owned_wear)) : [],
+    show_on_avatar: s.show_on_avatar !== false,
+  };
+}
+
+let carrotDiskState = {
+  balance: null,
+  starter_day: "",
+  checkin_day: "",
+  checkin_streak: 0,
+  secret_skin: "prism",
+  days: {},
+  collection: [],
+  home: cloneHomeState(DEFAULT_HOME_STATE),
+};
 
 async function syncCarrotFromDisk() {
   try {
@@ -8606,30 +9156,29 @@ async function syncCarrotFromDisk() {
       carrotDiskState = {
         balance: typeof j.balance === "number" ? Math.max(0, j.balance) : null,
         starter_day: typeof j.starter_day === "string" ? j.starter_day : "",
+        checkin_day: typeof j.checkin_day === "string" ? j.checkin_day : "",
+        checkin_streak: typeof j.checkin_streak === "number" ? Math.max(0, j.checkin_streak) : 0,
         secret_skin: (typeof j.secret_skin === "string" && SECRET_SKINS[j.secret_skin]) ? j.secret_skin : "prism",
         days: (j.days && typeof j.days === "object") ? j.days : {},
         collection: Array.isArray(j.collection) ? j.collection : [],
+        home: cloneHomeState(j.home),
       };
-      const dk = getDataDayKey();
-      // Grant daily +3 starter coins once per calendar day into the persistent wallet
-      if (carrotDiskState.starter_day !== dk) {
-        let baseBal = carrotDiskState.balance;
-        if (baseBal === null) {
-          try {
-            const raw = localStorage.getItem("tootoo_carrot_balance");
-            if (raw !== null) baseBal = Math.max(0, Number(raw) || 0);
-          } catch {}
-        }
-        const nextBal = (baseBal !== null ? baseBal : 0) + 3;
+      // Ensure brand-new wallet initializes cleanly without silent auto-grant (daily +1 via explicit check-in!)
+      if (carrotDiskState.balance === null) {
+        let lsBal = 0;
+        try {
+          const raw = localStorage.getItem("tootoo_carrot_balance");
+          if (raw !== null) lsBal = Math.max(0, Number(raw) || 0);
+        } catch {}
+        carrotDiskState.balance = lsBal;
         const lsColl = (() => { try { const a = JSON.parse(localStorage.getItem("tootoo_gacha_coll") || "[]"); return Array.isArray(a) ? a : []; } catch { return []; } })();
-        try { localStorage.setItem("tootoo_carrot_balance", String(nextBal)); } catch {}
-        persistCarrotPatch({
-          balance: nextBal,
-          starter_day: dk,
-          collection: lsColl,
-        });
+        persistCarrotPatch({ balance: lsBal, collection: lsColl });
       }
       renderGachaMeta();
+      renderBunnyState(getEffectiveTodayTokens());
+      if (typeof renderHomeModal === "function" && document.getElementById("homeModal")?.classList.contains("open")) {
+        renderHomeModal();
+      }
     }
   } catch {}
 }
@@ -8641,6 +9190,15 @@ function persistCarrotPatch(patch) {
   }
   if (typeof patch.starter_day === "string" && patch.starter_day.length === 10) {
     carrotDiskState.starter_day = patch.starter_day;
+  }
+  if (typeof patch.checkin_day === "string" && patch.checkin_day.length === 10) {
+    carrotDiskState.checkin_day = patch.checkin_day;
+  }
+  if (patch.checkin_streak != null) {
+    carrotDiskState.checkin_streak = Math.max(0, Number(patch.checkin_streak) || 0);
+  }
+  if (patch.home && typeof patch.home === "object") {
+    carrotDiskState.home = cloneHomeState(patch.home);
   }
   if (patch.day) {
     const cur = carrotDiskState.days[patch.day] || { claimed: 0, spent: 0, bonus: 0 };
@@ -8730,7 +9288,7 @@ function getGachaCoinState() {
       if (rawB !== null) realBalance = Math.max(0, Number(rawB) || 0);
     } catch {}
   }
-  if (realBalance === null) realBalance = 3;
+  if (realBalance === null) realBalance = 0;
 
   const dbgAdd = debugState.active ? debugState.gachaCoins : 0;
   const dbgSpent = debugState.active ? debugState.gachaSpent : 0;
@@ -8792,6 +9350,9 @@ function renderGachaMeta() {
   if (hdrGacha) hdrGacha.textContent = cs.balance;
   const hdrArc = document.getElementById("arcHeaderCoins");
   if (hdrArc) hdrArc.textContent = cs.balance;
+  const hdrHome = document.getElementById("homeHeaderCoins");
+  if (hdrHome) hdrHome.textContent = cs.balance;
+  if (typeof renderCheckinUi === "function") renderCheckinUi();
 
   const gBtn = document.getElementById("gachaBtn");
   if (gBtn) {
@@ -9191,6 +9752,1005 @@ document.querySelectorAll("#dbgReflexChips button[data-ai]").forEach(btn => {
     debugState.reflexAiMock = btn.dataset.ai === "real" ? null : Number(btn.dataset.ai);
     syncDebugUi();
   });
+});
+
+// ============================================================
+// DAILY CHECK-IN (+1 🥕) + TOOTOO COZY HOME STUDIO (HOUSES / DECOR / WARDROBE)
+// ============================================================
+const HOME_SLOT_META = {
+  bed:    { label: "🛋️ 家具",  short: "家具" },
+  light:  { label: "💡 灯饰",  short: "灯饰" },
+  floor:  { label: "🪵 地面",  short: "地面" },
+  garden: { label: "🌿 花园",  short: "花园" },
+  pool:   { label: "🏊 泳池",  short: "泳池" },
+};
+
+const WEAR_SLOT_META = {
+  hat:    { label: "🎩 头饰帽子" },
+  outfit: { label: "🧥 衣服披风" },
+  acc:    { label: "👜 包包配饰" },
+};
+
+const HOME_HOUSES = [
+  { id: "street",    icon: "🛣️", name: "露宿马路边",   price: 0,    tierTag: "起点",   slots: [],                                          desc: "路灯与沥青路牙，垫张旧报纸先凑合睡一晚" },
+  { id: "pot",       icon: "🪴", name: "简陋花盆屋",   price: 5,    tierTag: "蜗居",   slots: [],                                          desc: "倒扣的红陶大花盆，门口青草小蘑菇，终于能遮风挡雨" },
+  { id: "cardboard", icon: "📦", name: "工业纸箱屋",   price: 15,   tierTag: "可装潢", slots: ["bed", "light"],                            desc: "瓦楞纸箱镂空小窗+胶带封顶，从此正式开启装潢！" },
+  { id: "treehole",  icon: "🌳", name: "阳光树洞屋",   price: 35,   tierTag: "林间",   slots: ["bed", "light", "garden"],                  desc: "暖木纹老橡树洞，圆拱木窗洒满阳光，解锁门前绿植" },
+  { id: "heanju",    icon: "🏢", name: "和安居小区",   price: 80,   tierTag: "住宅",   slots: ["bed", "light", "floor", "garden"],         desc: "经典烟火气温馨小住宅！红砖阳台落地窗，解锁地面铺装" },
+  { id: "xixi",      icon: "🏡", name: "西溪壹号别墅", price: 220,  tierTag: "豪宅",   slots: ["bed", "light", "floor", "garden", "pool"], desc: "江南现代独栋花园别墅！白墙落地玻璃，解锁泳池水景！" },
+  { id: "atlantis",  icon: "🏛️", name: "海底水晶神殿", price: 550,  tierTag: "奇观",   slots: ["bed", "light", "floor", "garden", "pool"], desc: "深海透明水晶穹顶、发光珊瑚柱与游动水母，水下宫殿" },
+  { id: "rocket",    icon: "🚀", name: "太空火箭舱",   price: 1200, tierTag: "星际",   slots: ["bed", "light", "floor", "garden", "pool"], desc: "舷窗外旋转土星与银河星云，失重漂浮胡萝卜宇航舱" },
+  { id: "wormhole",  icon: "🌌", name: "次元虫洞方舟", price: 2800, tierTag: "终极",   slots: ["bed", "light", "floor", "garden", "pool"], desc: "悬浮多维时空裂隙的终极奇观，量子星轨光桥环绕" },
+];
+
+const HOME_DECORS = [
+  // bed (家具/主位)
+  { id: "straw_mat",      slot: "bed",    icon: "🌾", name: "干草暖软垫",     price: 4,   desc: "晒过太阳的软蓬蓬干草窝，兔兔打滚很香" },
+  { id: "cardboard_sofa", slot: "bed",    icon: "📦", name: "纸箱手搓沙发",   price: 10,  desc: "加厚双层瓦楞纸配格纹抱枕，环保又舒适" },
+  { id: "muji_desk",      slot: "bed",    icon: "💻", name: "原木码农升降桌", price: 28,  desc: "实木桌面+双屏显示器+机械键盘，效率翻倍" },
+  { id: "velvet_sofa",    slot: "bed",    icon: "🛋️", name: "西溪云朵大沙发", price: 65,  desc: "意式奶油真皮大沙发，写完代码直接瘫平" },
+  { id: "cyber_pod",      slot: "bed",    icon: "🛸", name: "零重力电竞舱",   price: 180, desc: "悬浮全包裹环形屏幕座舱，心流模式永不断电" },
+  { id: "quantum_throne", slot: "bed",    icon: "👑", name: "奇点星环王座",   price: 420, desc: "黑金浮空王座配旋转星轨，算力之王专属宝座" },
+  // light (灯饰/墙面)
+  { id: "fairy_bulb",         slot: "light", icon: "💡", name: "暖黄钨丝小灯泡", price: 4,   desc: "一盏复古拉绳灯泡，把小屋照得暖融融" },
+  { id: "carrot_neon",        slot: "light", icon: "🥕", name: "霓虹胡萝卜灯牌", price: 14,  desc: "墙上发光胡萝卜霓虹招牌，深夜氛围感拉满" },
+  { id: "star_projector",     slot: "light", icon: "🌌", name: "卧室星空投影仪", price: 32,  desc: "天花板铺满缓缓流转的浪漫星云与星光" },
+  { id: "crystal_chandelier", slot: "light", icon: "✨", name: "轻奢水晶大吊灯", price: 78,  desc: "多层折射琉璃水晶灯，别墅客厅排面担当" },
+  { id: "aurora_holo",        slot: "light", icon: "🌈", name: "全息极光天幕",   price: 210, desc: "实时流动的极光全息穹顶，科幻感溢出屏幕" },
+  // floor (地面/地毯)
+  { id: "plaid_rug",       slot: "floor", icon: "🧶", name: "暖格编织地毯",   price: 16,  desc: "红白暖格子手工羊毛毯，光脚踩上去超软" },
+  { id: "wood_floor",      slot: "floor", icon: "🪵", name: "人字拼实木地板", price: 38,  desc: "温润胡桃木人字拼地板，和安居精装标配" },
+  { id: "marble_tile",     slot: "floor", icon: "🏛️", name: "鱼肚白大理石砖", price: 88,  desc: "带淡淡金脉的抛光大理石，高端大气有光泽" },
+  { id: "starlight_floor", slot: "floor", icon: "🌠", name: "银河星轨光感地", price: 240, desc: "步步生辉的深空星尘光感玻璃地面" },
+  // garden (绿植/花园)
+  { id: "mini_carrot_pot",  slot: "garden", icon: "🌱", name: "窗台胡萝卜盆栽", price: 8,   desc: "现种现吃的小胡萝卜苗，充满田园生机" },
+  { id: "balcony_monstera", slot: "garden", icon: "🪴", name: "阳台龟背竹绿角", price: 24,  desc: "郁郁葱葱的大叶龟背竹+琴叶榕，文艺清新" },
+  { id: "sakura_garden",    slot: "garden", icon: "🌸", name: "樱花庭院小花园", price: 75,  desc: "落英缤纷的粉樱树+庭院石灯，西溪别墅绝配" },
+  { id: "biolum_reef",      slot: "garden", icon: "🪸", name: "发光星花珊瑚园", price: 190, desc: "会呼吸的荧光水晶花与深海荧光珊瑚簇" },
+  // pool (泳池/水景)
+  { id: "koi_pond",        slot: "pool", icon: "🎏", name: "锦鲤荷花景观池", price: 55,  desc: "碧绿荷叶下红白锦鲤悠游，禅意十足" },
+  { id: "infinity_pool",   slot: "pool", icon: "🏊", name: "恒温湛蓝无边泳池", price: 110, desc: "波光粼粼的私家恒温泳池，还飘着小黄鸭！" },
+  { id: "hot_spring",      slot: "pool", icon: "♨️", name: "星空温泉泡泡汤池", price: 185, desc: "热气袅袅的露天温泉池，写代码累了泡一泡" },
+  { id: "portal_fountain", slot: "pool", icon: "🌀", name: "悬浮时空光瀑喷泉", price: 360, desc: "反重力浮空能量水柱与星环喷泉，震撼奇观" },
+];
+
+const HOME_WEARABLES = [
+  // hat (头饰/帽子)
+  { id: "paper_boat",    slot: "hat", icon: "📰", name: "折纸报纸小船帽",   price: 3,   desc: "旧报纸手折的小船帽，质朴又呆萌" },
+  { id: "worn_cap",      slot: "hat", icon: "🪣", name: "破旧洗水渔夫帽",   price: 6,   desc: "带个可爱小补丁的做旧渔夫帽，街头松弛感" },
+  { id: "knit_beanie",   slot: "hat", icon: "🧶", name: "胡萝卜毛线帽",     price: 16,  desc: "暖橘手织毛线帽+白毛球，冬天护耳神器" },
+  { id: "beret_art",     slot: "hat", icon: "🎨", name: "复古羊毛贝雷帽",   price: 38,  desc: "斜戴酒红画家贝雷帽，文艺设计师范儿" },
+  { id: "cc_pearl_hat",  slot: "hat", icon: "👒", name: "CC 双环珍珠礼帽",  price: 128, desc: "高定奶油礼帽配珍珠链与双环金扣，优雅贵气" },
+  { id: "tier3_band",    slot: "hat", icon: "🔥", name: "疾风烈焰额带结",   price: 26,  minTier: 3, desc: "认真兔专属限定：燃动赤金火焰头带尾结" },
+  { id: "tier5_scouter", slot: "hat", icon: "📡", name: "赛亚战力探测镜",   price: 95,  minTier: 5, desc: "超赛兔专属限定：实时侦测算力爆表数值" },
+  // outfit (服饰/披风)
+  { id: "waste_letter",  slot: "outfit", icon: "📄", name: "废弃信纸小披风", price: 3,   desc: "泛黄方格信纸系成的迷你披风，环保又有梗" },
+  { id: "patch_scarf",   slot: "outfit", icon: "🧣", name: "补丁格子小围巾", price: 8,   desc: "奶奶缝的红白拼布围巾，暖和又软萌" },
+  { id: "hoodie_dev",    slot: "outfit", icon: "🧥", name: "码农深灰连帽卫衣", price: 22, desc: "极客标配连帽抽绳卫衣，深夜写码舒适度满分" },
+  { id: "trench_bb",     slot: "outfit", icon: "🧥", name: "BBR 经典格纹风衣", price: 85, desc: "英伦驼色格纹翻领风衣，走路自带气场" },
+  { id: "h_silk_cape",   slot: "outfit", icon: "🧣", name: "HM 橘橙真丝斗篷", price: 220, desc: "标志性爱马橘真丝缎面斗篷配金扣，奢华拉满" },
+  { id: "tier4_spark",   slot: "outfit", icon: "⚡", name: "雷电暴击金肩章", price: 52,  minTier: 4, desc: "暴击兔专属限定：双肩跃动黄金暴击电弧" },
+  { id: "tier6_collar",  slot: "outfit", icon: "😈", name: "暗红魔纹尖刺领", price: 160, minTier: 6, desc: "红魔兔专属限定：黑曜石尖刺魔纹与红宝石" },
+  // acc (包包/配饰)
+  { id: "plastic_bag",   slot: "acc", icon: "🛍️", name: "透明菜篮小拎袋",   price: 4,   desc: "拎着一根新鲜小胡萝卜的接地气买菜袋" },
+  { id: "canvas_tote",   slot: "acc", icon: "🎒", name: "复古帆布小书包",   price: 15,  desc: "百搭米白帆布挎包，装得下全套生产力工具" },
+  { id: "iv_bucket",     slot: "acc", icon: "👜", name: "IV 老花水桶包包",  price: 98,  desc: "经典栗棕金纹 IV 老花抽绳水桶包，回头率 100%" },
+  { id: "gci_shades",    slot: "acc", icon: "🕶️", name: "GCI 复古金边墨镜", price: 145, desc: "茶色渐变金丝框大牌墨镜，酷到没朋友" },
+  { id: "rlx_watch",     slot: "acc", icon: "⌚", name: "RLX 绿水鬼机械表", price: 320, desc: "翠绿表圈配精工金链机械怀表，身价象征" },
+  { id: "tier8_scepter", slot: "acc", icon: "👑", name: "星渊星辰维度权杖", price: 280, minTier: 8, desc: "星渊霸王兔专属限定：浮空黄金星冠权杖" },
+  { id: "tier10_orb",    slot: "acc", icon: "🛸", name: "量子浮游星能炮",   price: 520, minTier: 10, desc: "50B 隐藏款专属限定：双翼浮游全息星能模块" },
+];
+
+let homeUiState = {
+  tab: "houses",   // houses | decor | wear
+  decorSlot: "bed",
+  wearSlot: "hat",
+};
+
+function getRealHomeState() {
+  if (carrotDiskState && carrotDiskState.home) return carrotDiskState.home;
+  try {
+    const raw = JSON.parse(localStorage.getItem("tootoo_home_state") || "null");
+    if (raw && typeof raw === "object") return cloneHomeState(raw);
+  } catch {}
+  return cloneHomeState(DEFAULT_HOME_STATE);
+}
+
+function getActiveHomeState() {
+  if (debugState.active) {
+    if (!debugState.homeSandbox) debugState.homeSandbox = cloneHomeState(getRealHomeState());
+    return debugState.homeSandbox;
+  }
+  return getRealHomeState();
+}
+
+function saveActiveHomeState(nextHome, spentCost = 0) {
+  const clean = cloneHomeState(nextHome);
+  if (debugState.active) {
+    debugState.homeSandbox = clean;
+    if (spentCost > 0) debugState.gachaSpent += spentCost;
+  } else {
+    carrotDiskState.home = clean;
+    try { localStorage.setItem("tootoo_home_state", JSON.stringify(clean)); } catch {}
+    const patch = { home: clean };
+    if (spentCost > 0) {
+      const cs = getGachaCoinState();
+      const nextBal = Math.max(0, cs.realBalance - spentCost);
+      patch.balance = nextBal;
+      try { localStorage.setItem("tootoo_carrot_balance", String(nextBal)); } catch {}
+    }
+    persistCarrotPatch(patch);
+  }
+  renderGachaMeta();
+  renderBunnyState(getEffectiveTodayTokens());
+}
+
+// ---- Daily Check-In (+1 萝卜币) ----
+function getCheckinState() {
+  const today = getDataDayKey();
+  const cDay = (debugState.active && debugState.checkinDay != null)
+    ? debugState.checkinDay
+    : (carrotDiskState.checkin_day || (() => { try { return localStorage.getItem("tootoo_checkin_day") || ""; } catch { return ""; } })());
+  const streak = (debugState.active && debugState.checkinStreak != null)
+    ? debugState.checkinStreak
+    : Math.max(carrotDiskState.checkin_streak || 0, (() => { try { return Number(localStorage.getItem("tootoo_checkin_streak") || 0) || 0; } catch { return 0; } })());
+  return { today, checkedIn: cDay === today, lastDay: cDay, streak };
+}
+
+function isYesterdayStr(prevIso, todayIso) {
+  if (!prevIso || !todayIso || prevIso.length !== 10 || todayIso.length !== 10) return false;
+  const p = new Date(prevIso + "T00:00:00");
+  const t = new Date(todayIso + "T00:00:00");
+  const diffDays = Math.round((t - p) / 86400000);
+  return diffDays === 1;
+}
+
+function renderCheckinUi() {
+  const ci = getCheckinState();
+  const homeBtn = document.getElementById("homeBtn");
+  if (homeBtn) {
+    homeBtn.classList.toggle("has-checkin", !ci.checkedIn);
+    const h = HOME_HOUSES.find(x => x.id === getActiveHomeState().house) || HOME_HOUSES[0];
+    homeBtn.title = ci.checkedIn
+      ? `TooToo 小家 · 当前「${h.name}」（今日已签到）`
+      : `TooToo 小家 · 当前「${h.name}」（今日可签到领 +1 萝卜币！）`;
+  }
+  [
+    { btn: "homeCheckinBtn", sub: "homeCheckinSub" },
+    { btn: "gachaCheckinBtn", sub: "gachaCheckinSub" },
+  ].forEach(({ btn, sub }) => {
+    const b = document.getElementById(btn);
+    const s = document.getElementById(sub);
+    if (b) {
+      b.disabled = ci.checkedIn;
+      b.textContent = ci.checkedIn ? "✓ 今日已签" : "🥕 签到 +1";
+    }
+    if (s) {
+      s.textContent = ci.checkedIn
+        ? `今日已领 +1 萝卜币 · 已连续签到 ${Math.max(1, ci.streak)} 天 ✨`
+        : (ci.streak > 0
+          ? `已连签 ${ci.streak} 天 · 今天签一下再领 +1 萝卜币 🥕`
+          : "每天签到稳稳领 1 枚萝卜币，攒钱给 TooToo 盖新家 🥕");
+    }
+  });
+}
+
+function performDailyCheckin(originBtn) {
+  const ci = getCheckinState();
+  if (ci.checkedIn) return;
+  const nextStreak = isYesterdayStr(ci.lastDay, ci.today) ? (ci.streak + 1) : 1;
+  if (debugState.active) {
+    debugState.checkinDay = ci.today;
+    debugState.checkinStreak = nextStreak;
+    debugState.gachaCoins += 1;
+  } else {
+    const cs = getGachaCoinState();
+    const nextBal = cs.realBalance + 1;
+    try {
+      localStorage.setItem("tootoo_checkin_day", ci.today);
+      localStorage.setItem("tootoo_checkin_streak", String(nextStreak));
+      localStorage.setItem("tootoo_carrot_balance", String(nextBal));
+    } catch {}
+    persistCarrotPatch({
+      balance: nextBal,
+      checkin_day: ci.today,
+      checkin_streak: nextStreak,
+    });
+  }
+  if (originBtn) spawnConfettiBurst(originBtn, 18);
+  playSfx("gold");
+  renderGachaMeta();
+  if (document.getElementById("homeModal")?.classList.contains("open")) {
+    renderHomeShop();
+  }
+}
+
+// ---- Wearable SVG Overlays (36x36 mascot coordinates) ----
+function getWearableItemSvg(id) {
+  switch (id) {
+    // HATS
+    case "paper_boat":
+      return `<g><path d="M11.8 14.4 L14.0 9.6 L18 12.2 L22.0 9.6 L24.2 14.4 Z" fill="#F5F0E1" stroke="#57534E" stroke-width="0.9" stroke-linejoin="round"/><line x1="14.2" y1="12.8" x2="21.8" y2="12.8" stroke="#A8A29E" stroke-width="0.65"/></g>`;
+    case "worn_cap":
+      return `<g><path d="M9.6 15.0 Q18 11.4 26.4 15.0 L25.2 12.0 Q18 9.2 10.8 12.0 Z" fill="#84896E" stroke="#3F4234" stroke-width="0.95" stroke-linejoin="round"/><rect x="19.8" y="11.6" width="2.8" height="2.0" rx="0.4" fill="#D6C7A9" stroke="#3F4234" stroke-width="0.55"/><path d="M8.4 15.1 Q18 13.4 27.6 15.1" stroke="#3F4234" stroke-width="1.35" stroke-linecap="round" fill="none"/></g>`;
+    case "knit_beanie":
+      return `<g><path d="M10.4 14.8 C10.8 9.8 25.2 9.8 25.6 14.8 Z" fill="#EA580C" stroke="#7C2D12" stroke-width="0.95"/><rect x="9.8" y="13.4" width="16.4" height="2.2" rx="1.1" fill="#F97316" stroke="#7C2D12" stroke-width="0.75"/><circle cx="18" cy="9.2" r="2.0" fill="#FFFBEB" stroke="#7C2D12" stroke-width="0.75"/></g>`;
+    case "beret_art":
+      return `<g><path d="M10.0 14.8 C10.6 9.8 23.8 9.2 26.4 13.6 C24.6 15.4 12.4 15.6 10.0 14.8 Z" fill="#9F1239" stroke="#4C0519" stroke-width="0.95"/><path d="M18.4 10.2 L19.6 8.6" stroke="#4C0519" stroke-width="1.1" stroke-linecap="round"/></g>`;
+    case "cc_pearl_hat":
+      return `<g><ellipse cx="18" cy="14.4" rx="11.2" ry="2.2" fill="#FEF9EE" stroke="#92400E" stroke-width="0.85"/><path d="M11.6 14.0 C12.0 10.2 24.0 10.2 24.4 14.0 Z" fill="#FFFDF7" stroke="#92400E" stroke-width="0.85"/><path d="M11.8 13.2 Q18 14.2 24.2 13.2" stroke="#181715" stroke-width="1.4" fill="none"/><circle cx="16.2" cy="13.5" r="0.85" fill="#FDE68A" stroke="#92400E" stroke-width="0.45"/><circle cx="19.8" cy="13.5" r="0.85" fill="#FDE68A" stroke="#92400E" stroke-width="0.45"/><circle cx="18.0" cy="13.6" r="1.05" fill="#FFFFFF" stroke="#B45309" stroke-width="0.5"/></g>`;
+    case "tier3_band":
+      return `<g><path d="M27.2 15.2 Q32.5 11.4 35.2 12.6 Q32.2 15.8 34.4 18.2" fill="none" stroke="#F59E0B" stroke-width="1.7" stroke-linecap="round"/><path d="M16.4 14.6 L18 11.6 L19.6 14.6 Z" fill="#FACC15" stroke="#DC2626" stroke-width="0.7"/></g>`;
+    case "tier5_scouter":
+      return `<g><rect x="19.4" y="19.0" width="8.6" height="5.4" rx="1.6" fill="#22C55E" fill-opacity="0.42" stroke="#15803D" stroke-width="0.95"/><line x1="21.0" y1="21.7" x2="26.4" y2="21.7" stroke="#86EFAC" stroke-width="0.7"/><circle cx="28.4" cy="21.7" r="1.4" fill="#F8FAFC" stroke="#181715" stroke-width="0.8"/></g>`;
+    // OUTFITS
+    case "waste_letter":
+      return `<g><path d="M9.0 29.2 L5.8 34.8 L30.2 34.8 L27.0 29.2 Q18 31.8 9.0 29.2 Z" fill="#F5F0E1" stroke="#78716C" stroke-width="0.85"/><line x1="11.2" y1="32.2" x2="24.8" y2="32.2" stroke="#D6D3D1" stroke-width="0.65"/><rect x="22.8" y="31.0" width="2.4" height="2.4" rx="0.4" fill="#E54826" opacity="0.8"/></g>`;
+    case "patch_scarf":
+      return `<g><path d="M9.4 29.0 Q18 32.6 26.6 29.0 L27.6 32.0 Q18 35.2 8.4 32.0 Z" fill="#DC2626" stroke="#7F1D1D" stroke-width="0.85"/><rect x="14.2" y="30.6" width="3.4" height="2.8" rx="0.5" fill="#FEF3C7"/><rect x="20.4" y="30.4" width="3.0" height="4.8" rx="0.9" fill="#DC2626" stroke="#7F1D1D" stroke-width="0.75"/></g>`;
+    case "hoodie_dev":
+      return `<g><path d="M8.6 29.4 Q18 32.8 27.4 29.4 L29.2 35.2 L6.8 35.2 Z" fill="#334155" stroke="#0F172A" stroke-width="0.95"/><line x1="15.2" y1="31.2" x2="14.6" y2="34.8" stroke="#F8FAFC" stroke-width="0.9" stroke-linecap="round"/><line x1="20.8" y1="31.2" x2="21.4" y2="34.8" stroke="#F8FAFC" stroke-width="0.9" stroke-linecap="round"/></g>`;
+    case "trench_bb":
+      return `<g><path d="M8.4 29.0 L6.4 35.2 L29.6 35.2 L27.6 29.0 Q18 32.4 8.4 29.0 Z" fill="#D6A96C" stroke="#78350F" stroke-width="0.9"/><path d="M12.4 30.2 L18 34.4 L23.6 30.2" fill="none" stroke="#991B1B" stroke-width="0.9"/><circle cx="15.2" cy="33.4" r="0.65" fill="#451A03"/><circle cx="20.8" cy="33.4" r="0.65" fill="#451A03"/></g>`;
+    case "h_silk_cape":
+      return `<g><path d="M7.6 28.8 L4.4 35.2 L31.6 35.2 L28.4 28.8 Q18 32.8 7.6 28.8 Z" fill="#F97316" stroke="#9A3412" stroke-width="0.95"/><path d="M9.6 33.8 L26.4 33.8" stroke="#FDE68A" stroke-width="0.85" stroke-dasharray="2 1.5"/><circle cx="18" cy="31.3" r="1.45" fill="#FACC15" stroke="#92400E" stroke-width="0.65"/></g>`;
+    case "tier4_spark":
+      return `<g><path d="M5.6 27.2 L9.4 29.2 L7.0 33.2 L3.4 30.6 Z" fill="#FACC15" stroke="#B45309" stroke-width="0.85"/><path d="M30.4 27.2 L26.6 29.2 L29.0 33.2 L32.6 30.6 Z" fill="#FACC15" stroke="#B45309" stroke-width="0.85"/></g>`;
+    case "tier6_collar":
+      return `<g><path d="M9.6 29.4 Q18 32.6 26.4 29.4 L25.6 32.0 Q18 34.8 10.4 32.0 Z" fill="#18181B" stroke="#EF4444" stroke-width="0.9"/><path d="M18 30.8 L19.4 32.8 L18 34.4 L16.6 32.8 Z" fill="#EF4444"/><circle cx="12.5" cy="31.2" r="0.7" fill="#FCA5A5"/><circle cx="23.5" cy="31.2" r="0.7" fill="#FCA5A5"/></g>`;
+    // ACCESSORIES
+    case "plastic_bag":
+      return `<g><path d="M27.4 26.8 Q29.4 24.4 31.4 26.8" fill="none" stroke="#94A3B8" stroke-width="0.95"/><rect x="26.4" y="26.8" width="6.0" height="6.8" rx="1.2" fill="#E2E8F0" fill-opacity="0.8" stroke="#64748B" stroke-width="0.8"/><path d="M28.6 27.4 L30.2 31.4 L31.2 27.4 Z" fill="#F97316"/></g>`;
+    case "canvas_tote":
+      return `<g><line x1="11.4" y1="29.0" x2="27.0" y2="30.6" stroke="#78716C" stroke-width="1.0"/><rect x="25.6" y="27.6" width="6.8" height="6.4" rx="1.3" fill="#FEF3C7" stroke="#78350F" stroke-width="0.9"/><line x1="27.2" y1="30.2" x2="30.8" y2="30.2" stroke="#D97706" stroke-width="0.8"/></g>`;
+    case "iv_bucket":
+      return `<g><path d="M26.2 26.8 Q29.4 23.6 32.4 26.8" fill="none" stroke="#D97706" stroke-width="1.05"/><path d="M25.4 26.8 L33.2 26.8 L32.2 34.2 Q29.3 35.0 26.4 34.2 Z" fill="#5C3A21" stroke="#2D1A0E" stroke-width="0.95" stroke-linejoin="round"/><line x1="25.6" y1="28.4" x2="33.0" y2="28.4" stroke="#F59E0B" stroke-width="0.9"/><text x="29.3" y="32.4" font-size="3.9" font-family="monospace" font-weight="900" fill="#FDE68A" text-anchor="middle">IV</text></g>`;
+    case "gci_shades":
+      return `<g><rect x="9.6" y="19.4" width="7.0" height="4.4" rx="1.8" fill="#1C1917" fill-opacity="0.88" stroke="#F59E0B" stroke-width="0.95"/><rect x="19.4" y="19.4" width="7.0" height="4.4" rx="1.8" fill="#1C1917" fill-opacity="0.88" stroke="#F59E0B" stroke-width="0.95"/><line x1="16.6" y1="21.0" x2="19.4" y2="21.0" stroke="#F59E0B" stroke-width="1.0"/><line x1="11.0" y1="20.6" x2="12.8" y2="22.4" stroke="#FEF08A" stroke-width="0.7" opacity="0.85"/><line x1="20.8" y1="20.6" x2="22.6" y2="22.4" stroke="#FEF08A" stroke-width="0.7" opacity="0.85"/></g>`;
+    case "rlx_watch":
+      return `<g><circle cx="29.4" cy="30.4" r="3.4" fill="#047857" stroke="#F59E0B" stroke-width="1.1"/><circle cx="29.4" cy="30.4" r="2.1" fill="#064E3B"/><line x1="29.4" y1="30.4" x2="29.4" y2="28.9" stroke="#FDE047" stroke-width="0.75" stroke-linecap="round"/><line x1="29.4" y1="30.4" x2="30.7" y2="30.9" stroke="#FDE047" stroke-width="0.7" stroke-linecap="round"/></g>`;
+    case "tier8_scepter":
+      return `<g><line x1="31.6" y1="15.0" x2="31.6" y2="34.2" stroke="#F59E0B" stroke-width="1.5" stroke-linecap="round"/><path d="M31.6 10.6 L32.8 13.2 L35.2 14.0 L32.8 14.8 L31.6 17.4 L30.4 14.8 L28.0 14.0 L30.4 13.2 Z" fill="#FDE047" stroke="#B45309" stroke-width="0.65"/></g>`;
+    case "tier10_orb":
+      return `<g><circle cx="3.2" cy="14.2" r="2.3" fill="#22D3EE" stroke="#7C3AED" stroke-width="0.9"/><circle cx="32.8" cy="14.2" r="2.3" fill="#EC4899" stroke="#7C3AED" stroke-width="0.9"/><circle cx="3.2" cy="14.2" r="0.8" fill="#FFFFFF"/><circle cx="32.8" cy="14.2" r="0.8" fill="#FFFFFF"/></g>`;
+    default:
+      return "";
+  }
+}
+
+function getWearOverlaySvgFor(wear) {
+  if (!wear) return "";
+  // Render order: outfit first, then hat, then acc on top
+  return (wear.outfit ? getWearableItemSvg(wear.outfit) : "")
+    + (wear.hat ? getWearableItemSvg(wear.hat) : "")
+    + (wear.acc ? getWearableItemSvg(wear.acc) : "");
+}
+
+function getAvatarWearSig() {
+  const h = getActiveHomeState();
+  if (!h.show_on_avatar) return "off";
+  return `${h.wear.hat || ""}|${h.wear.outfit || ""}|${h.wear.acc || ""}`;
+}
+
+function getAvatarWearOverlaySvg() {
+  const h = getActiveHomeState();
+  if (!h.show_on_avatar) return "";
+  return getWearOverlaySvgFor(h.wear);
+}
+
+// ---- Living 420x208 SVG Architectural Scene Renderer ----
+function renderHouseBackdropSvg(houseId) {
+  switch (houseId) {
+    case "street":
+      return `
+        <defs><linearGradient id="hSkySt" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1e2436"/><stop offset="100%" stop-color="#3a4258"/></linearGradient></defs>
+        <rect width="420" height="208" fill="url(#hSkySt)"/>
+        <circle cx="352" cy="42" r="16" fill="#fef3c7" opacity="0.88"/>
+        <circle cx="358" cy="39" r="14" fill="#232a3e"/>
+        <circle cx="62" cy="36" r="1.4" fill="#fde68a"/><circle cx="136" cy="24" r="1.2" fill="#fff"/><circle cx="242" cy="32" r="1.5" fill="#fde68a"/>
+        <!-- Street lamp & warm cone -->
+        <rect x="64" y="42" width="5" height="114" fill="#475569"/>
+        <path d="M66 44 Q82 32 98 44" stroke="#64748b" stroke-width="4" fill="none"/>
+        <ellipse cx="98" cy="47" rx="8" ry="4" fill="#fde047"/>
+        <polygon points="88,50 108,50 156,162 42,162" fill="#fde047" opacity="0.11"/>
+        <!-- Distant buildings -->
+        <rect x="255" y="78" width="44" height="72" rx="2" fill="#2a3146"/>
+        <rect x="308" y="64" width="56" height="86" rx="2" fill="#242b3d"/>
+        <rect x="320" y="78" width="8" height="10" fill="#fbbf24" opacity="0.55"/><rect x="342" y="96" width="8" height="10" fill="#fbbf24" opacity="0.45"/>
+        <!-- Curb & Asphalt road -->
+        <rect x="0" y="148" width="420" height="12" fill="#94a3b8"/>
+        <rect x="0" y="160" width="420" height="48" fill="#334155"/>
+        <line x1="16" y1="184" x2="72" y2="184" stroke="#cbd5e1" stroke-width="3" stroke-dasharray="18 16" opacity="0.55"/>
+        <line x1="316" y1="184" x2="404" y2="184" stroke="#cbd5e1" stroke-width="3" stroke-dasharray="18 16" opacity="0.55"/>
+        <!-- Newspaper mat under bunny -->
+        <rect x="164" y="154" width="92" height="22" rx="3" fill="#e7e2d5" stroke="#94a3b8" stroke-width="1"/>
+        <line x1="176" y1="162" x2="212" y2="162" stroke="#9ca3af" stroke-width="1.4"/><line x1="176" y1="168" x2="244" y2="168" stroke="#9ca3af" stroke-width="1.1"/>
+        <ellipse cx="118" cy="170" rx="5" ry="2.6" fill="#d97706" transform="rotate(-18 118 170)" class="h-drift"/>
+      `;
+    case "pot":
+      return `
+        <defs><linearGradient id="hSkyPot" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#dbeafe"/><stop offset="100%" stop-color="#fef3c7"/></linearGradient></defs>
+        <rect width="420" height="208" fill="url(#hSkyPot)"/>
+        <circle cx="348" cy="42" r="20" fill="#fde047" opacity="0.85"/>
+        <ellipse cx="95" cy="40" rx="28" ry="10" fill="#fff" opacity="0.8" class="h-drift"/>
+        <!-- Meadow hill -->
+        <path d="M0 146 Q120 128 240 144 Q330 154 420 138 L420 208 L0 208 Z" fill="#86efac"/>
+        <path d="M0 162 Q210 148 420 164 L420 208 L0 208 Z" fill="#4ade80" opacity="0.65"/>
+        <!-- Giant Cozy Upside-down Terracotta Flowerpot House -->
+        <path d="M126 164 L148 56 L272 56 L294 164 Z" fill="#c25934" stroke="#7c2d12" stroke-width="2.2" stroke-linejoin="round"/>
+        <rect x="138" y="42" width="144" height="18" rx="6" fill="#d96b43" stroke="#7c2d12" stroke-width="2"/>
+        <!-- Interior cozy cutout -->
+        <path d="M164 164 L164 106 A46 46 0 0 1 256 106 L256 164 Z" fill="#451a03" opacity="0.85"/>
+        <path d="M170 164 L170 110 A40 40 0 0 1 250 110 L250 164 Z" fill="#fef3c7" opacity="0.92"/>
+        <!-- Cute mushroom & grass tufts -->
+        <rect x="92" y="152" width="7" height="12" rx="3" fill="#fef3c7" stroke="#78350f" stroke-width="1"/>
+        <path d="M84 154 A11 9 0 0 1 107 154 Z" fill="#ef4444" stroke="#7f1d1d" stroke-width="1.2"/>
+        <circle cx="92" cy="149" r="1.6" fill="#fff"/><circle cx="99" cy="150" r="1.3" fill="#fff"/>
+        <path d="M312 164 Q316 146 322 164 M318 164 Q326 142 332 164" stroke="#15803d" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+      `;
+    case "cardboard":
+      return `
+        <rect width="420" height="208" fill="#d6b286"/>
+        <!-- Corrugated cardboard wall & ceiling -->
+        <rect x="0" y="0" width="420" height="24" fill="#b88c5a"/>
+        <rect x="182" y="0" width="56" height="28" fill="#e5d5b7" opacity="0.82"/>
+        <path d="M0 152 L420 152 L420 208 L0 208 Z" fill="#b08452"/>
+        <line x1="0" y1="152" x2="420" y2="152" stroke="#7c542b" stroke-width="2"/>
+        <!-- Cardboard seams & hand-drawn stamp -->
+        <line x1="36" y1="24" x2="36" y2="152" stroke="#a67a48" stroke-width="1.5" stroke-dasharray="6 5"/>
+        <line x1="384" y1="24" x2="384" y2="152" stroke="#a67a48" stroke-width="1.5" stroke-dasharray="6 5"/>
+        <!-- Cut-out box window -->
+        <rect x="278" y="44" width="84" height="62" rx="4" fill="#bae6fd" stroke="#7c542b" stroke-width="3"/>
+        <circle cx="338" cy="64" r="9" fill="#fde047"/>
+        <path d="M278 96 Q315 84 362 96 L362 106 L278 106 Z" fill="#86efac"/>
+        <line x1="320" y1="44" x2="320" y2="106" stroke="#7c542b" stroke-width="2.2"/>
+        <line x1="278" y1="75" x2="362" y2="75" stroke="#7c542b" stroke-width="2.2"/>
+        <!-- Box label -->
+        <rect x="52" y="48" width="76" height="28" rx="3" fill="none" stroke="#7c542b" stroke-width="1.4" opacity="0.65"/>
+        <text x="90" y="66" font-size="10" font-family="monospace" font-weight="800" fill="#7c542b" text-anchor="middle" opacity="0.72">TOOTOO ↑↑</text>
+      `;
+    case "treehole":
+      return `
+        <defs><linearGradient id="hWood" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#9a6b3e"/><stop offset="100%" stop-color="#c69663"/></linearGradient></defs>
+        <rect width="420" height="208" fill="url(#hWood)"/>
+        <!-- Organic curved bark framing -->
+        <path d="M0 0 L420 0 L420 208 L0 208 Z M38 20 Q210 6 382 20 Q398 110 386 154 L34 154 Q22 110 38 20 Z" fill="#6b4423" fill-rule="evenodd"/>
+        <!-- Warm plank floor -->
+        <rect x="0" y="152" width="420" height="56" fill="#8c5a32"/>
+        <line x1="0" y1="152" x2="420" y2="152" stroke="#4a2c14" stroke-width="2"/>
+        <!-- Arched hobbit window -->
+        <path d="M274 106 L274 68 A38 34 0 0 1 350 68 L350 106 Z" fill="#e0f2fe" stroke="#5c3618" stroke-width="3.2"/>
+        <circle cx="326" cy="60" r="10" fill="#fde047"/>
+        <ellipse cx="292" cy="96" rx="18" ry="12" fill="#4ade80"/>
+        <ellipse cx="334" cy="98" rx="18" ry="11" fill="#22c55e"/>
+        <line x1="312" y1="34" x2="312" y2="106" stroke="#5c3618" stroke-width="2"/>
+        <line x1="274" y1="78" x2="350" y2="78" stroke="#5c3618" stroke-width="2"/>
+        <!-- Wall shelf -->
+        <rect x="54" y="62" width="66" height="6" rx="2" fill="#5c3618"/>
+        <circle cx="72" cy="55" r="6" fill="#f97316"/><path d="M72 49 L70 44 M72 49 L75 45" stroke="#16a34a" stroke-width="1.5"/>
+      `;
+    case "heanju":
+      return `
+        <rect width="420" height="208" fill="#f5efe2"/>
+        <!-- Cozy modern Chinese apartment wall + baseboard -->
+        <rect x="0" y="146" width="420" height="6" fill="#d6cbb8"/>
+        <rect x="0" y="152" width="420" height="56" fill="#e6dcc8"/>
+        <!-- Balcony sliding glass door overlooking warm neighborhood -->
+        <rect x="242" y="28" width="144" height="118" rx="4" fill="#dbeafe" stroke="#9ca3af" stroke-width="3"/>
+        <rect x="256" y="76" width="38" height="70" fill="#e07a5f" opacity="0.65"/>
+        <rect x="302" y="58" width="48" height="88" fill="#d4a373" opacity="0.72"/>
+        <rect x="312" y="70" width="8" height="10" fill="#fef3c7"/><rect x="330" y="70" width="8" height="10" fill="#fef3c7"/>
+        <rect x="312" y="90" width="8" height="10" fill="#fef3c7"/><rect x="330" y="90" width="8" height="10" fill="#fef3c7"/>
+        <line x1="314" y1="28" x2="314" y2="146" stroke="#9ca3af" stroke-width="2.4"/>
+        <!-- Balcony railing -->
+        <line x1="244" y1="122" x2="384" y2="122" stroke="#64748b" stroke-width="2"/>
+        <!-- AC indoor unit on wall -->
+        <rect x="46" y="34" width="76" height="20" rx="5" fill="#fff" stroke="#cbd5e1" stroke-width="1.4"/>
+        <line x1="54" y1="48" x2="114" y2="48" stroke="#94a3b8" stroke-width="1.5"/>
+        <circle cx="112" cy="40" r="1.5" fill="#22c55e"/>
+        <!-- Framed poster -->
+        <rect x="148" y="48" width="54" height="42" rx="3" fill="#fff" stroke="#a8a29e" stroke-width="2"/>
+        <circle cx="175" cy="69" r="11" fill="#fed7aa"/><text x="175" y="73" font-size="11" text-anchor="middle">🥕</text>
+      `;
+    case "xixi":
+      return `
+        <defs><linearGradient id="hXixiSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#bae6fd"/><stop offset="65%" stop-color="#f0f9ff"/><stop offset="100%" stop-color="#dcfce7"/></linearGradient></defs>
+        <rect width="420" height="208" fill="#faf7f0"/>
+        <!-- Timber architectural ceiling beams -->
+        <rect x="0" y="0" width="420" height="20" fill="#78350f" opacity="0.86"/>
+        <rect x="70" y="0" width="12" height="24" fill="#92400e"/><rect x="204" y="0" width="12" height="24" fill="#92400e"/><rect x="338" y="0" width="12" height="24" fill="#92400e"/>
+        <!-- Panoramic floor-to-ceiling villa glass wall -->
+        <rect x="28" y="24" width="364" height="122" rx="4" fill="url(#hXixiSky)" stroke="#cbd5e1" stroke-width="2.5"/>
+        <!-- Distant misty Jiangnan hills & white-walled pavilion -->
+        <path d="M28 112 Q118 76 218 104 Q312 72 392 108 L392 146 L28 146 Z" fill="#86efac" opacity="0.55"/>
+        <path d="M28 124 Q180 108 392 126 L392 146 L28 146 Z" fill="#4ade80" opacity="0.65"/>
+        <ellipse cx="104" cy="48" rx="30" ry="9" fill="#fff" opacity="0.78" class="h-drift"/>
+        <line x1="150" y1="24" x2="150" y2="146" stroke="#cbd5e1" stroke-width="1.6" opacity="0.75"/>
+        <line x1="272" y1="24" x2="272" y2="146" stroke="#cbd5e1" stroke-width="1.6" opacity="0.75"/>
+        <!-- Villa stone terrace floor -->
+        <rect x="0" y="146" width="420" height="62" fill="#e7e0d3"/>
+        <line x1="0" y1="146" x2="420" y2="146" stroke="#c8beab" stroke-width="2"/>
+      `;
+    case "atlantis":
+      return `
+        <defs><linearGradient id="hSea" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0c4a6e"/><stop offset="55%" stop-color="#0369a1"/><stop offset="100%" stop-color="#082f49"/></linearGradient></defs>
+        <rect width="420" height="208" fill="url(#hSea)"/>
+        <!-- Sunbeams through ocean water -->
+        <polygon points="90,0 132,0 82,155 42,155" fill="#7dd3fc" opacity="0.14"/>
+        <polygon points="240,0 296,0 248,155 198,155" fill="#7dd3fc" opacity="0.16"/>
+        <!-- Crystal temple dome arches -->
+        <path d="M28 152 L28 74 A182 88 0 0 1 392 74 L392 152" fill="none" stroke="#7dd3fc" stroke-width="2.5" opacity="0.5"/>
+        <rect x="34" y="54" width="14" height="98" rx="4" fill="#bae6fd" opacity="0.35"/>
+        <rect x="372" y="54" width="14" height="98" rx="4" fill="#bae6fd" opacity="0.35"/>
+        <!-- Glowing jellyfish & bubbles -->
+        <g class="h-float"><path d="M324 58 A12 10 0 0 1 348 58 Z" fill="#f472b6" opacity="0.75"/><line x1="330" y1="58" x2="328" y2="72" stroke="#fbcfe8" stroke-width="1.2"/><line x1="336" y1="58" x2="336" y2="75" stroke="#fbcfe8" stroke-width="1.2"/><line x1="342" y1="58" x2="344" y2="72" stroke="#fbcfe8" stroke-width="1.2"/></g>
+        <circle cx="88" cy="64" r="4" fill="none" stroke="#bae6fd" stroke-width="1.2" class="h-float"/>
+        <circle cx="102" cy="48" r="2.5" fill="none" stroke="#bae6fd" stroke-width="1" class="h-float"/>
+        <!-- Pearl temple floor -->
+        <rect x="0" y="148" width="420" height="60" fill="#164e63"/>
+        <line x1="0" y1="148" x2="420" y2="148" stroke="#38bdf8" stroke-width="2" opacity="0.65"/>
+      `;
+    case "rocket":
+      return `
+        <defs><linearGradient id="hSpace" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#020617"/><stop offset="60%" stop-color="#1e1b4b"/><stop offset="100%" stop-color="#0f172a"/></linearGradient></defs>
+        <rect width="420" height="208" fill="#1e293b"/>
+        <!-- Curved aerospace hull ribs -->
+        <path d="M0 0 L420 0 L420 150 L0 150 Z" fill="#334155"/>
+        <rect x="26" y="16" width="368" height="128" rx="18" fill="#1e293b" stroke="#64748b" stroke-width="2.5"/>
+        <!-- Giant Space Porthole Window -->
+        <circle cx="308" cy="76" r="46" fill="url(#hSpace)" stroke="#94a3b8" stroke-width="5"/>
+        <circle cx="290" cy="54" r="1.4" fill="#fff"/><circle cx="332" cy="52" r="1.6" fill="#fde047"/><circle cx="282" cy="92" r="1.2" fill="#38bdf8"/>
+        <!-- Ringed Saturn -->
+        <g class="h-float">
+          <circle cx="314" cy="78" r="15" fill="#f59e0b"/>
+          <ellipse cx="314" cy="78" rx="28" ry="6.5" transform="rotate(-18 314 78)" fill="none" stroke="#fde68a" stroke-width="2.4"/>
+        </g>
+        <!-- Control console panel -->
+        <rect x="46" y="44" width="92" height="44" rx="6" fill="#0f172a" stroke="#38bdf8" stroke-width="1.4"/>
+        <circle cx="62" cy="58" r="3" fill="#22c55e"/><circle cx="74" cy="58" r="3" fill="#f59e0b"/><circle cx="86" cy="58" r="3" fill="#38bdf8"/>
+        <rect x="56" y="68" width="70" height="10" rx="2" fill="#083344"/><line x1="60" y1="73" x2="112" y2="73" stroke="#22d3ee" stroke-width="1.6" stroke-dasharray="6 4"/>
+        <!-- Metallic cabin deck -->
+        <rect x="0" y="148" width="420" height="60" fill="#0f172a"/>
+        <line x1="0" y1="148" x2="420" y2="148" stroke="#38bdf8" stroke-width="2" opacity="0.7"/>
+      `;
+    case "wormhole":
+      return `
+        <defs>
+          <radialGradient id="hWorm" cx="50%" cy="42%" r="60%">
+            <stop offset="0%" stop-color="#312e81"/>
+            <stop offset="45%" stop-color="#1e1b4b"/>
+            <stop offset="100%" stop-color="#03020a"/>
+          </radialGradient>
+        </defs>
+        <rect width="420" height="208" fill="url(#hWorm)"/>
+        <!-- Spinning Dimensional Wormhole Vortex -->
+        <g class="h-spin">
+          <ellipse cx="210" cy="78" rx="112" ry="48" fill="none" stroke="#a855f7" stroke-width="2.2" stroke-dasharray="14 8" opacity="0.75"/>
+          <ellipse cx="210" cy="78" rx="82" ry="34" fill="none" stroke="#22d3ee" stroke-width="2" stroke-dasharray="10 6" opacity="0.85"/>
+          <ellipse cx="210" cy="78" rx="50" ry="20" fill="none" stroke="#f59e0b" stroke-width="1.8" opacity="0.9"/>
+        </g>
+        <!-- Floating quantum crystal obelisks -->
+        <polygon points="56,36 68,66 56,96 44,66" fill="#22d3ee" opacity="0.45" class="h-float"/>
+        <polygon points="364,42 376,72 364,102 352,72" fill="#ec4899" opacity="0.45" class="h-float"/>
+        <circle cx="96" cy="34" r="1.8" fill="#fde047"/><circle cx="326" cy="28" r="1.8" fill="#22d3ee"/><circle cx="144" cy="24" r="1.4" fill="#f472b6"/>
+        <!-- Floating quantum glass bridge floor -->
+        <polygon points="0,150 420,150 420,208 0,208" fill="#090514" opacity="0.86"/>
+        <line x1="0" y1="150" x2="420" y2="150" stroke="#c084fc" stroke-width="2.4"/>
+        <line x1="40" y1="176" x2="380" y2="176" stroke="#22d3ee" stroke-width="1" opacity="0.45" stroke-dasharray="8 8"/>
+      `;
+    default:
+      return `<rect width="420" height="208" fill="#f3f0e8"/>`;
+  }
+}
+
+function renderDecorLayerSvg(decor, allowedSlots, freshSlot = null) {
+  let out = "";
+  const pop = (s) => (freshSlot === s ? ` class="decor-pop"` : "");
+
+  // 1. FLOOR (rendered underneath everything on floor)
+  if (allowedSlots.includes("floor") && decor.floor) {
+    let fSvg = "";
+    if (decor.floor === "plaid_rug") {
+      fSvg = `<ellipse cx="210" cy="178" rx="112" ry="18" fill="#ef4444" stroke="#991b1b" stroke-width="1.6"/><ellipse cx="210" cy="178" rx="92" ry="13" fill="none" stroke="#fef3c7" stroke-width="2" stroke-dasharray="8 6"/>`;
+    } else if (decor.floor === "wood_floor") {
+      fSvg = `<rect x="0" y="150" width="420" height="58" fill="#b47b47"/><path d="M0 165 H420 M0 182 H420 M0 198 H420 M60 150 V165 M160 150 V165 M260 150 V165 M360 150 V165 M110 165 V182 M210 165 V182 M310 165 V182" stroke="#78350f" stroke-width="1.1" opacity="0.4"/>`;
+    } else if (decor.floor === "marble_tile") {
+      fSvg = `<rect x="0" y="150" width="420" height="58" fill="#f8fafc"/><path d="M24 166 Q90 156 150 178 M220 158 Q285 180 355 164" stroke="#d4af37" stroke-width="1.2" fill="none" opacity="0.5"/><line x1="0" y1="178" x2="420" y2="178" stroke="#cbd5e1" stroke-width="1"/>`;
+    } else if (decor.floor === "starlight_floor") {
+      fSvg = `<rect x="0" y="150" width="420" height="58" fill="#0f172a"/><ellipse cx="210" cy="178" rx="150" ry="20" fill="none" stroke="#38bdf8" stroke-width="1.6" stroke-dasharray="10 6" opacity="0.8"/><circle cx="110" cy="172" r="2" fill="#fde047"/><circle cx="292" cy="184" r="2.2" fill="#c084fc"/><circle cx="348" cy="168" r="1.8" fill="#22d3ee"/>`;
+    }
+    out += `<g${pop("floor")}>${fSvg}</g>`;
+  }
+
+  // 2. LIGHT (ceiling / upper wall)
+  if (allowedSlots.includes("light") && decor.light) {
+    let lSvg = "";
+    if (decor.light === "fairy_bulb") {
+      lSvg = `<line x1="210" y1="0" x2="210" y2="30" stroke="#78350f" stroke-width="1.8"/><circle cx="210" cy="36" r="8" fill="#fef08a" stroke="#d97706" stroke-width="1.4"/><circle cx="210" cy="36" r="26" fill="#fef08a" opacity="0.22"/>`;
+    } else if (decor.light === "carrot_neon") {
+      lSvg = `<rect x="158" y="28" width="104" height="28" rx="14" fill="#18181b" stroke="#f97316" stroke-width="2"/><text x="210" y="46" font-size="11.5" font-family="monospace" font-weight="900" fill="#fb923c" text-anchor="middle">🥕 TOOTOO</text>`;
+    } else if (decor.light === "star_projector") {
+      lSvg = `<ellipse cx="210" cy="34" rx="135" ry="24" fill="#8b5cf6" opacity="0.2"/><text x="128" y="34" font-size="11" fill="#fde047">✦</text><text x="210" y="26" font-size="13" fill="#c4b5fd">★</text><text x="292" y="36" font-size="11" fill="#38bdf8">✦</text>`;
+    } else if (decor.light === "crystal_chandelier") {
+      lSvg = `<line x1="210" y1="0" x2="210" y2="20" stroke="#d97706" stroke-width="2"/><path d="M174 32 Q210 18 246 32" stroke="#f59e0b" stroke-width="2.2" fill="none"/><polygon points="182,32 186,44 178,44" fill="#fef9c3"/><polygon points="210,26 215,44 205,44" fill="#fff"/><polygon points="238,32 242,44 234,44" fill="#fef9c3"/><circle cx="210" cy="36" r="42" fill="#fde68a" opacity="0.16"/>`;
+    } else if (decor.light === "aurora_holo") {
+      lSvg = `<path d="M20 34 Q120 8 210 30 Q300 52 400 22" fill="none" stroke="#22d3ee" stroke-width="10" opacity="0.32" stroke-linecap="round"/><path d="M35 44 Q140 16 230 38 Q320 56 390 30" fill="none" stroke="#ec4899" stroke-width="7" opacity="0.28" stroke-linecap="round"/>`;
+    }
+    out += `<g${pop("light")}>${lSvg}</g>`;
+  }
+
+  // 3. BED / MAIN FURNITURE (left-center zone)
+  if (allowedSlots.includes("bed") && decor.bed) {
+    let bSvg = "";
+    if (decor.bed === "straw_mat") {
+      bSvg = `<ellipse cx="96" cy="166" rx="44" ry="11" fill="#eab308" stroke="#a16207" stroke-width="1.6"/><path d="M68 164 L82 168 M92 162 L110 169 M116 163 L128 167" stroke="#ca8a04" stroke-width="1.6"/>`;
+    } else if (decor.bed === "cardboard_sofa") {
+      bSvg = `<rect x="52" y="130" width="84" height="36" rx="5" fill="#c69663" stroke="#7c542b" stroke-width="1.8"/><rect x="60" y="142" width="68" height="16" rx="4" fill="#fca5a5"/><rect x="66" y="134" width="16" height="12" rx="3" fill="#fef3c7" stroke="#b45309" stroke-width="1"/>`;
+    } else if (decor.bed === "muji_desk") {
+      bSvg = `<rect x="46" y="128" width="92" height="8" rx="2" fill="#d97706" stroke="#78350f" stroke-width="1.4"/><rect x="54" y="136" width="6" height="34" fill="#78350f"/><rect x="124" y="136" width="6" height="34" fill="#78350f"/><rect x="72" y="102" width="40" height="24" rx="3" fill="#0f172a" stroke="#64748b" stroke-width="1.6"/><line x1="80" y1="110" x2="104" y2="110" stroke="#22d3ee" stroke-width="1.5"/><line x1="80" y1="116" x2="98" y2="116" stroke="#4ade80" stroke-width="1.5"/>`;
+    } else if (decor.bed === "velvet_sofa") {
+      bSvg = `<rect x="44" y="126" width="98" height="42" rx="14" fill="#fef3c7" stroke="#b45309" stroke-width="1.8"/><rect x="54" y="142" width="78" height="18" rx="8" fill="#fde68a"/><circle cx="68" cy="140" r="8" fill="#f97316"/><circle cx="118" cy="140" r="8" fill="#0d9488"/>`;
+    } else if (decor.bed === "cyber_pod") {
+      bSvg = `<g class="h-float"><ellipse cx="94" cy="144" rx="44" ry="26" fill="#0f172a" stroke="#22d3ee" stroke-width="2"/><path d="M62 134 Q94 114 126 134" stroke="#ec4899" stroke-width="3" fill="none"/><ellipse cx="94" cy="172" rx="32" ry="5" fill="#22d3ee" opacity="0.35"/></g>`;
+    } else if (decor.bed === "quantum_throne") {
+      bSvg = `<g class="h-float"><path d="M68 164 L76 104 L94 118 L112 104 L120 164 Z" fill="#1e1b4b" stroke="#f59e0b" stroke-width="2"/><circle cx="94" cy="112" r="7" fill="#fde047"/><ellipse cx="94" cy="166" rx="38" ry="8" fill="#a855f7" opacity="0.38"/></g>`;
+    }
+    out += `<g${pop("bed")}>${bSvg}</g>`;
+  }
+
+  // 4. GARDEN / PLANTS (right zone)
+  if (allowedSlots.includes("garden") && decor.garden) {
+    let gSvg = "";
+    if (decor.garden === "mini_carrot_pot") {
+      gSvg = `<path d="M326 164 L332 142 L358 142 L364 164 Z" fill="#c25934" stroke="#7c2d12" stroke-width="1.5"/><path d="M345 142 Q336 122 332 128 M345 142 Q345 118 346 126 M345 142 Q355 122 360 128" stroke="#16a34a" stroke-width="2.4" fill="none" stroke-linecap="round"/>`;
+    } else if (decor.garden === "balcony_monstera") {
+      gSvg = `<rect x="326" y="144" width="32" height="24" rx="5" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/><ellipse cx="332" cy="126" rx="14" ry="10" fill="#15803d" transform="rotate(-24 332 126)"/><ellipse cx="354" cy="122" rx="15" ry="10" fill="#22c55e" transform="rotate(20 354 122)"/><ellipse cx="342" cy="112" rx="13" ry="9" fill="#16a34a"/>`;
+    } else if (decor.garden === "sakura_garden") {
+      gSvg = `<path d="M348 168 Q344 128 358 98" stroke="#78350f" stroke-width="7" fill="none" stroke-linecap="round"/><circle cx="340" cy="96" r="20" fill="#fbcfe8"/><circle cx="364" cy="90" r="22" fill="#f9a8d4"/><circle cx="378" cy="108" r="16" fill="#fbcfe8"/><circle cx="318" cy="122" r="3" fill="#f472b6" class="h-float"/><circle cx="328" cy="144" r="2.5" fill="#f9a8d4" class="h-float"/>`;
+    } else if (decor.garden === "biolum_reef") {
+      gSvg = `<path d="M332 168 Q326 132 316 124 M346 168 Q348 124 358 112 M360 168 Q370 140 378 134" stroke="#ec4899" stroke-width="5" fill="none" stroke-linecap="round"/><circle cx="316" cy="124" r="6" fill="#22d3ee" opacity="0.9"/><circle cx="358" cy="112" r="7" fill="#fde047" opacity="0.9"/><circle cx="378" cy="134" r="5" fill="#a855f7" opacity="0.9"/>`;
+    }
+    out += `<g${pop("garden")}>${gSvg}</g>`;
+  }
+
+  // 5. POOL / WATER FEATURE (foreground right-center courtyard)
+  if (allowedSlots.includes("pool") && decor.pool) {
+    let pSvg = "";
+    if (decor.pool === "koi_pond") {
+      pSvg = `<ellipse cx="308" cy="184" rx="68" ry="16" fill="#0e7490" stroke="#94a3b8" stroke-width="2.5"/><ellipse cx="294" cy="182" rx="10" ry="5" fill="#22c55e"/><ellipse cx="326" cy="184" rx="7" ry="3.2" fill="#f97316" class="h-drift"/>`;
+    } else if (decor.pool === "infinity_pool") {
+      pSvg = `<rect x="248" y="168" width="144" height="28" rx="12" fill="#06b6d4" stroke="#e0f2fe" stroke-width="2.6"/><path d="M264 178 Q282 174 300 178 T336 178 T372 178" stroke="#cffafe" stroke-width="1.8" fill="none" class="h-drift"/><text x="348" y="185" font-size="12" class="h-float">🐤</text>`;
+    } else if (decor.pool === "hot_spring") {
+      pSvg = `<ellipse cx="312" cy="182" rx="66" ry="17" fill="#38bdf8" stroke="#78716c" stroke-width="4"/><path d="M286 164 Q282 152 288 144 M312 162 Q308 148 314 140 M336 164 Q332 152 338 144" stroke="#fff" stroke-width="2" fill="none" opacity="0.65" stroke-linecap="round" class="h-float"/>`;
+    } else if (decor.pool === "portal_fountain") {
+      pSvg = `<ellipse cx="312" cy="186" rx="58" ry="13" fill="#4c1d95" stroke="#22d3ee" stroke-width="2"/><path d="M312 184 Q302 152 290 144 M312 184 Q312 142 312 132 M312 184 Q322 152 334 144" stroke="#38bdf8" stroke-width="2.6" fill="none" stroke-linecap="round"/><circle cx="312" cy="132" r="5" fill="#fde047" class="h-float"/>`;
+    }
+    out += `<g${pop("pool")}>${pSvg}</g>`;
+  }
+
+  return out;
+}
+
+function renderHomeStage(freshDecorSlot = null, twirlBunny = false) {
+  const hState = getActiveHomeState();
+  const house = HOME_HOUSES.find(x => x.id === hState.house) || HOME_HOUSES[0];
+  const tier = getBunnyTier(getEffectiveTodayTokens());
+  const vis = getTierVisual(tier);
+  const wearSvg = getWearOverlaySvgFor(hState.wear);
+
+  const titleEl = document.getElementById("homeStageTitle");
+  if (titleEl) titleEl.textContent = `${house.icon} ${house.name}`;
+  const slotsEl = document.getElementById("homeStageSlots");
+  if (slotsEl) {
+    const equippedCnt = house.slots.filter(s => hState.decor[s]).length;
+    slotsEl.textContent = house.slots.length > 0
+      ? `装潢 ${equippedCnt}/${house.slots.length}`
+      : "升级纸箱屋开启装潢";
+  }
+
+  const svgEl = document.getElementById("homeStageSvg");
+  if (!svgEl) return;
+
+  const backdrop = renderHouseBackdropSvg(house.id);
+  const decorLayer = renderDecorLayerSvg(hState.decor, house.slots, freshDecorSlot);
+
+  // Place TooToo right inside the scene with soft ground shadow + equipped wearables!
+  const bunnyGroup = `
+    <g id="homeStageBunny" transform="translate(167, 102) scale(2.38)">
+      <ellipse cx="18" cy="34.2" rx="11.5" ry="2.6" fill="rgba(23,22,20,0.22)"/>
+      <g class="${twirlBunny ? "bunny-twirl" : ""}">
+        ${vis.svg}
+        ${wearSvg}
+      </g>
+    </g>
+  `;
+
+  svgEl.innerHTML = backdrop + decorLayer + bunnyGroup;
+}
+
+// ---- Home Cinematic Effects: Build House / Decorate / Dress Up ----
+function spawnStageParticles(particles, cxPct = 50, cyPct = 55) {
+  const wrap = document.getElementById("homeStageWrap");
+  if (!wrap) return;
+  particles.forEach((glyph, i) => {
+    const el = document.createElement("span");
+    el.className = "home-fx-part";
+    el.textContent = glyph;
+    const ang = (Math.PI * 2 * i) / particles.length + (Math.random() - 0.5) * 0.4;
+    const dist = 42 + Math.random() * 88;
+    el.style.left = cxPct + "%";
+    el.style.top = cyPct + "%";
+    el.style.setProperty("--dx", (Math.cos(ang) * dist).toFixed(1) + "px");
+    el.style.setProperty("--dy", (Math.sin(ang) * dist - 18).toFixed(1) + "px");
+    el.style.setProperty("--rot", ((Math.random() - 0.5) * 320).toFixed(0) + "deg");
+    el.style.setProperty("--dur", (0.72 + Math.random() * 0.35).toFixed(2) + "s");
+    wrap.appendChild(el);
+    setTimeout(() => el.remove(), 1150);
+  });
+}
+
+function showStageBanner(text) {
+  const wrap = document.getElementById("homeStageWrap");
+  if (!wrap) return;
+  wrap.querySelectorAll(".home-fx-banner").forEach(n => n.remove());
+  const b = document.createElement("div");
+  b.className = "home-fx-banner";
+  b.textContent = text;
+  wrap.appendChild(b);
+  setTimeout(() => b.remove(), 1500);
+}
+
+function sweepStageShimmer() {
+  const wrap = document.getElementById("homeStageWrap");
+  if (!wrap) return;
+  const sh = document.createElement("div");
+  sh.className = "home-shimmer";
+  wrap.appendChild(sh);
+  setTimeout(() => sh.remove(), 820);
+}
+
+function playBuildHouseFx(house) {
+  const wrap = document.getElementById("homeStageWrap");
+  const svg = document.getElementById("homeStageSvg");
+  if (wrap) {
+    wrap.classList.remove("fx-building");
+    void wrap.offsetWidth;
+    wrap.classList.add("fx-building");
+    setTimeout(() => wrap.classList.remove("fx-building"), 650);
+  }
+  if (svg) {
+    svg.classList.remove("fx-house-rise");
+    void svg.offsetWidth;
+    svg.classList.add("fx-house-rise");
+    setTimeout(() => svg.classList.remove("fx-house-rise"), 720);
+  }
+  sweepStageShimmer();
+  const isGrand = house.price >= 200;
+  const glyphs = isGrand
+    ? ["✨", "🎆", "🏛️", "🌟", "🎉", "💎", "✨", "🌟", "🎆", "✨", "🎉", "💎", "🌟", "✨", "🎆", "🎉"]
+    : ["🔨", "🪵", "🧱", "✨", "🏠", "🎉", "✨", "🔨", "🧱", "🌟", "✨", "🎉", "🪵", "✨"];
+  spawnStageParticles(glyphs, 50, 56);
+  showStageBanner(`🎉 乔迁新居！入住「${house.name}」`);
+  playSfx(isGrand ? "mythic" : "levelUp");
+}
+
+function playDecorFx(slot, item) {
+  sweepStageShimmer();
+  const posMap = {
+    bed:    { x: 24, y: 68, g: ["🔨", "✨", "🛋️", "⭐", "✨", "🔨", "🌟", "✨", "⭐", "✨"] },
+    light:  { x: 50, y: 22, g: ["💡", "✦", "✨", "🌟", "⚡", "✨", "✦", "💡", "🌟", "✨"] },
+    floor:  { x: 50, y: 86, g: ["✨", "🧹", "🌟", "✦", "✨", "💎", "🌟", "✨", "✦", "✨"] },
+    garden: { x: 82, y: 64, g: ["🌸", "🌿", "✨", "🌱", "🍃", "✨", "🌸", "🌿", "🌟", "✨"] },
+    pool:   { x: 74, y: 84, g: ["💧", "🫧", "✨", "🌊", "💎", "🫧", "✨", "💧", "🌟", "✨"] },
+  };
+  const p = posMap[slot] || posMap.bed;
+  spawnStageParticles(p.g, p.x, p.y);
+  showStageBanner(`✨ 装潢焕新 · ${item.name}`);
+  playSfx("gold");
+}
+
+function playDressFx(item) {
+  spawnStageParticles(["✨", "🎀", "💎", "🌟", "✨", "✦", "🎀", "🌟", "✨", "💎"], 50, 62);
+  showStageBanner(`✨ 换装完成 · ${item.name}`);
+  playSfx("cache");
+}
+
+function renderHomeShop() {
+  const hState = getActiveHomeState();
+  const house = HOME_HOUSES.find(x => x.id === hState.house) || HOME_HOUSES[0];
+  const cs = getGachaCoinState();
+  const maxTier = debugState.unlockAll ? 10 : getMaxUnlockedLevel();
+
+  const pillsEl = document.getElementById("homeSlotPills");
+  const gridEl = document.getElementById("homeShopGrid");
+  const wearToggle = document.getElementById("homeAvatarWearToggle");
+  if (wearToggle) {
+    wearToggle.style.display = homeUiState.tab === "wear" ? "inline-flex" : "none";
+    wearToggle.textContent = hState.show_on_avatar ? "头像同步穿戴: 开" : "头像同步穿戴: 关";
+    wearToggle.classList.toggle("on", hState.show_on_avatar);
+  }
+
+  if (homeUiState.tab === "houses") {
+    if (pillsEl) pillsEl.innerHTML = `<span class="dbg-tag" style="color:var(--muted)">从马路边一路盖到次元方舟 · 越贵的房子解锁越多装潢槽位</span>`;
+    if (gridEl) {
+      gridEl.innerHTML = HOME_HOUSES.map(h => {
+        const owned = hState.owned_houses.includes(h.id);
+        const equipped = hState.house === h.id;
+        const canAfford = cs.balance >= h.price;
+        const slotTxt = h.slots.length > 0 ? h.slots.map(s => HOME_SLOT_META[s].short).join("/") : "无装潢槽";
+        const tag = equipped
+          ? `<span class="hc-tag eq">当前居住</span>`
+          : (owned ? `<span class="hc-tag own">已拥有</span>` : `<span class="hc-tag">${h.tierTag}</span>`);
+        const btnHtml = equipped
+          ? `<button class="hc-btn unequip" disabled>居住中</button>`
+          : (owned
+            ? `<button class="hc-btn equip" data-act="move-house" data-id="${h.id}">搬入入住</button>`
+            : `<button class="hc-btn buy" data-act="buy-house" data-id="${h.id}" ${canAfford ? "" : "disabled"}>${canAfford ? "建造买下" : "萝卜币不足"}</button>`);
+        return `<div class="home-card${equipped ? " equipped" : ""}">
+          <div>
+            <div class="hc-top">
+              <span class="hc-name">${h.icon} ${h.name}</span>
+              ${tag}
+            </div>
+            <div class="hc-desc" style="margin-top:3px">${h.desc}</div>
+            <div class="hc-desc" style="margin-top:2px;color:var(--ink-soft)">槽位：${slotTxt}</div>
+          </div>
+          <div class="hc-act">
+            <span class="hc-price">${h.price === 0 ? "免费初始" : `🥕 ${h.price} 币`}</span>
+            ${btnHtml}
+          </div>
+        </div>`;
+      }).join("");
+    }
+  } else if (homeUiState.tab === "decor") {
+    const allSlots = ["bed", "light", "floor", "garden", "pool"];
+    if (pillsEl) {
+      pillsEl.innerHTML = allSlots.map(s => {
+        const unlocked = house.slots.includes(s);
+        return `<button class="home-slot-pill${homeUiState.decorSlot === s ? " active" : ""}${unlocked ? "" : " locked"}" data-dslot="${s}">${unlocked ? "" : "🔒 "}${HOME_SLOT_META[s].label}</button>`;
+      }).join("");
+    }
+    if (gridEl) {
+      if (house.slots.length === 0) {
+        gridEl.innerHTML = `<div class="home-notice">当前「${house.name}」还太简陋，无法装修哦～<br/>先去「🏠 置业盖房」攒够 <strong>15 萝卜币</strong> 搬进「📦 工业纸箱屋」，即可开启装潢系统！</div>`;
+      } else if (!house.slots.includes(homeUiState.decorSlot)) {
+        const needHouse = HOME_HOUSES.find(x => x.slots.includes(homeUiState.decorSlot));
+        gridEl.innerHTML = `<div class="home-notice">「${HOME_SLOT_META[homeUiState.decorSlot].label}」槽位需要升级至 <strong>${needHouse ? `${needHouse.icon} ${needHouse.name}` : "更高阶住宅"}</strong> 后解锁！</div>`;
+      } else {
+        const items = HOME_DECORS.filter(d => d.slot === homeUiState.decorSlot);
+        gridEl.innerHTML = items.map(it => {
+          const owned = hState.owned_decor.includes(it.id);
+          const equipped = hState.decor[it.slot] === it.id;
+          const canAfford = cs.balance >= it.price;
+          const tag = equipped ? `<span class="hc-tag eq">已摆放</span>` : (owned ? `<span class="hc-tag own">仓库已有</span>` : "");
+          const btnHtml = equipped
+            ? `<button class="hc-btn unequip" data-act="unequip-decor" data-slot="${it.slot}">收起</button>`
+            : (owned
+              ? `<button class="hc-btn equip" data-act="equip-decor" data-id="${it.id}">摆出来</button>`
+              : `<button class="hc-btn buy" data-act="buy-decor" data-id="${it.id}" ${canAfford ? "" : "disabled"}>${canAfford ? "购买装潢" : "币不足"}</button>`);
+          return `<div class="home-card${equipped ? " equipped" : ""}">
+            <div>
+              <div class="hc-top"><span class="hc-name">${it.icon} ${it.name}</span>${tag}</div>
+              <div class="hc-desc" style="margin-top:3px">${it.desc}</div>
+            </div>
+            <div class="hc-act">
+              <span class="hc-price">🥕 ${it.price} 币</span>
+              ${btnHtml}
+            </div>
+          </div>`;
+        }).join("");
+      }
+    }
+  } else {
+    // Wardrobe
+    const wSlots = ["hat", "outfit", "acc"];
+    if (pillsEl) {
+      pillsEl.innerHTML = wSlots.map(s =>
+        `<button class="home-slot-pill${homeUiState.wearSlot === s ? " active" : ""}" data-wslot="${s}">${WEAR_SLOT_META[s].label}</button>`
+      ).join("");
+    }
+    if (gridEl) {
+      const items = HOME_WEARABLES.filter(w => w.slot === homeUiState.wearSlot);
+      gridEl.innerHTML = items.map(it => {
+        const owned = hState.owned_wear.includes(it.id);
+        const equipped = hState.wear[it.slot] === it.id;
+        const reqTier = it.minTier || 0;
+        const tierLocked = reqTier > 0 && maxTier < reqTier && !owned;
+        const reqTierObj = reqTier > 0 ? BUNNY_TIERS.find(t => t.level === reqTier) : null;
+        const reqLabel = reqTierObj ? (reqTierObj.secret ? "EX 50B" : `Lv.${reqTier} ${reqTierObj.name}`) : "";
+        const canAfford = cs.balance >= it.price;
+        const tag = equipped
+          ? `<span class="hc-tag eq">穿戴中</span>`
+          : (owned
+            ? `<span class="hc-tag own">已拥有</span>`
+            : (reqTier > 0 ? `<span class="hc-tag vip">${reqTier === 10 ? "50B限定" : `Lv.${reqTier}限定`}</span>` : ""));
+        const btnHtml = tierLocked
+          ? `<button class="hc-btn" disabled>🔒 需${reqLabel}</button>`
+          : (equipped
+            ? `<button class="hc-btn unequip" data-act="unequip-wear" data-slot="${it.slot}">脱下</button>`
+            : (owned
+              ? `<button class="hc-btn equip" data-act="equip-wear" data-id="${it.id}">穿戴</button>`
+              : `<button class="hc-btn buy" data-act="buy-wear" data-id="${it.id}" ${canAfford ? "" : "disabled"}>${canAfford ? "购买穿戴" : "币不足"}</button>`));
+        return `<div class="home-card${equipped ? " equipped" : ""}${tierLocked ? " tier-locked" : ""}">
+          <div>
+            <div class="hc-top"><span class="hc-name">${it.icon} ${it.name}</span>${tag}</div>
+            <div class="hc-desc" style="margin-top:3px">${it.desc}</div>
+          </div>
+          <div class="hc-act">
+            <span class="hc-price">🥕 ${it.price} 币</span>
+            ${btnHtml}
+          </div>
+        </div>`;
+      }).join("");
+    }
+  }
+}
+
+function renderHomeModal(freshDecorSlot = null, twirlBunny = false) {
+  renderCheckinUi();
+  renderHomeStage(freshDecorSlot, twirlBunny);
+  renderHomeShop();
+}
+
+function openHomeModal() {
+  document.getElementById("homeModal").classList.add("open");
+  renderGachaMeta();
+  renderHomeModal();
+}
+function closeHomeModal() {
+  document.getElementById("homeModal").classList.remove("open");
+}
+
+// ---- Home Event Wiring ----
+document.getElementById("homeBtn").addEventListener("click", openHomeModal);
+document.getElementById("homeCloseBtn").addEventListener("click", closeHomeModal);
+document.getElementById("homeModal").addEventListener("click", (e) => {
+  if (e.target === e.currentTarget) closeHomeModal();
+});
+document.getElementById("homeWalletBtn").addEventListener("click", () => {
+  closeHomeModal();
+  openGachaModal();
+});
+document.getElementById("gachaGoHomeBtn").addEventListener("click", () => {
+  closeGachaModal();
+  openHomeModal();
+});
+document.getElementById("homeCheckinBtn").addEventListener("click", (e) => performDailyCheckin(e.currentTarget));
+document.getElementById("gachaCheckinBtn").addEventListener("click", (e) => performDailyCheckin(e.currentTarget));
+
+document.getElementById("homeStageSvg").addEventListener("click", () => {
+  renderHomeStage(null, true);
+  spawnStageParticles(["❤️", "✨", "🥕", "✦"], 50, 62);
+  playSfx("token");
+});
+
+document.querySelectorAll("#homeTabs button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("#homeTabs button").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    homeUiState.tab = btn.dataset.htab;
+    if (homeUiState.tab === "decor") {
+      const h = HOME_HOUSES.find(x => x.id === getActiveHomeState().house) || HOME_HOUSES[0];
+      if (h.slots.length > 0 && !h.slots.includes(homeUiState.decorSlot)) {
+        homeUiState.decorSlot = h.slots[0];
+      }
+    }
+    renderHomeShop();
+  });
+});
+
+document.getElementById("homeSlotPills").addEventListener("click", (e) => {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+  if (btn.dataset.dslot) {
+    homeUiState.decorSlot = btn.dataset.dslot;
+    renderHomeShop();
+  } else if (btn.dataset.wslot) {
+    homeUiState.wearSlot = btn.dataset.wslot;
+    renderHomeShop();
+  }
+});
+
+document.getElementById("homeAvatarWearToggle").addEventListener("click", () => {
+  const h = cloneHomeState(getActiveHomeState());
+  h.show_on_avatar = !h.show_on_avatar;
+  saveActiveHomeState(h, 0);
+  renderHomeShop();
+  playSfx("token");
+});
+
+document.getElementById("homeShopGrid").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-act]");
+  if (!btn || btn.disabled) return;
+  const act = btn.dataset.act;
+  const id = btn.dataset.id;
+  const slot = btn.dataset.slot;
+  const h = cloneHomeState(getActiveHomeState());
+  const cs = getGachaCoinState();
+
+  if (act === "buy-house" || act === "move-house") {
+    const house = HOME_HOUSES.find(x => x.id === id);
+    if (!house) return;
+    if (act === "buy-house") {
+      if (cs.balance < house.price) { playSfx("bomb"); return; }
+      if (!h.owned_houses.includes(house.id)) h.owned_houses.push(house.id);
+      h.house = house.id;
+      saveActiveHomeState(h, house.price);
+    } else {
+      h.house = house.id;
+      saveActiveHomeState(h, 0);
+    }
+    renderHomeModal();
+    playBuildHouseFx(house);
+  } else if (act === "buy-decor" || act === "equip-decor") {
+    const item = HOME_DECORS.find(x => x.id === id);
+    if (!item) return;
+    if (act === "buy-decor") {
+      if (cs.balance < item.price) { playSfx("bomb"); return; }
+      if (!h.owned_decor.includes(item.id)) h.owned_decor.push(item.id);
+      h.decor[item.slot] = item.id;
+      saveActiveHomeState(h, item.price);
+    } else {
+      h.decor[item.slot] = item.id;
+      saveActiveHomeState(h, 0);
+    }
+    renderHomeModal(item.slot, false);
+    playDecorFx(item.slot, item);
+  } else if (act === "unequip-decor" && slot) {
+    h.decor[slot] = null;
+    saveActiveHomeState(h, 0);
+    renderHomeModal();
+    playSfx("token");
+  } else if (act === "buy-wear" || act === "equip-wear") {
+    const item = HOME_WEARABLES.find(x => x.id === id);
+    if (!item) return;
+    if (act === "buy-wear") {
+      if (cs.balance < item.price) { playSfx("bomb"); return; }
+      if (!h.owned_wear.includes(item.id)) h.owned_wear.push(item.id);
+      h.wear[item.slot] = item.id;
+      saveActiveHomeState(h, item.price);
+    } else {
+      h.wear[item.slot] = item.id;
+      saveActiveHomeState(h, 0);
+    }
+    renderHomeModal(null, true);
+    playDressFx(item);
+  } else if (act === "unequip-wear" && slot) {
+    h.wear[slot] = null;
+    saveActiveHomeState(h, 0);
+    renderHomeModal(null, true);
+    playSfx("token");
+  }
+});
+
+// Debug shortcuts for Home Studio
+document.getElementById("dbgAddBigCoinsBtn").addEventListener("click", () => addDebugGachaCoins(500));
+document.getElementById("dbgOpenHomeBtn").addEventListener("click", openHomeModal);
+document.getElementById("dbgHomePlus500Btn").addEventListener("click", () => {
+  addDebugGachaCoins(500);
+  renderHomeShop();
+});
+document.getElementById("dbgHomePlus3000Btn").addEventListener("click", () => {
+  addDebugGachaCoins(3000);
+  renderHomeShop();
+});
+document.getElementById("dbgHomeUnlockAllBtn").addEventListener("click", () => {
+  debugState.unlockAll = true;
+  const ub = document.getElementById("dbgUnlockBtn");
+  if (ub) ub.textContent = "全解锁: 开";
+  const h = cloneHomeState(getActiveHomeState());
+  h.owned_houses = HOME_HOUSES.map(x => x.id);
+  h.owned_decor = HOME_DECORS.map(x => x.id);
+  h.owned_wear = HOME_WEARABLES.map(x => x.id);
+  saveActiveHomeState(h, 0);
+  renderHomeModal();
+  showStageBanner("🔑 沙盒全房/全装潢/全衣橱已解锁！");
+  playSfx("ssr");
+});
+document.getElementById("dbgHomeResetCheckinBtn").addEventListener("click", () => {
+  debugState.checkinDay = "";
+  renderCheckinUi();
+  playSfx("token");
 });
 
 initTheme();

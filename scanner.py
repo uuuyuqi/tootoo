@@ -92,8 +92,63 @@ def _save_evo_state(state: dict[str, Any]) -> None:
 CARROT_STATE_FILE = os.path.join(CACHE_DIR, "carrot_state.json")
 
 
+DEFAULT_HOME_STATE: dict[str, Any] = {
+    "house": "street",
+    "owned_houses": ["street"],
+    "decor": {"bed": None, "light": None, "floor": None, "garden": None, "pool": None},
+    "owned_decor": [],
+    "wear": {"hat": None, "outfit": None, "acc": None},
+    "owned_wear": [],
+    "show_on_avatar": True,
+}
+
+
+def _sanitize_home_state(raw: Any) -> dict[str, Any]:
+    h = dict(DEFAULT_HOME_STATE)
+    h["decor"] = dict(DEFAULT_HOME_STATE["decor"])
+    h["wear"] = dict(DEFAULT_HOME_STATE["wear"])
+    h["owned_houses"] = list(DEFAULT_HOME_STATE["owned_houses"])
+    h["owned_decor"] = []
+    h["owned_wear"] = []
+    if not isinstance(raw, dict):
+        return h
+    if isinstance(raw.get("house"), str) and raw["house"].strip():
+        h["house"] = raw["house"].strip()
+    if isinstance(raw.get("owned_houses"), list):
+        oh = [str(x).strip() for x in raw["owned_houses"] if isinstance(x, str) and x.strip()]
+        if "street" not in oh:
+            oh.insert(0, "street")
+        h["owned_houses"] = list(dict.fromkeys(oh))
+    if h["house"] not in h["owned_houses"]:
+        h["owned_houses"].append(h["house"])
+    if isinstance(raw.get("decor"), dict):
+        for slot in ("bed", "light", "floor", "garden", "pool"):
+            v = raw["decor"].get(slot)
+            h["decor"][slot] = str(v).strip() if isinstance(v, str) and v.strip() else None
+    if isinstance(raw.get("owned_decor"), list):
+        h["owned_decor"] = list(dict.fromkeys(str(x).strip() for x in raw["owned_decor"] if isinstance(x, str) and x.strip()))
+    if isinstance(raw.get("wear"), dict):
+        for slot in ("hat", "outfit", "acc"):
+            v = raw["wear"].get(slot)
+            h["wear"][slot] = str(v).strip() if isinstance(v, str) and v.strip() else None
+    if isinstance(raw.get("owned_wear"), list):
+        h["owned_wear"] = list(dict.fromkeys(str(x).strip() for x in raw["owned_wear"] if isinstance(x, str) and x.strip()))
+    if isinstance(raw.get("show_on_avatar"), bool):
+        h["show_on_avatar"] = raw["show_on_avatar"]
+    return h
+
+
 def load_carrot_state() -> dict[str, Any]:
-    default: dict[str, Any] = {"balance": None, "starter_day": "", "secret_skin": "prism", "days": {}, "collection": []}
+    default: dict[str, Any] = {
+        "balance": None,
+        "starter_day": "",
+        "checkin_day": "",
+        "checkin_streak": 0,
+        "secret_skin": "prism",
+        "days": {},
+        "collection": [],
+        "home": _sanitize_home_state(None),
+    }
     try:
         if os.path.exists(CARROT_STATE_FILE):
             with open(CARROT_STATE_FILE, "r", encoding="utf-8") as f:
@@ -105,10 +160,24 @@ def load_carrot_state() -> dict[str, Any]:
                 bal = data.get("balance")
                 clean_bal = max(0, int(bal)) if isinstance(bal, (int, float)) else None
                 starter_day = str(data.get("starter_day") or "")
+                checkin_day = str(data.get("checkin_day") or "")
+                try:
+                    checkin_streak = max(0, int(data.get("checkin_streak") or 0))
+                except (TypeError, ValueError):
+                    checkin_streak = 0
                 skin = str(data.get("secret_skin") or "prism")
                 if skin not in ("prism", "void", "cyber"):
                     skin = "prism"
-                return {"balance": clean_bal, "starter_day": starter_day, "secret_skin": skin, "days": days, "collection": clean_coll}
+                return {
+                    "balance": clean_bal,
+                    "starter_day": starter_day,
+                    "checkin_day": checkin_day,
+                    "checkin_streak": checkin_streak,
+                    "secret_skin": skin,
+                    "days": days,
+                    "collection": clean_coll,
+                    "home": _sanitize_home_state(data.get("home")),
+                }
     except Exception:
         pass
     return default
@@ -123,8 +192,17 @@ def save_carrot_state(patch: dict[str, Any]) -> dict[str, Any]:
             pass
     if "starter_day" in patch and isinstance(patch["starter_day"], str) and len(patch["starter_day"]) == 10:
         cur["starter_day"] = patch["starter_day"]
+    if "checkin_day" in patch and isinstance(patch["checkin_day"], str) and len(patch["checkin_day"]) == 10:
+        cur["checkin_day"] = patch["checkin_day"]
+    if "checkin_streak" in patch and patch["checkin_streak"] is not None:
+        try:
+            cur["checkin_streak"] = max(0, int(patch["checkin_streak"]))
+        except (TypeError, ValueError):
+            pass
     if "secret_skin" in patch and patch["secret_skin"] in ("prism", "void", "cyber"):
         cur["secret_skin"] = patch["secret_skin"]
+    if "home" in patch and isinstance(patch["home"], dict):
+        cur["home"] = _sanitize_home_state(patch["home"])
     day = str(patch.get("day") or "").strip()
     if len(day) == 10 and day[4] == "-" and day[7] == "-":
         d_ent = cur["days"].get(day)
