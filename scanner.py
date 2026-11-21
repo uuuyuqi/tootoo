@@ -2374,6 +2374,8 @@ def build_telemetry(
     by_day: dict[str, dict[str, Any]] = {}
     by_hour = [0] * 24
     by_hour_reqs = [0] * 24
+    by_hour_cost = [0.0] * 24
+    by_hour_perf = [empty_perf() for _ in range(24)]
     by_project: dict[str, dict[str, Any]] = {}
 
     for ev in filtered:
@@ -2409,6 +2411,7 @@ def build_telemetry(
 
         by_hour[hr] += tot_tok
         by_hour_reqs[hr] += 1
+        by_hour_cost[hr] += cost
 
         # Per-model
         mm = by_model.setdefault(model, {
@@ -2485,6 +2488,7 @@ def build_telemetry(
                 perf_merge(mm["perf"].setdefault("_", empty_perf()), st)
                 perf_merge(tm["perf"].setdefault("_", empty_perf()), st)
                 perf_merge(dm["perf"].setdefault("_", empty_perf()), st)
+                perf_merge(by_hour_perf[hr], st)
 
     # Finalize KPIs
     grand_tokens = totals["in"] + totals["out"] + totals["cr"] + totals["cw"] + totals["reason"]
@@ -2721,7 +2725,17 @@ def build_telemetry(
         },
         "ttft_histogram": ttft_bins,
         "daily": daily_out,
-        "hourly": [{"hour": h, "tokens": by_hour[h], "requests": by_hour_reqs[h]} for h in range(24)],
+        "hourly": [
+            {
+                "hour": h,
+                "tokens": by_hour[h],
+                "requests": by_hour_reqs[h],
+                "cost": round(by_hour_cost[h], 4),
+                "tps": round(by_hour_perf[h]["o"] / by_hour_perf[h]["g"], 1) if by_hour_perf[h]["g"] > 0 else None,
+                "ttft_p50": histogram_percentile(by_hour_perf[h]["th"], 0.50),
+            }
+            for h in range(24)
+        ],
         "quotas": quotas,
         "tools": tools_out,
         "models": models_out,
