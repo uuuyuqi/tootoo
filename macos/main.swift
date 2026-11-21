@@ -20,6 +20,7 @@ let BUNNY_TIERS: [BunnyTierInfo] = [
     BunnyTierInfo(level: 7, name: "狱火魔神兔", minTokens: 1_000_000_000),
     BunnyTierInfo(level: 8, name: "星渊霸王兔", minTokens: 1_500_000_000),
     BunnyTierInfo(level: 9, name: "创世飞升兔", minTokens: 3_000_000_000),
+    BunnyTierInfo(level: 10, name: "奇点终焉兔", minTokens: 50_000_000_000),
 ]
 
 func bunnyTier(for tokens: Double) -> BunnyTierInfo {
@@ -88,41 +89,28 @@ func makeBunnyMenuBarIcon(tier: Int = 1, compactForBar: Bool = false) -> NSImage
             NSBezierPath(ovalIn: NSRect(x: 12.1, y: 21.4, width: 3.3, height: 3.3)).fill()
             NSBezierPath(ovalIn: NSRect(x: 20.6, y: 21.4, width: 3.3, height: 3.3)).fill()
 
-        case 3: // 认真兔: raised boxing gloves
-            rotatedEar(cx: 13, cy: 15, deg: -12, x: 9.8, y: 2.8, w: 5.2, h: 13.2, r: 2.6)
-            rotatedEar(cx: 23, cy: 15, deg: 12, x: 21.0, y: 2.8, w: 5.2, h: 13.2, r: 2.6)
-            fillRect(7.4, 13.2, 21.2, 17.2, 8.4)
-            NSBezierPath(ovalIn: NSRect(x: 0.8, y: 21.2, width: 8.2, height: 8.2)).fill()
-            NSBezierPath(ovalIn: NSRect(x: 27.0, y: 21.2, width: 8.2, height: 8.2)).fill()
+        case 3: // 认真兔: clean round head + sleek focus glasses
+            rotatedEar(cx: 13, cy: 15, deg: -10, x: 9.6, y: 3.0, w: 5.4, h: 13.8, r: 2.7)
+            rotatedEar(cx: 23, cy: 15, deg: 10, x: 21.0, y: 3.0, w: 5.4, h: 13.8, r: 2.7)
+            fillRect(6.5, 13.8, 23.0, 17.8, 8.9)
             ctx.setBlendMode(.clear)
-            let brows = NSBezierPath()
-            brows.lineWidth = 1.9; brows.lineCapStyle = .round
-            brows.move(to: NSPoint(x: 11.4, y: 19.5)); brows.line(to: NSPoint(x: 15.6, y: 20.9))
-            brows.move(to: NSPoint(x: 24.6, y: 19.5)); brows.line(to: NSPoint(x: 20.4, y: 20.9))
-            brows.stroke()
-            NSBezierPath(ovalIn: NSRect(x: 12.5, y: 21.8, width: 2.8, height: 2.8)).fill()
-            NSBezierPath(ovalIn: NSRect(x: 20.7, y: 21.8, width: 2.8, height: 2.8)).fill()
+            fillRect(9.2, 19.0, 7.2, 5.2, 1.5)
+            fillRect(19.6, 19.0, 7.2, 5.2, 1.5)
+            fillRect(16.2, 20.6, 3.6, 1.6, 0.7)
+            ctx.setBlendMode(.normal)
+            NSColor.black.setFill()
+            NSBezierPath(ovalIn: NSRect(x: 11.7, y: 20.4, width: 2.4, height: 2.4)).fill()
+            NSBezierPath(ovalIn: NSRect(x: 21.9, y: 20.4, width: 2.4, height: 2.4)).fill()
 
-        case 4: // 暴击兔: flexed twin biceps!
-            rotatedEar(cx: 13, cy: 14, deg: -10, x: 10.2, y: 2.4, w: 5.0, h: 12.6, r: 2.5)
-            rotatedEar(cx: 23, cy: 14, deg: 10, x: 20.8, y: 2.4, w: 5.0, h: 12.6, r: 2.5)
-            // Left flexed arm + fist
-            NSBezierPath(ovalIn: NSRect(x: 1.0, y: 17.5, width: 5.4, height: 5.4)).fill()
-            fillRect(1.2, 20.5, 4.4, 8.2, 2.2)
-            fillRect(2.2, 24.4, 8.0, 5.2, 2.4)
-            // Right flexed arm + fist
-            NSBezierPath(ovalIn: NSRect(x: 29.6, y: 17.5, width: 5.4, height: 5.4)).fill()
-            fillRect(30.4, 20.5, 4.4, 8.2, 2.2)
-            fillRect(25.8, 24.4, 8.0, 5.2, 2.4)
-            fillRect(8.8, 12.4, 18.4, 17.8, 6.8)
+        case 4: // 暴击兔: clean round head + blazing lightning crest + crit eyes
+            rotatedEar(cx: 12, cy: 15, deg: -16, x: 8.8, y: 3.8, w: 5.2, h: 13.2, r: 2.6)
+            rotatedEar(cx: 24, cy: 15, deg: 16, x: 22.0, y: 3.8, w: 5.2, h: 13.2, r: 2.6)
+            // Lightning bolt crest between ears
+            fillPoly([(19.6, 2.0), (15.2, 9.2), (18.2, 9.2), (16.4, 15.0), (21.2, 7.6), (18.2, 7.6)])
+            fillRect(6.5, 14.0, 23.0, 17.6, 8.8)
             ctx.setBlendMode(.clear)
-            let brows = NSBezierPath()
-            brows.lineWidth = 2.0; brows.lineCapStyle = .round
-            brows.move(to: NSPoint(x: 11.4, y: 18.0)); brows.line(to: NSPoint(x: 16.0, y: 19.6))
-            brows.move(to: NSPoint(x: 24.6, y: 18.0)); brows.line(to: NSPoint(x: 20.0, y: 19.6))
-            brows.stroke()
-            NSBezierPath(ovalIn: NSRect(x: 12.8, y: 20.5, width: 2.8, height: 2.8)).fill()
-            NSBezierPath(ovalIn: NSRect(x: 20.4, y: 20.5, width: 2.8, height: 2.8)).fill()
+            fillPoly([(10.6, 19.8), (16.0, 21.4), (11.5, 23.4)])
+            fillPoly([(25.4, 19.8), (20.0, 21.4), (24.5, 23.4)])
 
         case 5: // 超赛爆气兔: spiky aura + upright hair tufts
             let aura = NSBezierPath()
@@ -187,6 +175,20 @@ func makeBunnyMenuBarIcon(tier: Int = 1, compactForBar: Bool = false) -> NSImage
             ctx.setBlendMode(.clear)
             NSBezierPath(ovalIn: NSRect(x: 12.0, y: 20.8, width: 3.4, height: 3.4)).fill()
             NSBezierPath(ovalIn: NSRect(x: 20.6, y: 20.8, width: 3.4, height: 3.4)).fill()
+
+        case 10: // EX 奇点终焉兔 (50B): diamond singularity star + orbital ring + cosmic wings
+            let orbit = NSBezierPath(ovalIn: NSRect(x: 2.2, y: 9.8, width: 31.6, height: 6.4))
+            orbit.lineWidth = 1.6
+            orbit.stroke()
+            fillPoly([(18.0, 0.8), (20.4, 4.6), (18.0, 8.2), (15.6, 4.6)])
+            fillPoly([(6.5, 19.5), (0.8, 13.0), (2.0, 25.5), (7.0, 26.8)])
+            fillPoly([(29.5, 19.5), (35.2, 13.0), (34.0, 25.5), (29.0, 26.8)])
+            rotatedEar(cx: 13, cy: 16, deg: -14, x: 9.2, y: 5.6, w: 5.2, h: 12.0, r: 2.6)
+            rotatedEar(cx: 23, cy: 16, deg: 14, x: 21.6, y: 5.6, w: 5.2, h: 12.0, r: 2.6)
+            fillRect(6.8, 14.6, 22.4, 17.2, 8.6)
+            ctx.setBlendMode(.clear)
+            fillPoly([(13.6, 19.8), (15.6, 22.2), (13.6, 24.6), (11.6, 22.2)])
+            fillPoly([(22.4, 19.8), (24.4, 22.2), (22.4, 24.6), (20.4, 22.2)])
 
         default: // Lv.1 软萌兔
             rotatedEar(cx: 13, cy: 15, deg: -9, x: 9.5, y: 3.0, w: 5.6, h: 14.0, r: 2.8)
@@ -739,7 +741,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
                 setMenuBarQuotaBar(mode)
             }
         case "setDebugTier":
-            if let lv = payload["level"] as? Int, (1...9).contains(lv) {
+            if let lv = payload["level"] as? Int, (1...10).contains(lv) {
                 debugTierOverride = lv
                 let tier = BUNNY_TIERS.first(where: { $0.level == lv }) ?? BUNNY_TIERS[0]
                 self.currentTier = tier

@@ -137,6 +137,22 @@
     border-color: #e54826;
     box-shadow: 0 0 0 2px rgba(229, 72, 38, 0.2), 0 3px 12px rgba(229, 72, 38, 0.32);
   }
+  /* EX 50B 奇点终焉兔 — 3 限定皮肤舞台背景 */
+  .bunny-wrap.stage-secret-prism {
+    background: conic-gradient(from 130deg at 50% 50%, #e0e7ff, #fae8ff, #ccfbf1, #fef3c7, #e0e7ff);
+    border-color: #8b5cf6;
+    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.28), 0 0 16px rgba(56, 189, 248, 0.45);
+  }
+  .bunny-wrap.stage-secret-void {
+    background: radial-gradient(circle at 50% 45%, #2e1065 0%, #090514 68%, #020106 100%);
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.32), 0 0 18px rgba(139, 92, 246, 0.55);
+  }
+  .bunny-wrap.stage-secret-cyber {
+    background: radial-gradient(circle at 50% 40%, #083344 0%, #041521 68%, #020810 100%);
+    border-color: #22d3ee;
+    box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.3), 0 0 18px rgba(236, 72, 153, 0.42);
+  }
 
   .bunny-wrap:hover { transform: translateY(-1px); }
 
@@ -191,6 +207,96 @@
   .bunny-wrap[data-lv="9"]:hover .bunny-svg { animation: fxLv9Hover 0.95s ease-in-out infinite; }
   .bunny-wrap[data-lv="9"].fx-click { animation: fxAscendGlow 0.82s ease-out; }
   .bunny-wrap[data-lv="9"].fx-click .bunny-svg { animation: fxLv9Click 0.82s cubic-bezier(0.22, 1.35, 0.36, 1); }
+
+  /* EX 50B 奇点终焉兔 (Lv.10): mythic levitation + singularity hyper-spin */
+  .bunny-wrap[data-lv="10"]:hover {
+    box-shadow: 0 0 0 2.5px rgba(168, 85, 247, 0.58), 0 0 26px rgba(56, 189, 248, 0.72), 0 0 14px rgba(251, 191, 36, 0.65);
+    transform: translateY(-3px) scale(1.1);
+  }
+  .bunny-wrap[data-lv="10"]:hover .bunny-svg { animation: fxLv10Hover 1.05s ease-in-out infinite; }
+  .bunny-wrap[data-lv="10"].fx-click { animation: fxSecretGlow 0.9s ease-out; }
+  .bunny-wrap[data-lv="10"].fx-click .bunny-svg { animation: fxLv9Click 0.88s cubic-bezier(0.22, 1.35, 0.36, 1); }
+  @keyframes fxLv10Hover {
+    0%, 100% { transform: translateY(-1.5px) scale(1.06); filter: drop-shadow(0 0 4px rgba(168, 85, 247, 0.7)); }
+    50%      { transform: translateY(-5px) scale(1.13); filter: drop-shadow(0 0 9px rgba(34, 211, 238, 0.85)); }
+  }
+  @keyframes fxSecretGlow {
+    0%   { box-shadow: 0 0 10px rgba(139, 92, 246, 0.5); }
+    40%  { box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.65), 0 0 36px rgba(168, 85, 247, 0.95), 0 0 18px rgba(251, 191, 36, 0.9); }
+    100% { box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.3), 0 0 16px rgba(56, 189, 248, 0.45); }
+  }
+
+  /* EX 50B Mythic Secret Card inside Evolution Gallery */
+  .evo-card.evo-secret {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    text-align: left;
+    gap: 12px;
+    padding: 10px 13px;
+    background: linear-gradient(125deg, color-mix(in srgb, var(--violet) 9%, var(--surface)), color-mix(in srgb, var(--accent) 7%, var(--surface)), color-mix(in srgb, var(--teal) 8%, var(--surface)));
+    border: 1.5px solid color-mix(in srgb, var(--violet) 42%, var(--border));
+    box-shadow: 0 4px 16px color-mix(in srgb, var(--violet) 12%, transparent);
+  }
+  .evo-card.evo-secret.locked {
+    border-style: dashed;
+    background: color-mix(in srgb, var(--violet) 4%, var(--surface-2));
+    box-shadow: none;
+  }
+  .evo-secret-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+  .evo-secret-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+  .evo-secret-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    color: var(--violet);
+  }
+  .evo-skin-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: flex-end;
+    flex-shrink: 0;
+  }
+  .evo-skin-btn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--ink-soft);
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 700;
+    padding: 3.5px 7.5px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+  .evo-skin-btn:hover {
+    border-color: var(--violet);
+    color: var(--ink);
+    transform: translateY(-1px);
+  }
+  .evo-skin-btn.active {
+    background: linear-gradient(90deg, #7c3aed, #ec4899);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.35);
+  }
 
   @keyframes fxLv1Hover { 0%,100% { transform: rotate(0deg); } 40% { transform: rotate(-6deg) translateY(-1px); } 75% { transform: rotate(5deg); } }
   @keyframes fxLv2Hover { 0%,100% { transform: translateY(0) rotate(0deg); } 25% { transform: translateY(-2px) rotate(-5deg); } 75% { transform: translateY(-2px) rotate(5deg); } }
@@ -422,16 +528,21 @@
     transition: opacity 0.22s ease, transform 0.28s cubic-bezier(0.22, 1.3, 0.36, 1), filter 0.28s ease;
   }
   .evo-prog-rem.is-waiting {
-    opacity: 0.42;
+    opacity: 0;
+    animation: evoRemFadeIn 0.62s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  @keyframes evoRemFadeIn {
+    0%   { opacity: 0.08; transform: translateY(2px); }
+    100% { opacity: 0.85; transform: translateY(0); }
   }
   .evo-prog-rem.pulse {
     animation: evoRemBlinkTwice 1.25s ease-in-out forwards;
   }
   @keyframes evoRemBlinkTwice {
-    0%   { opacity: 0.42; transform: scale(1); filter: brightness(1); text-shadow: none; }
+    0%   { opacity: 0.85; transform: scale(1); filter: brightness(1); text-shadow: none; }
     14%  { opacity: 1; transform: scale(1.045); filter: brightness(1.24); text-shadow: 0 0 10px color-mix(in srgb, var(--accent) 52%, transparent); }
     28%  { opacity: 1; transform: scale(1.03); filter: brightness(1.18); text-shadow: 0 0 8px color-mix(in srgb, var(--accent) 40%, transparent); }
-    43%  { opacity: 0.2; transform: scale(0.99); filter: brightness(0.92); text-shadow: none; }
+    43%  { opacity: 0.22; transform: scale(0.99); filter: brightness(0.92); text-shadow: none; }
     57%  { opacity: 1; transform: scale(1.045); filter: brightness(1.24); text-shadow: 0 0 10px color-mix(in srgb, var(--accent) 52%, transparent); }
     72%  { opacity: 1; transform: scale(1.03); filter: brightness(1.18); text-shadow: 0 0 8px color-mix(in srgb, var(--accent) 40%, transparent); }
     100% { opacity: 1; transform: scale(1); filter: brightness(1); text-shadow: none; }
@@ -3807,6 +3918,7 @@
       <button data-lv="7">Lv.7</button>
       <button data-lv="8">Lv.8</button>
       <button data-lv="9">Lv.9</button>
+      <button data-lv="10" style="border-color:var(--violet);color:var(--violet)">EX·50B</button>
     </div>
     <div class="dbg-inline-row" style="padding-top:4px;border-top:1px dashed color-mix(in srgb, var(--amber) 35%, transparent)">
       <span class="dbg-tag">🎲 扭蛋/游戏:</span>
@@ -4178,52 +4290,43 @@ const BUNNY_TIERS = [
   {
     level: 3, min: 30e6, max: 100e6, range: "30 – 100M", name: "认真兔", stage: "",
     svg: `
-      <g transform="rotate(-12 13 15)"><rect x="9.8" y="2.8" width="5.3" height="13.4" rx="2.65" fill="#181715"/><rect x="11.2" y="5.0" width="2.5" height="8.8" rx="1.25" fill="#E54826"/></g>
-      <g transform="rotate(12 23 15)"><rect x="20.9" y="2.8" width="5.3" height="13.4" rx="2.65" fill="#181715"/><rect x="22.3" y="5.0" width="2.5" height="8.8" rx="1.25" fill="#E54826"/></g>
-      <rect x="7.4" y="13.2" width="21.2" height="17.2" rx="8.4" fill="#181715"/>
-      <rect x="9.0" y="14.7" width="18.0" height="14.2" rx="7.0" fill="#FAF8F3"/>
-      <path d="M8.4 17.6 Q18 15.8 27.6 17.6 L27.4 19.3 Q18 17.6 8.6 19.3 Z" fill="#E54826"/>
-      <path d="M11.6 19.6 L15.6 20.8 M24.4 19.6 L20.4 20.8" stroke="#181715" stroke-width="1.5" stroke-linecap="round"/>
-      <ellipse cx="13.8" cy="22.0" rx="1.3" ry="1.55" fill="#181715"/>
-      <ellipse cx="22.2" cy="22.0" rx="1.3" ry="1.55" fill="#181715"/>
-      <circle cx="14.2" cy="21.4" r="0.45" fill="#FAF8F3"/>
-      <circle cx="22.6" cy="21.4" r="0.45" fill="#FAF8F3"/>
-      <rect x="17.0" y="23.4" width="2.0" height="1.2" rx="0.6" fill="#E54826"/>
-      <path d="M16.0 25.8 L20.0 25.8" stroke="#181715" stroke-width="1.25" stroke-linecap="round"/>
-      <g class="b-pump">
-        <circle cx="5.8" cy="25.2" r="4.3" fill="#E54826" stroke="#181715" stroke-width="1.4"/>
-        <circle cx="8.6" cy="23.4" r="1.7" fill="#E54826" stroke="#181715" stroke-width="1.2"/>
-        <path d="M4.0 23.4 Q5.2 22.2 6.8 22.8" stroke="#FAF8F3" stroke-width="1.1" stroke-linecap="round" fill="none"/>
-        <rect x="3.5" y="28.6" width="4.6" height="2.4" rx="1.0" fill="#FAF8F3" stroke="#181715" stroke-width="1.1"/>
-        <circle cx="30.2" cy="25.2" r="4.3" fill="#E54826" stroke="#181715" stroke-width="1.4"/>
-        <circle cx="27.4" cy="23.4" r="1.7" fill="#E54826" stroke="#181715" stroke-width="1.2"/>
-        <path d="M32.0 23.4 Q30.8 22.2 29.2 22.8" stroke="#FAF8F3" stroke-width="1.1" stroke-linecap="round" fill="none"/>
-        <rect x="27.9" y="28.6" width="4.6" height="2.4" rx="1.0" fill="#FAF8F3" stroke="#181715" stroke-width="1.1"/>
-      </g>
+      <g transform="rotate(-10 13 15)"><rect x="9.6" y="3.0" width="5.4" height="13.8" rx="2.7" fill="#181715"/><rect x="11.1" y="5.2" width="2.4" height="9.0" rx="1.2" fill="#E54826"/></g>
+      <g transform="rotate(10 23 15)"><rect x="21.0" y="3.0" width="5.4" height="13.8" rx="2.7" fill="#181715"/><rect x="22.5" y="5.2" width="2.4" height="9.0" rx="1.2" fill="#E54826"/></g>
+      <rect x="6.5" y="13.8" width="23" height="17.8" rx="8.9" fill="#181715"/>
+      <rect x="8.1" y="15.3" width="19.8" height="14.8" rx="7.4" fill="#FAF8F3"/>
+      <path d="M10.4 18.2 L15.4 18.7 M25.6 18.2 L20.6 18.7" stroke="#181715" stroke-width="1.35" stroke-linecap="round"/>
+      <rect x="9.4" y="19.2" width="7.2" height="5.2" rx="1.8" fill="#E0F2FE" fill-opacity="0.55" stroke="#181715" stroke-width="1.45"/>
+      <rect x="19.4" y="19.2" width="7.2" height="5.2" rx="1.8" fill="#E0F2FE" fill-opacity="0.55" stroke="#181715" stroke-width="1.45"/>
+      <line x1="16.6" y1="21.3" x2="19.4" y2="21.3" stroke="#181715" stroke-width="1.4"/>
+      <line x1="8.2" y1="20.8" x2="9.5" y2="21.0" stroke="#181715" stroke-width="1.3" stroke-linecap="round"/>
+      <line x1="26.5" y1="21.0" x2="27.8" y2="20.8" stroke="#181715" stroke-width="1.3" stroke-linecap="round"/>
+      <ellipse cx="13.0" cy="21.8" rx="1.2" ry="1.45" fill="#181715"/>
+      <ellipse cx="23.0" cy="21.8" rx="1.2" ry="1.45" fill="#181715"/>
+      <line x1="10.6" y1="20.4" x2="12.2" y2="23.2" stroke="#FFFFFF" stroke-width="0.9" stroke-linecap="round" opacity="0.85"/>
+      <line x1="20.6" y1="20.4" x2="22.2" y2="23.2" stroke="#FFFFFF" stroke-width="0.9" stroke-linecap="round" opacity="0.85"/>
+      <ellipse cx="10.8" cy="26.2" rx="1.7" ry="0.9" fill="#E54826" opacity="0.28"/>
+      <ellipse cx="25.2" cy="26.2" rx="1.7" ry="0.9" fill="#E54826" opacity="0.28"/>
+      <rect x="16.9" y="24.9" width="2.2" height="1.2" rx="0.6" fill="#E54826"/>
+      <path d="M15.8 27.3 Q18 28.1 20.4 27.1" stroke="#181715" stroke-width="1.2" stroke-linecap="round" fill="none"/>
     `
   },
   {
     level: 4, min: 100e6, max: 300e6, range: "100 – 300M", name: "暴击兔", stage: "stage-muscle",
     svg: `
-      <g class="b-pump">
-        <path d="M9.5 29.8 C4.2 30.2 1.2 27.6 1.4 23.8 C1.6 20.5 3.6 18.2 5.4 18.2 C7.2 18.2 7.8 20.2 6.8 21.8 C5.5 22.8 5.6 24.4 7.0 24.6 C8.4 24.8 9.2 23.4 10.2 24.0 Z" fill="#FAF8F3" stroke="#181715" stroke-width="1.5" stroke-linejoin="round"/>
-        <circle cx="4.8" cy="19.2" r="2.1" fill="#FAF8F3" stroke="#181715" stroke-width="1.4"/>
-        <path d="M5.6 25.4 Q7.2 24.0 8.5 25.4" stroke="#E54826" stroke-width="1.1" stroke-linecap="round" fill="none"/>
-        <path d="M26.5 29.8 C31.8 30.2 34.8 27.6 34.6 23.8 C34.4 20.5 32.4 18.2 30.6 18.2 C28.8 18.2 28.2 20.2 29.2 21.8 C30.5 22.8 30.4 24.4 29.0 24.6 C27.6 24.8 26.8 23.4 25.8 24.0 Z" fill="#FAF8F3" stroke="#181715" stroke-width="1.5" stroke-linejoin="round"/>
-        <circle cx="31.2" cy="19.2" r="2.1" fill="#FAF8F3" stroke="#181715" stroke-width="1.4"/>
-        <path d="M30.4 25.4 Q28.8 24.0 27.5 25.4" stroke="#E54826" stroke-width="1.1" stroke-linecap="round" fill="none"/>
-      </g>
-      <g transform="rotate(-10 13 14)"><rect x="10.2" y="2.4" width="5.0" height="12.6" rx="2.5" fill="#181715"/><rect x="11.6" y="4.5" width="2.2" height="8.2" rx="1.1" fill="#EA580C"/></g>
-      <g transform="rotate(10 23 14)"><rect x="20.8" y="2.4" width="5.0" height="12.6" rx="2.5" fill="#181715"/><rect x="22.2" y="4.5" width="2.2" height="8.2" rx="1.1" fill="#EA580C"/></g>
-      <rect x="8.8" y="12.4" width="18.4" height="16.2" rx="6.8" fill="#181715"/>
-      <rect x="10.3" y="13.8" width="15.4" height="13.4" rx="5.5" fill="#FAF8F3"/>
-      <path d="M12.2 29.6 Q15.0 32.0 18.0 29.8 Q21.0 32.0 23.8 29.6 L23.5 33.4 L12.5 33.4 Z" fill="#FAF8F3" stroke="#181715" stroke-width="1.4" stroke-linejoin="round"/>
-      <line x1="18" y1="29.8" x2="18" y2="33.0" stroke="#181715" stroke-width="1.2"/>
-      <path d="M11.6 17.6 L16.2 19.2 M24.4 17.6 L19.8 19.2" stroke="#181715" stroke-width="1.8" stroke-linecap="round"/>
-      <ellipse cx="14.2" cy="20.5" rx="1.25" ry="1.4" fill="#181715"/>
-      <ellipse cx="21.8" cy="20.5" rx="1.25" ry="1.4" fill="#181715"/>
-      <rect x="17.0" y="21.8" width="2.0" height="1.2" rx="0.6" fill="#EA580C"/>
-      <path d="M15.4 24.4 Q18.4 25.8 21.0 23.8" stroke="#181715" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+      <path d="M3.2 21.0 L5.8 18.8 L4.6 21.2 L6.4 22.8 L3.6 24.4 L4.6 22.0 Z" fill="#F59E0B"/>
+      <path d="M32.8 21.0 L30.2 18.8 L31.4 21.2 L29.6 22.8 L32.4 24.4 L31.4 22.0 Z" fill="#F59E0B"/>
+      <g transform="rotate(-16 12 15)"><rect x="8.8" y="3.8" width="5.3" height="13.2" rx="2.65" fill="#181715"/><rect x="10.2" y="5.8" width="2.5" height="8.8" rx="1.25" fill="#F59E0B"/></g>
+      <g transform="rotate(16 24 15)"><rect x="21.9" y="3.8" width="5.3" height="13.2" rx="2.65" fill="#181715"/><rect x="23.3" y="5.8" width="2.5" height="8.8" rx="1.25" fill="#F59E0B"/></g>
+      <path d="M19.8 2.0 L15.0 9.4 L18.1 9.4 L16.2 15.2 L21.4 7.5 L18.3 7.5 Z" fill="#FACC15" stroke="#B45309" stroke-width="1.05" stroke-linejoin="round"/>
+      <rect x="6.5" y="14.0" width="23" height="17.6" rx="8.8" fill="#181715"/>
+      <rect x="8.1" y="15.5" width="19.8" height="14.6" rx="7.3" fill="#FFFDF8"/>
+      <path d="M10.4 18.6 L15.6 20.4 M25.6 18.6 L20.4 20.4" stroke="#181715" stroke-width="1.6" stroke-linecap="round"/>
+      <path d="M13.2 19.6 L13.9 21.2 L15.5 21.9 L13.9 22.6 L13.2 24.2 L12.5 22.6 L10.9 21.9 L12.5 21.2 Z" fill="#EA580C"/>
+      <path d="M22.8 19.6 L23.5 21.2 L25.1 21.9 L23.5 22.6 L22.8 24.2 L22.1 22.6 L20.5 21.9 L22.1 21.2 Z" fill="#EA580C"/>
+      <circle cx="13.2" cy="21.9" r="0.7" fill="#FEF08A"/>
+      <circle cx="22.8" cy="21.9" r="0.7" fill="#FEF08A"/>
+      <rect x="16.9" y="24.2" width="2.2" height="1.25" rx="0.6" fill="#EA580C"/>
+      <path d="M14.6 26.6 Q18 29.0 21.6 26.2" stroke="#181715" stroke-width="1.4" stroke-linecap="round" fill="none"/>
     `
   },
   {
@@ -4295,7 +4398,7 @@ const BUNNY_TIERS = [
     `
   },
   {
-    level: 9, min: 3e9, max: Infinity, range: "3B+", name: "创世飞升兔", stage: "stage-ascend",
+    level: 9, min: 3e9, max: 50e9, range: "3B – 50B", name: "创世飞升兔", stage: "stage-ascend",
     svg: `
       <g class="b-float">
         <ellipse cx="18" cy="3.2" rx="8.4" ry="2.2" fill="none" stroke="#E54826" stroke-width="1.8"/>
@@ -4312,8 +4415,116 @@ const BUNNY_TIERS = [
         <path d="M15.8 26.5 Q18 28.2 20.2 26.5" stroke="#181715" stroke-width="1.2" stroke-linecap="round" fill="none"/>
       </g>
     `
+  },
+  {
+    level: 10, min: 50e9, max: Infinity, range: "50B+", name: "奇点终焉兔", secret: true, stage: "stage-secret-prism",
+    svg: ""
   }
 ];
+
+// 3 Exclusive Mythic Skins for the 50B Secret Tier (EX 奇点终焉兔)
+const SECRET_SKINS = {
+  prism: {
+    id: "prism",
+    label: "🌈 极光棱镜",
+    stage: "stage-secret-prism",
+    callout: "✦ 极光奇点 · 50B ✦",
+    fxColors: ["#8B5CF6", "#38BDF8", "#EC4899", "#FBBF24", "#14B8A6"],
+    flash: "rgba(139, 92, 246, 0.36)",
+    svg: `
+      <g class="b-float">
+        <path d="M18 0.9 L20.6 4.4 L18 7.8 L15.4 4.4 Z" fill="#38BDF8" stroke="#7C3AED" stroke-width="1.0" stroke-linejoin="round"/>
+        <path d="M6.8 20.4 L1.0 13.8 L2.6 21.0 L1.2 25.2 L7.0 25.8 Z" fill="#C4B5FD" stroke="#7C3AED" stroke-width="0.95" stroke-linejoin="round"/>
+        <path d="M29.2 20.4 L35.0 13.8 L33.4 21.0 L34.8 25.2 L29.0 25.8 Z" fill="#99F6E4" stroke="#0D9488" stroke-width="0.95" stroke-linejoin="round"/>
+        <g transform="rotate(-13 13 16)"><rect x="9.3" y="5.6" width="5.4" height="12.2" rx="2.7" fill="#312E81"/><rect x="10.8" y="7.5" width="2.4" height="8.0" rx="1.2" fill="#F472B6"/></g>
+        <g transform="rotate(13 23 16)"><rect x="21.3" y="5.6" width="5.4" height="12.2" rx="2.7" fill="#312E81"/><rect x="22.8" y="7.5" width="2.4" height="8.0" rx="1.2" fill="#38BDF8"/></g>
+        <rect x="6.5" y="14.5" width="23" height="17.4" rx="8.7" fill="#312E81"/>
+        <rect x="8.1" y="16.0" width="19.8" height="14.4" rx="7.2" fill="#FFFFFF"/>
+        <path d="M18 16.5 L19.4 18.4 L18 20.3 L16.6 18.4 Z" fill="#8B5CF6"/>
+        <path d="M13.5 20.2 L14.2 21.8 L15.8 22.5 L14.2 23.2 L13.5 24.8 L12.8 23.2 L11.2 22.5 L12.8 21.8 Z" fill="#EC4899"/>
+        <path d="M22.5 20.2 L23.2 21.8 L24.8 22.5 L23.2 23.2 L22.5 24.8 L21.8 23.2 L20.2 22.5 L21.8 21.8 Z" fill="#06B6D4"/>
+        <circle cx="13.5" cy="22.5" r="0.65" fill="#FEF08A"/>
+        <circle cx="22.5" cy="22.5" r="0.65" fill="#FEF08A"/>
+        <path d="M15.8 26.7 Q18 28.4 20.2 26.7" stroke="#312E81" stroke-width="1.25" stroke-linecap="round" fill="none"/>
+      </g>
+    `
+  },
+  void: {
+    id: "void",
+    label: "🕳️ 黑洞奇点",
+    stage: "stage-secret-void",
+    callout: "✦ 奇点坍缩 · 50B ✦",
+    fxColors: ["#F59E0B", "#A855F7", "#FDE047", "#C084FC", "#F8FAFC"],
+    flash: "rgba(168, 85, 247, 0.42)",
+    svg: `
+      <g class="b-float">
+        <ellipse cx="18" cy="18.2" rx="16.5" ry="4.5" transform="rotate(-18 18 18.2)" fill="none" stroke="#F59E0B" stroke-width="1.6" opacity="0.92"/>
+        <ellipse cx="18" cy="18.2" rx="14.2" ry="3.4" transform="rotate(-18 18 18.2)" fill="none" stroke="#C084FC" stroke-width="0.9" stroke-dasharray="3 2" opacity="0.85"/>
+        <circle cx="18" cy="3.8" r="2.3" fill="#090514" stroke="#FBBF24" stroke-width="1.35"/>
+        <g transform="rotate(-14 13 16)"><rect x="9.2" y="5.4" width="5.4" height="12.4" rx="2.7" fill="#1E1B4B" stroke="#A855F7" stroke-width="0.85"/><rect x="10.7" y="7.4" width="2.4" height="8.0" rx="1.2" fill="#FBBF24"/></g>
+        <g transform="rotate(14 23 16)"><rect x="21.4" y="5.4" width="5.4" height="12.4" rx="2.7" fill="#1E1B4B" stroke="#A855F7" stroke-width="0.85"/><rect x="22.9" y="7.4" width="2.4" height="8.0" rx="1.2" fill="#FBBF24"/></g>
+        <rect x="6.5" y="14.4" width="23" height="17.5" rx="8.75" fill="#0B0718" stroke="#F59E0B" stroke-width="1.25"/>
+        <path d="M18 16.4 L19.4 18.2 L18 20.0 L16.6 18.2 Z" fill="#FDE047"/>
+        <path d="M10.8 20.6 L16.0 22.1 L11.4 23.8 Z M25.2 20.6 L20.0 22.1 L24.6 23.8 Z" fill="#FBBF24"/>
+        <circle cx="13.4" cy="22.2" r="0.7" fill="#FFFFFF"/>
+        <circle cx="22.6" cy="22.2" r="0.7" fill="#FFFFFF"/>
+        <path d="M15.4 26.8 Q18 28.4 20.6 26.8" stroke="#C084FC" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+      </g>
+    `
+  },
+  cyber: {
+    id: "cyber",
+    label: "⚡ 赛博量子",
+    stage: "stage-secret-cyber",
+    callout: "⚡ 量子飞升 · 50B ⚡",
+    fxColors: ["#22D3EE", "#EC4899", "#FACC15", "#34D399", "#FFFFFF"],
+    flash: "rgba(34, 211, 238, 0.36)",
+    svg: `
+      <g class="b-float">
+        <path d="M6.4 20.0 L1.2 15.2 L3.4 20.6 L1.6 25.0 L6.8 24.4 Z" fill="#22D3EE" opacity="0.88"/>
+        <path d="M29.6 20.0 L34.8 15.2 L32.6 20.6 L34.4 25.0 L29.2 24.4 Z" fill="#EC4899" opacity="0.88"/>
+        <g transform="rotate(-11 13 15)"><rect x="9.4" y="4.0" width="5.4" height="13.2" rx="2.3" fill="#0F172A" stroke="#22D3EE" stroke-width="1.05"/><line x1="12.1" y1="6.4" x2="12.1" y2="12.8" stroke="#22D3EE" stroke-width="1.4" stroke-linecap="round"/><circle cx="12.1" cy="6.4" r="1.2" fill="#EC4899"/></g>
+        <g transform="rotate(11 23 15)"><rect x="21.2" y="4.0" width="5.4" height="13.2" rx="2.3" fill="#0F172A" stroke="#EC4899" stroke-width="1.05"/><line x1="23.9" y1="6.4" x2="23.9" y2="12.8" stroke="#EC4899" stroke-width="1.4" stroke-linecap="round"/><circle cx="23.9" cy="6.4" r="1.2" fill="#22D3EE"/></g>
+        <rect x="6.5" y="14.2" width="23" height="17.6" rx="8.6" fill="#0F172A" stroke="#22D3EE" stroke-width="1.2"/>
+        <rect x="8.2" y="15.8" width="19.6" height="14.4" rx="7.0" fill="#111827"/>
+        <rect x="9.4" y="19.2" width="17.2" height="5.4" rx="2.7" fill="#083344" stroke="#22D3EE" stroke-width="1.1"/>
+        <line x1="11.6" y1="21.9" x2="15.4" y2="21.9" stroke="#22D3EE" stroke-width="1.9" stroke-linecap="round"/>
+        <line x1="20.6" y1="21.9" x2="24.4" y2="21.9" stroke="#EC4899" stroke-width="1.9" stroke-linecap="round"/>
+        <rect x="17.0" y="25.2" width="2.0" height="1.1" rx="0.5" fill="#FACC15"/>
+        <path d="M15.4 27.4 L20.6 27.4" stroke="#34D399" stroke-width="1.35" stroke-linecap="round"/>
+      </g>
+    `
+  }
+};
+
+function getActiveSecretSkin() {
+  const fromDisk = carrotDiskState && carrotDiskState.secret_skin;
+  if (fromDisk && SECRET_SKINS[fromDisk]) return SECRET_SKINS[fromDisk];
+  try {
+    const saved = localStorage.getItem("tootoo_secret_skin");
+    if (saved && SECRET_SKINS[saved]) return SECRET_SKINS[saved];
+  } catch {}
+  return SECRET_SKINS.prism;
+}
+
+function setActiveSecretSkin(skinId) {
+  if (!SECRET_SKINS[skinId]) return;
+  try { localStorage.setItem("tootoo_secret_skin", skinId); } catch {}
+  if (carrotDiskState) carrotDiskState.secret_skin = skinId;
+  persistCarrotPatch({ secret_skin: skinId });
+  renderBunnyState(getEffectiveTodayTokens());
+  if (document.getElementById("evoModal").classList.contains("open")) {
+    renderEvoModal();
+  }
+}
+
+function getTierVisual(tier) {
+  if (tier && tier.level === 10) {
+    const sk = getActiveSecretSkin();
+    return { stage: sk.stage, svg: sk.svg, skin: sk };
+  }
+  return { stage: (tier && tier.stage) || "", svg: (tier && tier.svg) || "", skin: null };
+}
 
 function getBunnyTier(tokens) {
   let cur = BUNNY_TIERS[0];
@@ -4373,7 +4584,7 @@ function getEffectiveTodayTokens() {
 }
 
 function applyDebugOverride(lv) {
-  debugState.level = (lv >= 1 && lv <= 9) ? lv : null;
+  debugState.level = (lv >= 1 && lv <= 10) ? lv : null;
   document.querySelectorAll("#dbgLvChips button").forEach(b => {
     const blv = Number(b.dataset.lv);
     b.classList.toggle("on", debugState.level == null ? blv === 0 : blv === debugState.level);
@@ -4479,29 +4690,34 @@ function renderBunnyState(tokens) {
   }
 
   // Preserve active transient FX / patrol classes across SSE refreshes
+  const vis = getTierVisual(tier);
   const keepFxClick = wrap.classList.contains("fx-click");
   const keepSiphon = wrap.classList.contains("siphoning");
   const keepIsSiphon = wrap.classList.contains("is-siphoning");
   const keepNibble = wrap.classList.contains("nibble");
   const keepAway = (typeof patrolRunning !== "undefined" && patrolRunning) || wrap.classList.contains("is-away");
   wrap.className = "bunny-wrap"
-    + (tier.stage ? " " + tier.stage : "")
+    + (vis.stage ? " " + vis.stage : "")
     + (keepFxClick ? " fx-click" : "")
     + (keepSiphon ? " siphoning" : "")
     + (keepIsSiphon ? " is-siphoning" : "")
     + (keepNibble ? " nibble" : "")
     + (keepAway ? " is-away" : "");
-  const prevLv = wrap.dataset.lv;
+  const prevKey = wrap.dataset.lv + ":" + (wrap.dataset.skin || "");
+  const curSkinId = vis.skin ? vis.skin.id : "";
+  const curKey = String(tier.level) + ":" + curSkinId;
   wrap.dataset.lv = String(tier.level);
-  if (prevLv !== String(tier.level) || !svg.innerHTML) {
-    svg.innerHTML = tier.svg;
+  wrap.dataset.skin = curSkinId;
+  if (prevKey !== curKey || !svg.innerHTML) {
+    svg.innerHTML = vis.svg;
     if (keepAway) {
       const patrolSvg = document.querySelector(".patrol-bunny svg");
-      if (patrolSvg) patrolSvg.innerHTML = tier.svg;
+      if (patrolSvg) patrolSvg.innerHTML = vis.svg;
     }
   }
   const dbgPrefix = debugState.level != null ? "[调试] " : "";
-  mood.textContent = `${dbgPrefix}今日 Lv.${tier.level} ${tier.name} ▸`;
+  const lvLabel = tier.secret ? "EX" : `Lv.${tier.level}`;
+  mood.textContent = `${dbgPrefix}今日 ${lvLabel} ${tier.name} ▸`;
 
   if (next) {
     const pct = Math.max(3, Math.min(100, Math.round((val / next.min) * 100)));
@@ -4528,10 +4744,11 @@ const TIER_FX_PALETTES = {
   7: { colors: ["#C026D3", "#F43F5E", "#FDE047"], rings: 3, count: 28, spread: 92, rays: 14, flash: "rgba(192,38,211,0.36)", quake: "lg", callout: "狱火觉醒", glyphs: ["◆", "✦", "⚡", "★"] },
   8: { colors: ["#F59E0B", "#A78BFA", "#FEF08A"], rings: 4, count: 36, spread: 112, rays: 18, flash: "rgba(167,139,250,0.36)", quake: "lg", callout: "★ 星渊降临 ★", glyphs: ["✦", "★", "◈", "✧"] },
   9: { colors: ["#E54826", "#FBBF24", "#FFFDF9", "#F43F5E"], rings: 5, count: 48, spread: 136, rays: 24, flash: "rgba(251,191,36,0.44)", quake: "lg", callout: "✦ 创世飞升 ✦", glyphs: ["✦", "★", "◈", "✧"] },
+  10: { colors: ["#8B5CF6", "#38BDF8", "#EC4899", "#FBBF24"], rings: 6, count: 64, spread: 158, rays: 28, flash: "rgba(139,92,246,0.42)", quake: "lg", callout: "✦ 奇点终焉 · 50B ✦", glyphs: ["✦", "◈", "★", "⚡", "✧"] },
 };
 
 function triggerBunnyFx(el, level) {
-  const lv = Math.max(1, Math.min(9, Number(level) || 1));
+  const lv = Math.max(1, Math.min(10, Number(level) || 1));
   el.classList.remove("fx-click");
   void el.offsetWidth;
   el.classList.add("fx-click");
@@ -4543,7 +4760,11 @@ function triggerBunnyFx(el, level) {
   const rect = el.getBoundingClientRect();
   const cx = rect.left + rect.width / 2;
   const cy = rect.top + rect.height / 2;
-  const cfg = TIER_FX_PALETTES[lv] || TIER_FX_PALETTES[1];
+  let cfg = TIER_FX_PALETTES[lv] || TIER_FX_PALETTES[1];
+  if (lv === 10) {
+    const sk = getActiveSecretSkin();
+    cfg = { ...cfg, colors: sk.fxColors, flash: sk.flash, callout: sk.callout };
+  }
 
   // Screen-level quake for Lv.3+
   if (cfg.quake) {
@@ -4663,10 +4884,12 @@ function renderEvoModal() {
     const remain = Math.max(0, next.min - tokens);
     const pct = remain > 0 ? Math.max(4, Math.min(95, rawPct)) : 100;
     const nextUnlocked = debugState.unlockAll || next.level <= maxUnlockedLv;
-    const nextName = nextUnlocked ? `Lv.${next.level} ${next.name}` : `Lv.${next.level} 神秘形态`;
+    const nextLabel = next.secret ? "EX" : `Lv.${next.level}`;
+    const nextName = nextUnlocked ? `${nextLabel} ${next.name}` : (next.secret ? "EX 究极隐藏款" : `Lv.${next.level} 神秘形态`);
+    const curLabel = cur.secret ? "EX" : `Lv.${cur.level}`;
     box.innerHTML = `
       <div class="evo-prog-head">
-        <span>今日：<strong>Lv.${cur.level} ${cur.name}</strong> (${fmtNum(tokens)})</span>
+        <span>今日：<strong>${curLabel} ${cur.name}</strong> (${fmtNum(tokens)})</span>
         <span class="evo-prog-rem${remain > 0 ? " is-waiting" : ""}" id="evoProgRem">距「${nextName}」还差 ${fmtNum(remain)}</span>
       </div>
       <div class="evo-prog-track">
@@ -4695,8 +4918,8 @@ function renderEvoModal() {
   } else {
     box.innerHTML = `
       <div class="evo-prog-head">
-        <span>今日：<strong>Lv.9 ${cur.name}</strong> (${fmtNum(tokens)})</span>
-        <span class="evo-prog-rem">今日已达满阶巅峰 ✨</span>
+        <span>今日：<strong>EX ${cur.name}</strong> (${fmtNum(tokens)})</span>
+        <span class="evo-prog-rem">50B 究极隐藏款已觉醒 ✦</span>
       </div>
       <div class="evo-prog-track">
         <div class="evo-prog-fill is-growing" id="evoProgFill" style="width:0%"></div>
@@ -4714,12 +4937,57 @@ function renderEvoModal() {
   }
 
   const grid = document.getElementById("evoGrid");
+  const activeSkin = getActiveSecretSkin();
   grid.innerHTML = BUNNY_TIERS.map((t, idx) => {
     const isLocked = !debugState.unlockAll && t.level > maxUnlockedLv;
+    const delay = idx * 28;
+    if (t.secret) {
+      const cls = `evo-card evo-secret ${t.level === cur.level ? "current" : (isLocked ? "locked" : "unlocked")} evo-enter`;
+      if (isLocked) {
+        return `<div class="${cls}" style="--d:${delay}ms" data-locked="1" data-lv="${t.level}">
+          <div class="evo-secret-left">
+            <div class="bunny-wrap" title="50B 究极隐藏款 · 达成后永久解锁并获得 3 款限定皮肤">
+              <svg class="bunny-svg" viewBox="0 0 36 36" fill="none">
+                <rect x="10.5" y="16" width="15" height="11.5" rx="3" stroke="currentColor" stroke-width="1.8" opacity="0.5"/>
+                <path d="M13.5 16 V12.5 A4.5 4.5 0 0 1 22.5 12.5 V16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" opacity="0.5"/>
+                <circle cx="18" cy="21.5" r="1.6" fill="currentColor" opacity="0.55"/>
+              </svg>
+            </div>
+            <div class="evo-secret-meta">
+              <span class="evo-secret-badge">✦ EX 究极隐藏款 · 50B 门槛</span>
+              <div class="evo-name">??? 待觉醒</div>
+              <div class="evo-rng">单日突破 50B 解锁 · 含 3 款限定皮肤</div>
+            </div>
+          </div>
+          <div class="evo-skin-pills">
+            <span class="evo-skin-btn" style="opacity:0.5;cursor:default">皮肤 I · ???</span>
+            <span class="evo-skin-btn" style="opacity:0.5;cursor:default">皮肤 II · ???</span>
+            <span class="evo-skin-btn" style="opacity:0.5;cursor:default">皮肤 III · ???</span>
+          </div>
+        </div>`;
+      }
+      const vis = getTierVisual(t);
+      const skinBtns = Object.values(SECRET_SKINS).map(sk =>
+        `<button class="evo-skin-btn${sk.id === activeSkin.id ? " active" : ""}" data-skin="${sk.id}">${sk.label}</button>`
+      ).join("");
+      return `<div class="${cls}" style="--d:${delay}ms" data-locked="0" data-lv="${t.level}">
+        <div class="evo-secret-left">
+          <div class="bunny-wrap ${vis.stage}" data-lv="${t.level}" data-skin="${activeSkin.id}" title="点击触发 EX 奇点终焉兔（${activeSkin.label}）专属动效">
+            <svg class="bunny-svg" viewBox="0 0 36 36" fill="none">${vis.svg}</svg>
+          </div>
+          <div class="evo-secret-meta">
+            <span class="evo-secret-badge">✦ EX 究极隐藏款 · ${t.range}</span>
+            <div class="evo-name">${t.name} · ${activeSkin.label}</div>
+            <div class="evo-rng">点击右侧随时切换 3 款限定皮肤</div>
+          </div>
+        </div>
+        <div class="evo-skin-pills">${skinBtns}</div>
+      </div>`;
+    }
+
     const cls = (t.level === cur.level
       ? "evo-card current"
       : (isLocked ? "evo-card locked" : "evo-card unlocked")) + " evo-enter";
-    const delay = idx * 28;
     if (isLocked) {
       return `<div class="${cls}" style="--d:${delay}ms" data-locked="1" data-lv="${t.level}">
         <div class="bunny-wrap" title="神秘形态 · 达成隐藏门槛后永久解锁">
@@ -4742,11 +5010,22 @@ function renderEvoModal() {
     </div>`;
   }).join("");
 
+  grid.querySelectorAll(".evo-skin-btn[data-skin]").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      setActiveSecretSkin(btn.dataset.skin);
+      const sw = document.querySelector('#evoGrid .evo-secret .bunny-wrap');
+      if (sw) triggerBunnyFx(sw, 10);
+      playSfx("ssr");
+    });
+  });
+
   const hintEl = document.getElementById("evoHint");
   if (hintEl) {
+    const maxLbl = maxUnlockedLv >= 10 ? "EX 究极隐藏款" : `Lv.${maxUnlockedLv}`;
     hintEl.textContent = maxUnlockedLv > cur.level
-      ? `历史最高已永久解锁至 Lv.${maxUnlockedLv} · 点击任意已解锁形态可重温专属动效`
-      : "已解锁形态永久保留 · 点击可触发专属动效 · 更高阶形态达成后自动揭晓";
+      ? `历史最高已永久解锁至 ${maxLbl} · 点击任意已解锁形态可重温专属动效`
+      : "已解锁形态永久保留 · 点击可触发专属动效 · 更高阶与 50B 隐藏款达成后自动揭晓";
   }
   grid.querySelectorAll(".evo-card").forEach(card => {
     const wrap = card.querySelector(".bunny-wrap");
@@ -6658,7 +6937,7 @@ function summonBunnyPatrol() {
 
   const runner = document.createElement("div");
   runner.className = "patrol-bunny";
-  runner.innerHTML = `<div class="pb-flip"><div class="pb-inner"><svg viewBox="0 0 36 36" fill="none" style="width:100%;height:100%">${tier.svg}</svg></div></div>`;
+  runner.innerHTML = `<div class="pb-flip"><div class="pb-inner"><svg viewBox="0 0 36 36" fill="none" style="width:100%;height:100%">${getTierVisual(tier).svg}</svg></div></div>`;
   runner.style.transform = `translate3d(${startX.toFixed(1)}px, ${startY.toFixed(1)}px, 0)`;
   document.body.appendChild(runner);
   playSfx("token");
@@ -8056,7 +8335,7 @@ const GACHA_POOL = [
   { id: 24, r: "R",  icon: "🎉", name: "提前下班预言兔", desc: "效率太高提前收工，快奖励自己吃顿好的！" },
 ];
 
-let carrotDiskState = { balance: null, starter_day: "", days: {}, collection: [] };
+let carrotDiskState = { balance: null, starter_day: "", secret_skin: "prism", days: {}, collection: [] };
 
 async function syncCarrotFromDisk() {
   try {
@@ -8067,6 +8346,7 @@ async function syncCarrotFromDisk() {
       carrotDiskState = {
         balance: typeof j.balance === "number" ? Math.max(0, j.balance) : null,
         starter_day: typeof j.starter_day === "string" ? j.starter_day : "",
+        secret_skin: (typeof j.secret_skin === "string" && SECRET_SKINS[j.secret_skin]) ? j.secret_skin : "prism",
         days: (j.days && typeof j.days === "object") ? j.days : {},
         collection: Array.isArray(j.collection) ? j.collection : [],
       };
@@ -8487,7 +8767,7 @@ let dbgLevelUpTimer = null;
 document.getElementById("dbgLevelUpBtn").addEventListener("click", () => {
   if (dbgLevelUpTimer) clearTimeout(dbgLevelUpTimer);
   const curReal = getBunnyTier((state.data && state.data.today_tokens) || 0);
-  const targetLv = debugState.level != null ? debugState.level : Math.min(9, curReal.level + 1);
+  const targetLv = debugState.level != null ? debugState.level : Math.min(10, curReal.level + 1);
   const prevLv = Math.max(1, targetLv - 1);
   const targetTier = BUNNY_TIERS.find(t => t.level === targetLv) || BUNNY_TIERS[0];
 
