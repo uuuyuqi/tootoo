@@ -13,8 +13,8 @@ struct BunnyTierInfo {
 let BUNNY_TIERS: [BunnyTierInfo] = [
     BunnyTierInfo(level: 1, name: "软萌兔", minTokens: 0),
     BunnyTierInfo(level: 2, name: "热身兔", minTokens: 10_000_000),
-    BunnyTierInfo(level: 3, name: "拳击兔", minTokens: 30_000_000),
-    BunnyTierInfo(level: 4, name: "肉筋兔", minTokens: 100_000_000),
+    BunnyTierInfo(level: 3, name: "认真兔", minTokens: 30_000_000),
+    BunnyTierInfo(level: 4, name: "暴击兔", minTokens: 100_000_000),
     BunnyTierInfo(level: 5, name: "超赛爆气兔", minTokens: 300_000_000),
     BunnyTierInfo(level: 6, name: "红魔兔", minTokens: 600_000_000),
     BunnyTierInfo(level: 7, name: "狱火魔神兔", minTokens: 1_000_000_000),
@@ -88,7 +88,7 @@ func makeBunnyMenuBarIcon(tier: Int = 1, compactForBar: Bool = false) -> NSImage
             NSBezierPath(ovalIn: NSRect(x: 12.1, y: 21.4, width: 3.3, height: 3.3)).fill()
             NSBezierPath(ovalIn: NSRect(x: 20.6, y: 21.4, width: 3.3, height: 3.3)).fill()
 
-        case 3: // 拳击兔: raised boxing gloves
+        case 3: // 认真兔: raised boxing gloves
             rotatedEar(cx: 13, cy: 15, deg: -12, x: 9.8, y: 2.8, w: 5.2, h: 13.2, r: 2.6)
             rotatedEar(cx: 23, cy: 15, deg: 12, x: 21.0, y: 2.8, w: 5.2, h: 13.2, r: 2.6)
             fillRect(7.4, 13.2, 21.2, 17.2, 8.4)
@@ -103,7 +103,7 @@ func makeBunnyMenuBarIcon(tier: Int = 1, compactForBar: Bool = false) -> NSImage
             NSBezierPath(ovalIn: NSRect(x: 12.5, y: 21.8, width: 2.8, height: 2.8)).fill()
             NSBezierPath(ovalIn: NSRect(x: 20.7, y: 21.8, width: 2.8, height: 2.8)).fill()
 
-        case 4: // 肉筋兔: flexed twin biceps!
+        case 4: // 暴击兔: flexed twin biceps!
             rotatedEar(cx: 13, cy: 14, deg: -10, x: 10.2, y: 2.4, w: 5.0, h: 12.6, r: 2.5)
             rotatedEar(cx: 23, cy: 14, deg: 10, x: 20.8, y: 2.4, w: 5.0, h: 12.6, r: 2.5)
             // Left flexed arm + fist

@@ -149,11 +149,11 @@
   .bunny-wrap[data-lv="2"]:hover .bunny-svg { animation: fxLv2Hover 0.55s ease-in-out infinite; }
   .bunny-wrap[data-lv="2"].fx-click .bunny-svg { animation: fxLv2Click 0.52s ease-out; }
 
-  /* Lv.3 拳击兔: bob & weave + jab combo */
+  /* Lv.3 认真兔: bob & weave + jab combo */
   .bunny-wrap[data-lv="3"]:hover .bunny-svg { animation: fxLv3Hover 0.45s ease-in-out infinite; }
   .bunny-wrap[data-lv="3"].fx-click .bunny-svg { animation: fxLv3Click 0.48s cubic-bezier(0.2, 1.3, 0.4, 1); }
 
-  /* Lv.4 肉筋兔: muscle pump swell + power flex quake */
+  /* Lv.4 暴击兔: muscle pump swell + power flex quake */
   .bunny-wrap[data-lv="4"]:hover { box-shadow: 0 0 12px rgba(234, 88, 12, 0.4); }
   .bunny-wrap[data-lv="4"]:hover .bunny-svg { animation: fxLv4Hover 0.65s ease-in-out infinite; }
   .bunny-wrap[data-lv="4"].fx-click { animation: fxBoxShake 0.42s ease-out; }
@@ -4176,7 +4176,7 @@ const BUNNY_TIERS = [
     `
   },
   {
-    level: 3, min: 30e6, max: 100e6, range: "30 – 100M", name: "拳击兔", stage: "",
+    level: 3, min: 30e6, max: 100e6, range: "30 – 100M", name: "认真兔", stage: "",
     svg: `
       <g transform="rotate(-12 13 15)"><rect x="9.8" y="2.8" width="5.3" height="13.4" rx="2.65" fill="#181715"/><rect x="11.2" y="5.0" width="2.5" height="8.8" rx="1.25" fill="#E54826"/></g>
       <g transform="rotate(12 23 15)"><rect x="20.9" y="2.8" width="5.3" height="13.4" rx="2.65" fill="#181715"/><rect x="22.3" y="5.0" width="2.5" height="8.8" rx="1.25" fill="#E54826"/></g>
@@ -4203,7 +4203,7 @@ const BUNNY_TIERS = [
     `
   },
   {
-    level: 4, min: 100e6, max: 300e6, range: "100 – 300M", name: "肉筋兔", stage: "stage-muscle",
+    level: 4, min: 100e6, max: 300e6, range: "100 – 300M", name: "暴击兔", stage: "stage-muscle",
     svg: `
       <g class="b-pump">
         <path d="M9.5 29.8 C4.2 30.2 1.2 27.6 1.4 23.8 C1.6 20.5 3.6 18.2 5.4 18.2 C7.2 18.2 7.8 20.2 6.8 21.8 C5.5 22.8 5.6 24.4 7.0 24.6 C8.4 24.8 9.2 23.4 10.2 24.0 Z" fill="#FAF8F3" stroke="#181715" stroke-width="1.5" stroke-linejoin="round"/>
