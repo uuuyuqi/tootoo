@@ -8896,7 +8896,9 @@ function renderAlchemyStats() {
 
   const threeBody = (tok / 1.8e6).toFixed(1);
   const coffees = Math.max(0, Math.round(cost / 4.5));
-  const savedHours = (outTok / 2200).toFixed(1); // ~2200 tokens/hr thoughtful coding
+  const savedHoursVal = outTok / 2200; // ~2200 tokens/hr thoughtful coding
+  const savedHours = savedHoursVal.toFixed(1);
+  const savedWeeks = (savedHoursVal / 50).toFixed(1); // 5 days/wk * 10 hrs/day = 50 hrs/wk
   const readMult = tps > 0 ? (tps / 5.5).toFixed(1) : "—";
 
   grid.innerHTML = `
@@ -8913,7 +8915,7 @@ function renderAlchemyStats() {
     <div class="alchemy-tile">
       <div class="al-k">⌨️ 替你省下手敲时长</div>
       <div class="al-v">${savedHours} <span style="font-size:11px;color:var(--muted)">小时</span></div>
-      <div class="al-sub">基于 ${fmtNum(outTok)} 真实输出</div>
+      <div class="al-sub">上古手搓时代要 ${savedWeeks} 周</div>
     </div>
     <div class="alchemy-tile">
       <div class="al-k">🚀 超越人类阅读速度</div>
