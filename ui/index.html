@@ -1272,88 +1272,78 @@
     100% { opacity: 0; transform: translateY(-8px) scale(1.1); }
   }
 
-  /* Collectible surprise Gacha Capsule dropped during patrol */
+  /* Collectible surprise Gacha Capsule gently brought back after patrol completes */
   .patrol-capsule {
     position: fixed;
-    top: 38px;
+    top: 14px;
+    left: 16px;
     z-index: 1002;
     cursor: pointer;
     display: inline-flex;
-    flex-direction: column;
     align-items: center;
-    gap: 4px;
+    gap: 8px;
+    padding: 6px 11px 6px 8px;
+    border-radius: 999px;
+    background: var(--surface);
+    border: 1.5px solid var(--active-border);
+    box-shadow: 0 6px 20px rgba(23, 22, 20, 0.16);
     user-select: none;
     -webkit-user-select: none;
-    animation: capsuleDropBounce 0.72s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    animation: capsuleArrive 0.42s cubic-bezier(0.22, 1.25, 0.36, 1) forwards;
+    transition: transform 0.16s ease, box-shadow 0.16s ease;
+  }
+  .patrol-capsule:hover {
+    transform: translateY(-1.5px) scale(1.02);
+    box-shadow: 0 8px 24px color-mix(in srgb, var(--accent) 26%, rgba(23, 22, 20, 0.18));
   }
   .patrol-capsule .cap-orb {
-    width: 34px;
-    height: 34px;
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
     border-radius: 50%;
     position: relative;
-    background: linear-gradient(180deg, #E54826 0%, #E54826 48%, #181715 48%, #181715 54%, #FAF8F3 54%, #FAF8F3 100%);
-    border: 2px solid #181715;
-    box-shadow: 0 4px 16px rgba(245, 158, 11, 0.55), 0 0 0 3px rgba(245, 158, 11, 0.22);
-    animation: capsuleWiggle 1.2s ease-in-out 0.72s infinite;
-    transition: transform 0.16s ease;
-  }
-  .patrol-capsule:hover .cap-orb {
-    transform: scale(1.16);
-    box-shadow: 0 6px 20px rgba(229, 72, 38, 0.65), 0 0 0 4px rgba(245, 158, 11, 0.34);
+    background: linear-gradient(180deg, #E54826 0%, #E54826 48%, #181715 48%, #181715 55%, #FAF8F3 55%, #FAF8F3 100%);
+    border: 1.6px solid #181715;
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+    animation: capsuleWiggle 1.6s ease-in-out 0.45s infinite;
   }
   .patrol-capsule .cap-orb::before {
     content: "";
     position: absolute;
     left: 50%;
     top: 51%;
-    width: 9px;
-    height: 9px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     background: #F59E0B;
-    border: 2px solid #181715;
+    border: 1.4px solid #181715;
     transform: translate(-50%, -50%);
-  }
-  .patrol-capsule .cap-orb::after {
-    content: "";
-    position: absolute;
-    top: 4px;
-    left: 6px;
-    width: 8px;
-    height: 4px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.65);
-    transform: rotate(-28deg);
   }
   .patrol-capsule .cap-tag {
     font-family: var(--font-mono);
-    font-size: 9.5px;
-    font-weight: 800;
-    padding: 2px 7px;
-    border-radius: 999px;
-    background: var(--surface);
-    color: var(--accent);
-    border: 1px solid var(--active-border);
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.16);
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--ink);
     white-space: nowrap;
+  }
+  .patrol-capsule .cap-tag b {
+    color: var(--accent);
   }
   .patrol-capsule.fading {
     opacity: 0;
-    transform: translateY(10px) scale(0.8);
-    transition: opacity 0.35s ease, transform 0.35s ease;
+    transform: translateY(-6px) scale(0.94);
+    transition: opacity 0.32s ease, transform 0.32s ease;
   }
-  @keyframes capsuleDropBounce {
-    0%   { opacity: 0; transform: translate(-50%, -24px) scale(0.5) rotate(-25deg); }
-    45%  { opacity: 1; transform: translate(-50%, 16px) scale(1.08) rotate(12deg); }
-    70%  { opacity: 1; transform: translate(-50%, 2px) scale(0.96) rotate(-6deg); }
-    88%  { opacity: 1; transform: translate(-50%, 8px) scale(1.02) rotate(3deg); }
-    100% { opacity: 1; transform: translate(-50%, 6px) scale(1) rotate(0deg); }
+  @keyframes capsuleArrive {
+    0%   { opacity: 0; transform: translate(-12px, -4px) scale(0.84); }
+    100% { opacity: 1; transform: translate(0, 0) scale(1); }
   }
   @keyframes capsuleWiggle {
     0%, 100% { transform: rotate(0deg); }
-    20%      { transform: rotate(-10deg) translateY(-2px); }
-    40%      { transform: rotate(10deg) translateY(-2px); }
-    60%      { transform: rotate(-6deg); }
-    80%      { transform: rotate(4deg); }
+    18%      { transform: rotate(-10deg); }
+    36%      { transform: rotate(10deg); }
+    54%      { transform: rotate(-5deg); }
+    70%      { transform: rotate(0deg); }
   }
 
   /* ---- TooToo Arcade Modal ---- */
@@ -6020,52 +6010,48 @@ document.addEventListener("mousemove", (e) => {
   setTimeout(() => dot.remove(), 680);
 });
 
-// ---- Two-Way Bunny Patrol (Bottom L->R, then Top R->L) + Surprise Gacha Capsule ----
-function spawnPatrolCapsule(xPx) {
+// ---- Two-Way Bunny Patrol (Bottom L->R, then Top R->L) + Gentle Post-Patrol Capsule ----
+function spawnPatrolCapsule() {
+  document.querySelectorAll(".patrol-capsule").forEach(n => n.remove());
   const cap = document.createElement("div");
   cap.className = "patrol-capsule";
-  const clampedX = Math.max(76, Math.min(window.innerWidth - 76, xPx));
-  cap.style.left = clampedX + "px";
-  cap.innerHTML = `<div class="cap-orb"></div><span class="cap-tag">✨ 巡逻掉扭蛋! 点我 +1 币</span>`;
+  cap.innerHTML = `<div class="cap-orb"></div><span class="cap-tag">巡逻完成！TooToo 捡到 <b>1 颗算力扭蛋</b> · 点击收下</span>`;
   document.body.appendChild(cap);
-  playSfx("gold");
+  playSfx("cache");
 
   let collected = false;
   const cleanupTimer = setTimeout(() => {
     if (collected) return;
     cap.classList.add("fading");
-    setTimeout(() => cap.remove(), 380);
-  }, 12000);
+    setTimeout(() => cap.remove(), 340);
+  }, 10000);
 
   cap.addEventListener("click", (e) => {
     e.stopPropagation();
     if (collected) return;
     collected = true;
     clearTimeout(cleanupTimer);
-    spawnConfettiBurst(cap, 24);
-    activateStardust(3600);
-    playSfx("ssr");
+    spawnConfettiBurst(cap, 18);
+    playSfx("gold");
 
-    // Credit +1 bonus gacha coin for today (persisted & synced with Gacha HUD)
     const bKey = "tootoo_gacha_bonus_" + getTodayKey();
     let bonus = 0;
     try { bonus = Math.max(0, Number(localStorage.getItem(bKey) || 0) || 0); } catch {}
     try { localStorage.setItem(bKey, String(bonus + 1)); } catch {}
     if (typeof renderGachaMeta === "function") renderGachaMeta();
 
-    // Floating celebratory toast
-    document.querySelectorAll(".levelup-toast").forEach(n => n.remove());
-    const toast = document.createElement("div");
-    toast.className = "levelup-toast";
-    toast.textContent = "🥚 巡逻奇遇！拾取算力扭蛋 · 算力币 +1！";
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 2900);
-
-    cap.remove();
+    cap.innerHTML = `<div class="cap-orb" style="animation:none"></div><span class="cap-tag">已收入囊中 · <b>算力币 +1</b> ✨</span>`;
+    setTimeout(() => {
+      cap.classList.add("fading");
+      setTimeout(() => cap.remove(), 320);
+    }, 1100);
   });
 }
 
+let patrolRunning = false;
 function summonBunnyPatrol() {
+  if (patrolRunning) return;
+  patrolRunning = true;
   const tier = getBunnyTier(getEffectiveTodayTokens());
 
   // Leg 1: Bottom edge Left -> Right
@@ -6090,13 +6076,12 @@ function summonBunnyPatrol() {
   });
   setTimeout(() => botRunner.remove(), 3800);
 
-  // Leg 2: Top edge Right -> Left return patrol!
+  // Leg 2: Top edge Right -> Left return patrol
   setTimeout(() => {
     const topRunner = document.createElement("div");
     topRunner.className = "patrol-bunny top-return";
     topRunner.innerHTML = `<div class="pb-flip"><div class="pb-inner"><svg viewBox="0 0 36 36" fill="none" style="width:100%;height:100%">${tier.svg}</svg></div></div>`;
     document.body.appendChild(topRunner);
-    playSfx("token");
 
     const topPrints = ["🐾", "✦", "🥕", "🐾"];
     topPrints.forEach((glyph, i) => {
@@ -6112,29 +6097,34 @@ function summonBunnyPatrol() {
       }, 600 + i * 700);
     });
 
-    // Surprise gacha capsule drop: guaranteed on first-ever patrol, ~32% chance afterwards (up to 5/day)
-    let isFirst = true;
-    try { isFirst = localStorage.getItem("tootoo_patrol_egg_seen") !== "1"; } catch {}
-    const bKey = "tootoo_gacha_bonus_" + getTodayKey();
-    let todayBonus = 0;
-    try { todayBonus = Math.max(0, Number(localStorage.getItem(bKey) || 0) || 0); } catch {}
-    const shouldDrop = isFirst || (todayBonus < 5 && Math.random() < 0.32);
+    // Only AFTER patrol finishes returning to top-left:
+    // First-ever patrol guarantees 1 capsule; afterwards ~18% chance (up to 3/day); most patrols simply finish quietly!
+    setTimeout(() => {
+      topRunner.remove();
+      patrolRunning = false;
 
-    if (shouldDrop) {
-      if (isFirst) {
-        try { localStorage.setItem("tootoo_patrol_egg_seen", "1"); } catch {}
+      const bunny = document.getElementById("bunnyMascot");
+      if (bunny) {
+        bunny.classList.remove("nibble");
+        void bunny.offsetWidth;
+        bunny.classList.add("nibble");
+        setTimeout(() => bunny.classList.remove("nibble"), 400);
       }
-      const dropDelay = 1250 + Math.round(Math.random() * 900);
-      setTimeout(() => {
-        const r = topRunner.getBoundingClientRect();
-        const dropX = (r.left > 40 && r.left < window.innerWidth - 40)
-          ? r.left + 17
-          : window.innerWidth * (0.35 + Math.random() * 0.3);
-        spawnPatrolCapsule(dropX);
-      }, dropDelay);
-    }
 
-    setTimeout(() => topRunner.remove(), 3800);
+      let isFirst = true;
+      try { isFirst = localStorage.getItem("tootoo_patrol_egg_seen") !== "1"; } catch {}
+      const bKey = "tootoo_gacha_bonus_" + getTodayKey();
+      let todayBonus = 0;
+      try { todayBonus = Math.max(0, Number(localStorage.getItem(bKey) || 0) || 0); } catch {}
+      const foundEgg = isFirst || (todayBonus < 3 && Math.random() < 0.18);
+
+      if (foundEgg) {
+        if (isFirst) {
+          try { localStorage.setItem("tootoo_patrol_egg_seen", "1"); } catch {}
+        }
+        spawnPatrolCapsule();
+      }
+    }, 3650);
   }, 3650);
 }
 document.getElementById("arcPatrolBtn").addEventListener("click", summonBunnyPatrol);
