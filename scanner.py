@@ -88,6 +88,60 @@ def _save_evo_state(state: dict[str, Any]) -> None:
     except OSError:
         pass
 
+
+CARROT_STATE_FILE = os.path.join(CACHE_DIR, "carrot_state.json")
+
+
+def load_carrot_state() -> dict[str, Any]:
+    default: dict[str, Any] = {"days": {}, "collection": []}
+    try:
+        if os.path.exists(CARROT_STATE_FILE):
+            with open(CARROT_STATE_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, dict):
+                days = data.get("days") if isinstance(data.get("days"), dict) else {}
+                coll = data.get("collection") if isinstance(data.get("collection"), list) else []
+                clean_coll = sorted({int(x) for x in coll if isinstance(x, (int, float))})
+                return {"days": days, "collection": clean_coll}
+    except Exception:
+        pass
+    return default
+
+
+def save_carrot_state(patch: dict[str, Any]) -> dict[str, Any]:
+    cur = load_carrot_state()
+    day = str(patch.get("day") or "").strip()
+    if len(day) == 10 and day[4] == "-" and day[7] == "-":
+        d_ent = cur["days"].get(day)
+        if not isinstance(d_ent, dict):
+            d_ent = {"claimed": 0, "spent": 0, "bonus": 0}
+        for fld in ("claimed", "spent", "bonus"):
+            if fld in patch and patch[fld] is not None:
+                try:
+                    d_ent[fld] = max(0, int(patch[fld]))
+                except (TypeError, ValueError):
+                    pass
+        cur["days"][day] = d_ent
+        # Keep most recent 90 days
+        if len(cur["days"]) > 90:
+            for old_k in sorted(cur["days"].keys())[:-90]:
+                cur["days"].pop(old_k, None)
+    if isinstance(patch.get("collection"), list):
+        merged = set(cur["collection"])
+        for x in patch["collection"]:
+            if isinstance(x, (int, float)):
+                merged.add(int(x))
+        cur["collection"] = sorted(merged)
+    try:
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        tmp = CARROT_STATE_FILE + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(cur, f, ensure_ascii=False, indent=2)
+        os.replace(tmp, CARROT_STATE_FILE)
+    except OSError:
+        pass
+    return cur
+
 # Performance outlier guards & TTFT log-histogram parameters
 PERF_MIN_OUTPUT = 20
 PERF_MAX_SECONDS = 1800.0

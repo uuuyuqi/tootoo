@@ -5133,6 +5133,7 @@ window.__onPopoverOpen = () => {
   });
   if (state.data) {
     connectStream(true);
+    syncCarrotFromDisk();
     // If popover was idle >12s, silently refresh with top progress bar
     if (Date.now() - lastFetchTs > 12000) {
       fetchTelemetry(false);
@@ -6601,10 +6602,11 @@ function spawnPatrolCapsule() {
     if (debugState.active) {
       debugState.gachaCoins += 1;
     } else {
-      const bKey = "tootoo_gacha_bonus_" + getTodayKey();
-      let bonus = 0;
-      try { bonus = Math.max(0, Number(localStorage.getItem(bKey) || 0) || 0); } catch {}
-      try { localStorage.setItem(bKey, String(bonus + 1)); } catch {}
+      const dk = getDataDayKey();
+      const csNow = getGachaCoinState();
+      const nextBonus = csNow.bonus + 1;
+      try { localStorage.setItem("tootoo_gacha_bonus_" + dk, String(nextBonus)); } catch {}
+      persistCarrotPatch({ day: dk, bonus: nextBonus });
     }
     if (typeof renderGachaMeta === "function") renderGachaMeta();
 
@@ -8043,11 +8045,69 @@ const GACHA_POOL = [
   { id: 24, r: "R",  icon: "🎉", name: "提前下班预言兔", desc: "效率太高提前收工，快奖励自己吃顿好的！" },
 ];
 
+let carrotDiskState = { days: {}, collection: [] };
+
+async function syncCarrotFromDisk() {
+  try {
+    const r = await fetch("/api/carrot");
+    if (!r.ok) return;
+    const j = await r.json();
+    if (j && typeof j === "object") {
+      carrotDiskState = {
+        days: (j.days && typeof j.days === "object") ? j.days : {},
+        collection: Array.isArray(j.collection) ? j.collection : [],
+      };
+      // One-time backfill from localStorage into disk if disk doesn't have today's record yet
+      const dk = getDataDayKey();
+      const diskDay = carrotDiskState.days[dk];
+      const lsColl = (() => { try { const a = JSON.parse(localStorage.getItem("tootoo_gacha_coll") || "[]"); return Array.isArray(a) ? a : []; } catch { return []; } })();
+      const lsClaimed = (() => { try { const v = localStorage.getItem("tootoo_carrot_claimed_" + dk); return v !== null ? Math.max(0, Number(v) || 0) : null; } catch { return null; } })();
+      const lsSpent = (() => { try { return Math.max(0, Number(localStorage.getItem("tootoo_gacha_spent_" + dk) || 0) || 0); } catch { return 0; } })();
+      const lsBonus = (() => { try { return Math.max(0, Number(localStorage.getItem("tootoo_gacha_bonus_" + dk) || 0) || 0); } catch { return 0; } })();
+      if (!diskDay && (lsClaimed !== null || lsSpent > 0 || lsBonus > 0 || lsColl.length > 0)) {
+        persistCarrotPatch({
+          day: dk,
+          claimed: lsClaimed !== null ? lsClaimed : 0,
+          spent: lsSpent,
+          bonus: lsBonus,
+          collection: lsColl,
+        });
+      }
+      renderGachaMeta();
+    }
+  } catch {}
+}
+
+function persistCarrotPatch(patch) {
+  if (!patch || typeof patch !== "object") return;
+  if (patch.day) {
+    const cur = carrotDiskState.days[patch.day] || { claimed: 0, spent: 0, bonus: 0 };
+    if (patch.claimed != null) cur.claimed = Math.max(0, Number(patch.claimed) || 0);
+    if (patch.spent != null) cur.spent = Math.max(0, Number(patch.spent) || 0);
+    if (patch.bonus != null) cur.bonus = Math.max(0, Number(patch.bonus) || 0);
+    carrotDiskState.days[patch.day] = cur;
+  }
+  if (Array.isArray(patch.collection)) {
+    const merged = new Set([...(carrotDiskState.collection || []), ...patch.collection]);
+    carrotDiskState.collection = Array.from(merged);
+  }
+  try {
+    fetch("/api/carrot", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
+    }).catch(() => {});
+  } catch {}
+}
+
 function getRealGachaCollected() {
+  const fromDisk = Array.isArray(carrotDiskState.collection) ? carrotDiskState.collection : [];
+  let fromLs = [];
   try {
     const raw = JSON.parse(localStorage.getItem("tootoo_gacha_coll") || "[]");
-    return Array.isArray(raw) ? raw : [];
-  } catch { return []; }
+    if (Array.isArray(raw)) fromLs = raw;
+  } catch {}
+  return Array.from(new Set([...fromDisk, ...fromLs]));
 }
 
 function getGachaCollected() {
@@ -8062,37 +8122,49 @@ function getTodayKey() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+function getDataDayKey() {
+  if (state.data && typeof state.data.generated_at === "string" && state.data.generated_at.length >= 10) {
+    return state.data.generated_at.slice(0, 10);
+  }
+  return getTodayKey();
+}
+
 const CARROT_MINT_UNIT = 10e6; // 10M tokens = 1 萝卜币
 
 function getRealCarrotClaimed(todayKey, mintableTotal, realSpent, bonus) {
   const cKey = "tootoo_carrot_claimed_" + todayKey;
-  let stored = null;
+  const diskDay = carrotDiskState.days && carrotDiskState.days[todayKey];
+  const diskVal = (diskDay && typeof diskDay.claimed === "number") ? Math.max(0, diskDay.claimed) : null;
+  let lsVal = null;
   try {
     const raw = localStorage.getItem(cKey);
-    if (raw !== null) stored = Math.max(0, Number(raw) || 0);
+    if (raw !== null) lsVal = Math.max(0, Number(raw) || 0);
   } catch {}
-  if (stored === null) {
+  if (diskVal === null && lsVal === null) {
     // First time after upgrade: infer minimum claimed if user already spent beyond daily 3 + patrol bonus
     const inferred = Math.min(mintableTotal, Math.max(0, realSpent - 3 - bonus));
     return { claimed: inferred, cKey };
   }
-  return { claimed: Math.min(mintableTotal, stored), cKey };
+  return { claimed: Math.max(diskVal || 0, lsVal || 0), cKey };
 }
 
 function getGachaCoinState() {
   const todayTok = getEffectiveTodayTokens();
-  const todayKey = getTodayKey();
+  const todayKey = getDataDayKey();
+  const diskDay = (carrotDiskState.days && carrotDiskState.days[todayKey]) || null;
   const bKey = "tootoo_gacha_bonus_" + todayKey;
-  let bonus = 0;
-  try { bonus = Math.max(0, Number(localStorage.getItem(bKey) || 0) || 0); } catch {}
+  let lsBonus = 0;
+  try { lsBonus = Math.max(0, Number(localStorage.getItem(bKey) || 0) || 0); } catch {}
+  const bonus = Math.max(lsBonus, (diskDay && Number(diskDay.bonus)) || 0);
   const key = "tootoo_gacha_spent_" + todayKey;
-  let realSpent = 0;
-  try { realSpent = Math.max(0, Number(localStorage.getItem(key) || 0) || 0); } catch {}
+  let lsSpent = 0;
+  try { lsSpent = Math.max(0, Number(localStorage.getItem(key) || 0) || 0); } catch {}
+  const realSpent = Math.max(lsSpent, (diskDay && Number(diskDay.spent)) || 0);
 
   const mintableTotal = Math.floor(todayTok / CARROT_MINT_UNIT);
   const { claimed: realClaimed, cKey } = getRealCarrotClaimed(todayKey, mintableTotal, realSpent, bonus);
   const claimed = (debugState.active && debugState.carrotClaimed != null)
-    ? Math.min(mintableTotal, debugState.carrotClaimed)
+    ? debugState.carrotClaimed
     : realClaimed;
   const claimable = Math.max(0, mintableTotal - claimed);
   const convertedTok = claimed * CARROT_MINT_UNIT;
@@ -8107,6 +8179,7 @@ function getGachaCoinState() {
   const balance = Math.max(0, earned - spent);
 
   return {
+    todayKey,
     todayTok,
     mintableTotal,
     claimed,
@@ -8134,6 +8207,7 @@ function claimCarrotCoins() {
     debugState.carrotClaimed = newClaimed;
   } else {
     try { localStorage.setItem(cs.cKey, String(newClaimed)); } catch {}
+    persistCarrotPatch({ day: cs.todayKey, claimed: newClaimed, spent: cs.realSpent, bonus: cs.bonus });
   }
   const btn = document.getElementById("carrotClaimBtn");
   if (btn) spawnConfettiBurst(btn, 20);
@@ -8323,7 +8397,9 @@ document.getElementById("gachaPullBtn").addEventListener("click", () => {
   if (debugState.active) {
     debugState.gachaSpent += 1;
   } else {
-    try { localStorage.setItem(cs.key, String(cs.realSpent + 1)); } catch {}
+    const nextSpent = cs.realSpent + 1;
+    try { localStorage.setItem(cs.key, String(nextSpent)); } catch {}
+    persistCarrotPatch({ day: cs.todayKey, claimed: cs.claimed, spent: nextSpent, bonus: cs.bonus });
   }
   renderGachaMeta();
 
@@ -8350,6 +8426,7 @@ document.getElementById("gachaPullBtn").addEventListener("click", () => {
       coll.push(pick.id);
       if (!debugState.active) {
         try { localStorage.setItem("tootoo_gacha_coll", JSON.stringify(coll)); } catch {}
+        persistCarrotPatch({ collection: coll });
       }
       renderGachaMeta();
     }
@@ -8551,6 +8628,7 @@ requestAnimationFrame(() => {
   syncSlidePill("popTabs", true);
 });
 postNative("getMenuBarFields");
+syncCarrotFromDisk();
 fetchTelemetry(false);
 </script>
 </body>

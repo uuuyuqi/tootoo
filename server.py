@@ -18,7 +18,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
 from pricing import sync_remote_pricing
-from scanner import build_telemetry, save_local_quota_config
+from scanner import build_telemetry, load_carrot_state, save_carrot_state, save_local_quota_config
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UI_FILE = os.path.join(BASE_DIR, "ui", "index.html")
@@ -130,6 +130,13 @@ class TooTooHandler(BaseHTTPRequestHandler):
                 self._send_json({"lines": []})
             return
 
+        if parsed.path == "/api/carrot":
+            try:
+                self._send_json(load_carrot_state())
+            except Exception as e:
+                self._send_json({"days": {}, "collection": [], "error": str(e)}, status=500)
+            return
+
         if parsed.path == "/api/pricing/refresh":
             try:
                 res = sync_remote_pricing(force=True)
@@ -202,6 +209,16 @@ class TooTooHandler(BaseHTTPRequestHandler):
                         entry["limit"] = float(limit_val)
                     lq = save_local_quota_config(tool, entry)
                 self._send_json({"ok": True, "local_quotas": lq})
+            except Exception as e:
+                self._send_json({"ok": False, "error": str(e)}, status=400)
+            return
+        if parsed.path == "/api/carrot":
+            try:
+                length = int(self.headers.get("Content-Length", "0") or "0")
+                raw = self.rfile.read(min(length, 65536))
+                body = json.loads(raw.decode("utf-8"))
+                saved = save_carrot_state(body if isinstance(body, dict) else {})
+                self._send_json({"ok": True, **saved})
             except Exception as e:
                 self._send_json({"ok": False, "error": str(e)}, status=400)
             return
