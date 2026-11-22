@@ -3257,11 +3257,28 @@
     pointer-events: none;
     z-index: 4;
   }
+  .home-stage-hud-left {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    pointer-events: none;
+  }
   .home-stage-hud-right {
     display: inline-flex;
     align-items: center;
     gap: 5px;
     pointer-events: none;
+  }
+  .home-stage-pill.weather-pill {
+    cursor: pointer;
+    background: rgba(18, 24, 38, 0.72);
+    border-color: rgba(186, 230, 253, 0.34);
+    color: #e0f2fe;
+    transition: filter 0.14s ease, transform 0.14s ease;
+  }
+  .home-stage-pill.weather-pill:hover {
+    filter: brightness(1.12);
+    transform: translateY(-1px);
   }
   .home-stage-pill {
     pointer-events: auto;
@@ -3487,8 +3504,88 @@
   .h-ripple-d1  { animation: homeRippleOut 3.2s ease-out 1.6s infinite; transform-box: fill-box; transform-origin: center; }
   .h-steam      { animation: homeSteamRise 3.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
   .h-steam-d1   { animation: homeSteamRise 3.4s ease-in-out 1.2s infinite; transform-box: fill-box; transform-origin: center; }
+  @keyframes homeRainFall {
+    0%   { transform: translate(12px, -30px); opacity: 0; }
+    15%  { opacity: 0.85; }
+    85%  { opacity: 0.78; }
+    100% { transform: translate(-24px, 168px); opacity: 0; }
+  }
+  @keyframes homeSnowFall {
+    0%   { transform: translate(0, -18px); opacity: 0; }
+    16%  { opacity: 0.92; }
+    50%  { transform: translate(14px, 76px); opacity: 0.95; }
+    88%  { opacity: 0.8; }
+    100% { transform: translate(-10px, 168px); opacity: 0; }
+  }
+  @keyframes homeWindGust {
+    0%   { transform: translateX(-70px); opacity: 0; }
+    24%  { opacity: 0.72; }
+    76%  { opacity: 0.62; }
+    100% { transform: translateX(130px); opacity: 0; }
+  }
+  @keyframes homeWindLeaf {
+    0%   { transform: translate(-24px, -12px) rotate(0deg); opacity: 0; }
+    18%  { opacity: 0.92; }
+    82%  { opacity: 0.85; }
+    100% { transform: translate(160px, 54px) rotate(320deg); opacity: 0; }
+  }
+  @keyframes homeCloudPass {
+    0%, 100% { transform: translateX(-10px); }
+    50%      { transform: translateX(16px); }
+  }
+  .h-rain       { animation: homeRainFall var(--dur, 0.92s) linear var(--del, 0s) infinite; }
+  .h-snow       { animation: homeSnowFall var(--dur, 4.4s) ease-in-out var(--del, 0s) infinite; }
+  .h-wind       { animation: homeWindGust var(--dur, 2.2s) ease-in-out var(--del, 0s) infinite; }
+  .h-wind-leaf  { animation: homeWindLeaf var(--dur, 3.1s) ease-in-out var(--del, 0s) infinite; transform-box: fill-box; transform-origin: center; }
+  .h-cloud-pass { animation: homeCloudPass 9.5s ease-in-out infinite; }
   .h-petal      { animation: homePetalFall 4.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
   .h-petal-d1   { animation: homePetalFall 5.4s ease-in-out 1.8s infinite; transform-box: fill-box; transform-origin: center; }
+  @keyframes bunnyShiver {
+    0%, 72%, 100% { transform: translateX(0); }
+    76% { transform: translateX(-0.7px); }
+    80% { transform: translateX(0.7px); }
+    84% { transform: translateX(-0.55px); }
+    88% { transform: translateX(0.55px); }
+    92% { transform: translateX(0); }
+  }
+  @keyframes bunnySneeze {
+    0%   { transform: scale(1) rotate(0deg); }
+    24%  { transform: scale(0.92, 1.1) translateY(-1.8px) rotate(-8deg); }
+    48%  { transform: scale(1.12, 0.88) translate(1.6px, 0.8px) rotate(9deg); }
+    72%  { transform: scale(0.97, 1.04) translateY(-0.5px) rotate(-3deg); }
+    100% { transform: scale(1) rotate(0deg); }
+  }
+  @keyframes bunnyDrinkSip {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    25%  { transform: translateY(0.8px) rotate(6deg) scale(1.02, 0.98); }
+    55%  { transform: translateY(-0.6px) rotate(-2deg) scale(0.99, 1.02); }
+    78%  { transform: translateY(0.7px) rotate(5deg) scale(1.02, 0.98); }
+  }
+  @keyframes bunnyWaterDrip {
+    0%   { transform: translateY(0); opacity: 0.92; }
+    70%  { opacity: 0.85; }
+    100% { transform: translateY(8.5px); opacity: 0; }
+  }
+  .home-stage-svg .bunny-shiver {
+    animation: bunnyShiver 2.5s ease-in-out infinite;
+    transform-box: fill-box;
+    transform-origin: center bottom;
+  }
+  .home-stage-svg .bunny-sneeze {
+    animation: bunnySneeze 0.56s cubic-bezier(0.22, 1.35, 0.36, 1);
+    transform-box: fill-box;
+    transform-origin: center bottom;
+  }
+  .home-stage-svg .bunny-drink {
+    animation: bunnyDrinkSip 0.92s ease-in-out;
+    transform-box: fill-box;
+    transform-origin: center bottom;
+  }
+  .h-drip    { animation: bunnyWaterDrip 1.55s ease-in infinite; }
+  .h-drip-d1 { animation: bunnyWaterDrip 1.85s ease-in 0.72s infinite; }
+  .home-hot-table { cursor: pointer; transition: filter 0.16s ease; }
+  .home-hot-table:hover { filter: drop-shadow(0 0 5px rgba(251, 191, 36, 0.65)); }
+  .home-hot-table.need-warm .ht-beacon { animation: homePulseGlow 1.35s ease-in-out infinite; }
 
   .home-tabs {
     display: grid;
@@ -5662,7 +5759,10 @@
 
     <div class="home-stage-wrap" id="homeStageWrap">
       <div class="home-stage-hud">
-        <span class="home-stage-pill" id="homeStageTitle">🛣️ 露宿马路边</span>
+        <span class="home-stage-hud-left">
+          <span class="home-stage-pill" id="homeStageTitle">🛣️ 露宿马路边</span>
+          <button class="home-stage-pill weather-pill" id="homeStageWeatherPill" style="display:none" title="当前本地实时天气（点击刷新）"></button>
+        </span>
         <span class="home-stage-hud-right">
           <button class="home-stage-pill preview-pill" id="homePreviewExitBtn" style="display:none" title="点击退出试看预览，回到当前真实装扮">👁 预览中 · 退出</button>
           <span class="home-stage-pill secret-pill" id="homeStageSecretPill" style="display:none">✦ 隐藏臻品</span>
@@ -5692,6 +5792,16 @@
         <button class="dbg-mini-btn" id="dbgHomePlus3000Btn">💎 +3000币</button>
         <button class="dbg-mini-btn" id="dbgHomeUnlockAllBtn">🔑 沙盒全买全解锁</button>
         <button class="dbg-mini-btn" id="dbgHomeResetCheckinBtn">📅 重置临时签到</button>
+      </div>
+      <div class="dbg-inline-row" id="dbgWeatherChips" style="margin-top:4px">
+        <span class="dbg-tag">🌦 模拟天气(前6套房生效):</span>
+        <button class="dbg-mini-btn on" data-w="real">真实</button>
+        <button class="dbg-mini-btn" data-w="sunny">☀️ 晴天</button>
+        <button class="dbg-mini-btn" data-w="cloudy">⛅ 多云</button>
+        <button class="dbg-mini-btn" data-w="overcast">☁️ 阴天</button>
+        <button class="dbg-mini-btn" data-w="windy">🍃 刮风</button>
+        <button class="dbg-mini-btn" data-w="rain">🌧️ 下雨</button>
+        <button class="dbg-mini-btn" data-w="snow">❄️ 下雪</button>
       </div>
     </div>
   </div>
@@ -12845,49 +12955,94 @@ function renderHouseBackdropSvg(houseId) {
     case "wormhole":
       return `
         <defs>
-          <radialGradient id="hWorm" cx="50%" cy="40%" r="62%">
-            <stop offset="0%" stop-color="#2e1065"/>
-            <stop offset="46%" stop-color="#140c2e"/>
+          <radialGradient id="hWorm" cx="50%" cy="38%" r="64%">
+            <stop offset="0%" stop-color="#311068"/>
+            <stop offset="44%" stop-color="#140b2e"/>
             <stop offset="100%" stop-color="#03020a"/>
           </radialGradient>
+          <radialGradient id="hWormLensing" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#fef08a" stop-opacity="0.45"/>
+            <stop offset="42%" stop-color="#a855f7" stop-opacity="0.28"/>
+            <stop offset="100%" stop-color="#03020a" stop-opacity="0"/>
+          </radialGradient>
+          <linearGradient id="hWormFloor" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#180d36"/>
+            <stop offset="42%" stop-color="#0d0720"/>
+            <stop offset="100%" stop-color="#04020c"/>
+          </linearGradient>
+          <radialGradient id="hWormRefl" cx="50%" cy="0%" r="68%">
+            <stop offset="0%" stop-color="#fbbf24" stop-opacity="0.26"/>
+            <stop offset="42%" stop-color="#a855f7" stop-opacity="0.22"/>
+            <stop offset="100%" stop-color="#04020c" stop-opacity="0"/>
+          </radialGradient>
+          <linearGradient id="hWormBridge" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#3b1d7a" stop-opacity="0.58"/>
+            <stop offset="55%" stop-color="#1e1042" stop-opacity="0.42"/>
+            <stop offset="100%" stop-color="#090418" stop-opacity="0.18"/>
+          </linearGradient>
+          <linearGradient id="hWormRail" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#fef08a" stop-opacity="0.9"/>
+            <stop offset="45%" stop-color="#c084fc" stop-opacity="0.72"/>
+            <stop offset="100%" stop-color="#22d3ee" stop-opacity="0.25"/>
+          </linearGradient>
         </defs>
         <rect width="420" height="208" fill="url(#hWorm)"/>
-        <!-- Deep cosmos twinkling stars -->
-        <circle cx="88" cy="30" r="1.5" fill="#fde047" class="h-twinkle"/>
-        <circle cx="332" cy="26" r="1.6" fill="#22d3ee" class="h-twinkle-d1"/>
-        <circle cx="142" cy="22" r="1.2" fill="#f472b6" class="h-twinkle-d2"/>
-        <circle cx="282" cy="34" r="1.3" fill="#fff" class="h-twinkle"/>
-        <circle cx="48" cy="116" r="1.2" fill="#c084fc" class="h-twinkle-d1"/>
-        <circle cx="372" cy="122" r="1.2" fill="#fde047" class="h-twinkle-d2"/>
-        <!-- Relativistic Gargantua Wormhole Vortex -->
-        <g filter="url(#hsGlowMd)">
-          <ellipse cx="210" cy="76" rx="124" ry="50" fill="none" stroke="#7c3aed" stroke-width="3" opacity="0.34"/>
-        </g>
-        <g class="h-spin-slow">
-          <ellipse cx="210" cy="76" rx="116" ry="46" fill="none" stroke="#a855f7" stroke-width="2" stroke-dasharray="16 8" opacity="0.82"/>
-          <ellipse cx="210" cy="76" rx="90" ry="35" fill="none" stroke="#22d3ee" stroke-width="1.8" stroke-dasharray="10 6" opacity="0.86"/>
-        </g>
-        <g class="h-spin-rev">
-          <ellipse cx="210" cy="76" rx="64" ry="24" fill="none" stroke="#fbbf24" stroke-width="2.1" stroke-dasharray="18 5" opacity="0.92"/>
-        </g>
-        <!-- Glowing photon ring & dark singularity event horizon -->
-        <circle cx="210" cy="76" r="22" fill="url(#hsBlackHole)" filter="url(#hsGlowSm)"/>
-        <ellipse cx="210" cy="76" rx="44" ry="8" fill="none" stroke="#fef08a" stroke-width="2" opacity="0.88" filter="url(#hsGlowSm)"/>
-        <!-- Twin levitating faceted obsidian-gold crystal obelisks -->
+        <!-- Subtle cosmic nebula wisps & starfield -->
+        <ellipse cx="144" cy="48" rx="88" ry="22" transform="rotate(-14 144 48)" fill="#7c3aed" opacity="0.14"/>
+        <ellipse cx="294" cy="52" rx="82" ry="20" transform="rotate(12 294 52)" fill="#06b6d4" opacity="0.1"/>
+        <circle cx="88" cy="28" r="1.5" fill="#fde047" class="h-twinkle"/>
+        <circle cx="332" cy="24" r="1.6" fill="#22d3ee" class="h-twinkle-d1"/>
+        <circle cx="142" cy="20" r="1.2" fill="#f472b6" class="h-twinkle-d2"/>
+        <circle cx="282" cy="30" r="1.3" fill="#fff" class="h-twinkle"/>
+        <circle cx="104" cy="116" r="1.1" fill="#c084fc" class="h-twinkle-d1"/>
+        <circle cx="320" cy="114" r="1.2" fill="#fde047" class="h-twinkle-d2"/>
+        <!-- Gargantua Relativistic Wormhole (non-clipping flowing orbital accretion rings) -->
+        <ellipse cx="210" cy="74" rx="124" ry="44" fill="url(#hWormLensing)"/>
+        <ellipse cx="210" cy="74" rx="116" ry="38" fill="none" stroke="#7c3aed" stroke-width="2.4" opacity="0.34"/>
+        <ellipse cx="210" cy="74" rx="110" ry="34" fill="none" stroke="#a855f7" stroke-width="1.6" stroke-dasharray="22 10 8 10" opacity="0.82" class="h-flow"/>
+        <ellipse cx="210" cy="74" rx="88" ry="25" fill="none" stroke="#22d3ee" stroke-width="1.5" stroke-dasharray="16 8 6 8" opacity="0.82" class="h-flow-rev"/>
+        <ellipse cx="210" cy="74" rx="64" ry="17" fill="none" stroke="#fbbf24" stroke-width="1.8" stroke-dasharray="20 6" opacity="0.92" class="h-flow"/>
+        <!-- Upper & lower gravitational-lensed golden photon arcs -->
+        <path d="M180 72 A30 28 0 0 1 240 72" fill="none" stroke="#fde68a" stroke-width="2.2" opacity="0.72" filter="url(#hsGlowSm)"/>
+        <path d="M184 78 A26 22 0 0 0 236 78" fill="none" stroke="#f59e0b" stroke-width="1.8" opacity="0.62" filter="url(#hsGlowSm)"/>
+        <!-- Event horizon singularity & blazing equatorial accretion band -->
+        <circle cx="210" cy="74" r="21" fill="url(#hsBlackHole)" filter="url(#hsGlowSm)"/>
+        <ellipse cx="210" cy="74" rx="50" ry="7.5" fill="none" stroke="#fef08a" stroke-width="2.2" opacity="0.92" filter="url(#hsGlowSm)"/>
+        <path d="M161 75 A50 7.5 0 0 0 259 75" fill="none" stroke="#ffffff" stroke-width="1.1" opacity="0.85"/>
+        <!-- Twin levitating faceted obsidian-gold crystal obelisks with base aura -->
+        <ellipse cx="52" cy="134" rx="16" ry="3.4" fill="#22d3ee" opacity="0.22" class="h-pulse"/>
         <g class="h-float">
           <polygon points="52,32 66,68 52,108 38,68" fill="url(#hsObsidian)" stroke="#22d3ee" stroke-width="1.3"/>
-          <polygon points="52,32 66,68 52,74" fill="#38bdf8" opacity="0.32"/>
-          <line x1="52" y1="36" x2="52" y2="102" stroke="#fef08a" stroke-width="0.9" opacity="0.7"/>
+          <polygon points="52,32 66,68 52,74" fill="#38bdf8" opacity="0.34"/>
+          <line x1="52" y1="36" x2="52" y2="102" stroke="#fef08a" stroke-width="0.9" opacity="0.78"/>
         </g>
+        <ellipse cx="368" cy="134" rx="16" ry="3.4" fill="#f472b6" opacity="0.22" class="h-pulse"/>
         <g class="h-float-slow">
           <polygon points="368,36 382,72 368,112 354,72" fill="url(#hsObsidian)" stroke="#f472b6" stroke-width="1.3"/>
-          <polygon points="368,36 382,72 368,78" fill="#ec4899" opacity="0.32"/>
-          <line x1="368" y1="40" x2="368" y2="106" stroke="#fef08a" stroke-width="0.9" opacity="0.7"/>
+          <polygon points="368,36 382,72 368,78" fill="#ec4899" opacity="0.34"/>
+          <line x1="368" y1="40" x2="368" y2="106" stroke="#fef08a" stroke-width="0.9" opacity="0.78"/>
         </g>
-        <!-- Quantum glass light-bridge floor -->
-        <polygon points="0,148 420,148 420,208 0,208" fill="#090516"/>
-        <line x1="0" y1="148" x2="420" y2="148" stroke="#c084fc" stroke-width="2.2" filter="url(#hsGlowSm)"/>
-        <line x1="36" y1="176" x2="384" y2="176" stroke="#22d3ee" stroke-width="1.1" opacity="0.48" stroke-dasharray="10 8" class="h-flow"/>
+        <!-- Perspective Obsidian-Glass Quantum Light-Bridge Deck -->
+        <polygon points="0,148 420,148 420,208 0,208" fill="url(#hWormFloor)"/>
+        <!-- Central mirror reflection of the golden-violet wormhole -->
+        <ellipse cx="210" cy="150" rx="126" ry="44" fill="url(#hWormRefl)"/>
+        <!-- Architectural 1-point perspective light-bridge walkway -->
+        <polygon points="134,148 286,148 358,208 62,208" fill="url(#hWormBridge)"/>
+        <!-- Perspective chamfered rails & outer deck ribs -->
+        <line x1="134" y1="148" x2="62" y2="208" stroke="url(#hWormRail)" stroke-width="1.5"/>
+        <line x1="286" y1="148" x2="358" y2="208" stroke="url(#hWormRail)" stroke-width="1.5"/>
+        <line x1="78" y1="148" x2="0" y2="188" stroke="#7c3aed" stroke-width="0.9" opacity="0.38"/>
+        <line x1="342" y1="148" x2="420" y2="188" stroke="#7c3aed" stroke-width="0.9" opacity="0.38"/>
+        <!-- Subtle recessed transverse light inlays on the bridge -->
+        <line x1="115" y1="164" x2="305" y2="164" stroke="#a855f7" stroke-width="0.85" opacity="0.34"/>
+        <line x1="88" y1="186" x2="332" y2="186" stroke="#22d3ee" stroke-width="0.85" opacity="0.28"/>
+        <!-- Tiny luminous quantum diamond markers along bridge center -->
+        <polygon points="210,154 214,157.5 210,161 206,157.5" fill="#fef08a" opacity="0.58" class="h-twinkle"/>
+        <polygon points="210,171 215,175.5 210,180 205,175.5" fill="#c084fc" opacity="0.48" class="h-twinkle-d1"/>
+        <polygon points="210,192 216,197 210,202 204,197" fill="#38bdf8" opacity="0.38" class="h-twinkle-d2"/>
+        <!-- Crisp glowing horizon balustrade -->
+        <line x1="0" y1="148" x2="420" y2="148" stroke="#c084fc" stroke-width="2" filter="url(#hsGlowSm)"/>
+        <line x1="128" y1="148" x2="292" y2="148" stroke="#fef08a" stroke-width="1.2" opacity="0.85"/>
       `;
     case "secret_palace":
       return `
@@ -13774,27 +13929,58 @@ function walkHomeBunnyTo(targetX, targetY, rawClickY = targetY) {
   const view = getEffectiveStageViewState();
   const house = HOME_HOUSES.find(x => x.id === view.houseId) || HOME_HOUSES[0];
   const isStarFloor = house.slots.includes("floor") && (view.decor.floor === "starlight_floor" || view.decor.floor === "secret_prism_mirror");
+  const hotTbl = getHomeHotTableInfo(house.id);
+
+  // Check if user clicked the cozy hot-water table (from pot onward)
+  const clickedHotTable = !!(
+    hotTbl &&
+    Math.abs(targetX - hotTbl.x) <= 25 &&
+    Math.abs(rawClickY - (hotTbl.y - 11)) <= 24
+  );
 
   // Clamp to natural walkable room bounds
   let tx = Math.max(46, Math.min(374, targetX));
   let ty = Math.max(154, Math.min(198, targetY));
-  // If user clicked directly on sofa/bed/throne cushion above the floor line, let bunny hop nicely onto it!
-  if (rawClickY >= 120 && rawClickY < 156 && tx <= 148 && house.slots.includes("bed") && view.decor.bed) {
+  if (clickedHotTable) {
+    tx = hotTbl.standX;
+    ty = hotTbl.standY;
+  } else if (house.id === "pot" && rawClickY >= 88 && rawClickY < 166 && tx >= 170 && tx <= 250) {
+    // Clicked inside the warm terracotta pot arch -> walk right into the cozy shelter!
+    tx = Math.max(182, Math.min(214, tx));
+    ty = 162;
+  } else if (rawClickY >= 120 && rawClickY < 156 && tx <= 148 && house.slots.includes("bed") && view.decor.bed) {
+    // Clicked directly on sofa/bed/throne cushion above the floor line
     ty = 156;
   }
 
-  spawnStageWalkRing(tx, ty, isStarFloor);
+  spawnStageWalkRing(clickedHotTable ? hotTbl.x : tx, clickedHotTable ? hotTbl.y : ty, isStarFloor);
 
   const sx = homeBunnyPos.x;
   const sy = homeBunnyPos.y;
   const dist = Math.hypot(tx - sx, ty - sy);
 
+  // Clicked right on hot-water table when already standing beside it -> drink right away!
+  if (clickedHotTable && dist < 18) {
+    stopHomeBunnyWalk();
+    homeBunnyPos.x = tx;
+    homeBunnyPos.y = ty;
+    homeBunnyPos.facing = hotTbl.facing;
+    updateHomeBunnyTransformDom();
+    triggerDrinkHotWater(hotTbl);
+    return;
+  }
+
   // Clicked right on TooToo itself -> affectionate pet twirl!
-  if (dist < 24 && Math.abs(rawClickY - (sy - 36)) < 46) {
+  if (!clickedHotTable && dist < 24 && Math.abs(rawClickY - (sy - 36)) < 46) {
     stopHomeBunnyWalk();
     renderHomeStage(null, true);
     spawnStageParticles(["❤️", "✨", "🥕", "✦"], (sx / 420) * 100, ((sy - 42) / 208) * 100);
-    const petLines = ["❤️ 摸摸头好开心！", "🥕 今天也要一起冲算力！", "✨ 兔兔在新家超幸福～", "🐾 点哪里兔兔就跳去哪里哦！"];
+    const cond = homeBunnyClimate.condition;
+    const petLines = cond
+      ? (cond === "wet"
+        ? ["💧 身上湿漉漉的～快点小桌子带我喝热水！", "🤧 摸摸湿耳朵，好想喝口热水呀～"]
+        : ["❄️ 耳朵上顶着积雪凉冰冰的～去喝口热水吧！", "🤧 抖抖雪花，好想喝杯热水暖暖～"])
+      : ["❤️ 摸摸头好开心！", "🥕 今天也要一起冲算力！", "✨ 兔兔在新家超幸福～", "🐾 点哪里兔兔就跳去哪里哦！"];
     showHomeStageBubble(petLines[Math.floor(Math.random() * petLines.length)]);
     playSfx("token");
     return;
@@ -13836,12 +14022,544 @@ function walkHomeBunnyTo(targetX, targetY, rawClickY = targetY) {
       homeBunnyPos.y = ty;
       homeBunnyPos.hopY = 0;
       homeBunnyPos.raf = null;
+      if (clickedHotTable) homeBunnyPos.facing = hotTbl.facing;
       updateHomeBunnyTransformDom();
       if (isStarFloor) spawnStageWalkRing(tx, ty, true);
-      triggerHomeSpotReaction(tx, ty, rawClickY);
+      if (clickedHotTable) {
+        triggerDrinkHotWater(hotTbl);
+      } else {
+        const gotExposed = syncHomeBunnyClimate(true);
+        if (!gotExposed) {
+          triggerHomeSpotReaction(tx, ty, rawClickY);
+        }
+      }
     }
   };
   homeBunnyPos.raf = requestAnimationFrame(step);
+}
+
+// ---- Outdoor Rain/Snow Exposure, Wet/Snowy Overlays, Sneezing & Hot-Water Table ----
+const homeBunnyClimate = {
+  condition: null, // null | "wet" | "snowy"
+  sneezeTimer: null,
+  isDrinking: false,
+};
+
+function getHomeHotTableInfo(houseId) {
+  if (!houseId || houseId === "street") return null;
+  if (houseId === "pot") {
+    // Cozy warm stump table tucked right inside the sheltered flowerpot arch
+    return { x: 234, y: 159, standX: 198, standY: 162, facing: 1, style: "stump" };
+  }
+  const styleMap = {
+    cardboard: "crate",
+    treehole: "stump",
+    heanju: "wood",
+    xixi: "tea",
+    atlantis: "marble",
+    rocket: "cyber",
+    wormhole: "cyber",
+    secret_palace: "celestial",
+  };
+  // Cleanly positioned between left furniture (x<=144) and center bunny (x=210)
+  return { x: 171, y: 157, standX: 199, standY: 164, facing: -1, style: styleMap[houseId] || "wood" };
+}
+
+function isHomeBunnyOutdoors(houseId, x = homeBunnyPos.x, y = homeBunnyPos.y) {
+  if (!HOME_WEATHER_HOUSES.has(houseId)) return false;
+  if (houseId === "street") return true;
+  if (houseId === "pot") {
+    // Inside the arched terracotta shelter: x in [168..252], y <= 170; meadow outside is exposed!
+    return x < 168 || x > 252 || y > 170;
+  }
+  return false;
+}
+
+function renderHomeHotTableSvg(houseId, needsWarm = false) {
+  const tbl = getHomeHotTableInfo(houseId);
+  if (!tbl) return "";
+  const { x, y, style } = tbl;
+
+  let tableArt = "";
+  if (style === "stump") {
+    tableArt = `
+      <ellipse cx="0" cy="2" rx="13" ry="3.2" fill="rgba(24,14,6,0.22)"/>
+      <path d="M-9 1 L-10 -12 L10 -12 L9 1 Z" fill="#92400e" stroke="#451a03" stroke-width="1"/>
+      <line x1="-4" y1="-9" x2="-4" y2="-1" stroke="#78350f" stroke-width="0.9" opacity="0.65"/>
+      <line x1="4" y1="-10" x2="3" y2="-2" stroke="#78350f" stroke-width="0.9" opacity="0.65"/>
+      <ellipse cx="0" cy="-12" rx="11.5" ry="3.4" fill="#d97706" stroke="#78350f" stroke-width="1"/>
+      <ellipse cx="0" cy="-12" rx="7.5" ry="2" fill="#fde68a" opacity="0.72"/>
+    `;
+  } else if (style === "crate") {
+    tableArt = `
+      <ellipse cx="0" cy="2" rx="14" ry="3.2" fill="rgba(24,14,6,0.2)"/>
+      <rect x="-12" y="-13" width="24" height="14" rx="1.8" fill="#c99b63" stroke="#785028" stroke-width="1.1"/>
+      <line x1="-12" y1="-7" x2="12" y2="-7" stroke="#966a3c" stroke-width="0.9"/>
+      <rect x="-13.5" y="-15" width="27" height="3.2" rx="1.2" fill="#deb98c" stroke="#785028" stroke-width="1"/>
+    `;
+  } else if (style === "tea") {
+    tableArt = `
+      <ellipse cx="0" cy="2" rx="15" ry="3.4" fill="rgba(24,18,12,0.18)"/>
+      <rect x="-10" y="-12" width="2.2" height="13" rx="1" fill="#5c2d0e"/>
+      <rect x="7.8" y="-12" width="2.2" height="13" rx="1" fill="#5c2d0e"/>
+      <rect x="-13.5" y="-15" width="27" height="3.6" rx="1.6" fill="#78350f" stroke="#451a03" stroke-width="0.9"/>
+      <rect x="-12" y="-14.4" width="24" height="1.2" rx="0.6" fill="#d97706" opacity="0.45"/>
+    `;
+  } else if (style === "marble") {
+    tableArt = `
+      <ellipse cx="0" cy="2" rx="14" ry="3.4" fill="rgba(6,24,42,0.28)"/>
+      <rect x="-3" y="-12" width="6" height="13" rx="1.5" fill="#e2e8f0" stroke="#94a3b8" stroke-width="0.8"/>
+      <ellipse cx="0" cy="1" rx="8.5" ry="2.2" fill="#cbd5e1" stroke="#fbbf24" stroke-width="0.7"/>
+      <ellipse cx="0" cy="-13" rx="13.5" ry="3.5" fill="#f8fafc" stroke="#fbbf24" stroke-width="1"/>
+    `;
+  } else if (style === "cyber") {
+    tableArt = `
+      <ellipse cx="0" cy="2" rx="14" ry="3.2" fill="rgba(34,211,238,0.2)"/>
+      <path d="M-9 1 L-5 -12 M9 1 L5 -12" stroke="#64748b" stroke-width="2" stroke-linecap="round"/>
+      <ellipse cx="0" cy="-13" rx="13.5" ry="3.3" fill="#1e293b" stroke="#38bdf8" stroke-width="1.1"/>
+      <ellipse cx="0" cy="-13" rx="9" ry="1.8" fill="#0f172a" stroke="#c084fc" stroke-width="0.6" opacity="0.75"/>
+    `;
+  } else if (style === "celestial") {
+    tableArt = `
+      <ellipse cx="0" cy="2" rx="14.5" ry="3.4" fill="rgba(250,204,21,0.22)"/>
+      <rect x="-2.4" y="-12" width="4.8" height="13" rx="1.2" fill="url(#hsGoldV)"/>
+      <ellipse cx="0" cy="1" rx="8.5" ry="2.2" fill="url(#hsGoldH)"/>
+      <ellipse cx="0" cy="-13" rx="13.5" ry="3.5" fill="#fffbeb" stroke="#f59e0b" stroke-width="1.1"/>
+    `;
+  } else {
+    // Cozy warm birch wood side table
+    tableArt = `
+      <ellipse cx="0" cy="2" rx="14.5" ry="3.2" fill="rgba(24,18,12,0.16)"/>
+      <line x1="-9.5" y1="-12" x2="-11" y2="1.5" stroke="#92400e" stroke-width="2" stroke-linecap="round"/>
+      <line x1="9.5" y1="-12" x2="11" y2="1.5" stroke="#92400e" stroke-width="2" stroke-linecap="round"/>
+      <rect x="-13.5" y="-15" width="27" height="3.6" rx="1.8" fill="#e5b887" stroke="#92400e" stroke-width="0.95"/>
+    `;
+  }
+
+  // Ceramic steaming hot-water mug + coaster sitting on the tabletop
+  const mugCup = `
+    <ellipse cx="1" cy="-14.2" rx="6.2" ry="1.6" fill="#fef3c7" opacity="0.78"/>
+    <path d="M5.4 -21.2 C8.5 -21.2 8.5 -16.8 5.4 -16.8" fill="none" stroke="#fff7ed" stroke-width="1.45" stroke-linecap="round"/>
+    <path d="M-3.8 -22.5 L5.8 -22.5 L5.0 -15.4 Q1 -14.2 -3.0 -15.4 Z" fill="#fff7ed" stroke="#ea580c" stroke-width="1"/>
+    <ellipse cx="1" cy="-22.5" rx="4.8" ry="1.35" fill="#fed7aa" stroke="#ea580c" stroke-width="0.8"/>
+    <ellipse cx="1" cy="-22.4" rx="3.4" ry="0.85" fill="#f59e0b" opacity="0.72"/>
+    <circle cx="1" cy="-18.6" r="1.4" fill="#fb923c" opacity="0.85"/>
+    <!-- Rising cozy hot-water steam wisps -->
+    <path d="M-1.2 -24.5 Q-2.8 -28.2 -0.6 -31.8" fill="none" stroke="#ffffff" stroke-width="1.25" stroke-linecap="round" opacity="0.86" class="h-steam"/>
+    <path d="M2.6 -24.8 Q4.4 -28.8 2.2 -33.2" fill="none" stroke="#fef3c7" stroke-width="1.15" stroke-linecap="round" opacity="0.82" class="h-steam-d1"/>
+  `;
+
+  // Subtle warm pulsing cue above cup when TooToo is wet/snowy so user knows to click to drink!
+  const cueX = houseId === "pot" ? 3 : 1;
+  const warmCue = needsWarm
+    ? `<g class="ht-beacon">
+         <circle cx="1" cy="-20" r="13" fill="#fbbf24" opacity="0.24" filter="url(#hsGlowSm)"/>
+         <rect x="${cueX - 18}" y="-45" width="36" height="13" rx="6.5" fill="rgba(16,14,12,0.92)" stroke="#fbbf24" stroke-width="0.95"/>
+         <text x="${cueX}" y="-36.2" font-size="6.8" font-family="sans-serif" font-weight="800" fill="#fef08a" text-anchor="middle">☕喝热水</text>
+       </g>`
+    : "";
+
+  return `
+    <g id="homeHotTable" class="home-hot-table${needsWarm ? " need-warm" : ""}" transform="translate(${x}, ${y})">
+      <title>点击小桌子，让兔兔跑过来喝口热水</title>
+      ${tableArt}
+      ${mugCup}
+      ${warmCue}
+    </g>
+  `;
+}
+
+function renderBunnyClimateOverlaySvg(condition) {
+  if (condition === "wet") {
+    // Glistening rain droplets clinging to ears/cheeks + falling animated drips
+    return `
+      <g pointer-events="none">
+        <!-- Left & right ear glistening water beads -->
+        <path d="M9.6 7.8 C8.5 9.6 8.6 10.9 9.6 11.2 C10.6 10.9 10.7 9.6 9.6 7.8 Z" fill="#38bdf8" stroke="#e0f2fe" stroke-width="0.45"/>
+        <circle cx="9.3" cy="9.6" r="0.38" fill="#ffffff"/>
+        <path d="M26.2 8.4 C25.2 10.0 25.3 11.2 26.2 11.5 C27.1 11.2 27.2 10.0 26.2 8.4 Z" fill="#38bdf8" stroke="#e0f2fe" stroke-width="0.45"/>
+        <circle cx="25.9" cy="10.0" r="0.35" fill="#ffffff"/>
+        <!-- Forehead & cheek water droplets -->
+        <path d="M13.6 15.2 C12.9 16.5 13.0 17.3 13.6 17.5 C14.2 17.3 14.3 16.5 13.6 15.2 Z" fill="#7dd3fc" stroke="#ffffff" stroke-width="0.35"/>
+        <path d="M23.8 18.8 C23.1 20.1 23.2 21.0 23.8 21.2 C24.4 21.0 24.5 20.1 23.8 18.8 Z" fill="#38bdf8" stroke="#e0f2fe" stroke-width="0.38"/>
+        <circle cx="10.2" cy="21.6" r="0.78" fill="#7dd3fc" opacity="0.9"/>
+        <!-- Animated falling rain drips off ears -->
+        <path d="M8.6 13.2 C8.0 14.3 8.1 15.1 8.6 15.3 C9.1 15.1 9.2 14.3 8.6 13.2 Z" fill="#38bdf8" class="h-drip"/>
+        <path d="M27.4 13.6 C26.8 14.7 26.9 15.5 27.4 15.7 C27.9 15.5 28.0 14.7 27.4 13.6 Z" fill="#7dd3fc" class="h-drip-d1"/>
+      </g>
+    `;
+  }
+  if (condition === "snowy") {
+    // Adorable fluffy snow caps perched on both ears & crown + sparkling frost crystal
+    return `
+      <g pointer-events="none">
+        <!-- Left ear snow cap -->
+        <path d="M9.0 7.2 Q12.2 3.2 15.2 7.0 Q14.0 8.5 12.2 7.8 Q10.4 8.5 9.0 7.2 Z" fill="#ffffff" stroke="#bae6fd" stroke-width="0.55" stroke-linejoin="round"/>
+        <!-- Right ear snow cap -->
+        <path d="M20.8 7.0 Q23.8 3.2 27.0 7.2 Q25.6 8.5 23.8 7.8 Q22.0 8.5 20.8 7.0 Z" fill="#ffffff" stroke="#bae6fd" stroke-width="0.55" stroke-linejoin="round"/>
+        <!-- Crown snow tuft between ears -->
+        <path d="M14.4 14.8 Q18.0 11.4 21.6 14.8 Q19.8 16.0 18.0 15.4 Q16.2 16.0 14.4 14.8 Z" fill="#f8fafc" stroke="#bae6fd" stroke-width="0.5" stroke-linejoin="round"/>
+        <!-- Tiny clinging snowflakes on cheeks & ear edge -->
+        <circle cx="9.8" cy="20.4" r="0.85" fill="#ffffff" stroke="#bae6fd" stroke-width="0.3"/>
+        <circle cx="26.4" cy="19.6" r="0.75" fill="#ffffff" stroke="#bae6fd" stroke-width="0.3"/>
+        <circle cx="15.4" cy="16.4" r="0.55" fill="#e0f2fe"/>
+        <path d="M27.8 9.2 L28.4 10.4 L29.6 10.9 L28.4 11.4 L27.8 12.6 L27.2 11.4 L26.0 10.9 L27.2 10.4 Z" fill="#e0f2fe" class="h-twinkle"/>
+      </g>
+    `;
+  }
+  return "";
+}
+
+function stopHomeSneezeTimer() {
+  if (homeBunnyClimate.sneezeTimer) {
+    clearTimeout(homeBunnyClimate.sneezeTimer);
+    homeBunnyClimate.sneezeTimer = null;
+  }
+}
+
+function scheduleHomeSneeze(initialDelayMs = 3400) {
+  stopHomeSneezeTimer();
+  if (!homeBunnyClimate.condition) return;
+  if (!document.getElementById("homeModal")?.classList.contains("open")) return;
+  homeBunnyClimate.sneezeTimer = setTimeout(() => {
+    homeBunnyClimate.sneezeTimer = null;
+    if (!homeBunnyClimate.condition) return;
+    if (!document.getElementById("homeModal")?.classList.contains("open")) return;
+    if (!homeBunnyPos.raf && !homeBunnyClimate.isDrinking) {
+      triggerHomeBunnySneeze();
+    }
+    scheduleHomeSneeze(6800 + Math.random() * 3200);
+  }, initialDelayMs);
+}
+
+function triggerHomeBunnySneeze() {
+  const cond = homeBunnyClimate.condition;
+  if (!cond) return;
+  const view = getEffectiveStageViewState();
+  const animEl = document.getElementById("homeStageBunnyAnim");
+  if (animEl) {
+    animEl.classList.remove("bunny-sneeze");
+    void animEl.offsetWidth;
+    animEl.classList.add("bunny-sneeze");
+    setTimeout(() => animEl.classList.remove("bunny-sneeze"), 600);
+  }
+  const cxPct = (homeBunnyPos.x / 420) * 100;
+  const cyPct = Math.max(20, ((homeBunnyPos.y - 42) / 208) * 100);
+  spawnStageParticles(cond === "wet" ? ["💨", "💧", "🤧"] : ["💨", "❄️", "🤧"], cxPct, cyPct);
+  if (sfxEnabled) {
+    playTone(680, 0.055, "sine", 0.04);
+    setTimeout(() => playTone(420, 0.085, "triangle", 0.045), 75);
+  }
+  const isOut = isHomeBunnyOutdoors(view.houseId, homeBunnyPos.x, homeBunnyPos.y);
+  let msg = "";
+  if (view.houseId === "street") {
+    msg = cond === "wet"
+      ? "🤧 阿嚏！马路边淋雨好冷…快搬进花盆屋喝口热水吧！"
+      : "🤧 阿嚏！街头下雪冻僵啦…想回屋子喝口热水！";
+  } else if (isOut) {
+    msg = cond === "wet"
+      ? "🤧 阿嚏！屋外淋湿了好冷…点屋里小桌子喝热水！"
+      : "🤧 阿嚏！身上积雪冰冰的…回屋里喝口热水吧！";
+  } else {
+    msg = cond === "wet"
+      ? "🤧 阿嚏！身上还湿漉漉的，点小桌子喝口热水就好了！"
+      : "🤧 阿嚏！耳朵上还有积雪，快点小桌子喝口热水暖暖！";
+  }
+  showHomeStageBubble(msg);
+}
+
+function refreshHomeBunnyClimateDom() {
+  const condEl = document.getElementById("homeStageBunnyCondition");
+  const animEl = document.getElementById("homeStageBunnyAnim");
+  const cond = homeBunnyClimate.condition;
+  if (condEl) {
+    condEl.innerHTML = renderBunnyClimateOverlaySvg(cond);
+  }
+  if (animEl) {
+    animEl.classList.toggle("bunny-shiver", !!cond && !homeBunnyClimate.isDrinking);
+  }
+  // Sync hot-water table warm beacon if table is visible
+  const view = getEffectiveStageViewState();
+  const tblEl = document.getElementById("homeHotTable");
+  if (tblEl && getHomeHotTableInfo(view.houseId)) {
+    const tmp = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    tmp.innerHTML = renderHomeHotTableSvg(view.houseId, !!cond);
+    const nextTbl = tmp.firstElementChild;
+    if (nextTbl) tblEl.replaceWith(nextTbl);
+  }
+}
+
+function syncHomeBunnyClimate(triggerNotice = false) {
+  const view = getEffectiveStageViewState();
+  const houseId = view.houseId;
+  const hasWeather = HOME_WEATHER_HOUSES.has(houseId);
+  const weather = hasWeather ? getEffectiveWeather() : null;
+  const outdoors = isHomeBunnyOutdoors(houseId, homeBunnyPos.x, homeBunnyPos.y);
+
+  if (weather && (weather.kind === "rain" || weather.kind === "snow") && outdoors) {
+    const nextCond = weather.kind === "rain" ? "wet" : "snowy";
+    const changed = homeBunnyClimate.condition !== nextCond;
+    homeBunnyClimate.condition = nextCond;
+    refreshHomeBunnyClimateDom();
+    if (!homeBunnyClimate.sneezeTimer) {
+      scheduleHomeSneeze(changed ? 2800 : 5200);
+    }
+    if (changed && triggerNotice) {
+      showHomeStageBubble(
+        nextCond === "wet"
+          ? "🌧️ 哎呀淋到雨了，身上湿漉漉的！快去喝口热水吧～"
+          : "❄️ 哇，耳朵上落了好多积雪！快去喝口热水暖暖～"
+      );
+      return true;
+    }
+  } else if (homeBunnyClimate.condition && !homeBunnyClimate.sneezeTimer) {
+    // Still wet/snowy even after coming indoors until TooToo drinks hot water!
+    scheduleHomeSneeze(4800);
+  }
+  return false;
+}
+
+function triggerDrinkHotWater(tbl) {
+  const wasSick = !!homeBunnyClimate.condition;
+  const prevCond = homeBunnyClimate.condition;
+  homeBunnyClimate.isDrinking = true;
+  homeBunnyClimate.condition = null;
+  stopHomeSneezeTimer();
+  refreshHomeBunnyClimateDom();
+
+  const animEl = document.getElementById("homeStageBunnyAnim");
+  if (animEl) {
+    animEl.classList.remove("bunny-shiver", "bunny-sneeze", "bunny-drink");
+    void animEl.offsetWidth;
+    animEl.classList.add("bunny-drink");
+    setTimeout(() => {
+      animEl.classList.remove("bunny-drink");
+      homeBunnyClimate.isDrinking = false;
+    }, 960);
+  } else {
+    setTimeout(() => { homeBunnyClimate.isDrinking = false; }, 960);
+  }
+
+  const cxPct = ((tbl ? tbl.x : homeBunnyPos.x) / 420) * 100;
+  const cyPct = Math.max(20, (((tbl ? tbl.y : homeBunnyPos.y) - 24) / 208) * 100);
+  spawnStageParticles(wasSick ? ["☕", "♨️", "❤️", "✨", "🌟", "☀️"] : ["☕", "♨️", "✨", "❤️"], cxPct, cyPct);
+  playSfx("cache");
+  if (wasSick) {
+    showHomeStageBubble(
+      prevCond === "wet"
+        ? "☕ 咕嘟咕嘟～喝口热水身上暖干啦，不打喷嚏咯！"
+        : "☕ 咕嘟咕嘟～喝口热水积雪融化啦，浑身暖呼呼！"
+    );
+  } else {
+    const cozyLines = [
+      "☕ 咕嘟咕嘟～喝口热水润润喉，继续写代码！",
+      "♨️ 刚泡好的热水好暖心，兔兔满血复活～",
+      "☕ 多喝热水身体棒，今天算力肯定爆棚！",
+    ];
+    showHomeStageBubble(cozyLines[Math.floor(Math.random() * cozyLines.length)]);
+  }
+}
+
+// ---- Local Real-Time Weather Engine (for terrestrial houses only: street..xixi) ----
+// Special/extraterrestrial houses (atlantis, rocket, wormhole, secret_palace) have NO weather system!
+const HOME_WEATHER_HOUSES = new Set(["street", "pot", "cardboard", "treehole", "heanju", "xixi"]);
+const HOME_WEATHER_META = {
+  sunny:    { icon: "☀️", label: "晴天" },
+  cloudy:   { icon: "⛅", label: "多云" },
+  overcast: { icon: "☁️", label: "阴天" },
+  windy:    { icon: "🍃", label: "刮风" },
+  rain:     { icon: "🌧️", label: "下雨" },
+  snow:     { icon: "❄️", label: "下雪" },
+};
+let localWeatherState = { ok: false, kind: "sunny", icon: "☀️", label: "晴天", temp_c: null, city: "" };
+let debugWeatherMock = null; // null | "sunny" | "cloudy" | "overcast" | "windy" | "rain" | "snow"
+
+async function fetchLocalWeather(force = false) {
+  try {
+    const r = await fetch("/api/weather" + (force ? "?force=1" : ""));
+    if (!r.ok) return;
+    const j = await r.json();
+    if (j && j.kind && HOME_WEATHER_META[j.kind]) {
+      localWeatherState = j;
+      if (document.getElementById("homeModal")?.classList.contains("open")) {
+        renderHomeStage();
+      }
+    }
+  } catch {}
+}
+
+function getEffectiveWeather() {
+  if (debugState.active && debugWeatherMock && HOME_WEATHER_META[debugWeatherMock]) {
+    const m = HOME_WEATHER_META[debugWeatherMock];
+    return { kind: debugWeatherMock, icon: m.icon, label: m.label, temp_c: localWeatherState.temp_c, city: localWeatherState.city, mocked: true };
+  }
+  const kind = (localWeatherState && HOME_WEATHER_META[localWeatherState.kind]) ? localWeatherState.kind : "sunny";
+  const m = HOME_WEATHER_META[kind];
+  return { kind, icon: m.icon, label: m.label, temp_c: localWeatherState.temp_c, city: localWeatherState.city, mocked: false };
+}
+
+function renderWeatherLayerSvg(houseId, weather) {
+  if (!HOME_WEATHER_HOUSES.has(houseId) || !weather) return { under: "", over: "" };
+  const kind = weather.kind || "sunny";
+  const isOutdoor = houseId === "street" || houseId === "pot";
+
+  // Exact window clip geometry for indoor terrestrial houses so rain/snow/wind appear authentically OUTSIDE the glass!
+  const clipShapes = {
+    cardboard: `<rect x="275" y="43" width="86" height="62" rx="3"/>`,
+    treehole:  `<path d="M275 105 L275 66 A37 33 0 0 1 349 66 L349 105 Z"/>`,
+    heanju:    `<rect x="239" y="25" width="150" height="120" rx="3"/>`,
+    xixi:      `<rect x="23" y="27" width="374" height="118" rx="2"/>`,
+  };
+  const zoneBounds = {
+    street:    { x0: 0,   x1: 420, y0: 0,  y1: 208 },
+    pot:       { x0: 0,   x1: 420, y0: 0,  y1: 208 },
+    cardboard: { x0: 274, x1: 362, y0: 42, y1: 106 },
+    treehole:  { x0: 274, x1: 350, y0: 32, y1: 106 },
+    heanju:    { x0: 238, x1: 390, y0: 24, y1: 146 },
+    xixi:      { x0: 22,  x1: 398, y0: 26, y1: 146 },
+  };
+  const b = zoneBounds[houseId] || zoneBounds.street;
+  const w = b.x1 - b.x0;
+  const h = b.y1 - b.y0;
+  const clipId = `hsWClip_${houseId}`;
+  const potMaskDef = houseId === "pot"
+    ? `<defs><mask id="hsPotOutdoorMask"><rect width="420" height="208" fill="#ffffff"/><path d="M168 164 L168 108 A42 42 0 0 1 252 108 L252 164 Z" fill="#000000"/></mask></defs>`
+    : "";
+  const clipDef = isOutdoor ? potMaskDef : `<defs><clipPath id="${clipId}">${clipShapes[houseId]}</clipPath></defs>`;
+  const wrapOpen = isOutdoor
+    ? `${clipDef}<g${houseId === "pot" ? ' mask="url(#hsPotOutdoorMask)"' : ""} pointer-events="none">`
+    : `${clipDef}<g clip-path="url(#${clipId})" pointer-events="none">`;
+  const wrapClose = `</g>`;
+
+  let fx = "";
+  let ambientTint = "";
+  let outdoorBg = "";
+
+  if (kind === "sunny") {
+    // Gentle warm golden sun-rays & soft drifting sunlight motes
+    fx = `
+      <polygon points="${b.x0 + w * 0.56},${b.y0} ${b.x0 + w * 0.84},${b.y0} ${b.x0 + w * 0.62},${b.y1} ${b.x0 + w * 0.34},${b.y1}" fill="url(#hsSunbeam)" opacity="0.42" class="h-pulse"/>
+      <circle cx="${(b.x0 + w * 0.66).toFixed(0)}" cy="${(b.y0 + h * 0.34).toFixed(0)}" r="1.8" fill="#fef08a" opacity="0.72" class="h-float"/>
+      <circle cx="${(b.x0 + w * 0.52).toFixed(0)}" cy="${(b.y0 + h * 0.54).toFixed(0)}" r="1.4" fill="#fffbeb" opacity="0.62" class="h-float-slow"/>
+    `;
+  } else if (kind === "cloudy") {
+    // Multi-layered soft drifting cumulus clouds
+    const cy1 = b.y0 + Math.min(34, h * 0.28);
+    const cy2 = b.y0 + Math.min(48, h * 0.42);
+    const col = houseId === "street" ? "#94a3b8" : "#ffffff";
+    fx = `
+      <g class="h-cloud-pass" opacity="${houseId === "street" ? "0.42" : "0.84"}">
+        <ellipse cx="${(b.x0 + w * 0.28).toFixed(0)}" cy="${cy1.toFixed(0)}" rx="${Math.max(18, w * 0.14).toFixed(0)}" ry="10" fill="${col}"/>
+        <ellipse cx="${(b.x0 + w * 0.35).toFixed(0)}" cy="${(cy1 - 5).toFixed(0)}" rx="${Math.max(12, w * 0.09).toFixed(0)}" ry="8" fill="${col}"/>
+        <ellipse cx="${(b.x0 + w * 0.72).toFixed(0)}" cy="${cy2.toFixed(0)}" rx="${Math.max(20, w * 0.16).toFixed(0)}" ry="11" fill="${col}"/>
+        <ellipse cx="${(b.x0 + w * 0.65).toFixed(0)}" cy="${(cy2 - 5).toFixed(0)}" rx="${Math.max(13, w * 0.1).toFixed(0)}" ry="8.5" fill="${col}"/>
+      </g>`;
+  } else if (kind === "overcast") {
+    // Moody layered slate-silver overcast cloud bank + cool overcast veil
+    const cy = b.y0 + Math.min(26, h * 0.24);
+    const cloudSvg = `
+      <rect x="${b.x0}" y="${b.y0}" width="${w}" height="${isOutdoor ? 148 : h}" fill="#475569" opacity="${houseId === "street" ? "0.26" : "0.34"}"/>
+      <g class="h-cloud-pass" opacity="0.86">
+        <ellipse cx="${(b.x0 + w * 0.22).toFixed(0)}" cy="${cy.toFixed(0)}" rx="${Math.max(24, w * 0.22).toFixed(0)}" ry="14" fill="#94a3b8"/>
+        <ellipse cx="${(b.x0 + w * 0.54).toFixed(0)}" cy="${(cy + 4).toFixed(0)}" rx="${Math.max(28, w * 0.26).toFixed(0)}" ry="16" fill="#64748b"/>
+        <ellipse cx="${(b.x0 + w * 0.84).toFixed(0)}" cy="${(cy + 2).toFixed(0)}" rx="${Math.max(26, w * 0.24).toFixed(0)}" ry="15" fill="#94a3b8"/>
+      </g>`;
+    if (isOutdoor) {
+      outdoorBg = `<g${houseId === "pot" ? ' mask="url(#hsPotOutdoorMask)"' : ""} pointer-events="none">${cloudSvg}</g>`;
+    } else {
+      fx = cloudSvg;
+      ambientTint = `<rect width="420" height="208" fill="#334155" opacity="0.1" pointer-events="none"/>`;
+    }
+  } else if (kind === "windy") {
+    // Sweeping aerodynamic wind gusts + tumbling autumn leaves
+    const gustCount = w > 220 ? 5 : 3;
+    let gusts = "";
+    for (let i = 0; i < gustCount; i++) {
+      const gx = b.x0 + (w / gustCount) * i;
+      const gy = b.y0 + h * (0.2 + (i % 3) * 0.24);
+      const dur = (1.7 + (i % 3) * 0.45).toFixed(2);
+      const del = (-i * 0.55).toFixed(2);
+      gusts += `<path d="M${gx.toFixed(0)} ${gy.toFixed(0)} Q${(gx + 34).toFixed(0)} ${(gy - 7).toFixed(0)} ${(gx + 68).toFixed(0)} ${gy.toFixed(0)} T${(gx + 104).toFixed(0)} ${(gy - 3).toFixed(0)}" fill="none" stroke="#e2e8f0" stroke-width="1.6" stroke-linecap="round" opacity="0.68" class="h-wind" style="--dur:${dur}s;--del:${del}s"/>`;
+    }
+    const leafCount = w > 220 ? 7 : 4;
+    let leaves = "";
+    const leafCols = ["#f97316", "#eab308", "#22c55e", "#d97706"];
+    for (let i = 0; i < leafCount; i++) {
+      const lx = b.x0 + (w * (0.08 + (i * 0.14) % 0.85));
+      const ly = b.y0 + (h * (0.14 + (i * 0.21) % 0.68));
+      const dur = (2.4 + (i % 4) * 0.45).toFixed(2);
+      const del = (-i * 0.65).toFixed(2);
+      leaves += `<ellipse cx="${lx.toFixed(0)}" cy="${ly.toFixed(0)}" rx="3.8" ry="1.9" fill="${leafCols[i % leafCols.length]}" class="h-wind-leaf" style="--dur:${dur}s;--del:${del}s"/>`;
+    }
+    fx = gusts + leaves;
+  } else if (kind === "rain") {
+    // Cool rain-cloud atmosphere (behind bunny when outdoor so bunny stays crisp!) + slanted animated raindrops + puddle splashes
+    const dropCount = w > 220 ? 24 : 12;
+    const skyClouds = `
+      <rect x="${b.x0}" y="${b.y0}" width="${w}" height="${h}" fill="#1e293b" opacity="${houseId === "street" ? "0.2" : "0.26"}"/>
+      <g opacity="0.82">
+        <ellipse cx="${(b.x0 + w * 0.26).toFixed(0)}" cy="${(b.y0 + 16).toFixed(0)}" rx="${Math.max(24, w * 0.24).toFixed(0)}" ry="14" fill="#64748b"/>
+        <ellipse cx="${(b.x0 + w * 0.78).toFixed(0)}" cy="${(b.y0 + 22).toFixed(0)}" rx="${Math.max(32, w * 0.28).toFixed(0)}" ry="18" fill="#475569"/>
+        <ellipse cx="${(b.x0 + w * 0.52).toFixed(0)}" cy="${(b.y0 + 12).toFixed(0)}" rx="${Math.max(24, w * 0.22).toFixed(0)}" ry="12" fill="#64748b"/>
+      </g>`;
+    let drops = isOutdoor ? "" : skyClouds;
+    if (isOutdoor) {
+      outdoorBg = `<g${houseId === "pot" ? ' mask="url(#hsPotOutdoorMask)"' : ""} pointer-events="none">${skyClouds}</g>`;
+    }
+    for (let i = 0; i < dropCount; i++) {
+      const rx = b.x0 + ((i + 0.5) / dropCount) * w + ((i % 3) - 1) * 4;
+      const ry = b.y0 + (i % 4) * 14;
+      const len = 11 + (i % 3) * 4;
+      const dur = (0.72 + (i % 4) * 0.14).toFixed(2);
+      const del = (-(i * 0.19) % 1.2).toFixed(2);
+      drops += `<line x1="${rx.toFixed(1)}" y1="${ry.toFixed(1)}" x2="${(rx - 4.2).toFixed(1)}" y2="${(ry + len).toFixed(1)}" stroke="#bae6fd" stroke-width="${i % 3 === 0 ? "1.35" : "0.95"}" stroke-linecap="round" opacity="0.82" class="h-rain" style="--dur:${dur}s;--del:${del}s"/>`;
+    }
+    if (isOutdoor) {
+      // Road/meadow puddle splashes
+      drops += `
+        <ellipse cx="118" cy="178" rx="9" ry="2.6" fill="none" stroke="#bae6fd" stroke-width="0.9" class="h-ripple"/>
+        <ellipse cx="298" cy="184" rx="10" ry="2.8" fill="none" stroke="#7dd3fc" stroke-width="0.9" class="h-ripple-d1"/>
+        <ellipse cx="212" cy="192" rx="8" ry="2.2" fill="none" stroke="#bae6fd" stroke-width="0.85" class="h-ripple"/>
+      `;
+    }
+    fx = drops;
+    if (!isOutdoor) ambientTint = `<rect width="420" height="208" fill="#1e3a5f" opacity="0.11" pointer-events="none"/>`;
+  } else if (kind === "snow") {
+    // Serene drifting multi-size snowflakes + wintry sky veil (behind bunny!) + pot-roof / sill snow cap
+    const flakeCount = w > 220 ? 28 : 13;
+    const snowSky = `
+      <rect x="${b.x0}" y="${b.y0}" width="${w}" height="${h}" fill="#3b5278" opacity="0.22"/>
+      ${houseId === "pot"
+        ? `<g opacity="0.82"><ellipse cx="344" cy="30" rx="64" ry="24" fill="#cbd5e1"/><ellipse cx="110" cy="22" rx="74" ry="18" fill="#e2e8f0"/></g>
+           <path d="M135 42 Q168 33 210 38 Q252 33 285 42 Q285 47 278 47 L142 47 Q135 47 135 42 Z" fill="#f8fafc" opacity="0.94"/>
+           <ellipse cx="92" cy="145" rx="11" ry="4" fill="#f8fafc" opacity="0.86"/>`
+        : ""}`;
+    let flakes = isOutdoor ? "" : snowSky;
+    if (isOutdoor) {
+      outdoorBg = `<g${houseId === "pot" ? ' mask="url(#hsPotOutdoorMask)"' : ""} pointer-events="none">${snowSky}</g>`;
+    }
+    for (let i = 0; i < flakeCount; i++) {
+      const fxX = b.x0 + ((i + 0.5) / flakeCount) * w;
+      const fxY = b.y0 + (i % 5) * 12;
+      const r = (1.3 + (i % 3) * 0.75).toFixed(1);
+      const dur = (3.4 + (i % 4) * 0.75).toFixed(2);
+      const del = (-(i * 0.41) % 3.6).toFixed(2);
+      flakes += `<circle cx="${fxX.toFixed(1)}" cy="${fxY.toFixed(1)}" r="${r}" fill="#ffffff" opacity="${i % 2 === 0 ? "0.92" : "0.74"}" class="h-snow" style="--dur:${dur}s;--del:${del}s"/>`;
+    }
+    // Delicate snow dusting along window sill or street curb (not a straight bar across pot hills!)
+    if (!isOutdoor) {
+      flakes += `<rect x="${b.x0}" y="${b.y1 - 4}" width="${w}" height="4" rx="2" fill="#f8fafc" opacity="0.72"/>`;
+    } else if (houseId === "street") {
+      flakes += `<rect x="0" y="147" width="420" height="4" fill="#f8fafc" opacity="0.62"/>`;
+    }
+    fx = flakes;
+    if (!isOutdoor) ambientTint = `<rect width="420" height="208" fill="#93c5fd" opacity="0.08" pointer-events="none"/>`;
+  }
+
+  const layer = `${wrapOpen}${fx}${wrapClose}`;
+  return isOutdoor
+    ? { under: clipDef + outdoorBg, over: `<g${houseId === "pot" ? ' mask="url(#hsPotOutdoorMask)"' : ""} pointer-events="none">${fx}</g>` }
+    : { under: layer + ambientTint, over: "" };
 }
 
 function renderHomeStage(freshDecorSlot = null, twirlBunny = false) {
@@ -13851,6 +14569,8 @@ function renderHomeStage(freshDecorSlot = null, twirlBunny = false) {
   const vis = getTierVisual(tier);
   const innateSvg = getActiveTierInnateSvg(tier.level, "st");
   const wearSvg = getWearOverlaySvgFor(view.wear, "st");
+  const hasWeather = HOME_WEATHER_HOUSES.has(house.id);
+  const weather = hasWeather ? getEffectiveWeather() : null;
 
   if (homeBunnyPos.lastHouseId && homeBunnyPos.lastHouseId !== house.id) {
     stopHomeBunnyWalk();
@@ -13862,12 +14582,26 @@ function renderHomeStage(freshDecorSlot = null, twirlBunny = false) {
 
   const wrapEl = document.getElementById("homeStageWrap");
   const titleEl = document.getElementById("homeStageTitle");
+  const weatherPillEl = document.getElementById("homeStageWeatherPill");
   const slotsEl = document.getElementById("homeStageSlots");
   const secretPillEl = document.getElementById("homeStageSecretPill");
   const previewExitBtn = document.getElementById("homePreviewExitBtn");
 
   if (titleEl) {
     titleEl.textContent = `${house.icon} ${house.name}${house.secret ? " · 隐藏款" : ""}`;
+  }
+  if (weatherPillEl) {
+    if (hasWeather && weather) {
+      weatherPillEl.style.display = "inline-flex";
+      const tempTxt = weather.temp_c != null ? ` ${weather.temp_c}°C` : "";
+      const mockTag = weather.mocked ? " [试]" : "";
+      weatherPillEl.textContent = `${weather.icon} ${weather.label}${tempTxt}${mockTag}`;
+      weatherPillEl.title = weather.city
+        ? `${weather.city} 本地实时天气：${weather.label}${tempTxt}（点击刷新）`
+        : `本地实时天气：${weather.label}${tempTxt}（点击刷新）`;
+    } else {
+      weatherPillEl.style.display = "none";
+    }
   }
   if (slotsEl) {
     const equippedCnt = house.slots.filter(s => view.decor[s]).length;
@@ -13897,23 +14631,41 @@ function renderHomeStage(freshDecorSlot = null, twirlBunny = false) {
 
   const defs = renderHomeStageDefs();
   const backdrop = renderHouseBackdropSvg(house.id);
+  const wLayers = hasWeather ? renderWeatherLayerSvg(house.id, weather) : { under: "", over: "" };
   const decorLayer = renderDecorLayerSvg(view.decor, house.slots, freshDecorSlot);
+
+  // Sync exposure before drawing bunny & hot-water table so wet/snow state is immediate on open/switch
+  if (weather && (weather.kind === "rain" || weather.kind === "snow") && isHomeBunnyOutdoors(house.id, homeBunnyPos.x, homeBunnyPos.y)) {
+    homeBunnyClimate.condition = weather.kind === "rain" ? "wet" : "snowy";
+  }
+
+  const hotTableLayer = renderHomeHotTableSvg(house.id, !!homeBunnyClimate.condition);
+  const condOverlaySvg = renderBunnyClimateOverlaySvg(homeBunnyClimate.condition);
+  const animClasses = [
+    twirlBunny ? "bunny-twirl" : "",
+    homeBunnyClimate.condition && !homeBunnyClimate.isDrinking ? "bunny-shiver" : "",
+  ].filter(Boolean).join(" ");
 
   const sc = getHomeBunnyScale(homeBunnyPos.y);
   const bunnyGroup = `
     <g id="homeStageBunny" transform="translate(${homeBunnyPos.x.toFixed(1)}, ${homeBunnyPos.y.toFixed(1)}) scale(${sc.toFixed(3)})">
       <ellipse id="homeStageBunnyShadow" cx="0" cy="0" rx="11.5" ry="2.6" fill="rgba(12,10,16,0.28)"/>
       <g id="homeStageBunnyBody" transform="translate(0, ${(-homeBunnyPos.hopY).toFixed(2)}) scale(${homeBunnyPos.facing}, 1) translate(-18, -34.2)">
-        <g class="${twirlBunny ? "bunny-twirl" : ""}">
+        <g id="homeStageBunnyAnim" class="${animClasses}">
           ${vis.svg}
           ${innateSvg}
           ${wearSvg}
+          <g id="homeStageBunnyCondition">${condOverlaySvg}</g>
         </g>
       </g>
     </g>
   `;
 
-  svgEl.innerHTML = defs + backdrop + decorLayer + bunnyGroup;
+  svgEl.innerHTML = defs + backdrop + wLayers.under + decorLayer + hotTableLayer + bunnyGroup + wLayers.over;
+
+  if (homeBunnyClimate.condition && !homeBunnyClimate.sneezeTimer && document.getElementById("homeModal")?.classList.contains("open")) {
+    scheduleHomeSneeze(3200);
+  }
 }
 
 // ---- Home Cinematic Effects: Tiered by Grade (Basic / Craft / Luxury / Mythic / Secret) ----
@@ -14248,9 +15000,11 @@ function openHomeModal() {
   document.getElementById("homeModal").classList.add("open");
   renderGachaMeta();
   renderHomeModal();
+  fetchLocalWeather(false);
 }
 function closeHomeModal() {
   stopHomeBunnyWalk();
+  stopHomeSneezeTimer();
   homeUiState.preview = null;
   document.getElementById("homeModal").classList.remove("open");
 }
@@ -14265,6 +15019,11 @@ document.getElementById("homePreviewExitBtn").addEventListener("click", (e) => {
   e.stopPropagation();
   homeUiState.preview = null;
   renderHomeModal();
+  playSfx("token");
+});
+document.getElementById("homeStageWeatherPill").addEventListener("click", (e) => {
+  e.stopPropagation();
+  fetchLocalWeather(true);
   playSfx("token");
 });
 document.getElementById("homeWalletBtn").addEventListener("click", () => {
@@ -14435,6 +15194,15 @@ document.getElementById("dbgHomeResetCheckinBtn").addEventListener("click", () =
   renderCheckinUi();
   playSfx("token");
 });
+document.querySelectorAll("#dbgWeatherChips button[data-w]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const w = btn.dataset.w;
+    debugWeatherMock = w === "real" ? null : w;
+    document.querySelectorAll("#dbgWeatherChips button[data-w]").forEach(b => b.classList.toggle("on", b === btn));
+    renderHomeStage();
+    playSfx("token");
+  });
+});
 
 initTheme();
 requestAnimationFrame(() => {
@@ -14443,6 +15211,7 @@ requestAnimationFrame(() => {
 });
 postNative("getMenuBarFields");
 syncCarrotFromDisk();
+fetchLocalWeather(false);
 fetchTelemetry(false);
 </script>
 </body>

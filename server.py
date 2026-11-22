@@ -12,17 +12,137 @@ import os
 import sys
 import threading
 import time
+import urllib.request
 import webbrowser
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
 from pricing import sync_remote_pricing
-from scanner import build_telemetry, load_carrot_state, save_carrot_state, save_local_quota_config
+from scanner import CACHE_DIR, build_telemetry, load_carrot_state, save_carrot_state, save_local_quota_config
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UI_FILE = os.path.join(BASE_DIR, "ui", "index.html")
 BUNNY_LINES_FILE = os.path.join(BASE_DIR, "ui", "bunny_lines.json")
+WEATHER_CACHE_FILE = os.path.join(CACHE_DIR, "weather_cache.json")
+
+_WEATHER_LOCK = threading.Lock()
+_WEATHER_CACHE: dict | None = None
+_WEATHER_NEXT_TS = 0.0
+_WEATHER_TTL = 1200.0  # 20 min
+_WEATHER_RETRY_TTL = 180.0
+
+_SNOW_CODES = {
+    179, 182, 185, 227, 230, 317, 320, 323, 326, 329, 332, 335, 338,
+    350, 362, 365, 368, 371, 374, 377, 392, 395,
+}
+_RAIN_CODES = {
+    176, 200, 263, 266, 281, 284, 293, 296, 299, 302, 305, 308, 311, 314,
+    353, 356, 359, 386, 389,
+}
+_OVERCAST_CODES = {122, 143, 248, 260}
+_WEATHER_META = {
+    "sunny":    ("☀️", "晴天"),
+    "cloudy":   ("⛅", "多云"),
+    "overcast": ("☁️", "阴天"),
+    "windy":    ("🍃", "刮风"),
+    "rain":     ("🌧️", "下雨"),
+    "snow":     ("❄️", "下雪"),
+}
+
+
+def _classify_wwo_weather(code: int, cloud_cover: int, wind_kmph: int, precip_mm: float) -> str:
+    if code in _SNOW_CODES:
+        return "snow"
+    if code in _RAIN_CODES or precip_mm >= 0.3:
+        return "rain"
+    if wind_kmph >= 24:
+        return "windy"
+    if code in _OVERCAST_CODES or cloud_cover >= 82:
+        return "overcast"
+    if code == 116 or cloud_cover >= 28:
+        return "cloudy"
+    return "sunny"
+
+
+def _load_disk_weather() -> dict | None:
+    try:
+        if os.path.exists(WEATHER_CACHE_FILE):
+            with open(WEATHER_CACHE_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, dict) and data.get("kind") in _WEATHER_META:
+                return data
+    except Exception:
+        pass
+    return None
+
+
+def _save_disk_weather(payload: dict) -> None:
+    try:
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        tmp = WEATHER_CACHE_FILE + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(payload, f, ensure_ascii=False)
+        os.replace(tmp, WEATHER_CACHE_FILE)
+    except OSError:
+        pass
+
+
+def fetch_local_weather(force: bool = False) -> dict:
+    global _WEATHER_CACHE, _WEATHER_NEXT_TS
+    now = time.monotonic()
+    with _WEATHER_LOCK:
+        if _WEATHER_CACHE is None:
+            _WEATHER_CACHE = _load_disk_weather()
+        if not force and _WEATHER_CACHE and now < _WEATHER_NEXT_TS:
+            return _WEATHER_CACHE
+        if not force and _WEATHER_CACHE is None and now < _WEATHER_NEXT_TS:
+            return {"ok": False, "kind": "sunny", "icon": "☀️", "label": "晴天", "temp_c": None, "city": ""}
+
+    fetched: dict | None = None
+    try:
+        req = urllib.request.Request(
+            "https://wttr.in/?format=j1",
+            headers={"User-Agent": "tootoo-weather/1.0", "Accept": "application/json"},
+        )
+        with urllib.request.urlopen(req, timeout=4.5) as resp:
+            raw = resp.read(262144).decode("utf-8", errors="ignore")
+        doc = json.loads(raw)
+        cc = (doc.get("current_condition") or [{}])[0]
+        na = (doc.get("nearest_area") or [{}])[0]
+        code = int(cc.get("weatherCode") or 113)
+        cloud = int(cc.get("cloudcover") or 0)
+        wind = int(cc.get("windspeedKmph") or 0)
+        precip = float(cc.get("precipMM") or 0.0)
+        temp_c = int(round(float(cc.get("temp_C") or 0)))
+        city_arr = na.get("areaName") or []
+        city = str((city_arr[0] or {}).get("value") or "").strip() if city_arr else ""
+        kind = _classify_wwo_weather(code, cloud, wind, precip)
+        icon, label = _WEATHER_META[kind]
+        fetched = {
+            "ok": True,
+            "kind": kind,
+            "icon": icon,
+            "label": label,
+            "temp_c": temp_c,
+            "wind_kmph": wind,
+            "cloud_cover": cloud,
+            "city": city,
+            "updated_at": int(time.time()),
+        }
+    except Exception:
+        fetched = None
+
+    with _WEATHER_LOCK:
+        if fetched:
+            _WEATHER_CACHE = fetched
+            _WEATHER_NEXT_TS = time.monotonic() + _WEATHER_TTL
+            _save_disk_weather(fetched)
+            return fetched
+        _WEATHER_NEXT_TS = time.monotonic() + _WEATHER_RETRY_TTL
+        if _WEATHER_CACHE:
+            return {**_WEATHER_CACHE, "cached": True}
+        return {"ok": False, "kind": "sunny", "icon": "☀️", "label": "晴天", "temp_c": None, "city": ""}
 
 
 def fmt_num(n: int | float) -> str:
@@ -135,6 +255,15 @@ class TooTooHandler(BaseHTTPRequestHandler):
                 self._send_json(load_carrot_state())
             except Exception as e:
                 self._send_json({"days": {}, "collection": [], "error": str(e)}, status=500)
+            return
+
+        if parsed.path == "/api/weather":
+            qs = parse_qs(parsed.query)
+            force = qs.get("force", ["0"])[0] == "1"
+            try:
+                self._send_json(fetch_local_weather(force=force))
+            except Exception as e:
+                self._send_json({"ok": False, "kind": "sunny", "icon": "☀️", "label": "晴天", "error": str(e)})
             return
 
         if parsed.path == "/api/pricing/refresh":
@@ -263,6 +392,10 @@ def main() -> None:
     def _warmup() -> None:
         try:
             build_telemetry("today", "all")
+        except Exception:
+            pass
+        try:
+            fetch_local_weather(force=False)
         except Exception:
             pass
 
