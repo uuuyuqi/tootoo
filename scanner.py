@@ -2586,8 +2586,24 @@ def build_telemetry(
 
     now = datetime.now().astimezone()
     today = now.date()
+    max_day = "9999-12-31"
     if range_key == "today":
         min_day = today.isoformat()
+        max_day = min_day
+    elif range_key == "yesterday":
+        yday = (today - timedelta(days=1)).isoformat()
+        min_day = yday
+        max_day = yday
+    elif range_key == "week":
+        min_day = (today - timedelta(days=today.weekday())).isoformat()
+        max_day = today.isoformat()
+    elif range_key == "last_week":
+        prev_mon = today - timedelta(days=today.weekday() + 7)
+        min_day = prev_mon.isoformat()
+        max_day = (prev_mon + timedelta(days=6)).isoformat()
+    elif range_key == "month":
+        min_day = today.replace(day=1).isoformat()
+        max_day = today.isoformat()
     elif range_key == "7d":
         min_day = (today - timedelta(days=6)).isoformat()
     elif range_key == "30d":
@@ -2607,7 +2623,7 @@ def build_telemetry(
         tot_tok = ev["in"] + ev["out"] + ev["cr"] + ev["cw"] + ev.get("reason", 0)
         if dk == today_iso:
             today_tokens += tot_tok
-        if dk < min_day:
+        if dk < min_day or dk > max_day:
             continue
         t = ev["tool"]
         tool_counts[t] += 1

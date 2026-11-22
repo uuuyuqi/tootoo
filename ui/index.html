@@ -4392,6 +4392,25 @@
     color: var(--active-fg);
     box-shadow: inset 0 0 0 1px var(--active-border);
   }
+  .seg .range-extra {
+    display: none;
+    align-items: center;
+  }
+  .seg.show-hist .range-extra {
+    display: inline-flex;
+    animation: rangeExtraIn 0.2s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  }
+  .seg .range-extra-sep {
+    width: 1px;
+    height: 12px;
+    background: var(--border);
+    margin: 0 2px;
+    flex-shrink: 0;
+  }
+  @keyframes rangeExtraIn {
+    0%   { opacity: 0; transform: translateX(-4px); }
+    100% { opacity: 1; transform: translateX(0); }
+  }
 
   .btn {
     display: inline-flex;
@@ -5496,6 +5515,13 @@
     line-height: 20px;
     font-size: 10.5px;
   }
+  body.popover-mode .seg.show-hist button {
+    padding: 0 6px;
+    font-size: 10px;
+  }
+  body.popover-mode .seg.show-hist .range-extra-sep {
+    margin: 0 1.5px;
+  }
 
   body.popover-mode .btn {
     height: 26px;
@@ -5823,9 +5849,14 @@
     <div class="controls">
       <div class="seg" id="rangeSeg">
         <button data-range="today" class="active">今日</button>
-        <button data-range="7d">7天</button>
-        <button data-range="30d">30天</button>
+        <button data-range="week">这周</button>
+        <button data-range="month">这月</button>
         <button data-range="all">全部</button>
+        <span class="range-extra" id="rangeExtra">
+          <span class="range-extra-sep" aria-hidden="true"></span>
+          <button data-range="yesterday">昨天</button>
+          <button data-range="last_week">上周</button>
+        </span>
       </div>
       <div class="ctrl-actions">
         <span class="scan-badge" id="scanBadge">扫描 —</span>
@@ -6239,7 +6270,6 @@
     <div class="evo-head">
       <span class="kicker" style="font-size:11px;color:var(--ink)">🎰 算力扭蛋 · 萝卜币兑换</span>
       <span style="display:flex;gap:5px;align-items:center">
-        <button class="btn" id="gachaGoHomeBtn" style="padding:3px 7px;font-size:10px" title="用萝卜币去 TooToo 小家盖房买装饰">🏠 去小家</button>
         <span class="carrot-wallet-pill" id="gachaWalletPill" title="当前可用萝卜币余额">🥕 <span id="gachaHeaderCoins">0</span> 萝卜币</span>
         <button class="btn" id="gachaCloseBtn" style="padding:3px 8px;font-size:10.5px">✕</button>
       </span>
@@ -8551,16 +8581,16 @@ async function fetchTelemetry(force = false) {
     if (!res.ok) throw new Error("HTTP " + res.status);
     const data = await res.json();
     if (seq !== fetchSeq) return;
-    // If popover defaults to today and today has 0 requests, smoothly switch to 7d on initial load
+    // If popover defaults to today and today has 0 requests, smoothly switch to this week on initial load
     if (isPopover && !state.data && state.range === "today" && data.kpi.requests === 0) {
-      state.range = "7d";
-      document.querySelectorAll("#rangeSeg button").forEach(b => b.classList.toggle("active", b.dataset.range === "7d"));
-      const res7 = await fetch(`/api/telemetry?range=7d&tool=${encodeURIComponent(state.tool)}`, { signal: ctrl.signal });
-      const data7 = await res7.json();
+      state.range = "week";
+      document.querySelectorAll("#rangeSeg button").forEach(b => b.classList.toggle("active", b.dataset.range === "week"));
+      const resW = await fetch(`/api/telemetry?range=week&tool=${encodeURIComponent(state.tool)}`, { signal: ctrl.signal });
+      const dataW = await resW.json();
       if (seq !== fetchSeq) return;
-      state.data = data7;
+      state.data = dataW;
       lastFetchTs = Date.now();
-      renderAll(data7);
+      renderAll(dataW);
       finishBoot();
       connectStream(true);
       return;
@@ -9586,12 +9616,16 @@ function renderProjects(d) {
 }
 
 // Event bindings
-document.getElementById("rangeSeg").querySelectorAll("button").forEach(btn => {
+const rangeSegEl = document.getElementById("rangeSeg");
+rangeSegEl.querySelectorAll("button").forEach(btn => {
   btn.addEventListener("click", () => {
-    document.querySelectorAll("#rangeSeg button").forEach(b => b.classList.remove("active"));
+    const nextRange = btn.dataset.range;
+    const showHist = nextRange === "all" || nextRange === "yesterday" || nextRange === "last_week";
+    rangeSegEl.classList.toggle("show-hist", showHist);
+    rangeSegEl.querySelectorAll("button").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
-    syncSlidePill("rangeSeg");
-    state.range = btn.dataset.range;
+    requestAnimationFrame(() => syncSlidePill("rangeSeg"));
+    state.range = nextRange;
     shouldAnimateCharts = true;
     lastSeenCallTs = 0;
     fetchTelemetry(false);
@@ -16145,10 +16179,6 @@ document.getElementById("homeStageZoneBtn").addEventListener("click", (e) => {
 document.getElementById("homeWalletBtn").addEventListener("click", () => {
   closeHomeModal();
   openGachaModal();
-});
-document.getElementById("gachaGoHomeBtn").addEventListener("click", () => {
-  closeGachaModal();
-  openHomeModal();
 });
 document.getElementById("homeCheckinBtn").addEventListener("click", (e) => performDailyCheckin(e.currentTarget));
 document.getElementById("gachaCheckinBtn").addEventListener("click", (e) => performDailyCheckin(e.currentTarget));
