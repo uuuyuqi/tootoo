@@ -7183,7 +7183,7 @@
     </div>
 
     <div class="home-preview-bar" id="homePreviewBar">
-      <span id="homePreviewLabel">👁 正在试看预览</span>
+      <span id="homePreviewLabel">✨ 正在试穿/试摆预览</span>
       <button class="home-preview-close" id="homePreviewCloseBtn">收起预览</button>
     </div>
 
@@ -17487,23 +17487,26 @@ function renderDecorLayerSvg(decor, allowedSlots, freshSlot = null, houseId = nu
 function getEffectiveStageViewState() {
   const real = getActiveHomeState();
   const pv = homeUiState.preview;
-  if (!pv) return { houseId: real.house, decor: real.decor, wear: real.wear, isPreview: false, previewLabel: "" };
-  let houseId = pv.kind === "house" ? pv.id : real.house;
+  if (!pv || (pv.kind !== "decor" && pv.kind !== "wear")) {
+    return { houseId: real.house, decor: real.decor, wear: real.wear, isPreview: false, previewLabel: "" };
+  }
+  let houseId = real.house;
   const decor = { ...real.decor };
   const wear = { ...real.wear };
   let previewLabel = "";
-  if (pv.kind === "house") {
-    const h = HOME_HOUSES.find(x => x.id === pv.id);
-    previewLabel = h ? `${h.icon} ${h.name}` : "";
-  } else if (pv.kind === "decor") {
+  if (pv.kind === "decor") {
     const d = HOME_DECORS.find(x => x.id === pv.id);
     if (d) {
       decor[d.slot] = d.id;
       previewLabel = `${d.icon} ${d.name}`;
+      // Only fall back to a house the user already owns or leases (never leak unowned houses!)
       const curH = TOOTOO_REG.getHouse(houseId);
       if (!curH || !curH.slots.includes(d.slot)) {
-        const sampleH = HOME_HOUSES.find(x => x.slots && x.slots.includes(d.slot));
-        if (sampleH) houseId = sampleH.id;
+        const ownedH = HOME_HOUSES.find(x =>
+          (real.owned_houses.includes(x.id) || TOOTOO_REG.isHouseLeased(x.id, real)) &&
+          x.slots && x.slots.includes(d.slot)
+        );
+        if (ownedH) houseId = ownedH.id;
       }
     }
   } else if (pv.kind === "wear") {
@@ -19054,7 +19057,7 @@ function renderHomeShop() {
   const pvBarLbl = document.getElementById("homePreviewLabel");
   if (pvBarLbl && homeUiState.preview) {
     const viewInfo = getEffectiveStageViewState();
-    pvBarLbl.textContent = `👁 正在试看预览：${viewInfo.previewLabel || ""}`;
+    pvBarLbl.textContent = `✨ 正在${homeUiState.preview.kind === "wear" ? "试穿" : "试摆"}预览：${viewInfo.previewLabel || ""}`;
   }
 
   // Friday 14:00-18:00 "辛苦一周" Weekly Rental Coupon info
@@ -19395,17 +19398,13 @@ function renderHomeShop() {
       const priceCls = buyInfo.price === 0 ? " free" : (!owned && !canBuy ? " unaffordable" : "");
       const slotTxt = h.slots.length > 0 ? h.slots.map(s => HOME_SLOT_META[s].short).join("/") : "无装潢槽";
       const tag = renderGradeBadgeHtml(h, equipped, owned, 0, leasedExp);
-      const isPv = !!(homeUiState.preview && homeUiState.preview.kind === "house" && homeUiState.preview.id === h.id);
-      const pvBtn = !locked
-        ? `<button class="hc-btn preview${isPv ? " on" : ""}" data-act="preview-house" data-id="${h.id}" title="在顶部临时展开舞台预览房型">${isPv ? "收起" : "👁 试看"}</button>`
-        : "";
       const btnHtml = locked
         ? `<button class="hc-btn" disabled>🔒 待解锁</button>`
         : (owned
           ? (equipped
             ? `<button class="hc-btn unequip" disabled>居住中</button>`
             : `<button class="hc-btn equip" data-act="move-house" data-id="${h.id}">搬入</button>`)
-          : `${pvBtn}<button class="hc-btn buy${h.secret ? " secret-buy" : ""}" data-act="buy-house" data-id="${h.id}" ${canBuy ? "" : "disabled"}>${canBuy ? (leased ? "买断" : (h.secret ? "铸造" : "买房")) : "币不足"}</button>`);
+          : `<button class="hc-btn buy${h.secret ? " secret-buy" : ""}" data-act="buy-house" data-id="${h.id}" ${canBuy ? "" : "disabled"}>${canBuy ? (leased ? "买断" : (h.secret ? "铸造" : "买房")) : "币不足"}</button>`);
       let rentRowHtml = "";
       if (h.rentable && !owned && !locked) {
         const r7 = TOOTOO_REG.getHouseRentPrice(h, 7, activeEvents, bestCoupon);
@@ -19744,8 +19743,8 @@ document.getElementById("homeShopGrid").addEventListener("click", (e) => {
     switchHomeView("shop", btn.dataset.tab || homeUiState.tab);
     return;
   }
-  if (act === "preview-house" || act === "preview-decor" || act === "preview-wear") {
-    const kind = act === "preview-house" ? "house" : (act === "preview-decor" ? "decor" : "wear");
+  if (act === "preview-decor" || act === "preview-wear") {
+    const kind = act === "preview-decor" ? "decor" : "wear";
     const same = homeUiState.preview && homeUiState.preview.kind === kind && homeUiState.preview.id === id;
     homeUiState.preview = same ? null : { kind, id };
     _lastHomeStageKey = "";
