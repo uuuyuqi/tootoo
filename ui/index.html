@@ -3591,7 +3591,7 @@
 
   .home-tabs {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 4px;
     background: var(--surface-2);
     border: 1px solid var(--border);
@@ -5946,14 +5946,12 @@
 
     <div class="home-event-banner" id="homeEventBanner">
       <span id="homeEventBannerText"></span>
-      <button id="homeEventBannerBtn">去逛活动 →</button>
     </div>
 
     <div class="home-tabs" id="homeTabs">
       <button data-htab="houses" class="active">🏠 置业租房</button>
       <button data-htab="decor">🛋️ 室内装潢</button>
       <button data-htab="wear">👗 兔兔衣橱</button>
-      <button data-htab="events">🎉 限时活动</button>
     </div>
 
     <div class="home-subbar" id="homeSubbar">
@@ -15696,33 +15694,6 @@ function renderHomeShop() {
         renderChunkedCards(cards);
       }
     }
-  } else {
-    // 4th Tab: 🎉 Live-Ops Seasonal Events Storefront & Festival Calendar
-    if (activeEvents.length > 0) {
-      if (subbarEl) subbarEl.style.display = "flex";
-      if (pillsEl) {
-        pillsEl.innerHTML = activeEvents.map(ev =>
-          `<span class="home-slot-pill active">${ev.icon} ${ev.name}进行中</span>`
-        ).join("");
-      }
-    } else {
-      if (subbarEl) subbarEl.style.display = "none";
-      if (pillsEl) pillsEl.innerHTML = "";
-    }
-    const eventDecors = HOME_DECORS.filter(it => it.eventId && TOOTOO_REG.isItemAvailable(it, activeEvents, hState.owned_decor.includes(it.id)));
-    const eventWears = HOME_WEARABLES.filter(it => it.eventId && TOOTOO_REG.isItemAvailable(it, activeEvents, hState.owned_wear.includes(it.id)));
-    const cards = [
-      ...eventDecors.map(it => renderDecorCardHtml(it, hState, cs, maxTier, activeEvents)),
-      ...eventWears.map(it => renderWearCardHtml(it, hState, cs, maxTier, activeEvents)),
-    ];
-    if (cards.length > 0) {
-      renderChunkedCards(cards);
-    } else if (gridEl) {
-      gridEl.innerHTML = `<div class="home-notice" style="text-align:left;line-height:1.7">
-        <strong>🎉 年度节庆日历</strong><br/>
-        ${TOOTOO_REG.events.map(ev => `${ev.icon} <strong>${ev.name}</strong> · ${ev.dateRanges.map(r => r.join(" ~ ")).join(" / ")}${ev.shopDiscount < 1 ? ` · 全场${Math.round(ev.shopDiscount * 10)}折` : ""}${ev.checkinBonus > 0 ? ` · 签到+${ev.checkinBonus}` : ""}`).join("<br/>")}
-      </div>`;
-    }
   }
 }
 
@@ -15843,16 +15814,6 @@ document.getElementById("homeSlotPills").addEventListener("click", (e) => {
     homeUiState.houseTier = Number(btn.dataset.htier) || 0;
     renderHomeShop();
   }
-});
-
-// Event banner quick-jump
-document.getElementById("homeEventBannerBtn").addEventListener("click", () => {
-  homeUiState.tab = "events";
-  homeUiState.pageLimit = 24;
-  closeHomeConfirm();
-  document.querySelectorAll("#homeTabs button").forEach(b => b.classList.toggle("active", b.dataset.htab === "events"));
-  renderHomeShop();
-  playSfx("token");
 });
 
 document.getElementById("homeAvatarWearToggle").addEventListener("click", () => {
