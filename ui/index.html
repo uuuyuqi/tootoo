@@ -14963,6 +14963,72 @@ function triggerHomeSpotReaction(tx, ty, rawClickY) {
   }
 }
 
+function getShelterSolidEnvelope(houseId) {
+  const map = {
+    wall_corner:    { left: 84,  right: 286, inX0: 164, inX1: 242, doorY: 168, frontY: 178, clearPad: 28 },
+    pot:            { left: 122, right: 298, inX0: 194, inX1: 226, doorY: 168, frontY: 178, clearPad: 28 },
+    hay_pile:       { left: 104, right: 316, inX0: 194, inX1: 226, doorY: 168, frontY: 178, clearPad: 28 },
+    moss_rocks:     { left: 98,  right: 314, inX0: 194, inX1: 218, doorY: 168, frontY: 178, clearPad: 28 },
+    giant_mushroom: { left: 142, right: 278, inX0: 194, inX1: 226, doorY: 168, frontY: 178, clearPad: 28 },
+  };
+  return map[houseId] || { left: 118, right: 302, inX0: 194, inX1: 226, doorY: 168, frontY: 178, clearPad: 28 };
+}
+
+function buildHomeWalkPath(house, sx, sy, tx, ty) {
+  const pts = [{ x: sx, y: sy }];
+  const pushPt = (x, y) => {
+    const prev = pts[pts.length - 1];
+    if (Math.hypot(x - prev.x, y - prev.y) >= 4) pts.push({ x, y });
+  };
+
+  if (house.weatherMode === "shelter") {
+    const a = house.shelterArch || { x0: 168, x1: 252, yMax: 170 };
+    const env = getShelterSolidEnvelope(house.id);
+    const pad = env.clearPad || 28;
+    const clampDoor = (x) => Math.max(env.inX0, Math.min(env.inX1, x));
+    const startIn = sy <= env.doorY && sx >= a.x0 - 4 && sx <= a.x1 + 4;
+    const endIn = ty <= env.doorY && tx >= a.x0 - 4 && tx <= a.x1 + 4;
+
+    if (startIn && !endIn) {
+      // Exit straight out through the open doorway first, NEVER sideways through solid walls!
+      const exitX = clampDoor(sx);
+      pushPt(exitX, env.frontY);
+      if (ty <= env.doorY) {
+        const clearX = tx < exitX ? Math.min(tx, env.left - pad) : Math.max(tx, env.right + pad);
+        pushPt(Math.max(46, Math.min(374, clearX)), env.frontY);
+      }
+    } else if (!startIn && endIn) {
+      // Walk around the front lawn to the doorway entrance, then step straight IN!
+      const enterX = clampDoor(tx);
+      if (sy <= env.doorY) {
+        const clearX = sx < enterX ? Math.min(sx, env.left - pad) : Math.max(sx, env.right + pad);
+        pushPt(Math.max(46, Math.min(374, clearX)), env.frontY);
+      }
+      pushPt(enterX, env.frontY);
+    } else if (!startIn && !endIn) {
+      // Outside -> Outside: never cut behind/through the solid house footprint!
+      const minX = Math.min(sx, tx);
+      const maxX = Math.max(sx, tx);
+      const crossesWallX = maxX >= env.left - pad && minX <= env.right + pad;
+      if (crossesWallX && (sy <= env.doorY || ty <= env.doorY)) {
+        if (sy <= env.doorY) pushPt(sx, env.frontY);
+        if (ty <= env.doorY) pushPt(tx, env.frontY);
+      }
+    }
+  } else if (house.weatherMode === "terrace") {
+    // Crossing between indoor (x < 416) and outdoor terrace (x >= 416) passes smoothly through doorway floor
+    if ((sx < 416 && tx >= 416) || (sx >= 416 && tx < 416)) {
+      const doorPassY = Math.max(172, Math.min(186, (sy + ty) / 2));
+      if (Math.abs(sy - doorPassY) > 6 || Math.abs(ty - doorPassY) > 6) {
+        pushPt(416, doorPassY);
+      }
+    }
+  }
+
+  pushPt(tx, ty);
+  return pts;
+}
+
 function walkHomeBunnyTo(targetX, targetY, rawClickY = targetY, opts = {}) {
   const view = getEffectiveStageViewState();
   const house = HOME_HOUSES.find(x => x.id === view.houseId) || HOME_HOUSES[0];
@@ -14986,13 +15052,15 @@ function walkHomeBunnyTo(targetX, targetY, rawClickY = targetY, opts = {}) {
     ty = hotTbl.standY;
   } else if (house.weatherMode === "shelter") {
     const a = house.shelterArch || { x0: 168, x1: 252, yMax: 170 };
-    if (rawClickY >= 78 && rawClickY <= 168 && tx >= a.x0 - 8 && tx <= a.x1 + 8) {
-      // Clicked inside shelter opening -> tuck snugly inside the dry shelter!
-      tx = Math.max(a.x0 + 14, Math.min(a.x1 - 24, tx));
+    const env = getShelterSolidEnvelope(house.id);
+    const pad = env.clearPad || 28;
+    if (rawClickY >= 78 && rawClickY <= env.doorY && tx >= a.x0 - 8 && tx <= a.x1 + 8) {
+      // Clicked inside shelter doorway -> tuck snugly inside the dry shelter with full head clearance!
+      tx = Math.max(env.inX0, Math.min(env.inX1, tx));
       ty = 162;
-    } else if (ty <= 168 && tx >= 92 && tx <= 316) {
-      // Clicked on solid outer wall -> step cleanly onto the front lawn in front of the wall!
-      ty = 176;
+    } else if (ty <= env.doorY && tx >= env.left - pad && tx <= env.right + pad) {
+      // Clicked on or right beside solid outer wall -> step cleanly onto the front lawn in front of the wall!
+      ty = env.frontY;
     }
   } else if (worldW > 420 && homeCamera.x < 30 && targetX >= 378 && targetX <= 420 && !opts.exact) {
     // Clicked right on the far-right glass doorway while indoors -> step right out onto the terrace!
@@ -15006,16 +15074,20 @@ function walkHomeBunnyTo(targetX, targetY, rawClickY = targetY, opts = {}) {
     // Clicked directly on sofa/bed/throne cushion above the floor line
     ty = 156;
   }
+  if (house.weatherMode === "terrace" && tx >= 416) {
+    // Keep outdoor terrace walk cleanly on the front promenade in front of fire-pit/bars/loungers
+    ty = Math.max(172, ty);
+  }
 
   spawnStageWalkRing(clickedHotTable && hotTbl ? hotTbl.x : tx, clickedHotTable && hotTbl ? hotTbl.y : ty, isStarFloor && tx < 416);
 
   const sx = homeBunnyPos.x;
   const sy = homeBunnyPos.y;
   const wasOutdoors = isHomeBunnyOutdoors(house.id, sx, sy);
-  const dist = Math.hypot(tx - sx, ty - sy);
+  const directDist = Math.hypot(tx - sx, ty - sy);
 
   // Clicked right on hot-water table when already standing beside it -> drink right away!
-  if (clickedHotTable && hotTbl && dist < 18) {
+  if (clickedHotTable && hotTbl && directDist < 18) {
     stopHomeBunnyWalk();
     homeBunnyPos.x = tx;
     homeBunnyPos.y = ty;
@@ -15028,7 +15100,7 @@ function walkHomeBunnyTo(targetX, targetY, rawClickY = targetY, opts = {}) {
   }
 
   // Clicked right on TooToo itself -> affectionate pet twirl!
-  if (!clickedHotTable && dist < 24 && Math.abs(rawClickY - (sy - 36)) < 46) {
+  if (!clickedHotTable && directDist < 24 && Math.abs(rawClickY - (sy - 36)) < 46) {
     stopHomeBunnyWalk();
     renderHomeStage(null, true);
     spawnStageParticles(["❤️", "✨", "🥕", "✦"], ((sx - homeCamera.x) / 420) * 100, ((sy - 42) / 208) * 100);
@@ -15044,24 +15116,56 @@ function walkHomeBunnyTo(targetX, targetY, rawClickY = targetY, opts = {}) {
   }
 
   stopHomeBunnyWalk();
-  if (Math.abs(tx - sx) > 4) {
-    homeBunnyPos.facing = tx >= sx ? 1 : -1;
+  const path = buildHomeWalkPath(house, sx, sy, tx, ty);
+  const segLens = [];
+  let totalDist = 0;
+  for (let i = 1; i < path.length; i++) {
+    const l = Math.hypot(path[i].x - path[i - 1].x, path[i].y - path[i - 1].y);
+    segLens.push(l);
+    totalDist += l;
+  }
+  if (totalDist < 1) {
+    homeBunnyPos.x = tx;
+    homeBunnyPos.y = ty;
+    updateHomeBunnyTransformDom();
+    return;
   }
 
-  const hops = Math.max(1, Math.round(dist / 36));
-  const dur = Math.min(2000, Math.max(260, dist * 3.8));
+  const hops = Math.max(1, Math.round(totalDist / 36));
+  const dur = Math.min(2200, Math.max(260, totalDist * 3.8));
   const t0 = performance.now();
   let lastHopIdx = -1;
   let midExposed = false;
 
+  const samplePath = (travel) => {
+    let rem = travel;
+    for (let i = 0; i < segLens.length; i++) {
+      const l = segLens[i];
+      if (rem <= l || i === segLens.length - 1) {
+        const frac = l > 0 ? Math.max(0, Math.min(1, rem / l)) : 1;
+        const a = path[i];
+        const b = path[i + 1];
+        return {
+          x: a.x + (b.x - a.x) * frac,
+          y: a.y + (b.y - a.y) * frac,
+          dx: b.x - a.x,
+        };
+      }
+      rem -= l;
+    }
+    return { x: tx, y: ty, dx: 0 };
+  };
+
   const step = (now) => {
     const p = Math.min(1, (now - t0) / dur);
-    const ease = 1 - Math.pow(1 - p, 2.0);
-    homeBunnyPos.x = sx + (tx - sx) * ease;
-    homeBunnyPos.y = sy + (ty - sy) * ease;
+    const ease = 1 - Math.pow(1 - p, 1.85);
+    const pos = samplePath(totalDist * ease);
+    homeBunnyPos.x = pos.x;
+    homeBunnyPos.y = pos.y;
+    if (Math.abs(pos.dx) > 3) homeBunnyPos.facing = pos.dx >= 0 ? 1 : -1;
     const hopPhase = p * hops;
     const hopIdx = Math.floor(hopPhase);
-    homeBunnyPos.hopY = Math.abs(Math.sin(hopPhase * Math.PI)) * (dist > 40 ? 9.5 : 6.5);
+    homeBunnyPos.hopY = Math.abs(Math.sin(hopPhase * Math.PI)) * (totalDist > 40 ? 9.5 : 6.5);
 
     // Smooth cinematic side-scrolling camera follow!
     if (worldW > 420) {
