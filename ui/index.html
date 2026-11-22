@@ -9994,11 +9994,12 @@ function renderDailyChart(d) {
   const kicker = document.getElementById("dailyChartKicker");
   const mode = state.chartMode;
 
-  // When viewing TODAY, plot 24h hourly curve across all modes (tokens / speed / cost) instead of a single lonely point
-  const useHourly = d.range === "today" && (d.hourly || []).length === 24;
+  // When viewing TODAY or YESTERDAY, plot 24h hourly curve across all modes (tokens / speed / cost) instead of a single lonely bar
+  const useHourly = (d.range === "today" || d.range === "yesterday") && (d.hourly || []).length === 24;
+  const dayPrefix = d.range === "yesterday" ? "昨日" : "今日";
   if (kicker) {
     kicker.textContent = useHourly
-      ? (mode === "tokens" ? "今日分时用量 (00–23点)" : mode === "tps" ? "今日分时速度 (00–23点)" : "今日分时成本 (00–23点)")
+      ? (mode === "tokens" ? `${dayPrefix}分时用量 (00–23点)` : mode === "tps" ? `${dayPrefix}分时速度 (00–23点)` : `${dayPrefix}分时成本 (00–23点)`)
       : "每日用量与速度趋势";
   }
 
@@ -10097,7 +10098,7 @@ function renderDailyChart(d) {
       const rect = svg.getBoundingClientRect();
       const box = el.getBoundingClientRect();
       tip.innerHTML = useHourly
-        ? `<strong>今日 ${r.day}</strong><br>用量: ${fmtNum(r.tokens)} · 请求: ${r.requests} 次<br>速度: ${r.tps != null ? r.tps + " tok/s" : "—"} · 首字: ${r.ttft_p50 != null ? r.ttft_p50 + "s" : "—"} · 成本: ${fmtCost(r.cost)}`
+        ? `<strong>${dayPrefix} ${r.day}</strong><br>用量: ${fmtNum(r.tokens)} · 请求: ${r.requests} 次<br>速度: ${r.tps != null ? r.tps + " tok/s" : "—"} · 首字: ${r.ttft_p50 != null ? r.ttft_p50 + "s" : "—"} · 成本: ${fmtCost(r.cost)}`
         : `<strong>${r.day}</strong><br>用量: ${fmtNum(r.tokens)} · 请求: ${r.requests} 次<br>速度: ${r.tps != null ? r.tps + " tok/s" : "—"} · 首字: ${r.ttft_p50 != null ? r.ttft_p50 + "s" : "—"} · 成本: ${fmtCost(r.cost)}`;
       tip.style.left = Math.min(rect.width - 90, Math.max(90, box.left - rect.left + box.width / 2)) + "px";
       tip.style.top = (Math.max(46, e.clientY - rect.top)) + "px";
