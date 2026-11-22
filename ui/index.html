@@ -3741,6 +3741,126 @@
     font-size: 9.5px;
     font-weight: 700;
   }
+  /* Living World Hotspots, Cosmic Animations, Bunny Magic Powers, Minimap & T10 Creator Bar */
+  .h-hotspot { cursor: pointer; transition: filter 0.16s ease, opacity 0.16s ease; }
+  .h-hotspot:hover { filter: drop-shadow(0 0 6px rgba(253, 224, 71, 0.88)) brightness(1.12); }
+  .h-spin-fast { transform-box: fill-box; transform-origin: center; animation: hsSpin 2.6s linear infinite; }
+  @keyframes hsMeteorFly {
+    0%   { opacity: 0; transform: translate(-24px, -10px); }
+    18%  { opacity: 1; }
+    100% { opacity: 0; transform: translate(150px, 64px); }
+  }
+  .h-meteor-fly { animation: hsMeteorFly 1.35s cubic-bezier(.16,.84,.44,1) forwards; }
+  @keyframes hsVisitorFly {
+    0%   { opacity: 0; transform: translateX(-40px); }
+    12%  { opacity: 0.95; }
+    88%  { opacity: 0.95; }
+    100% { opacity: 0; transform: translateX(1320px); }
+  }
+  .h-visitor-fly { animation: hsVisitorFly 8.0s linear forwards; }
+  @keyframes hsDragonFly {
+    0%   { opacity: 0; transform: translate(-140px, 12px); }
+    10%  { opacity: 1; }
+    50%  { transform: translate(820px, -12px); }
+    90%  { opacity: 1; }
+    100% { opacity: 0; transform: translate(1780px, 8px); }
+  }
+  .h-dragon-fly { animation: hsDragonFly 6.6s ease-in-out forwards; }
+  @keyframes hsSwimAcross {
+    0%   { opacity: 0; transform: translateX(260px); }
+    15%  { opacity: 0.86; }
+    85%  { opacity: 0.86; }
+    100% { opacity: 0; transform: translateX(920px); }
+  }
+  .h-swim-across { animation: hsSwimAcross 7.4s linear forwards; }
+  .bunny-invis { opacity: 0.28; filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.95)); }
+  .bunny-glow { filter: drop-shadow(0 0 7px rgba(253, 224, 71, 0.98)) drop-shadow(0 0 14px rgba(245, 158, 11, 0.85)); }
+  .home-world-minimap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 4px 8px;
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    border-top: 1px solid var(--border);
+  }
+  .hwm-zones { display: flex; flex-wrap: wrap; gap: 3px; align-items: center; }
+  .hwm-zbtn {
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.14s ease;
+  }
+  .hwm-zbtn:hover { color: var(--ink); border-color: var(--accent); }
+  .hwm-zbtn.on {
+    background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+  .hwm-track {
+    position: relative;
+    flex: 0 0 88px;
+    height: 10px;
+    border-radius: 999px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    overflow: hidden;
+  }
+  .hwm-vp {
+    position: absolute;
+    top: 1px; bottom: 1px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 26%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent) 65%, transparent);
+    pointer-events: none;
+  }
+  .hwm-dot {
+    position: absolute;
+    top: 50%;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    box-shadow: 0 0 4px var(--accent);
+  }
+  .t10-creator-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 6px;
+    padding: 6px 8px;
+    border-radius: 10px;
+    border: 1px solid rgba(245, 158, 11, 0.45);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--amber) 10%, var(--surface)), color-mix(in srgb, #a855f7 8%, var(--surface)));
+  }
+  .t10-row { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+  .t10-tag { font-family: var(--font-mono); font-size: 9.5px; font-weight: 800; color: var(--amber); margin-right: 2px; }
+  .t10-btn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--ink);
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.12s ease;
+  }
+  .t10-btn:hover { border-color: var(--amber); transform: translateY(-1px); }
+  .t10-btn.on {
+    background: linear-gradient(135deg, #f59e0b, #ea580c);
+    color: #fff;
+    border-color: #f59e0b;
+  }
   .adv-prop-btn {
     display: inline-flex;
     align-items: center;
@@ -7179,8 +7299,11 @@
           <span class="home-stage-pill" id="homeStageSlots">装潢槽位 0/0</span>
         </span>
       </div>
-      <svg class="home-stage-svg" id="homeStageSvg" viewBox="0 0 420 208" preserveAspectRatio="xMidYMid meet" title="点击家里任意位置，兔兔就会蹦跳走过去；点兔兔可以摸摸头"></svg>
+      <svg class="home-stage-svg" id="homeStageSvg" viewBox="0 0 420 208" preserveAspectRatio="xMidYMid meet" title="点击家里任意位置让兔兔蹦跳过去；点房间里的昆虫、窗帘、机关或兔兔都有惊喜互动！"></svg>
+      <div class="home-world-minimap" id="homeWorldMinimap" style="display:none"></div>
     </div>
+
+    <div class="t10-creator-bar" id="t10CreatorBar" style="display:none"></div>
 
     <div class="home-preview-bar" id="homePreviewBar">
       <span id="homePreviewLabel">✨ 正在试穿/试摆预览</span>
@@ -7614,7 +7737,9 @@
 
 <script src="/ui/tootoo_catalog.js"></script>
 <script src="/ui/tootoo_art_houses.js"></script>
+<script src="/ui/tootoo_art_wonders.js"></script>
 <script src="/ui/tootoo_art_items.js"></script>
+<script src="/ui/tootoo_world_engine.js"></script>
 <script>
 const params = new URLSearchParams(window.location.search);
 const isPopover = params.get("mode") === "popover";
@@ -16085,12 +16210,14 @@ function renderHouseBackdropSvg(houseId, dayPhase = { phase: "day", isNight: fal
   const phase = (dayPhase && dayPhase.phase) || "day";
   const cacheKey = `${houseId}|${phase}`;
   if (_backdropSvgCache.has(cacheKey)) return _backdropSvgCache.get(cacheKey);
+  const ext = (window.TooTooArtWonders && window.TooTooArtWonders.getExtensionSvg(houseId, dayPhase)) || "";
   const pluginBackdrop = TOOTOO_REG && TOOTOO_REG.getHouseArt(houseId, dayPhase);
   if (pluginBackdrop) {
-    _backdropSvgCache.set(cacheKey, pluginBackdrop);
-    return pluginBackdrop;
+    const out = pluginBackdrop + ext;
+    _backdropSvgCache.set(cacheKey, out);
+    return out;
   }
-  const svgOut = _buildHouseBackdropSvg(houseId, dayPhase);
+  const svgOut = _buildHouseBackdropSvg(houseId, dayPhase) + ext;
   _backdropSvgCache.set(cacheKey, svgOut);
   return svgOut;
 }
@@ -17544,6 +17671,10 @@ function updateHomeCameraDom() {
   if (w) {
     w.setAttribute("transform", `translate(${(-homeCamera.x).toFixed(2)}, 0)`);
   }
+  const view = getEffectiveStageViewState();
+  if (window.TooTooWorld) {
+    window.TooTooWorld.updateMinimapLive(view.houseId, homeBunnyPos.x, homeCamera.x);
+  }
   syncHomeZoneBtnDom();
 }
 
@@ -17551,25 +17682,37 @@ function syncHomeZoneBtnDom() {
   const btn = document.getElementById("homeStageZoneBtn");
   if (!btn) return;
   const view = getEffectiveStageViewState();
-  const hasWorld = getHomeWorldWidth(view.houseId) > 420;
-  if (!hasWorld) {
+  const hObj = TOOTOO_REG && TOOTOO_REG.getHouse(view.houseId);
+  const worldW = getHomeWorldWidth(view.houseId);
+  if (worldW <= 420) {
     btn.style.display = "none";
     return;
   }
   btn.style.display = "inline-flex";
-  const isOut = isHomeBunnyOutdoors(view.houseId, homeBunnyPos.x, homeBunnyPos.y);
-  if (isOut) {
-    btn.textContent = homeBunnyClimate.condition ? "🏠 喝热水" : "🏠 回家";
-    btn.title = "点击让兔兔走回屋里，镜头跟随移动";
+  if (hObj && hObj.weatherMode === "terrace") {
+    const isOut = isHomeBunnyOutdoors(view.houseId, homeBunnyPos.x, homeBunnyPos.y);
+    if (isOut) {
+      btn.textContent = homeBunnyClimate.condition ? "🏠 喝热水" : "🏠 回家";
+      btn.title = "点击让兔兔走回屋里，镜头跟随移动";
+    } else {
+      btn.textContent = "🚪 出门";
+      btn.title = "点击让兔兔走到室外露台/庭院，镜头跟随移动";
+    }
   } else {
-    btn.textContent = "🚪 出门";
-    btn.title = "点击让兔兔走到室外露台/庭院，镜头跟随移动";
+    const zones = (window.TooTooWorld && window.TooTooWorld.getZones(view.houseId)) || [];
+    const curIdx = zones.reduce((best, z, idx) =>
+      Math.abs(homeBunnyPos.x - z.x) < Math.abs(homeBunnyPos.x - zones[best].x) ? idx : best, 0);
+    const nextZ = zones[(curIdx + 1) % Math.max(1, zones.length)];
+    btn.textContent = nextZ ? `🧭 去${nextZ.name.replace(/^[①②③④]\s*/, "")} →` : "🧭 巡游 →";
+    btn.title = "点击让兔兔跳往下一个房间区域，镜头平滑跟随！";
   }
 }
 
 function getHomeBunnyScale(fy) {
   const t = Math.max(0, Math.min(1, (fy - 152) / 46));
-  return 2.16 + t * 0.4;
+  const fx = window.TooTooWorld && window.TooTooWorld.bunnyFx;
+  const morph = fx && fx.scaleMode === "giant" ? 1.42 : (fx && fx.scaleMode === "mini" ? 0.68 : 1);
+  return (2.16 + t * 0.4) * morph;
 }
 
 function updateHomeBunnyTransformDom() {
@@ -17580,14 +17723,29 @@ function updateHomeBunnyTransformDom() {
   const sc = getHomeBunnyScale(homeBunnyPos.y);
   g.setAttribute("transform", `translate(${homeBunnyPos.x.toFixed(1)}, ${homeBunnyPos.y.toFixed(1)}) scale(${sc.toFixed(3)})`);
   const hop = homeBunnyPos.hopY || 0;
-  const stretchY = hop > 0.5 ? (1 + Math.min(0.1, hop * 0.012)) : 1;
-  const squashX = hop > 0.5 ? (1 - Math.min(0.06, hop * 0.008)) : 1;
+  const stretchY = hop > 0.5 ? (1 + Math.min(0.12, hop * 0.011)) : 1;
+  const squashX = hop > 0.5 ? (1 - Math.min(0.08, hop * 0.007)) : 1;
   body.setAttribute("transform", `translate(0, ${(-hop).toFixed(2)}) scale(${(homeBunnyPos.facing * squashX).toFixed(3)}, ${stretchY.toFixed(3)}) translate(-18, -34.2)`);
   if (sh) {
-    const shScale = Math.max(0.58, 1 - hop * 0.032);
+    const shScale = Math.max(0.45, 1 - hop * 0.024);
     sh.setAttribute("rx", (11.5 * shScale).toFixed(2));
     sh.setAttribute("ry", (2.6 * shScale).toFixed(2));
-    sh.setAttribute("opacity", Math.max(0.12, 0.28 - hop * 0.014).toFixed(2));
+    sh.setAttribute("opacity", Math.max(0.10, 0.28 - hop * 0.01).toFixed(2));
+  }
+  // Sync Quantum Prism Clone Echo if active (T9 / T10!)
+  const cloneG = document.getElementById("homeStageBunnyClone");
+  if (cloneG) {
+    const cx = homeBunnyPos.x - homeBunnyPos.facing * 36;
+    const cy = homeBunnyPos.y - 3;
+    cloneG.setAttribute("transform", `translate(${cx.toFixed(1)}, ${cy.toFixed(1)}) scale(${(sc * 0.92).toFixed(3)})`);
+    const cb = document.getElementById("homeStageBunnyCloneBody");
+    if (cb) {
+      cb.setAttribute("transform", `translate(0, ${(-hop * 0.85).toFixed(2)}) scale(${(homeBunnyPos.facing * squashX).toFixed(3)}, ${stretchY.toFixed(3)}) translate(-18, -34.2)`);
+    }
+  }
+  const view = getEffectiveStageViewState();
+  if (window.TooTooWorld) {
+    window.TooTooWorld.updateMinimapLive(view.houseId, homeBunnyPos.x, homeCamera.x);
   }
   // 2.5D depth sorting: when TooToo is inside a shelter arch (y <= doorY), front wall/roof occludes bunny!
   const fg = document.getElementById("homeStageForeground");
@@ -17817,11 +17975,11 @@ function walkHomeBunnyTo(targetX, targetY, rawClickY = targetY, opts = {}) {
       // Clicked on or right beside solid outer wall -> step cleanly onto the front lawn in front of the wall!
       ty = env.frontY;
     }
-  } else if (worldW > 420 && homeCamera.x < 30 && targetX >= 378 && targetX <= 420 && !opts.exact) {
+  } else if (house.weatherMode === "terrace" && homeCamera.x < 30 && targetX >= 378 && targetX <= 420 && !opts.exact) {
     // Clicked right on the far-right glass doorway while indoors -> step right out onto the terrace!
     tx = 478;
     ty = 176;
-  } else if (worldW > 420 && homeCamera.x > 160 && (targetX - homeCamera.x) <= 52 && !opts.exact) {
+  } else if (house.weatherMode === "terrace" && homeCamera.x > 160 && (targetX - homeCamera.x) <= 52 && !opts.exact) {
     // Clicked far-left return doorway edge while outdoors -> walk smoothly back inside!
     tx = Math.max(220, targetX - 70);
     ty = 178;
@@ -17886,8 +18044,9 @@ function walkHomeBunnyTo(targetX, targetY, rawClickY = targetY, opts = {}) {
     return;
   }
 
-  const hops = Math.max(1, Math.round(totalDist / 36));
-  const dur = Math.min(2200, Math.max(260, totalDist * 3.8));
+  const isLowGrav = !!(window.TooTooWorld && window.TooTooWorld.bunnyFx.lowGrav);
+  const hops = Math.max(1, Math.round(totalDist / (isLowGrav ? 68 : 38)));
+  const dur = Math.min(2600, Math.max(280, totalDist * (isLowGrav ? 4.4 : 3.2)));
   const t0 = performance.now();
   let lastHopIdx = -1;
   let midExposed = false;
@@ -17920,7 +18079,8 @@ function walkHomeBunnyTo(targetX, targetY, rawClickY = targetY, opts = {}) {
     if (Math.abs(pos.dx) > 3) homeBunnyPos.facing = pos.dx >= 0 ? 1 : -1;
     const hopPhase = p * hops;
     const hopIdx = Math.floor(hopPhase);
-    homeBunnyPos.hopY = Math.abs(Math.sin(hopPhase * Math.PI)) * (totalDist > 40 ? 9.5 : 6.5);
+    const hopAmp = (totalDist > 40 ? 9.5 : 6.5) * (isLowGrav ? 2.35 : 1);
+    homeBunnyPos.hopY = Math.abs(Math.sin(hopPhase * Math.PI)) * hopAmp;
 
     // Smooth cinematic side-scrolling camera follow!
     if (worldW > 420) {
@@ -18347,6 +18507,12 @@ function getEffectiveHomeDayPhase() {
     const m = metaMap[debugTimePhaseMock];
     return { ...m, hm: m.mockHm, mocked: true };
   }
+  const activeH = typeof getActiveHomeState === "function" ? getActiveHomeState() : null;
+  const cTime = activeH && activeH.house === "secret_palace" && window.TooTooWorld && window.TooTooWorld.roomState.creatorTime;
+  if (cTime && metaMap[cTime]) {
+    const m = metaMap[cTime];
+    return { ...m, hm: m.mockHm, mocked: false, creatorOverride: true };
+  }
   let phase = "day";
   if (hh >= 19 || hh < 6) phase = "night";
   else if (hh < 8) phase = "dawn";
@@ -18369,11 +18535,21 @@ async function fetchLocalWeather(force = false) {
 }
 
 function getEffectiveWeather() {
+  const h = typeof getActiveHomeState === "function" ? getActiveHomeState() : null;
+  if (h && h.house === "secret_palace" && window.TooTooWorld) {
+    const cw = window.TooTooWorld.roomState.creatorWeather || "aurora_meteor";
+    if (cw === "aurora_meteor") {
+      return { kind: "aurora_meteor", icon: "🌠", label: "太初极光流星", temp_c: null, city: "太初神权", mocked: false, cardOverride: false, creatorOverride: true };
+    }
+    if (HOME_WEATHER_META[cw]) {
+      const m = HOME_WEATHER_META[cw];
+      return { kind: cw, icon: m.icon, label: m.label, temp_c: null, city: "太初神权", mocked: false, cardOverride: false, creatorOverride: true };
+    }
+  }
   if (debugState.active && debugWeatherMock && HOME_WEATHER_META[debugWeatherMock]) {
     const m = HOME_WEATHER_META[debugWeatherMock];
     return { kind: debugWeatherMock, icon: m.icon, label: m.label, temp_c: localWeatherState.temp_c, city: localWeatherState.city, mocked: true, cardOverride: false };
   }
-  const h = typeof getActiveHomeState === "function" ? getActiveHomeState() : null;
   if (h && h.weather_override && HOME_WEATHER_META[h.weather_override.kind] && Number(h.weather_override.expires_at) > Date.now()) {
     const k = h.weather_override.kind;
     const m = HOME_WEATHER_META[k];
@@ -18521,17 +18697,33 @@ function renderWeatherLayerSvg(houseId, weather, dayPhase = { phase: "day", isNi
     return { sky, fall };
   };
 
-  // 1. Scrolling outdoor-world houses (T5 & T6 Hangzhou apartments/villas): indoor window + full outdoor world (416..720)!
+  // 0. T10 Creator Palace full-panorama celestial weather (0..1640) including exclusive Aurora-Meteor Shower!
+  if (mode === "creator") {
+    const wFull = (hObj && hObj.worldWidth) || 1640;
+    if (kind === "aurora_meteor") {
+      const auroraRibbon = `
+        <g class="h-aurora" filter="url(#hsGlowMd)" pointer-events="none" opacity="0.78">
+          <path d="M0 36 Q280 4 560 40 Q860 72 1180 28 Q1440 58 1640 22" fill="none" stroke="url(#hsAuroraCyan)" stroke-width="22"/>
+          <path d="M60 62 Q420 22 820 56 Q1240 80 1600 34" fill="none" stroke="url(#hsAuroraGold)" stroke-width="14" opacity="0.72"/>
+        </g>`;
+      return { under: auroraRibbon, over: "" };
+    }
+    const cFx = buildZoneFx({ x0: 0, x1: wFull, y0: 0, y1: 208 }, { isSky: true, isFalling: true, darkOp: 0.16 });
+    return { under: `<g pointer-events="none">${cFx.sky}</g>`, over: `<g pointer-events="none">${cFx.fall}</g>` };
+  }
+
+  // 1. Scrolling outdoor-world houses (T5 760px & T6 920px Hangzhou apartments/villas): indoor window + full outdoor world!
   if (hasTerrace) {
+    const worldW = (hObj && hObj.worldWidth) || 760;
     const winBounds = (hObj && hObj.indoorWindow) || { x0: 233, x1: 373, y0: 25, y1: 145 };
     const winClip = winBounds.shape === "twin_arch"
       ? `<path d="M154 146 V58 A50 34 0 0 1 254 58 V146 Z"/><path d="M272 146 V58 A50 34 0 0 1 372 58 V146 Z"/>`
       : `<rect x="${winBounds.x0}" y="${winBounds.y0}" width="${winBounds.x1 - winBounds.x0}" height="${winBounds.y1 - winBounds.y0}"/>`;
-    const outBounds = { x0: 416, x1: 720, y0: 0, y1: 208 };
+    const outBounds = { x0: 416, x1: worldW, y0: 0, y1: 208 };
 
     const defs = `<defs>
       <clipPath id="hsWWin_${houseId}">${winClip}</clipPath>
-      <clipPath id="hsWOut_${houseId}"><rect x="416" y="0" width="304" height="208"/></clipPath>
+      <clipPath id="hsWOut_${houseId}"><rect x="416" y="0" width="${worldW - 416}" height="208"/></clipPath>
     </defs>`;
 
     const winFx = buildZoneFx(winBounds, { isSky: true, isFalling: true, sillSnow: true, darkOp: 0.24 });
@@ -18700,6 +18892,7 @@ function renderHomeStage(freshDecorSlot = null, twirlBunny = false, forceRedraw 
     tier.level,
     (hState.hidden_tier_acc || []).join(","),
     homeBunnyClimate.condition || "",
+    window.TooTooWorld ? window.TooTooWorld.getDirtySignature(house.id) : "",
     freshDecorSlot || "",
     twirlBunny ? "1" : "0",
   ].join("|");
@@ -18707,6 +18900,10 @@ function renderHomeStage(freshDecorSlot = null, twirlBunny = false, forceRedraw 
   if (!forceRedraw && !freshDecorSlot && !twirlBunny && stageKey === _lastHomeStageKey && svgEl.childNodes.length > 0) {
     updateHomeBunnyTransformDom();
     updateHomeCameraDom();
+    if (window.TooTooWorld) {
+      window.TooTooWorld.renderWorldMinimap(house.id, homeBunnyPos.x, homeCamera.x);
+      window.TooTooWorld.renderT10CreatorBar(house.id);
+    }
     return;
   }
   _lastHomeStageKey = stageKey;
@@ -18721,30 +18918,43 @@ function renderHomeStage(freshDecorSlot = null, twirlBunny = false, forceRedraw 
     : "";
   const wLayers = hasWeather ? renderWeatherLayerSvg(house.id, weather, dayPhase) : { under: "", over: "" };
   const decorLayer = renderDecorLayerSvg(view.decor, house.slots, freshDecorSlot, house.id);
+  const interactiveLayer = window.TooTooWorld ? window.TooTooWorld.renderInteractiveLayerSvg(house, dayPhase) : "";
   const hotTableLayer = renderHomeHotTableSvg(house.id, !!homeBunnyClimate.condition);
   const condOverlaySvg = renderBunnyClimateOverlaySvg(homeBunnyClimate.condition);
+  const bFx = (window.TooTooWorld && window.TooTooWorld.bunnyFx) || {};
   const animClasses = [
     twirlBunny ? "bunny-twirl" : "",
     homeBunnyClimate.condition && !homeBunnyClimate.isDrinking ? "bunny-shiver" : "",
+    bFx.invisible ? "bunny-invis" : "",
+    bFx.glow ? "bunny-glow" : "",
   ].filter(Boolean).join(" ");
 
   const sc = getHomeBunnyScale(homeBunnyPos.y);
+  const bunnyInnerSvg = `${vis.svg}${innateSvg}${wearSvg}<g id="homeStageBunnyCondition">${condOverlaySvg}</g>`;
+  const cloneGroup = bFx.prismClone ? `
+    <g id="homeStageBunnyClone" opacity="0.52" style="filter:hue-rotate(120deg) drop-shadow(0 0 6px #38bdf8)" pointer-events="none" transform="translate(${(homeBunnyPos.x - homeBunnyPos.facing * 36).toFixed(1)}, ${(homeBunnyPos.y - 3).toFixed(1)}) scale(${(sc * 0.92).toFixed(3)})">
+      <g id="homeStageBunnyCloneBody" transform="translate(0, ${(-homeBunnyPos.hopY * 0.85).toFixed(2)}) scale(${homeBunnyPos.facing}, 1) translate(-18, -34.2)">
+        ${bunnyInnerSvg}
+      </g>
+    </g>` : "";
   const bunnyGroup = `
+    ${cloneGroup}
     <g id="homeStageBunny" transform="translate(${homeBunnyPos.x.toFixed(1)}, ${homeBunnyPos.y.toFixed(1)}) scale(${sc.toFixed(3)})">
       <ellipse id="homeStageBunnyShadow" cx="0" cy="0" rx="11.5" ry="2.6" fill="rgba(12,10,16,0.28)"/>
       <g id="homeStageBunnyBody" transform="translate(0, ${(-homeBunnyPos.hopY).toFixed(2)}) scale(${homeBunnyPos.facing}, 1) translate(-18, -34.2)">
         <g id="homeStageBunnyAnim" class="${animClasses}">
-          ${vis.svg}
-          ${innateSvg}
-          ${wearSvg}
-          <g id="homeStageBunnyCondition">${condOverlaySvg}</g>
+          ${bunnyInnerSvg}
         </g>
       </g>
     </g>
   `;
 
-  svgEl.innerHTML = `${defs}<g id="homeStageWorld" transform="translate(${(-homeCamera.x).toFixed(2)}, 0)">${backdrop}${wLayers.under}${decorLayer}${hotTableLayer}${bunnyGroup}${fgLayer}${wLayers.over}</g>`;
+  svgEl.innerHTML = `${defs}<g id="homeStageWorld" transform="translate(${(-homeCamera.x).toFixed(2)}, 0)">${backdrop}${wLayers.under}<g id="homeAmbientLayer" pointer-events="none"></g>${decorLayer}${interactiveLayer}${hotTableLayer}${bunnyGroup}${fgLayer}${wLayers.over}</g>`;
   syncHomeZoneBtnDom();
+  if (window.TooTooWorld) {
+    window.TooTooWorld.renderWorldMinimap(house.id, homeBunnyPos.x, homeCamera.x);
+    window.TooTooWorld.renderT10CreatorBar(house.id);
+  }
 
   if (homeBunnyClimate.condition && !homeBunnyClimate.sneezeTimer && document.getElementById("homeModal")?.classList.contains("open")) {
     scheduleHomeSneeze(3200);
@@ -19514,6 +19724,12 @@ function openHomeModal() {
     if (!document.getElementById("homeModal")?.classList.contains("open")) return;
     if (!homeBunnyPos.raf && (homeUiState.view === "home" || homeUiState.preview)) renderHomeStage();
   }, 30000);
+  if (window.TooTooWorld) {
+    window.TooTooWorld.startAmbientLoop(() => {
+      const v = getEffectiveStageViewState();
+      return TOOTOO_REG && TOOTOO_REG.getHouse(v.houseId);
+    });
+  }
 }
 function switchHomeView(view, targetTab = null) {
   homeUiState.view = view === "shop" ? "shop" : "home";
@@ -19531,6 +19747,7 @@ function closeHomeModal() {
   stopHomeBunnyWalk();
   stopHomeSneezeTimer();
   closeHomeConfirm();
+  if (window.TooTooWorld) window.TooTooWorld.stopAmbientLoop();
   if (homeClockTimer) {
     clearInterval(homeClockTimer);
     homeClockTimer = null;
@@ -19569,17 +19786,28 @@ document.getElementById("homeStageWeatherPill").addEventListener("click", (e) =>
 document.getElementById("homeStageZoneBtn").addEventListener("click", (e) => {
   e.stopPropagation();
   const view = getEffectiveStageViewState();
+  const hObj = TOOTOO_REG && TOOTOO_REG.getHouse(view.houseId);
   if (getHomeWorldWidth(view.houseId) <= 420) return;
-  const isOut = isHomeBunnyOutdoors(view.houseId, homeBunnyPos.x, homeBunnyPos.y);
-  if (isOut) {
-    const tbl = getHomeHotTableInfo(view.houseId);
-    if (homeBunnyClimate.condition && tbl) {
-      walkHomeBunnyTo(tbl.x, tbl.y, tbl.y - 10, { exact: true, drinkHotWater: true });
+  if (hObj && hObj.weatherMode === "terrace") {
+    const isOut = isHomeBunnyOutdoors(view.houseId, homeBunnyPos.x, homeBunnyPos.y);
+    if (isOut) {
+      const tbl = getHomeHotTableInfo(view.houseId);
+      if (homeBunnyClimate.condition && tbl) {
+        walkHomeBunnyTo(tbl.x, tbl.y, tbl.y - 10, { exact: true, drinkHotWater: true });
+      } else {
+        walkHomeBunnyTo(210, 183, 183, { exact: true });
+      }
     } else {
-      walkHomeBunnyTo(210, 183, 183, { exact: true });
+      walkHomeBunnyTo(568, 178, 178, { exact: true });
     }
-  } else {
-    walkHomeBunnyTo(568, 178, 178, { exact: true });
+    return;
+  }
+  const zones = (window.TooTooWorld && window.TooTooWorld.getZones(view.houseId)) || [];
+  if (zones.length) {
+    const curIdx = zones.reduce((best, z, idx) =>
+      Math.abs(homeBunnyPos.x - z.x) < Math.abs(homeBunnyPos.x - zones[best].x) ? idx : best, 0);
+    const nextZ = zones[(curIdx + 1) % zones.length];
+    walkHomeBunnyTo(nextZ.x, 180, 180, { exact: true });
   }
 });
 document.getElementById("homeWalletBtn").addEventListener("click", () => {
@@ -19590,12 +19818,112 @@ document.getElementById("homeCheckinBtn").addEventListener("click", (e) => perfo
 document.getElementById("gachaCheckinBtn").addEventListener("click", (e) => performDailyCheckin(e.currentTarget));
 
 document.getElementById("homeStageSvg").addEventListener("click", (e) => {
+  const hs = e.target.closest("[data-hotspot]");
+  if (hs && window.TooTooWorld) {
+    e.stopPropagation();
+    const view = getEffectiveStageViewState();
+    const house = TOOTOO_REG && TOOTOO_REG.getHouse(view.houseId);
+    const handled = window.TooTooWorld.handleHotspotClick(hs.dataset.hotspot, house, {
+      showBubble: (msg) => showHomeStageBubble(msg),
+      spawnParticles: (glyphs, px, py) => spawnStageParticles(glyphs, px, py),
+      playSfx,
+      playTone,
+      redraw: () => renderHomeStage(null, false, true),
+      updateBunnyDom: () => updateHomeBunnyTransformDom(),
+      teleportTo: (nx, ny) => {
+        stopHomeBunnyWalk();
+        homeBunnyPos.x = nx;
+        homeBunnyPos.y = ny;
+        homeCamera.x = getTargetCameraX(nx, view.houseId);
+        updateHomeBunnyTransformDom();
+        updateHomeCameraDom();
+        if (window.TooTooWorld) window.TooTooWorld.renderWorldMinimap(view.houseId, nx, homeCamera.x);
+      },
+    });
+    if (handled) return;
+  }
   const svg = e.currentTarget;
   const r = svg.getBoundingClientRect();
   if (!r.width || !r.height) return;
   const sx = ((e.clientX - r.left) / r.width) * 420 + homeCamera.x;
   const sy = ((e.clientY - r.top) / r.height) * 208;
   walkHomeBunnyTo(sx, sy, sy);
+});
+
+// Interactive World Minimap (Click Zone Buttons or Anywhere on Track to Hop Across Wide Palaces!)
+document.getElementById("homeWorldMinimap")?.addEventListener("click", (e) => {
+  const view = getEffectiveStageViewState();
+  const worldW = getHomeWorldWidth(view.houseId);
+  if (worldW <= 420) return;
+  const zBtn = e.target.closest("button[data-zone-x]");
+  if (zBtn) {
+    walkHomeBunnyTo(Number(zBtn.dataset.zoneX), 180, 180, { exact: true });
+    return;
+  }
+  const track = e.target.closest("#hwmTrack");
+  if (track) {
+    const r = track.getBoundingClientRect();
+    const frac = Math.max(0.04, Math.min(0.96, (e.clientX - r.left) / r.width));
+    walkHomeBunnyTo(frac * worldW, 180, 180, { exact: true });
+  }
+});
+
+// T10 Creator's Sovereign Control Bar (Time / Weather / All Bunny God Powers!)
+document.getElementById("t10CreatorBar")?.addEventListener("click", (e) => {
+  if (!window.TooTooWorld) return;
+  const rs = window.TooTooWorld.roomState;
+  const fx = window.TooTooWorld.bunnyFx;
+  const tBtn = e.target.closest("button[data-t10-time]");
+  if (tBtn) {
+    rs.creatorTime = tBtn.dataset.t10Time || null;
+    renderHomeStage(null, false, true);
+    showHomeStageBubble(rs.creatorTime ? `👑 造物主敕令：切换至「${tBtn.textContent}」天光！` : "🔄 已恢复跟随现实时间～");
+    playSfx("gold");
+    return;
+  }
+  const wBtn = e.target.closest("button[data-t10-weather]");
+  if (wBtn) {
+    rs.creatorWeather = wBtn.dataset.t10Weather;
+    renderHomeStage(null, false, true);
+    if (rs.creatorWeather === "aurora_meteor") {
+      for (let i = 0; i < 6; i++) setTimeout(() => window.TooTooWorld.spawnShootingStar(1640, true), i * 160);
+    }
+    showHomeStageBubble(`👑 造物主敕令：天象切换为「${wBtn.textContent}」！`);
+    playSfx("ssr");
+    return;
+  }
+  const fBtn = e.target.closest("button[data-t10-fx]");
+  if (fBtn) {
+    const act = fBtn.dataset.t10Fx;
+    if (act === "glow") fx.glow = !fx.glow;
+    else if (act === "invis") fx.invisible = !fx.invisible;
+    else if (act === "lowgrav") fx.lowGrav = !fx.lowGrav;
+    else if (act === "scale") fx.scaleMode = fx.scaleMode === "normal" ? "giant" : (fx.scaleMode === "giant" ? "mini" : "normal");
+    else if (act === "clone") fx.prismClone = !fx.prismClone;
+    else if (act === "dragon") {
+      window.TooTooWorld.spawnCosmicVisitor(1640, "dragon");
+      for (let i = 0; i < 4; i++) setTimeout(() => window.TooTooWorld.spawnShootingStar(1640, true), i * 200);
+      showHomeStageBubble("🐉 造物主御龙术！星河金龙腾空巡游 1640px 天穹！");
+      playSfx("ssr");
+      return;
+    }
+    renderHomeStage(null, false, true);
+    updateHomeBunnyTransformDom();
+    playSfx("cache");
+  }
+});
+
+// Keyboard Arrow Navigation inside Wide Houses (<- / -> hops TooToo smoothly across halls!)
+window.addEventListener("keydown", (e) => {
+  if (!document.getElementById("homeModal")?.classList.contains("open")) return;
+  if (homeUiState.view !== "home") return;
+  if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+  const view = getEffectiveStageViewState();
+  const worldW = getHomeWorldWidth(view.houseId);
+  if (worldW <= 420) return;
+  e.preventDefault();
+  const step = e.key === "ArrowRight" ? 150 : -150;
+  walkHomeBunnyTo(Math.max(54, Math.min(worldW - 54, homeBunnyPos.x + step)), homeBunnyPos.y, homeBunnyPos.y, { exact: true });
 });
 
 document.querySelectorAll("#homeTabs button").forEach(btn => {
