@@ -3361,6 +3361,51 @@
     font-size: 13px;
     animation: homePartFly var(--dur, 0.85s) cubic-bezier(0.16, 0.88, 0.3, 1) forwards;
   }
+  .home-walk-ring {
+    position: absolute;
+    z-index: 5;
+    width: 24px;
+    height: 11px;
+    border-radius: 50%;
+    border: 1.8px solid rgba(254, 240, 138, 0.92);
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.65);
+    pointer-events: none;
+    transform: translate(-50%, -50%) scale(0.35);
+    animation: homeWalkRingOut 0.56s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .home-walk-ring.star-step {
+    border-color: rgba(56, 189, 248, 0.92);
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.8), 0 0 18px rgba(168, 85, 247, 0.55);
+  }
+  @keyframes homeWalkRingOut {
+    0%   { opacity: 0.95; transform: translate(-50%, -50%) scale(0.3); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.65); }
+  }
+  .home-stage-bubble {
+    position: absolute;
+    z-index: 8;
+    pointer-events: none;
+    padding: 3.5px 9px;
+    border-radius: 999px;
+    background: rgba(22, 20, 18, 0.88);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid rgba(254, 240, 138, 0.45);
+    color: #fffdf7;
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 700;
+    white-space: nowrap;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+    transform: translate(-50%, -100%);
+    animation: homeBubblePop 2.2s cubic-bezier(0.22, 1.3, 0.36, 1) forwards;
+  }
+  @keyframes homeBubblePop {
+    0%   { opacity: 0; transform: translate(-50%, -70%) scale(0.72); }
+    14%  { opacity: 1; transform: translate(-50%, -105%) scale(1.04); }
+    78%  { opacity: 1; transform: translate(-50%, -108%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -125%) scale(0.92); }
+  }
   @keyframes homePartFly {
     0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.4) rotate(0deg); }
     20%  { opacity: 1; transform: translate(calc(-50% + var(--dx) * 0.35), calc(-50% + var(--dy) * 0.35)) scale(1.18) rotate(calc(var(--rot) * 0.4)); }
@@ -5621,7 +5666,7 @@
           <span class="home-stage-pill" id="homeStageSlots">装潢槽位 0/0</span>
         </span>
       </div>
-      <svg class="home-stage-svg" id="homeStageSvg" viewBox="0 0 420 208" preserveAspectRatio="xMidYMid meet" title="点点家里的兔兔互动一下"></svg>
+      <svg class="home-stage-svg" id="homeStageSvg" viewBox="0 0 420 208" preserveAspectRatio="xMidYMid meet" title="点击家里任意位置，兔兔就会蹦跳走过去；点兔兔可以摸摸头"></svg>
     </div>
 
     <div class="home-tabs" id="homeTabs">
@@ -13578,6 +13623,218 @@ function getEffectiveStageViewState() {
   return { houseId, decor, wear, isPreview: true, previewLabel };
 }
 
+// ---- Interactive Point-and-Walk Bunny State inside 420x208 Home Stage ----
+const homeBunnyPos = {
+  x: 210,
+  y: 183,
+  facing: 1,
+  hopY: 0,
+  raf: null,
+  lastHouseId: null,
+};
+
+function getHomeBunnyScale(fy) {
+  const t = Math.max(0, Math.min(1, (fy - 152) / 46));
+  return 2.16 + t * 0.4;
+}
+
+function updateHomeBunnyTransformDom() {
+  const g = document.getElementById("homeStageBunny");
+  const body = document.getElementById("homeStageBunnyBody");
+  const sh = document.getElementById("homeStageBunnyShadow");
+  if (!g || !body) return;
+  const sc = getHomeBunnyScale(homeBunnyPos.y);
+  g.setAttribute("transform", `translate(${homeBunnyPos.x.toFixed(1)}, ${homeBunnyPos.y.toFixed(1)}) scale(${sc.toFixed(3)})`);
+  const hop = homeBunnyPos.hopY || 0;
+  const stretchY = hop > 0.5 ? (1 + Math.min(0.1, hop * 0.012)) : 1;
+  const squashX = hop > 0.5 ? (1 - Math.min(0.06, hop * 0.008)) : 1;
+  body.setAttribute("transform", `translate(0, ${(-hop).toFixed(2)}) scale(${(homeBunnyPos.facing * squashX).toFixed(3)}, ${stretchY.toFixed(3)}) translate(-18, -34.2)`);
+  if (sh) {
+    const shScale = Math.max(0.58, 1 - hop * 0.032);
+    sh.setAttribute("rx", (11.5 * shScale).toFixed(2));
+    sh.setAttribute("ry", (2.6 * shScale).toFixed(2));
+    sh.setAttribute("opacity", Math.max(0.12, 0.28 - hop * 0.014).toFixed(2));
+  }
+}
+
+function stopHomeBunnyWalk() {
+  if (homeBunnyPos.raf) {
+    cancelAnimationFrame(homeBunnyPos.raf);
+    homeBunnyPos.raf = null;
+  }
+  homeBunnyPos.hopY = 0;
+}
+
+function spawnStageWalkRing(svgX, svgY, isStarStep = false) {
+  const wrap = document.getElementById("homeStageWrap");
+  if (!wrap) return;
+  const el = document.createElement("span");
+  el.className = "home-walk-ring" + (isStarStep ? " star-step" : "");
+  el.style.left = ((svgX / 420) * 100).toFixed(2) + "%";
+  el.style.top = ((svgY / 208) * 100).toFixed(2) + "%";
+  wrap.appendChild(el);
+  setTimeout(() => el.remove(), 600);
+}
+
+function showHomeStageBubble(text, svgX = homeBunnyPos.x, svgY = homeBunnyPos.y - 72) {
+  const wrap = document.getElementById("homeStageWrap");
+  if (!wrap) return;
+  wrap.querySelectorAll(".home-stage-bubble").forEach(n => n.remove());
+  const b = document.createElement("div");
+  b.className = "home-stage-bubble";
+  b.textContent = text;
+  const leftPct = Math.max(18, Math.min(82, (svgX / 420) * 100));
+  const topPct = Math.max(18, Math.min(72, (svgY / 208) * 100));
+  b.style.left = leftPct.toFixed(1) + "%";
+  b.style.top = topPct.toFixed(1) + "%";
+  wrap.appendChild(b);
+  setTimeout(() => b.remove(), 2250);
+}
+
+function triggerHomeSpotReaction(tx, ty, rawClickY) {
+  const view = getEffectiveStageViewState();
+  const house = HOME_HOUSES.find(x => x.id === view.houseId) || HOME_HOUSES[0];
+  const slots = house.slots || [];
+  const d = view.decor || {};
+  const cxPct = (tx / 420) * 100;
+  const cyPct = Math.max(22, ((ty - 44) / 208) * 100);
+
+  // 1. Clicked ceiling light zone
+  if (rawClickY < 74 && slots.includes("light") && d.light) {
+    const lightMsgs = {
+      fairy_bulb: "💡 暖黄小灯泡真温馨～",
+      carrot_neon: "🥕 深夜霓虹灯牌氛围感拉满！",
+      star_projector: "🌌 哇，天花板全是星云！",
+      crystal_chandelier: "✨ 轻奢水晶灯闪瞎兔眼啦～",
+      aurora_holo: "🌈 全息极光在头顶流动耶！",
+      secret_astrolabe_dome: "🌟 仰望太初黄金星仪穹顶！",
+    };
+    spawnStageParticles(["✨", "✦", "🌟", "💡"], cxPct, 28);
+    showHomeStageBubble(lightMsgs[d.light] || "✨ 好漂亮的灯！");
+    return;
+  }
+
+  // 2. Clicked pool / water zone (foreground right)
+  if (tx >= 248 && ty >= 166 && slots.includes("pool") && d.pool) {
+    const poolMsgs = {
+      koi_pond: "🎏 来看锦鲤讨个好运气～",
+      infinity_pool: "🏊 扑通！和小黄鸭一起泡泳池～",
+      hot_spring: "♨️ 写完代码泡个温泉太舒服啦～",
+      portal_fountain: "🌀 感受反重力时空光瀑！",
+      secret_starlight_cascade: "🌌 在银河浮空天池许个愿 ✨",
+    };
+    spawnStageParticles(["💧", "🫧", "✨", "🌊"], cxPct, cyPct);
+    showHomeStageBubble(poolMsgs[d.pool] || "💧 玩水真开心！");
+    playSfx("cache");
+    return;
+  }
+
+  // 3. Clicked furniture / bed / throne zone (left-center)
+  if (tx <= 154 && slots.includes("bed") && d.bed) {
+    const bedMsgs = {
+      straw_mat: "🌾 晒过太阳的干草窝好香～",
+      cardboard_sofa: "📦 手搓纸箱沙发意外很舒服！",
+      muji_desk: "💻 坐下再写两行神级代码！",
+      velvet_sofa: "🛋️ 云朵大沙发太软了，瘫一会儿～",
+      cyber_pod: "🛸 零重力电竞舱 · 心流启动！",
+      quantum_throne: "👑 登基！奇点王座算力拉满！",
+      secret_carrot_throne: "🥕 黄金萝卜圣座降临，尊贵拉满 ✦",
+    };
+    spawnStageParticles(d.bed.includes("throne") ? ["👑", "✨", "🌟", "✦"] : ["✨", "💤", "❤️"], cxPct, cyPct);
+    showHomeStageBubble(bedMsgs[d.bed] || "🛋️ 休息一下～");
+    playSfx("token");
+    return;
+  }
+
+  // 4. Clicked garden / plant zone (right-back)
+  if (tx >= 312 && ty <= 174 && slots.includes("garden") && d.garden) {
+    const gMsgs = {
+      mini_carrot_pot: "🌱 看看小胡萝卜长大了没～",
+      balcony_monstera: "🪴 龟背竹绿油油的好养眼！",
+      sakura_garden: "🌸 樱花瓣飘到兔兔耳朵上啦～",
+      biolum_reef: "🪸 荧光星花好梦幻！",
+      secret_golden_carrot_tree: "🌳 黄金萝卜神树结满光萝卜啦 ✦",
+    };
+    spawnStageParticles(["🌸", "🌿", "✨", "🥕"], cxPct, cyPct);
+    showHomeStageBubble(gMsgs[d.garden] || "🌿 闻闻花香～");
+    playSfx("token");
+  }
+}
+
+function walkHomeBunnyTo(targetX, targetY, rawClickY = targetY) {
+  const view = getEffectiveStageViewState();
+  const house = HOME_HOUSES.find(x => x.id === view.houseId) || HOME_HOUSES[0];
+  const isStarFloor = house.slots.includes("floor") && (view.decor.floor === "starlight_floor" || view.decor.floor === "secret_prism_mirror");
+
+  // Clamp to natural walkable room bounds
+  let tx = Math.max(46, Math.min(374, targetX));
+  let ty = Math.max(154, Math.min(198, targetY));
+  // If user clicked directly on sofa/bed/throne cushion above the floor line, let bunny hop nicely onto it!
+  if (rawClickY >= 120 && rawClickY < 156 && tx <= 148 && house.slots.includes("bed") && view.decor.bed) {
+    ty = 156;
+  }
+
+  spawnStageWalkRing(tx, ty, isStarFloor);
+
+  const sx = homeBunnyPos.x;
+  const sy = homeBunnyPos.y;
+  const dist = Math.hypot(tx - sx, ty - sy);
+
+  // Clicked right on TooToo itself -> affectionate pet twirl!
+  if (dist < 24 && Math.abs(rawClickY - (sy - 36)) < 46) {
+    stopHomeBunnyWalk();
+    renderHomeStage(null, true);
+    spawnStageParticles(["❤️", "✨", "🥕", "✦"], (sx / 420) * 100, ((sy - 42) / 208) * 100);
+    const petLines = ["❤️ 摸摸头好开心！", "🥕 今天也要一起冲算力！", "✨ 兔兔在新家超幸福～", "🐾 点哪里兔兔就跳去哪里哦！"];
+    showHomeStageBubble(petLines[Math.floor(Math.random() * petLines.length)]);
+    playSfx("token");
+    return;
+  }
+
+  stopHomeBunnyWalk();
+  if (Math.abs(tx - sx) > 4) {
+    homeBunnyPos.facing = tx >= sx ? 1 : -1;
+  }
+
+  const hops = Math.max(1, Math.round(dist / 36));
+  const dur = Math.min(1320, Math.max(260, dist * 4.1));
+  const t0 = performance.now();
+  let lastHopIdx = -1;
+
+  const step = (now) => {
+    const p = Math.min(1, (now - t0) / dur);
+    // Smooth cubic ease-out along floor path
+    const ease = 1 - Math.pow(1 - p, 2.2);
+    homeBunnyPos.x = sx + (tx - sx) * ease;
+    homeBunnyPos.y = sy + (ty - sy) * ease;
+    const hopPhase = p * hops;
+    const hopIdx = Math.floor(hopPhase);
+    homeBunnyPos.hopY = Math.abs(Math.sin(hopPhase * Math.PI)) * (dist > 40 ? 9.5 : 6.5);
+    updateHomeBunnyTransformDom();
+
+    if (hopIdx > lastHopIdx && hopIdx < hops) {
+      lastHopIdx = hopIdx;
+      if (isStarFloor) {
+        spawnStageWalkRing(homeBunnyPos.x, homeBunnyPos.y, true);
+      }
+      if (sfxEnabled) playTone(520 + (hopIdx % 3) * 65, 0.045, "triangle", 0.032);
+    }
+
+    if (p < 1) {
+      homeBunnyPos.raf = requestAnimationFrame(step);
+    } else {
+      homeBunnyPos.x = tx;
+      homeBunnyPos.y = ty;
+      homeBunnyPos.hopY = 0;
+      homeBunnyPos.raf = null;
+      updateHomeBunnyTransformDom();
+      if (isStarFloor) spawnStageWalkRing(tx, ty, true);
+      triggerHomeSpotReaction(tx, ty, rawClickY);
+    }
+  };
+  homeBunnyPos.raf = requestAnimationFrame(step);
+}
+
 function renderHomeStage(freshDecorSlot = null, twirlBunny = false) {
   const view = getEffectiveStageViewState();
   const house = HOME_HOUSES.find(x => x.id === view.houseId) || HOME_HOUSES[0];
@@ -13585,6 +13842,14 @@ function renderHomeStage(freshDecorSlot = null, twirlBunny = false) {
   const vis = getTierVisual(tier);
   const innateSvg = getActiveTierInnateSvg(tier.level, "st");
   const wearSvg = getWearOverlaySvgFor(view.wear, "st");
+
+  if (homeBunnyPos.lastHouseId && homeBunnyPos.lastHouseId !== house.id) {
+    stopHomeBunnyWalk();
+    homeBunnyPos.x = 210;
+    homeBunnyPos.y = 183;
+    homeBunnyPos.facing = 1;
+  }
+  homeBunnyPos.lastHouseId = house.id;
 
   const wrapEl = document.getElementById("homeStageWrap");
   const titleEl = document.getElementById("homeStageTitle");
@@ -13625,14 +13890,16 @@ function renderHomeStage(freshDecorSlot = null, twirlBunny = false) {
   const backdrop = renderHouseBackdropSvg(house.id);
   const decorLayer = renderDecorLayerSvg(view.decor, house.slots, freshDecorSlot);
 
-  // Place TooToo centered on the scene floor with subtle shadow + equipped wearables
+  const sc = getHomeBunnyScale(homeBunnyPos.y);
   const bunnyGroup = `
-    <g id="homeStageBunny" transform="translate(167, 100) scale(2.42)">
-      <ellipse cx="18" cy="34.2" rx="11.5" ry="2.6" fill="rgba(12,10,16,0.28)"/>
-      <g class="${twirlBunny ? "bunny-twirl" : ""}">
-        ${vis.svg}
-        ${innateSvg}
-        ${wearSvg}
+    <g id="homeStageBunny" transform="translate(${homeBunnyPos.x.toFixed(1)}, ${homeBunnyPos.y.toFixed(1)}) scale(${sc.toFixed(3)})">
+      <ellipse id="homeStageBunnyShadow" cx="0" cy="0" rx="11.5" ry="2.6" fill="rgba(12,10,16,0.28)"/>
+      <g id="homeStageBunnyBody" transform="translate(0, ${(-homeBunnyPos.hopY).toFixed(2)}) scale(${homeBunnyPos.facing}, 1) translate(-18, -34.2)">
+        <g class="${twirlBunny ? "bunny-twirl" : ""}">
+          ${vis.svg}
+          ${innateSvg}
+          ${wearSvg}
+        </g>
       </g>
     </g>
   `;
@@ -13974,6 +14241,7 @@ function openHomeModal() {
   renderHomeModal();
 }
 function closeHomeModal() {
+  stopHomeBunnyWalk();
   homeUiState.preview = null;
   document.getElementById("homeModal").classList.remove("open");
 }
@@ -14001,10 +14269,13 @@ document.getElementById("gachaGoHomeBtn").addEventListener("click", () => {
 document.getElementById("homeCheckinBtn").addEventListener("click", (e) => performDailyCheckin(e.currentTarget));
 document.getElementById("gachaCheckinBtn").addEventListener("click", (e) => performDailyCheckin(e.currentTarget));
 
-document.getElementById("homeStageSvg").addEventListener("click", () => {
-  renderHomeStage(null, true);
-  spawnStageParticles(["❤️", "✨", "🥕", "✦"], 50, 62);
-  playSfx("token");
+document.getElementById("homeStageSvg").addEventListener("click", (e) => {
+  const svg = e.currentTarget;
+  const r = svg.getBoundingClientRect();
+  if (!r.width || !r.height) return;
+  const sx = ((e.clientX - r.left) / r.width) * 420;
+  const sy = ((e.clientY - r.top) / r.height) * 208;
+  walkHomeBunnyTo(sx, sy, sy);
 });
 
 document.querySelectorAll("#homeTabs button").forEach(btn => {
