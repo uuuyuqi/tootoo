@@ -4288,20 +4288,6 @@
     transform: translateX(2px);
     border-color: color-mix(in srgb, var(--border-strong) 40%, var(--border));
   }
-  .model-cost-pill {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.5px 5.5px;
-    border-radius: 4px;
-    background: rgba(217, 119, 6, 0.11);
-    border: 1px solid rgba(217, 119, 6, 0.24);
-    color: var(--amber);
-    font-family: var(--font-mono);
-    font-size: 9.5px;
-    font-weight: 700;
-    line-height: 1.35;
-    flex-shrink: 0;
-  }
 
   @keyframes panelFadeUp {
     0%   { opacity: 0; transform: translateY(6px); }
@@ -9112,14 +9098,12 @@ function renderModelList(d) {
     const barWidth = Math.max(barPct > 0 ? 4 : 0, barPct);
     const rbCls = shouldAnimateCharts ? "race-bar sprint" : "race-bar";
     const rbDelay = Math.min(240, idx * 24);
-    const costBadge = key !== "cost"
-      ? `<span class="model-cost-pill" title="该模型估算费用">${fmtCost(m.cost)}</span>`
-      : "";
+    const metaInline = key !== "cost" ? `${subLeft} · ${fmtCost(m.cost)}` : subLeft;
 
     return `<div class="model-row">
       <div style="min-width:0">
         <div class="model-name" title="${esc(m.model)}">${esc(m.model)}</div>
-        <div class="model-meta">${tags} <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${subLeft}</span> ${costBadge}</div>
+        <div class="model-meta">${tags} <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${metaInline}</span></div>
         <div class="pop-inline-bar">
           <div class="race-track" style="height:4.5px"><div class="${rbCls}" style="--d:${rbDelay}ms;width:${barWidth}%;background:${barCol}"></div></div>
         </div>
