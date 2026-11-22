@@ -120,6 +120,18 @@ def _sanitize_home_state(raw: Any) -> dict[str, Any]:
     h["coupons"] = []
     h["friday_claim_week"] = ""
     h["claimed_house_gifts"] = []
+    h["weather_cards"] = {"h2": 0, "d1": 0}
+    h["weather_override"] = None
+    h["xp_boost"] = {"day": "", "tokens": 0}
+    h["arcade_items"] = {
+        "ammo_box": 0,
+        "rain_magnet": 0,
+        "slow_mo": 0,
+        "energy_shield": 0,
+        "overclock_core": 0,
+        "orbital_nuke": 0,
+    }
+    h["adventure_reward_day"] = ""
     if not isinstance(raw, dict):
         return h
     if isinstance(raw.get("house"), str) and raw["house"].strip():
@@ -173,10 +185,12 @@ def _sanitize_home_state(raw: Any) -> dict[str, Any]:
             if not isinstance(exp, (int, float)) or exp <= 0:
                 continue
             seen_cids.add(cid)
+            ckind = "wear" if str(c.get("kind") or "") == "wear" else "rent"
             clean_coupons.append({
                 "id": cid,
+                "kind": ckind,
                 "discount": round(float(disc), 2),
-                "label": str(c.get("label") or f"{int(round(float(disc) * 10))}折租房券")[:32],
+                "label": str(c.get("label") or f"{int(round(float(disc) * 10))}折{'饰品' if ckind == 'wear' else '租房'}券")[:32],
                 "rarity": "epic" if str(c.get("rarity") or "") == "epic" else "normal",
                 "expires_at": int(exp),
                 "source": str(c.get("source") or "friday")[:24],
@@ -186,6 +200,32 @@ def _sanitize_home_state(raw: Any) -> dict[str, Any]:
         h["friday_claim_week"] = raw["friday_claim_week"].strip()[:16]
     if isinstance(raw.get("claimed_house_gifts"), list):
         h["claimed_house_gifts"] = list(dict.fromkeys(str(x).strip() for x in raw["claimed_house_gifts"] if isinstance(x, str) and x.strip()))
+    if isinstance(raw.get("weather_cards"), dict):
+        wc = raw["weather_cards"]
+        for k in ("h2", "d1"):
+            v = wc.get(k)
+            if isinstance(v, (int, float)) and v >= 0:
+                h["weather_cards"][k] = min(999, int(v))
+    if isinstance(raw.get("weather_override"), dict):
+        wo = raw["weather_override"]
+        wkind = str(wo.get("kind") or "").strip()
+        wexp = wo.get("expires_at")
+        if wkind in ("sunny", "cloudy", "overcast", "windy", "rain", "snow") and isinstance(wexp, (int, float)) and wexp > 0:
+            h["weather_override"] = {"kind": wkind, "expires_at": int(wexp)}
+    if isinstance(raw.get("xp_boost"), dict):
+        xb = raw["xp_boost"]
+        xday = str(xb.get("day") or "").strip()[:10]
+        xtok = xb.get("tokens")
+        if len(xday) == 10 and isinstance(xtok, (int, float)) and xtok > 0:
+            h["xp_boost"] = {"day": xday, "tokens": min(2_000_000_000, int(xtok))}
+    if isinstance(raw.get("arcade_items"), dict):
+        ai = raw["arcade_items"]
+        for k in ("ammo_box", "rain_magnet", "slow_mo", "energy_shield", "overclock_core", "orbital_nuke"):
+            v = ai.get(k)
+            if isinstance(v, (int, float)) and v >= 0:
+                h["arcade_items"][k] = min(999, int(v))
+    if isinstance(raw.get("adventure_reward_day"), str):
+        h["adventure_reward_day"] = raw["adventure_reward_day"].strip()[:10]
     return h
 
 

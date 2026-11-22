@@ -587,6 +587,12 @@
       desc: "云雾托举的月牙白金浮空星池，黄金月门倾泻星瀑与光影金鲤",
       unlockReq: { needDecor: "portal_fountain", orTier: 8, label: "拥有「悬浮时空光瀑喷泉」或达到 Lv.8 星渊霸王兔" },
     },
+    // ========== Gacha-Exclusive Decors (扭蛋机限定家居装潢) ==========
+    { id: "gacha_carrot_cushion", slot: "bed",    icon: "🧸", name: "软萌胡萝卜抱枕窝",   price: 60,   grade: "craft",  gachaOnly: true, series: "扭蛋限定", tags: ["扭蛋限定", "抱枕"], desc: "扭蛋限定：蓬松橘白胡萝卜云朵大抱枕窝，软乎乎一躺就不想起来" },
+    { id: "gacha_lucky_flower",   slot: "garden", icon: "🌼", name: "幸运星花盆栽",       price: 80,   grade: "craft",  gachaOnly: true, series: "扭蛋限定", tags: ["扭蛋限定", "盆栽"], desc: "扭蛋限定：彩陶扭蛋壳种出的发光四叶幸运星花，微风摇曳散落星粉" },
+    { id: "gacha_mini_machine",   slot: "bed",    icon: "🎰", name: "迷你复古扭蛋机摆件", price: 240,  grade: "luxury", gachaOnly: true, series: "扭蛋限定", tags: ["扭蛋限定", "摆件"], desc: "扭蛋限定 SR：摆在屋里的缩小版兔耳扭蛋机，玻璃球里彩蛋闪闪发亮" },
+    { id: "gacha_bubble_lights",  slot: "light",  icon: "🫧", name: "梦幻泡泡彩灯串",     price: 260,  grade: "luxury", gachaOnly: true, series: "扭蛋限定", tags: ["扭蛋限定", "彩灯"], desc: "扭蛋限定 SR：糖果色七彩扭蛋泡泡灯串垂落天花板，柔和光晕流转" },
+    { id: "gacha_crystal_dome",   slot: "light",  icon: "💎", name: "银河扭蛋水晶穹顶灯", price: 1200, grade: "mythic", gachaOnly: true, series: "扭蛋限定", tags: ["扭蛋限定", "SSR", "穹顶灯"], desc: "扭蛋限定 SSR：24K金环托举的棱镜星河水晶吊灯，满屋流淌虹彩星辉" },
   ];
 
   // ---- Wearables Catalog (44 items: hats / outfits / accessories) ----
@@ -673,6 +679,12 @@
       series: "黑五限定", tags: ["黑五", "购物袋", "黑金", "限定"],
       desc: "黑色星期五限时限定：曜黑漆皮手提袋配 24K 烫金 VIP 蝴蝶结丝带，满载战利品",
     },
+    // ========== Gacha-Exclusive Wearables (扭蛋机限定小饰品) ==========
+    { id: "gacha_clover_clip", slot: "hat",    icon: "🍀", name: "幸运四叶草发卡",   price: 60,   grade: "craft",  gachaOnly: true, series: "扭蛋限定", tags: ["扭蛋限定", "发卡"], desc: "扭蛋限定 R：翡翠四叶草金边小发卡别在兔耳旁，欧气值+100%" },
+    { id: "gacha_capsule_bag", slot: "acc",    icon: "🧸", name: "迷你扭蛋斜挎包",   price: 75,   grade: "craft",  gachaOnly: true, series: "扭蛋限定", tags: ["扭蛋限定", "小包"], desc: "扭蛋限定 R：圆滚滚双色透明扭蛋壳斜挎小包，里面装着小金星" },
+    { id: "gacha_ribbon_cape", slot: "outfit", icon: "🎀", name: "幻彩星愿丝带披肩", price: 240,  grade: "luxury", gachaOnly: true, series: "扭蛋限定", tags: ["扭蛋限定", "披肩"], desc: "扭蛋限定 SR：丁香紫与樱花粉渐变星纱披肩，胸口系着鎏金蝴蝶结" },
+    { id: "gacha_star_wand",   slot: "acc",    icon: "⭐", name: "星愿幸运魔法棒",   price: 260,  grade: "luxury", gachaOnly: true, series: "扭蛋限定", tags: ["扭蛋限定", "魔法棒"], desc: "扭蛋限定 SR：自带星光拖尾的黄金翼星魔法棒，挥一挥好运降临" },
+    { id: "gacha_prism_crown", slot: "hat",    icon: "👑", name: "传世幻彩扭蛋皇冠", price: 1200, grade: "mythic", gachaOnly: true, series: "扭蛋限定", tags: ["扭蛋限定", "SSR", "皇冠"], desc: "扭蛋限定 SSR：镶嵌七彩棱镜宝石的 24K 鎏金小皇冠，自带神圣星环" },
   ];
 
   // ---- Extensible Plugin SVG Art Registry ----
@@ -842,6 +854,7 @@
 
   function isItemAvailable(item, activeEvents = [], isOwned = false) {
     if (!item) return false;
+    if (item.gachaOnly) return !!isOwned;
     if (!item.eventId) return true;
     if (isOwned) return true;
     return activeEvents.some(ev => ev.id === item.eventId);
@@ -946,16 +959,45 @@
     };
   }
 
-  function getValidCoupons(homeState, nowMs = Date.now()) {
+  function getValidCoupons(homeState, nowMs = Date.now(), kind = null) {
     const list = (homeState && Array.isArray(homeState.coupons)) ? homeState.coupons : [];
     return list
-      .filter(c => c && c.id && Number(c.expires_at) > nowMs && Number(c.discount) > 0 && Number(c.discount) < 1)
+      .filter(c => {
+        if (!c || !c.id || !(Number(c.expires_at) > nowMs)) return false;
+        if (!(Number(c.discount) > 0 && Number(c.discount) < 1)) return false;
+        const ck = c.kind === "wear" ? "wear" : "rent";
+        if (kind && ck !== kind) return false;
+        return true;
+      })
       .sort((a, b) => a.discount - b.discount || a.expires_at - b.expires_at);
   }
 
   function getBestRentCoupon(homeState, nowMs = Date.now()) {
-    const valid = getValidCoupons(homeState, nowMs);
+    const valid = getValidCoupons(homeState, nowMs, "rent");
     return valid.length ? valid[0] : null;
+  }
+
+  function getBestWearCoupon(homeState, nowMs = Date.now()) {
+    const valid = getValidCoupons(homeState, nowMs, "wear");
+    return valid.length ? valid[0] : null;
+  }
+
+  function getWearPriceWithCoupon(item, activeEvents = [], coupon = null) {
+    const eff = getEffectivePrice(item, activeEvents);
+    if (!coupon || !(Number(coupon.discount) > 0 && Number(coupon.discount) < 1) || eff.price <= 0) {
+      return { ...eff, basePriceBeforeCoupon: eff.price, couponApplied: null, savedByCoupon: 0 };
+    }
+    const discounted = Math.max(1, Math.round(eff.price * Number(coupon.discount)));
+    const dLabel = `${Math.round(Number(coupon.discount) * 10)}折券`;
+    return {
+      price: discounted,
+      originalPrice: eff.originalPrice || eff.price,
+      basePriceBeforeCoupon: eff.price,
+      onSale: discounted < (eff.originalPrice || eff.price),
+      discountLabel: eff.onSale ? `${eff.discountLabel}+${dLabel}` : dLabel,
+      couponApplied: coupon,
+      savedByCoupon: Math.max(0, eff.price - discounted),
+    };
   }
 
   function rollFridayCoupon(forceEpic = false, nowMs = Date.now()) {
@@ -964,6 +1006,7 @@
     const expiresAt = nowMs + ECONOMY.fridayCouponDays * 86400000;
     return {
       id: `fri_${nowMs}_${Math.random().toString(36).slice(2, 7)}`,
+      kind: "rent",
       discount,
       label: isEpic ? "🔥 3折租房神券" : "🏷️ 8折租房券",
       rarity: isEpic ? "epic" : "normal",
@@ -1050,6 +1093,8 @@
     getFridayWindowInfo,
     getValidCoupons,
     getBestRentCoupon,
+    getBestWearCoupon,
+    getWearPriceWithCoupon,
     rollFridayCoupon,
 
     getActiveEvents,

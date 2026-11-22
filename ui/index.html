@@ -3600,6 +3600,134 @@
     70% { transform: translate(-2px, 2px); }
   }
 
+  /* ---- Gacha Utility Bag (Weather Cards, Coupons, XP Boost, Adventure Props) & Adventure Prop Bar ---- */
+  .gacha-bag-card {
+    margin-top: 9px;
+    padding: 9px 11px;
+    border-radius: 9px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .gacha-bag-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    font-size: 10.5px;
+    font-weight: 800;
+    color: var(--ink);
+  }
+  .gacha-bag-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    align-items: center;
+  }
+  .bag-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--ink);
+  }
+  .bag-chip.act {
+    cursor: pointer;
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+    background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+    color: var(--accent);
+    transition: transform 0.14s ease, box-shadow 0.15s ease;
+  }
+  .bag-chip.act:hover { transform: translateY(-1px); box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 22%, transparent); }
+  .bag-chip.epic {
+    background: linear-gradient(90deg, rgba(245, 158, 11, 0.18), rgba(236, 72, 153, 0.14));
+    border-color: #f59e0b;
+    color: #d97706;
+  }
+  .bag-chip.sky {
+    background: rgba(14, 165, 233, 0.1);
+    border-color: rgba(56, 189, 248, 0.55);
+    color: #0284c7;
+  }
+  .weather-picker-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    align-items: center;
+    padding: 6px 8px;
+    border-radius: 8px;
+    background: var(--surface);
+    border: 1px dashed color-mix(in srgb, var(--accent) 45%, var(--border));
+  }
+  .weather-picker-bar button {
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--ink);
+    border-radius: 999px;
+    padding: 3px 8px;
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.12s ease, border-color 0.14s ease;
+  }
+  .weather-picker-bar button:hover {
+    transform: translateY(-1px);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .adv-prop-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    align-items: center;
+    margin-top: 7px;
+  }
+  .adv-prop-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--ink);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.12s ease, border-color 0.15s ease, background 0.15s ease;
+  }
+  .adv-prop-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+    color: var(--accent);
+  }
+  .adv-prop-btn:disabled {
+    opacity: 0.42;
+    cursor: not-allowed;
+  }
+  .adv-prop-btn .kcap {
+    font-size: 8.5px;
+    padding: 0 3.5px;
+    border-radius: 3px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .adv-prop-btn .cnt {
+    color: var(--accent);
+    font-weight: 900;
+  }
+
   /* ---- Carrot Coin Wallet Pill, Token->Carrot Exchange Card & KPI Link ---- */
   .carrot-wallet-pill {
     display: inline-flex;
@@ -6681,7 +6809,7 @@
         <button class="btn btn-ico" id="homeBtn" title="TooToo 小家 · 盖房/装潢/衣橱/签到"><span class="ico-home"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round"><path d="M2.4 7.4 8 2.6l5.6 4.8"/><path d="M4.1 6.3v6.6a1 1 0 0 0 1 1h5.8a1 1 0 0 0 1-1V6.3"/><path d="M6.6 13.9v-3.5a1.4 1.4 0 0 1 2.8 0v3.5"/></svg></span></button>
         <button class="btn btn-ico" id="gachaBtn" title="算力扭蛋 · 算力炼金"><span class="ico-gacha"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="5.6"/><path d="M2.5 8h3.6M9.9 8h3.6"/><circle cx="8" cy="8" r="1.9"/><circle cx="8" cy="8" r="0.55" fill="currentColor" stroke="none"/><path d="M5.4 5.1a3.5 3.5 0 0 1 2.2-1.1" stroke-width="1.3"/></svg></span></button>
         <button class="btn btn-ico" id="patrolBtn" title="召唤小兔兔巡逻（偶尔能捡到算力扭蛋）"><span class="ico-paw"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.45" stroke-linecap="round" stroke-linejoin="round"><path d="M5.1 11.4c0-1.55 1.3-2.75 2.9-2.75s2.9 1.2 2.9 2.75c0 1-.72 1.75-1.68 1.75-.46 0-.84-.16-1.22-.16s-.76.16-1.22.16c-.96 0-1.68-.75-1.68-1.75Z"/><circle cx="3.5" cy="7.4" r="1.15"/><circle cx="6.2" cy="4.7" r="1.2"/><circle cx="9.8" cy="4.7" r="1.2"/><circle cx="12.5" cy="7.4" r="1.15"/></svg></span></button>
-        <button class="btn btn-ico" id="arcadeBtn" title="更多玩法 · 算力游乐场"><span class="ico-more"><svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" stroke="none"><circle cx="3.6" cy="8" r="1.35"/><circle cx="8" cy="8" r="1.35"/><circle cx="12.4" cy="8" r="1.35"/></svg></span></button>
+        <button class="btn btn-ico" id="arcadeBtn" title="TooToo 大冒险"><span class="ico-more"><svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" stroke="none"><circle cx="3.6" cy="8" r="1.35"/><circle cx="8" cy="8" r="1.35"/><circle cx="12.4" cy="8" r="1.35"/></svg></span></button>
       </div>
     </div>
   </header>
@@ -7234,24 +7362,26 @@
         </svg>
       </button>
       <div style="font-size:11px;color:var(--muted);margin-bottom:8px">
-        当前余额 <strong id="gachaCoins" style="color:var(--accent)">0</strong> 枚萝卜币 · 扭蛋图鉴 <strong id="gachaColl" style="color:var(--ink)">0 / 24</strong>
+        当前余额 <strong id="gachaCoins" style="color:var(--accent)">0</strong> 枚萝卜币 · 扭蛋限定藏品 <strong id="gachaColl" style="color:var(--ink)">0 / 10</strong>
       </div>
       <button class="arc-primary-btn" id="gachaPullBtn">🥕 消耗 1 枚萝卜币扭一颗！</button>
       <div class="gacha-result" id="gachaResult">
-        <span style="font-size:11px;color:var(--muted)">用萝卜币拉下开关，看看兔兔今天给你抽什么神签 ✨</span>
+        <span style="font-size:11px;color:var(--muted)">可抽萝卜币 · 经验包 · 租房卡 · 限定饰品/装潢 · 呼风唤雨卡 · 折扣券 · 冒险道具 ✨</span>
       </div>
     </div>
+    <div class="gacha-bag-card" id="gachaBagCard"></div>
     <div class="alchemy-grid" id="alchemyGrid" style="margin-top:9px;margin-bottom:0"></div>
     <div class="dbg-only dbg-inline" id="dbgGachaPanel">
       <div class="dbg-inline-row">
-        <span class="dbg-tag">🛠 扭蛋沙盒(不扣真实萝卜币/不写图鉴)</span>
+        <span class="dbg-tag">🛠 扭蛋沙盒(不扣真实萝卜币)</span>
         <button class="dbg-mini-btn" id="dbgGachaPlusBtn">🥕 +10萝卜币</button>
-        <button class="dbg-mini-btn" id="dbgGachaResetClaimBtn">↺ 重置临时兑换</button>
-        <button class="dbg-mini-btn" id="dbgGachaResetCollBtn">↺ 清临时图鉴</button>
+        <button class="dbg-mini-btn" id="dbgGachaItemsBtn">🎒 +全套道具</button>
+        <button class="dbg-mini-btn" id="dbgGachaResetClaimBtn">↺ 重置兑换</button>
+        <button class="dbg-mini-btn" id="dbgGachaResetCollBtn">↺ 清藏品</button>
       </div>
       <div class="dbg-inline-row" id="dbgGachaForceChips">
         <span class="dbg-tag">强制出货:</span>
-        <button class="dbg-mini-btn on" data-rarity="auto">正常随机</button>
+        <button class="dbg-mini-btn on" data-rarity="auto">正常概率(SSR 2%)</button>
         <button class="dbg-mini-btn" data-rarity="SSR">👑 必SSR</button>
         <button class="dbg-mini-btn" data-rarity="SR">★ 必SR</button>
         <button class="dbg-mini-btn" data-rarity="R">◆ 必R</button>
@@ -7261,11 +7391,11 @@
   </div>
 </div>
 
-<!-- MORE: TOOTOO DATA-DRIVEN ARCADE MODAL -->
+<!-- MORE: TOOTOO ADVENTURE MODAL -->
 <div class="evo-backdrop" id="arcadeModal">
   <div class="arcade-dialog">
     <div class="evo-head">
-      <span class="kicker" style="font-size:11px;color:var(--ink)">更多玩法 · 算力游乐场</span>
+      <span class="kicker" style="font-size:11px;color:var(--ink)">⚔️ TooToo 大冒险</span>
       <span style="display:flex;gap:5px;align-items:center">
         <button class="carrot-wallet-pill" id="arcWalletBtn" title="当前萝卜币余额（点击前往兑换与扭蛋）">🥕 <span id="arcHeaderCoins">0</span></button>
         <button class="btn" id="arcSfxBtn" style="padding:3px 7px;font-size:10px" title="开关合成复古音效">🔇 静音</button>
@@ -7276,7 +7406,6 @@
     <div class="arcade-tabs" id="arcadeTabs">
       <button data-game="blaster" class="active">🚀 弹药打Bug</button>
       <button data-game="rain">🥕 接Token雨</button>
-      <button data-game="reflex">⚡ 首字对决</button>
     </div>
 
     <!-- GAME 1 (FLAGSHIP): 🚀 TOKEN AMMO BUG BLASTER -->
@@ -7302,8 +7431,8 @@
       <div class="rain-wrap">
         <canvas id="blasterCanvas"></canvas>
         <div class="rain-overlay" id="blasterOverlay">
-          <h3 id="blasterTitle">🚀 Token 弹幕 · Bug 歼灭战</h3>
-          <p id="blasterDesc">你的真实 Token 消耗量就是弹药库（每 1M = 1 发）！真实输出速度决定射速，真实缓存命中率触发免费补弹！移动鼠标走位自动开火，空格 / 点击画布消耗 25 发释放清屏激光！</p>
+          <h3 id="blasterTitle">🚀 TooToo 大冒险 · Bug 歼灭战</h3>
+          <p id="blasterDesc">真实 Token = 弹药库，真实缓存 = 免弹率！新增连击倍率、狂热充能、分裂 Bug 与扭蛋冒险道具（快捷键 1–5 释放）！破 1200 分每日赠 +1 萝卜币！</p>
           <button class="arc-primary-btn" id="blasterStartBtn">▶ 装填今日弹药出击</button>
         </div>
       </div>
@@ -7311,13 +7440,14 @@
         <span id="blWaveInfo">防线完好 ❤️❤️❤️ · 移动走位自动射击</span>
         <button class="btn" id="blNovaBtn" style="padding:3px 9px;font-size:10px" title="消耗 25 发 Token 弹药释放全屏清屏激光（快捷键：空格）">⚡ 算力清屏 (-25弹)</button>
       </div>
+      <div class="adv-prop-bar" id="blPropBar"></div>
       <div class="dbg-only dbg-inline">
         <div class="dbg-inline-row">
           <span class="dbg-tag">🛠 打Bug调试:</span>
           <button class="dbg-mini-btn" id="dbgBlGodBtn">🔥 无双: 关</button>
           <button class="dbg-mini-btn" id="dbgBlBossBtn">👾 刷OOM Boss</button>
           <button class="dbg-mini-btn" id="dbgBlAmmoBtn">🔋 掉弹药包</button>
-          <button class="dbg-mini-btn" id="dbgBlOverclockBtn">⚡ 掉超频(隐藏5管)</button>
+          <button class="dbg-mini-btn" id="dbgBlOverclockBtn">⚡ 掉超频(5管)</button>
           <button class="dbg-mini-btn" id="dbgBlNovaBtn">💥 免费清屏</button>
         </div>
       </div>
@@ -7332,54 +7462,20 @@
       <div class="rain-wrap">
         <canvas id="rainCanvas"></canvas>
         <div class="rain-overlay" id="rainOverlay">
-          <h3 id="rainTitle">🥕 兔兔接 Token 雨</h3>
-          <p id="rainDesc">左右移动鼠标或按 ← → 控制当前阶级的兔兔！接住 🟠Token 与 🟢缓存球得分，吃 💛金胡萝卜开启吸金磁铁，偶遇 🌈彩虹星触发双倍狂热，躲开 💣首字超时雷！</p>
+          <h3 id="rainTitle">🥕 TooToo 大冒险 · 接 Token 雨</h3>
+          <p id="rainDesc">移动接住 Token/缓存/💎反弹蓝钻/⏰续命沙漏！点击画布或按空格可「⚡ 闪避冲刺」无敌穿梭，最后 8 秒开启黄金狂潮，快捷键 1–4 释放冒险道具！</p>
           <button class="arc-primary-btn" id="rainStartBtn">▶ 开始 30 秒冲刺</button>
         </div>
       </div>
+      <div class="adv-prop-bar" id="rainPropBar"></div>
       <div class="dbg-only dbg-inline">
         <div class="dbg-inline-row">
           <span class="dbg-tag">🛠 Token雨调试:</span>
           <button class="dbg-mini-btn" id="dbgRainShieldBtn">🛡️ +护盾</button>
           <button class="dbg-mini-btn" id="dbgRainGoldBtn">🥕 掉金胡萝卜</button>
-          <button class="dbg-mini-btn" id="dbgRainRainbowBtn">🌈 掉彩虹星(隐藏)</button>
+          <button class="dbg-mini-btn" id="dbgRainRainbowBtn">🌈 掉彩虹星</button>
           <button class="dbg-mini-btn" id="dbgRainBombBtn">💣 掉卡顿雷</button>
           <button class="dbg-mini-btn" id="dbgRainTimeBtn">⏱ +15s</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- GAME 3: TTFT REFLEX ARENA -->
-    <div class="arcade-pane" id="arcPane-reflex">
-      <div class="arc-hud">
-        <span>对手 <strong id="refAiLbl">今日 AI 中位首字 —</strong></span>
-        <span>你的最快 <span class="accent" id="refBest">—</span></span>
-      </div>
-      <div class="reflex-stage" id="reflexStage">
-        <div class="reflex-big" id="reflexBig">⚡ 准备对决</div>
-        <div class="reflex-sub" id="reflexSub">点击此处开始 · 看到亮橙信号瞬间点击，看你和 AI 谁的首字更快！</div>
-      </div>
-      <div class="reflex-vs" id="reflexVs">
-        <div class="reflex-bar-row">
-          <span>你的首字</span>
-          <div class="race-track" style="height:6px"><div class="race-bar" id="refYouBar" style="width:0%;background:var(--teal)"></div></div>
-          <span id="refYouVal" style="text-align:right">—</span>
-        </div>
-        <div class="reflex-bar-row">
-          <span>AI 中位首字</span>
-          <div class="race-track" style="height:6px"><div class="race-bar" id="refAiBar" style="width:0%;background:var(--accent)"></div></div>
-          <span id="refAiVal" style="text-align:right">—</span>
-        </div>
-        <div id="refVerdict" style="color:var(--muted);text-align:center;padding-top:2px">点击上方竞技场测一局！</div>
-      </div>
-      <div class="reflex-hist" id="reflexHist"></div>
-      <div class="dbg-only dbg-inline">
-        <div class="dbg-inline-row" id="dbgReflexChips">
-          <span class="dbg-tag">🛠 首字调试:</span>
-          <button class="dbg-mini-btn" id="dbgRefFastBtn">⚡ 0.4s快发: 关</button>
-          <button class="dbg-mini-btn on" data-ai="real">AI真实</button>
-          <button class="dbg-mini-btn" data-ai="0.15">🤖 0.15s极快(测败)</button>
-          <button class="dbg-mini-btn" data-ai="3.5">🐢 3.5s超慢(测胜)</button>
         </div>
       </div>
     </div>
@@ -7816,6 +7912,15 @@ function syncDebugUi() {
   if (typeof refreshArcadeContext === "function") refreshArcadeContext();
 }
 
+function getTodayXpBoostTokens() {
+  try {
+    const h = typeof getActiveHomeState === "function" ? getActiveHomeState() : null;
+    if (!h || !h.xp_boost || !h.xp_boost.tokens) return 0;
+    const todayKey = typeof getTodayKey === "function" ? getTodayKey() : "";
+    return h.xp_boost.day === todayKey ? Number(h.xp_boost.tokens || 0) : 0;
+  } catch { return 0; }
+}
+
 function getEffectiveTodayTokens() {
   if (debugState.simTokens != null) {
     return debugState.simTokens;
@@ -7828,7 +7933,8 @@ function getEffectiveTodayTokens() {
       return next ? Math.round(t.min + (next.min - t.min) * 0.55) : Math.round(t.min * 1.15);
     }
   }
-  return (state.data && state.data.today_tokens != null) ? state.data.today_tokens : 0;
+  const base = (state.data && state.data.today_tokens != null) ? state.data.today_tokens : 0;
+  return base + getTodayXpBoostTokens();
 }
 
 function applyDebugOverride(lv) {
@@ -11429,7 +11535,6 @@ document.querySelectorAll("#arcadeTabs button").forEach(btn => {
     document.querySelectorAll(".arcade-pane").forEach(p => p.classList.toggle("active", p.id === `arcPane-${g}`));
     if (g !== "blaster") stopBlasterGame();
     if (g !== "rain") stopRainGame();
-    if (g !== "reflex") cancelReflexTimer();
     refreshArcadeContext();
   });
 });
@@ -11450,18 +11555,11 @@ function getBlasterLoadout() {
   return { todayTok, ammo, tps, cacheHit, refundProb, fireHz, cannons, tier, god: false };
 }
 
-function getEffectiveReflexAiSec() {
-  if (debugState.active && debugState.reflexAiMock != null) return debugState.reflexAiMock;
-  const k = (state.data && state.data.kpi) || {};
-  return k.ttft_p50 != null ? k.ttft_p50 : 2.8;
-}
-
 function refreshArcadeContext() {
   const tier = getBunnyTier(getEffectiveTodayTokens());
   const k = (state.data && state.data.kpi) || {};
   const tps = k.tps != null ? k.tps : 65;
   const cacheHit = k.cache_hit != null ? k.cache_hit : 75;
-  const ttft = getEffectiveReflexAiSec();
 
   // Blaster loadout HUD
   const lo = getBlasterLoadout();
@@ -11481,13 +11579,7 @@ function refreshArcadeContext() {
   try { rBest = Number(localStorage.getItem("tootoo_rain_best") || 0) || 0; } catch {}
   document.getElementById("rainBest").textContent = rBest;
 
-  const aiPrefix = (debugState.active && debugState.reflexAiMock != null) ? "[调试] 模拟 AI 首字" : "今日 AI 中位首字";
-  document.getElementById("refAiLbl").textContent = `${aiPrefix} ${ttft.toFixed(2)}s`;
-  document.getElementById("refAiVal").textContent = `${ttft.toFixed(2)}s`;
-  let fBest = null;
-  try { const v = localStorage.getItem("tootoo_reflex_best"); if (v) fBest = Number(v); } catch {}
-  document.getElementById("refBest").textContent = fBest != null ? `${(fBest / 1000).toFixed(3)}s` : "—";
-
+  if (typeof renderAdventurePropBars === "function") renderAdventurePropBars();
   renderAlchemyStats();
   renderGachaMeta();
 }
@@ -11509,6 +11601,8 @@ window.addEventListener("keydown", (e) => {
     e.preventDefault();
     triggerBlasterNova();
   }
+  const propKeys = { "1": "ammo_box", "2": "overclock_core", "3": "energy_shield", "4": "slow_mo", "5": "orbital_nuke" };
+  if (propKeys[e.key]) useAdventureProp("blaster", propKeys[e.key]);
 });
 window.addEventListener("keyup", (e) => {
   if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") blKeys.left = false;
@@ -11598,6 +11692,12 @@ function startBlasterGame() {
     lives: 3,
     score: 0,
     kills: 0,
+    combo: 0,
+    comboTimer: 0,
+    feverCharge: 0,
+    shieldTimer: 0,
+    slowTimer: 0,
+    freeAmmoTimer: 0,
     shakeTimer: 0,
     overclockTimer: 0,
     debugTainted: Boolean(debugState.active && debugState.godMode),
@@ -11626,6 +11726,13 @@ function tickBlasterGame(now) {
   s.elapsed += dt;
   if (s.shakeTimer > 0) s.shakeTimer = Math.max(0, s.shakeTimer - dt);
   if (s.overclockTimer > 0) s.overclockTimer = Math.max(0, s.overclockTimer - dt);
+  if (s.shieldTimer > 0) s.shieldTimer = Math.max(0, s.shieldTimer - dt);
+  if (s.slowTimer > 0) s.slowTimer = Math.max(0, s.slowTimer - dt);
+  if (s.freeAmmoTimer > 0) s.freeAmmoTimer = Math.max(0, s.freeAmmoTimer - dt);
+  if (s.comboTimer > 0) {
+    s.comboTimer = Math.max(0, s.comboTimer - dt);
+    if (s.comboTimer === 0) s.combo = 0;
+  }
 
   const isGod = debugState.active && debugState.godMode;
   if (isGod) s.debugTainted = true;
@@ -11641,9 +11748,9 @@ function tickBlasterGame(now) {
   const effHz = (isGod ? 11.0 : s.fireHz) * (s.overclockTimer > 0 ? 1.55 : 1);
   const fireInterval = 1 / effHz;
   s.fireAcc += dt;
-  if ((isGod || s.overclockTimer > 0 || s.ammo > 0) && s.fireAcc >= fireInterval) {
+  if ((isGod || s.overclockTimer > 0 || s.freeAmmoTimer > 0 || s.ammo > 0) && s.fireAcc >= fireInterval) {
     s.fireAcc -= fireInterval;
-    const isCacheFree = isGod || s.overclockTimer > 0 || Math.random() < s.refundProb;
+    const isCacheFree = isGod || s.overclockTimer > 0 || s.freeAmmoTimer > 0 || Math.random() < s.refundProb;
     if (isCacheFree) {
       s.refunded++;
       if (!isGod && s.overclockTimer <= 0 && s.refunded % 6 === 1) {
@@ -11684,9 +11791,11 @@ function tickBlasterGame(now) {
     let spec;
     if (roll < 0.12 && s.elapsed > 4) {
       spec = { lbl: "OOM", hp: 5 + Math.floor(wave * 0.6), r: 17, vy: 46 + wave * 4, col: "#9333EA", pts: 120, boss: true };
-    } else if (roll < 0.34) {
+    } else if (roll < 0.25 && s.elapsed > 6) {
+      spec = { lbl: "SPLT", hp: 2, r: 14, vy: 64 + wave * 5, col: "#0EA5E9", pts: 55, boss: false, split: true };
+    } else if (roll < 0.44) {
       spec = { lbl: "429", hp: 1, r: 12, vy: 118 + wave * 9, col: "#D97706", pts: 35, boss: false };
-    } else if (roll < 0.56) {
+    } else if (roll < 0.64) {
       spec = { lbl: "502", hp: 2, r: 13.5, vy: 72 + wave * 5, col: "#52525B", pts: 45, boss: false };
     } else {
       spec = { lbl: "BUG", hp: 1 + (wave >= 4 ? 1 : 0), r: 12.5, vy: 82 + wave * 6, col: "#DC2626", pts: 25, boss: false };
@@ -11710,12 +11819,13 @@ function tickBlasterGame(now) {
     }
   }
 
-  // Update enemies & collisions
+  // Update enemies & collisions (slow-mo prop halves enemy fall speed!)
+  const enemySpeedMult = s.slowTimer > 0 ? 0.46 : 1;
   for (let i = s.enemies.length - 1; i >= 0; i--) {
     const en = s.enemies[i];
-    en.wobble += dt * 3.5;
-    en.y += en.vy * dt;
-    en.x += Math.sin(en.wobble) * (en.lbl === "429" ? 42 : 14) * dt;
+    en.wobble += dt * 3.5 * enemySpeedMult;
+    en.y += en.vy * dt * enemySpeedMult;
+    en.x += Math.sin(en.wobble) * (en.lbl === "429" ? 42 : 14) * dt * enemySpeedMult;
     en.x = Math.max(en.r + 4, Math.min(s.w - en.r - 4, en.x));
 
     let killed = false;
@@ -11728,14 +11838,33 @@ function tickBlasterGame(now) {
         if (en.hp <= 0) {
           killed = true;
           s.kills++;
-          s.score += en.pts;
+          s.combo++;
+          s.comboTimer = 2.4;
+          const cMult = s.combo >= 15 ? 3 : (s.combo >= 8 ? 2 : (s.combo >= 4 ? 1.5 : 1));
+          const gain = Math.round(en.pts * cMult);
+          s.score += gain;
+          s.feverCharge = Math.min(100, s.feverCharge + (en.boss ? 28 : 8));
+          if (s.feverCharge >= 100) {
+            s.feverCharge = 0;
+            s.overclockTimer = Math.max(s.overclockTimer, 4.5);
+            s.floats.push({ x: s.w / 2, y: s.h * 0.35, txt: "🔥 狂热满能！5管黄金暴走 4.5s!", col: "#F59E0B", life: 1.1 });
+            playSfx("ssr");
+          }
           spawnBlasterParts(en.x, en.y, en.col, en.boss ? 18 : 10);
-          s.floats.push({ x: en.x, y: en.y, txt: `+${en.pts}`, col: en.col, life: 0.7 });
+          s.floats.push({ x: en.x, y: en.y, txt: cMult > 1 ? `+${gain} ×${cMult}` : `+${gain}`, col: en.col, life: 0.72 });
           playSfx(en.boss ? "gold" : "token");
-          if (en.boss && Math.random() < 0.35) {
+          if (en.split) {
+            for (const dir of [-1, 1]) {
+              s.enemies.push({
+                lbl: "mini", hp: 1, maxHp: 1, r: 9.5, vy: 112 + wave * 6, col: "#38BDF8", pts: 20, boss: false,
+                x: Math.max(16, Math.min(s.w - 16, en.x + dir * 18)), y: en.y, wobble: Math.random() * 6,
+              });
+            }
+          }
+          if (en.boss && Math.random() < 0.45) {
             s.pickups.push({ x: en.x, y: en.y, vy: 82, kind: "overclock", amt: 0 });
-          } else if (en.boss || Math.random() < 0.08) {
-            s.pickups.push({ x: en.x, y: en.y, vy: 88, kind: "ammo", amt: en.boss ? 25 : 10 });
+          } else if (en.boss || Math.random() < 0.1) {
+            s.pickups.push({ x: en.x, y: en.y, vy: 88, kind: "ammo", amt: en.boss ? 28 : 12 });
           }
           break;
         }
@@ -11748,9 +11877,11 @@ function tickBlasterGame(now) {
 
     if (en.y > s.h - 10) {
       s.enemies.splice(i, 1);
-      if (isGod) {
-        s.floats.push({ x: en.x, y: s.h - 24, txt: `🛡️ 无双免疫 ${en.lbl}`, col: "#F59E0B", life: 0.8 });
+      if (isGod || s.shieldTimer > 0) {
+        s.floats.push({ x: en.x, y: s.h - 24, txt: `🛡️ 护盾格挡 ${en.lbl}`, col: "#0EA5E9", life: 0.8 });
+        playSfx("cache");
       } else {
+        s.combo = 0;
         s.lives = Math.max(0, s.lives - 1);
         s.shakeTimer = 0.32;
         s.floats.push({ x: en.x, y: s.h - 24, txt: `${en.lbl} 突破防线!`, col: "#DC2626", life: 0.9 });
@@ -11891,12 +12022,19 @@ function tickBlasterGame(now) {
     blCtx.restore();
   }
 
-  // Draw Bunny Turret
+  // Draw Bunny Turret + Shield/Slow-Mo/Fever HUD
   blCtx.save();
   blCtx.translate(s.x, by);
+  if (s.shieldTimer > 0) {
+    blCtx.beginPath();
+    blCtx.arc(0, 0, 26 + Math.sin(now / 70) * 2.5, 0, Math.PI * 2);
+    blCtx.strokeStyle = "rgba(56, 189, 248, 0.88)";
+    blCtx.lineWidth = 2.6;
+    blCtx.stroke();
+  }
   if (s.overclockTimer > 0) {
     blCtx.beginPath();
-    blCtx.arc(0, 0, 24 + Math.sin(now / 55) * 3, 0, Math.PI * 2);
+    blCtx.arc(0, 0, 23 + Math.sin(now / 55) * 3, 0, Math.PI * 2);
     blCtx.strokeStyle = "rgba(245, 158, 11, 0.85)";
     blCtx.lineWidth = 2.5;
     blCtx.stroke();
@@ -11936,12 +12074,30 @@ function tickBlasterGame(now) {
     blCtx.fillText(f.txt, f.x, f.y);
   }
   blCtx.globalAlpha = 1;
+  // Live combo & fever charge HUD inside blaster canvas
+  if (s.combo >= 3) {
+    blCtx.fillStyle = s.combo >= 15 ? "#F59E0B" : "#E54826";
+    blCtx.font = "bold 11.5px monospace";
+    blCtx.textAlign = "left";
+    blCtx.fillText(`🔥 COMBO ×${s.combo}`, 10, 18);
+  }
+  if (s.slowTimer > 0) {
+    blCtx.fillStyle = "#0284C7";
+    blCtx.font = "bold 10.5px monospace";
+    blCtx.textAlign = "right";
+    blCtx.fillText(`⏱️ 缓时 ${s.slowTimer.toFixed(1)}s`, s.w - 10, 18);
+  }
+  // Fever progress bar along very top
+  blCtx.fillStyle = "rgba(128,128,128,0.14)";
+  blCtx.fillRect(0, 0, s.w, 3.5);
+  blCtx.fillStyle = s.overclockTimer > 0 ? "#F59E0B" : "#EA580C";
+  blCtx.fillRect(0, 0, s.w * (s.overclockTimer > 0 ? 1 : (s.feverCharge / 100)), 3.5);
   blCtx.restore();
 
   document.getElementById("blAmmo").textContent = isGod ? "♾️ 无限" : `${s.ammo} 发`;
   document.getElementById("blScore").textContent = s.score;
-  const ocTxt = s.overclockTimer > 0 ? ` · ⚡超频 ${s.overclockTimer.toFixed(1)}s` : "";
-  document.getElementById("blWaveInfo").textContent = `防线 ${isGod ? "🛡️无双" : ("❤️".repeat(s.lives) + "🖤".repeat(3 - s.lives))} · 第 ${wave} 波 · 免弹 ${s.refunded}${ocTxt}`;
+  const ocTxt = s.overclockTimer > 0 ? ` · ⚡超频 ${s.overclockTimer.toFixed(1)}s` : (s.shieldTimer > 0 ? ` · 🛡️盾 ${s.shieldTimer.toFixed(1)}s` : "");
+  document.getElementById("blWaveInfo").textContent = `防线 ${isGod ? "🛡️无双" : ("❤️".repeat(s.lives) + "🖤".repeat(Math.max(0, 3 - s.lives)))} · 第 ${wave} 波 · 免弹 ${s.refunded}${ocTxt}`;
 
   // End check: out of lives OR (ammo depleted and no bullets left)
   if (!isGod && (s.lives <= 0 || (s.ammo <= 0 && s.bullets.length === 0))) {
@@ -11949,6 +12105,7 @@ function tickBlasterGame(now) {
     let best = 0;
     try { best = Number(localStorage.getItem("tootoo_blaster_best") || 0) || 0; } catch {}
     const isNew = !s.debugTainted && s.score > best;
+    const bonusCoin = (!s.debugTainted && s.score >= 1200) ? grantDailyAdventureBonusCoin() : false;
     if (isNew) {
       best = s.score;
       try { localStorage.setItem("tootoo_blaster_best", String(best)); } catch {}
@@ -11960,8 +12117,9 @@ function tickBlasterGame(now) {
     }
     const reason = s.lives <= 0 ? "防线被 Bug 突破！" : "今日 Token 弹药全部倾泻完毕！";
     const dbgPrefix = s.debugTainted ? "[调试] " : "";
+    const bonusTxt = bonusCoin ? " 🎁 破 1200 分解锁今日大冒险奖励 +1 萝卜币！" : "";
     document.getElementById("blasterTitle").textContent = `${dbgPrefix}${isNew ? "🏆 新纪录！" : "🎯 战报"} 得分 ${s.score}`;
-    document.getElementById("blasterDesc").textContent = `${reason} 共歼灭 ${s.kills} 只 Bug，真实缓存帮你白嫖了 ${s.refunded} 发免费弹药！${s.debugTainted ? "（调试局不计入最高纪录）" : "写更多代码即可扩充弹药库！"}`;
+    document.getElementById("blasterDesc").textContent = `${reason} 共歼灭 ${s.kills} 只 Bug，真实缓存白嫖 ${s.refunded} 发弹药！${bonusTxt}`;
     document.getElementById("blasterStartBtn").textContent = "↻ 重新装填弹药";
     document.getElementById("blasterOverlay").classList.remove("hidden");
     return;
@@ -11985,6 +12143,9 @@ window.addEventListener("keydown", (e) => {
   if (!rainState || !rainState.running) return;
   if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") rainKeys.left = true;
   if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") rainKeys.right = true;
+  if (e.code === "Space") { e.preventDefault(); triggerRainDash(); }
+  const rProps = { "1": "rain_magnet", "2": "energy_shield", "3": "slow_mo", "4": "orbital_nuke" };
+  if (rProps[e.key]) useAdventureProp("rain", rProps[e.key]);
 });
 window.addEventListener("keyup", (e) => {
   if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") rainKeys.left = false;
@@ -11995,6 +12156,21 @@ rainCanvas.addEventListener("pointermove", (e) => {
   const r = rainCanvas.getBoundingClientRect();
   rainState.targetX = ((e.clientX - r.left) / r.width) * rainState.w;
 });
+rainCanvas.addEventListener("pointerdown", () => {
+  if (rainState && rainState.running) triggerRainDash();
+});
+
+function triggerRainDash() {
+  const s = rainState;
+  if (!s || !s.running || s.dashCd > 0) return;
+  const dir = s.targetX >= s.x ? 1 : -1;
+  s.dashTimer = 0.24;
+  s.dashCd = 1.6;
+  s.targetX = Math.max(24, Math.min(s.w - 24, s.x + dir * 92));
+  spawnRainParticles(s.x, s.h - 28, "#38BDF8", 10);
+  s.floats.push({ x: s.x, y: s.h - 46, txt: "⚡ 闪避冲刺!", col: "#0284C7", life: 0.6 });
+  playSfx("token");
+}
 
 function stopRainGame() {
   if (rainRaf) {
@@ -12033,6 +12209,9 @@ function startRainGame() {
     spawnAcc: 0,
     magnetTimer: 0,
     feverTimer: 0,
+    slowTimer: 0,
+    dashTimer: 0,
+    dashCd: 0,
     dizzyTimer: 0,
     shakeTimer: 0,
     shields,
@@ -12071,33 +12250,40 @@ function tickRainGame(now) {
   s.timeLeft = Math.max(0, s.timeLeft - dt);
   if (s.magnetTimer > 0) s.magnetTimer = Math.max(0, s.magnetTimer - dt);
   if (s.feverTimer > 0) s.feverTimer = Math.max(0, s.feverTimer - dt);
+  if (s.slowTimer > 0) s.slowTimer = Math.max(0, s.slowTimer - dt);
+  if (s.dashTimer > 0) s.dashTimer = Math.max(0, s.dashTimer - dt);
+  if (s.dashCd > 0) s.dashCd = Math.max(0, s.dashCd - dt);
   if (s.dizzyTimer > 0) s.dizzyTimer = Math.max(0, s.dizzyTimer - dt);
   if (s.shakeTimer > 0) s.shakeTimer = Math.max(0, s.shakeTimer - dt);
 
-  // Move bunny smoothly
+  // Move bunny smoothly (extra brisk during Dash!)
   if (rainKeys.left) s.targetX -= 390 * dt;
   if (rainKeys.right) s.targetX += 390 * dt;
   s.targetX = Math.max(24, Math.min(s.w - 24, s.targetX));
-  s.x += (s.targetX - s.x) * Math.min(1, dt * 16);
+  s.x += (s.targetX - s.x) * Math.min(1, dt * (s.dashTimer > 0 ? 34 : 16));
 
-  // Spawn items scaled by real TPS (including rare hidden Rainbow Star!)
-  const spawnInterval = Math.max(0.24, 0.58 - (s.tps / 180) * 0.28);
+  // Spawn items scaled by real TPS + Final 8s Golden Rush!
+  const isRush = s.timeLeft <= 8;
+  const spawnInterval = Math.max(0.18, (0.58 - (s.tps / 180) * 0.28) * (isRush ? 0.68 : 1));
   s.spawnAcc += dt;
   while (s.spawnAcc >= spawnInterval) {
     s.spawnAcc -= spawnInterval;
     const roll = Math.random();
     let kind = "token";
     if (roll < 0.035) kind = "rainbow";
-    else if (roll < 0.105) kind = "gold";
-    else if (roll < 0.24) kind = "bomb";
-    else if (roll < 0.24 + s.cacheRate * 0.55) kind = "cache";
+    else if (roll < 0.07) kind = "hourglass";
+    else if (roll < 0.13) kind = "diamond";
+    else if (roll < (isRush ? 0.28 : 0.19)) kind = "gold";
+    else if (roll < (isRush ? 0.38 : 0.31)) kind = "bomb";
+    else if (roll < 0.31 + s.cacheRate * 0.55) kind = "cache";
     const baseVy = 115 + (s.tps / 180) * 115 + Math.random() * 55;
     s.items.push({
       kind,
       x: 20 + Math.random() * (s.w - 40),
       y: -14,
-      vy: (kind === "gold" || kind === "rainbow") ? baseVy * 1.15 : baseVy,
-      r: kind === "rainbow" ? 12.5 : kind === "gold" ? 11 : kind === "bomb" ? 11 : 9.5,
+      vx: kind === "diamond" ? ((Math.random() < 0.5 ? -1 : 1) * (95 + Math.random() * 55)) : 0,
+      vy: (kind === "gold" || kind === "rainbow" || kind === "diamond") ? baseVy * 1.12 : baseVy,
+      r: kind === "rainbow" ? 12.5 : (kind === "gold" || kind === "diamond" || kind === "hourglass") ? 11 : kind === "bomb" ? 11 : 9.5,
       rot: Math.random() * Math.PI * 2,
     });
   }
@@ -12110,18 +12296,30 @@ function tickRainGame(now) {
       const dx = s.x - it.x;
       const dy = by - it.y;
       const dist = Math.hypot(dx, dy) || 1;
-      if (dist < (s.feverTimer > 0 ? 240 : 175)) {
-        it.x += (dx / dist) * 360 * dt;
-        it.y += (dy / dist) * 280 * dt;
+      if (dist < (s.feverTimer > 0 ? 255 : 190)) {
+        it.x += (dx / dist) * 380 * dt;
+        it.y += (dy / dist) * 290 * dt;
       }
     }
-    it.y += it.vy * dt;
+    if (it.vx) {
+      it.x += it.vx * dt;
+      if (it.x < it.r + 6 || it.x > s.w - it.r - 6) {
+        it.vx = -it.vx;
+        it.x = Math.max(it.r + 6, Math.min(s.w - it.r - 6, it.x));
+      }
+    }
+    const fallMult = (s.slowTimer > 0 && it.kind === "bomb") ? 0.42 : (s.slowTimer > 0 ? 0.78 : 1);
+    it.y += it.vy * dt * fallMult;
     it.rot += dt * 3;
 
     const hitDist = Math.hypot(it.x - s.x, it.y - by);
     if (hitDist < it.r + 20) {
       if (it.kind === "bomb") {
-        if (s.shields > 0 || (debugState.active && debugState.godMode)) {
+        if (s.dashTimer > 0) {
+          spawnRainParticles(it.x, it.y, "#38BDF8", 10);
+          s.floats.push({ x: it.x, y: by - 18, txt: "⚡ 冲刺闪避!", col: "#0284C7", life: 0.8 });
+          playSfx("cache");
+        } else if (s.shields > 0 || (debugState.active && debugState.godMode)) {
           if (s.shields > 0 && !(debugState.active && debugState.godMode)) s.shields--;
           spawnRainParticles(it.x, it.y, "#0E8A78", 16);
           s.floats.push({ x: it.x, y: by - 18, txt: "🛡️ 缓存护盾抵挡!", col: "#0E8A78", life: 0.95 });
@@ -12139,7 +12337,7 @@ function tickRainGame(now) {
         s.combo++;
         if (s.combo > s.maxCombo) s.maxCombo = s.combo;
         const mult = (s.combo >= 12 ? 3 : s.combo >= 5 ? 2 : 1) * (s.feverTimer > 0 ? 2 : 1);
-        const basePts = it.kind === "rainbow" ? 90 : it.kind === "gold" ? 50 : it.kind === "cache" ? 25 : 10;
+        const basePts = it.kind === "rainbow" ? 90 : it.kind === "diamond" ? 75 : it.kind === "gold" ? 50 : it.kind === "hourglass" ? 30 : it.kind === "cache" ? 25 : 10;
         const pts = Math.round(basePts * mult * (s.tierMult || 1));
         s.score += pts;
         if (it.kind === "rainbow") {
@@ -12149,6 +12347,15 @@ function tickRainGame(now) {
           spawnRainParticles(it.x, it.y, "#A78BFA", 24);
           s.floats.push({ x: it.x, y: by - 20, txt: `+${pts} 🌈 彩虹狂热 2× +护盾!`, col: "#A78BFA", life: 1.15 });
           playSfx("ssr");
+        } else if (it.kind === "hourglass") {
+          s.timeLeft += 4;
+          spawnRainParticles(it.x, it.y, "#0284C7", 16);
+          s.floats.push({ x: it.x, y: by - 18, txt: `+${pts} ⏰ 续命 +4s!`, col: "#0284C7", life: 1.0 });
+          playSfx("cache");
+        } else if (it.kind === "diamond") {
+          spawnRainParticles(it.x, it.y, "#38BDF8", 18);
+          s.floats.push({ x: it.x, y: by - 18, txt: `+${pts} 💎 算力蓝钻!`, col: "#0284C7", life: 0.95 });
+          playSfx("gold");
         } else if (it.kind === "gold") {
           s.magnetTimer = 3.6;
           spawnRainParticles(it.x, it.y, "#F59E0B", 18);
@@ -12268,6 +12475,30 @@ function tickRainGame(now) {
       rainCtx.textAlign = "center";
       rainCtx.textBaseline = "middle";
       rainCtx.fillText("🌈", 0, 1);
+    } else if (it.kind === "diamond") {
+      rainCtx.fillStyle = "#38BDF8";
+      rainCtx.shadowColor = "rgba(56,189,248,0.78)";
+      rainCtx.shadowBlur = 10;
+      rainCtx.beginPath();
+      rainCtx.arc(0, 0, it.r, 0, Math.PI * 2);
+      rainCtx.fill();
+      rainCtx.shadowBlur = 0;
+      rainCtx.font = "12px sans-serif";
+      rainCtx.textAlign = "center";
+      rainCtx.textBaseline = "middle";
+      rainCtx.fillText("💎", 0, 1);
+    } else if (it.kind === "hourglass") {
+      rainCtx.fillStyle = "#0284C7";
+      rainCtx.shadowColor = "rgba(14,165,233,0.7)";
+      rainCtx.shadowBlur = 8;
+      rainCtx.beginPath();
+      rainCtx.arc(0, 0, it.r, 0, Math.PI * 2);
+      rainCtx.fill();
+      rainCtx.shadowBlur = 0;
+      rainCtx.font = "11px sans-serif";
+      rainCtx.textAlign = "center";
+      rainCtx.textBaseline = "middle";
+      rainCtx.fillText("⏰", 0, 1);
     } else if (it.kind === "gold") {
       rainCtx.fillStyle = "#F59E0B";
       rainCtx.shadowColor = "rgba(245,158,11,0.7)";
@@ -12398,6 +12629,7 @@ function tickRainGame(now) {
     let best = 0;
     try { best = Number(localStorage.getItem("tootoo_rain_best") || 0) || 0; } catch {}
     const isNewRecord = !s.debugTainted && s.score > best;
+    const bonusCoin = (!s.debugTainted && s.score >= 900) ? grantDailyAdventureBonusCoin() : false;
     if (isNewRecord) {
       best = s.score;
       try { localStorage.setItem("tootoo_rain_best", String(best)); } catch {}
@@ -12407,12 +12639,13 @@ function tickRainGame(now) {
     } else {
       playSfx("win");
     }
-    const remark = s.score >= 700 ? "神级手速！比 200 tok/s 还能吸！"
-      : s.score >= 380 ? "Token 收割机本机！兔兔吃饱啦！"
-      : "热身完毕！下次盯紧金胡萝卜和彩虹星触发吸金狂热！";
+    const remark = s.score >= 900 ? "神级手速！比 200 tok/s 还能吸！"
+      : s.score >= 450 ? "Token 收割机本机！兔兔吃饱啦！"
+      : "热身完毕！善用闪避冲刺与扭蛋道具冲高分！";
     const dbgPrefix = s.debugTainted ? "[调试] " : "";
+    const bonusTxt = bonusCoin ? " 🎁 破 900 分解锁今日大冒险奖励 +1 萝卜币！" : "";
     document.getElementById("rainTitle").textContent = `${dbgPrefix}${isNewRecord ? "🏆 新纪录！" : "⏱ 时间到！"} 得分 ${s.score}`;
-    document.getElementById("rainDesc").textContent = `最高连击 ×${s.maxCombo} · ${remark}${s.debugTainted ? "（调试局不计入最高纪录）" : ""}`;
+    document.getElementById("rainDesc").textContent = `最高连击 ×${s.maxCombo} · ${remark}${bonusTxt}`;
     document.getElementById("rainStartBtn").textContent = "↻ 再来一局";
     document.getElementById("rainOverlay").classList.remove("hidden");
     return;
@@ -12424,117 +12657,182 @@ function tickRainGame(now) {
 document.getElementById("rainStartBtn").addEventListener("click", startRainGame);
 
 // ============================================================
-// GAME 2: ⚡ TTFT REFLEX ARENA
+// TOOTOO ADVENTURE PROPS ENGINE (Usable Gacha Props in Both Modes)
 // ============================================================
-let reflexMode = "idle"; // idle | waiting | go
-let reflexTimer = null;
-let reflexStartTs = 0;
-let reflexHistory = [];
+const ADVENTURE_PROPS = {
+  ammo_box:       { icon: "🔋", name: "弹药扩容", games: ["blaster"],          desc: "打Bug 立即 +60 发弹药并免弹 3 秒" },
+  overclock_core: { icon: "⚡", name: "五管超频", games: ["blaster"],          desc: "打Bug 立刻开启 8 秒隐藏 5 管黄金狂暴" },
+  rain_magnet:    { icon: "🧲", name: "吸金磁铁", games: ["rain"],             desc: "接Token雨 立刻开启 8 秒超大范围磁铁" },
+  energy_shield:  { icon: "🛡️", name: "能量护盾", games: ["blaster", "rain"],  desc: "打Bug +1命+6s护盾 / Token雨 +2层护盾" },
+  slow_mo:        { icon: "⏱️", name: "时光缓滞", games: ["blaster", "rain"],  desc: "打Bug 敌群减速6s / Token雨 +10s且雷减速" },
+  orbital_nuke:   { icon: "☄️", name: "轨道核弹", games: ["blaster", "rain"],  desc: "打Bug 零耗双倍清屏 / Token雨 全屏雷变彩虹+7s狂热" },
+};
 
-function cancelReflexTimer() {
-  if (reflexTimer) {
-    clearTimeout(reflexTimer);
-    reflexTimer = null;
-  }
-  reflexMode = "idle";
+function renderAdventurePropBars() {
+  const h = getActiveHomeState();
+  const bag = (h && h.arcade_items) || {};
+  const renderBar = (elId, game, keys) => {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    el.innerHTML = keys.map((k, idx) => {
+      const p = ADVENTURE_PROPS[k];
+      const cnt = Number(bag[k] || 0);
+      return `<button type="button" class="adv-prop-btn" data-game="${game}" data-prop="${k}" ${cnt > 0 ? "" : "disabled"} title="${p.desc}（快捷键 ${idx + 1}）">
+        <span class="kcap">${idx + 1}</span><span>${p.icon}${p.name}</span><span class="cnt">×${cnt}</span>
+      </button>`;
+    }).join("");
+  };
+  renderBar("blPropBar", "blaster", ["ammo_box", "overclock_core", "energy_shield", "slow_mo", "orbital_nuke"]);
+  renderBar("rainPropBar", "rain", ["rain_magnet", "energy_shield", "slow_mo", "orbital_nuke"]);
 }
 
-document.getElementById("reflexStage").addEventListener("click", () => {
-  const stage = document.getElementById("reflexStage");
-  const big = document.getElementById("reflexBig");
-  const sub = document.getElementById("reflexSub");
-  const aiTtftMs = Math.max(100, getEffectiveReflexAiSec() * 1000);
-
-  if (reflexMode === "idle") {
-    reflexMode = "waiting";
-    stage.className = "reflex-stage waiting";
-    big.textContent = "⏳ 模型思考中…";
-    sub.textContent = "盯紧屏幕！亮起亮橙信号瞬间点击，千万别抢跑！";
-    const delay = (debugState.active && debugState.reflexFast) ? 400 : (1200 + Math.random() * 2200);
-    reflexTimer = setTimeout(() => {
-      reflexMode = "go";
-      reflexStartTs = performance.now();
-      stage.className = "reflex-stage go";
-      big.textContent = "⚡ 首字吐出！快点！";
-      sub.textContent = "NOW! NOW! NOW!";
-      playSfx("go");
-    }, delay);
-  } else if (reflexMode === "waiting") {
-    cancelReflexTimer();
-    stage.className = "reflex-stage early";
-    big.textContent = "⚠️ 抢跑啦！";
-    sub.textContent = "AI 还没开始吐字呢 · 点击重新挑战";
-    playSfx("bomb");
-  } else if (reflexMode === "go") {
-    const ms = Math.max(80, Math.round(performance.now() - reflexStartTs));
-    reflexMode = "idle";
-    stage.className = "reflex-stage";
-    const sec = (ms / 1000).toFixed(3);
-    const title = ms < 200 ? "⚡ 量子手速兔" : ms < 260 ? "🚀 闪电首字王" : ms < 340 ? "🟢 缓存级反射" : "☕ 淡定架构师";
-    big.textContent = `${sec}s`;
-    sub.textContent = `${title} · 点击再测一轮`;
-    playSfx("win");
-
-    const refTainted = debugState.active && (debugState.reflexFast || debugState.reflexAiMock != null);
-    let best = null;
-    try { const v = localStorage.getItem("tootoo_reflex_best"); if (v) best = Number(v); } catch {}
-    if (!refTainted && (best == null || ms < best)) {
-      best = ms;
-      try { localStorage.setItem("tootoo_reflex_best", String(best)); } catch {}
-      document.getElementById("refBest").textContent = `${(best / 1000).toFixed(3)}s`;
-    }
-
-    const maxBar = Math.max(ms, aiTtftMs, 1000);
-    document.getElementById("refYouBar").style.width = Math.max(4, Math.round((ms / maxBar) * 100)) + "%";
-    document.getElementById("refAiBar").style.width = Math.max(4, Math.round((aiTtftMs / maxBar) * 100)) + "%";
-    document.getElementById("refYouVal").textContent = `${sec}s`;
-    document.getElementById("refAiVal").textContent = `${(aiTtftMs / 1000).toFixed(2)}s`;
-
-    const verdict = document.getElementById("refVerdict");
-    if (ms < aiTtftMs) {
-      const mult = (aiTtftMs / ms).toFixed(1);
-      verdict.style.color = "var(--teal)";
-      verdict.textContent = `🏆 你的首字比今日 AI 中位数快了 ${mult} 倍！`;
+function useAdventureProp(game, propId) {
+  const h = cloneHomeState(getActiveHomeState());
+  const cnt = Number((h.arcade_items && h.arcade_items[propId]) || 0);
+  if (cnt <= 0) return false;
+  if (game === "blaster") {
+    if (!blasterState || !blasterState.running) startBlasterGame();
+    const s = blasterState;
+    if (!s || !s.running) return false;
+    if (propId === "ammo_box") {
+      s.ammo += 60;
+      s.freeAmmoTimer = Math.max(s.freeAmmoTimer || 0, 3.0);
+      s.floats.push({ x: s.x, y: s.h - 48, txt: "🔋 弹药 +60 · 免弹 3s!", col: "#0E8A78", life: 1.0 });
+      playSfx("cache");
+    } else if (propId === "overclock_core") {
+      s.overclockTimer = Math.max(s.overclockTimer || 0, 8.0);
+      s.floats.push({ x: s.x, y: s.h - 48, txt: "⚡ 五管超频狂暴 8s!", col: "#F59E0B", life: 1.1 });
+      playSfx("ssr");
+    } else if (propId === "energy_shield") {
+      s.lives = Math.min(3, s.lives + 1);
+      s.shieldTimer = Math.max(s.shieldTimer || 0, 6.0);
+      s.floats.push({ x: s.x, y: s.h - 48, txt: "🛡️ 恢复生命 + 6s能量盾!", col: "#0284C7", life: 1.0 });
+      playSfx("cache");
+    } else if (propId === "slow_mo") {
+      s.slowTimer = Math.max(s.slowTimer || 0, 6.0);
+      s.floats.push({ x: s.w / 2, y: 48, txt: "⏱️ 时光缓滞 6s · 敌群减速!", col: "#0284C7", life: 1.0 });
+      playSfx("gold");
+    } else if (propId === "orbital_nuke") {
+      s.novaRing = { r: 18, maxR: Math.max(s.w, s.h) * 1.25, alpha: 1 };
+      s.shakeTimer = 0.48;
+      let wiped = 0;
+      for (const en of s.enemies) {
+        wiped++;
+        s.kills++;
+        s.score += en.pts * 2;
+        spawnBlasterParts(en.x, en.y, "#F59E0B", 16);
+      }
+      s.enemies = [];
+      s.floats.push({ x: s.w / 2, y: s.h * 0.42, txt: `☄️ 轨道核弹！双倍蒸发 ${wiped} 只 Bug!`, col: "#F59E0B", life: 1.2 });
+      playSfx("ssr");
     } else {
-      verdict.style.color = "var(--accent)";
-      verdict.textContent = `🤖 今日 AI 居然比你快一步！点击再来一局扳回颜面！`;
+      return false;
     }
-
-    reflexHistory = [ms, ...reflexHistory].slice(0, 5);
-    document.getElementById("reflexHist").innerHTML = reflexHistory
-      .map((v, i) => `<span class="pill ${i === 0 ? "teal" : ""}">#${reflexHistory.length - i} ${(v / 1000).toFixed(3)}s</span>`)
-      .join("");
+  } else if (game === "rain") {
+    if (!rainState || !rainState.running) startRainGame();
+    const s = rainState;
+    if (!s || !s.running) return false;
+    if (propId === "rain_magnet") {
+      s.magnetTimer = Math.max(s.magnetTimer || 0, 8.0);
+      s.floats.push({ x: s.x, y: s.h - 48, txt: "🧲 强力吸金磁铁 8s!", col: "#F59E0B", life: 1.0 });
+      playSfx("gold");
+    } else if (propId === "energy_shield") {
+      s.shields = Math.min(5, s.shields + 2);
+      s.floats.push({ x: s.x, y: s.h - 48, txt: `🛡️ 护盾 +2 (现有 ×${s.shields})`, col: "#0E8A78", life: 1.0 });
+      playSfx("cache");
+    } else if (propId === "slow_mo") {
+      s.timeLeft += 10;
+      s.slowTimer = Math.max(s.slowTimer || 0, 8.0);
+      s.floats.push({ x: s.w / 2, y: 42, txt: "⏱️ 时间 +10s · 炸弹缓速 8s!", col: "#0284C7", life: 1.05 });
+      playSfx("gold");
+    } else if (propId === "orbital_nuke") {
+      let conv = 0;
+      for (const it of s.items) {
+        if (it.kind === "bomb") { it.kind = "rainbow"; conv++; }
+        else if (it.kind === "token") { it.kind = "gold"; }
+      }
+      s.feverTimer = Math.max(s.feverTimer || 0, 7.0);
+      s.magnetTimer = Math.max(s.magnetTimer || 0, 7.0);
+      s.floats.push({ x: s.w / 2, y: s.h * 0.42, txt: `☄️ 彩虹天降！${conv}颗雷化作彩虹 + 7s 2×狂热!`, col: "#A855F7", life: 1.2 });
+      playSfx("ssr");
+    } else {
+      return false;
+    }
+  } else {
+    return false;
   }
+  h.arcade_items[propId] = Math.max(0, cnt - 1);
+  saveActiveHomeState(h, 0);
+  renderAdventurePropBars();
+  if (typeof renderGachaBag === "function") renderGachaBag();
+  return true;
+}
+
+["blPropBar", "rainPropBar"].forEach(id => {
+  document.getElementById(id)?.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-prop]");
+    if (!btn || btn.disabled) return;
+    useAdventureProp(btn.dataset.game, btn.dataset.prop);
+  });
 });
 
+function grantDailyAdventureBonusCoin() {
+  const todayKey = getTodayKey();
+  const h = cloneHomeState(getActiveHomeState());
+  if (h.adventure_reward_day === todayKey) return false;
+  h.adventure_reward_day = todayKey;
+  saveActiveHomeState(h, 0, 1);
+  return true;
+}
+
 // ============================================================
-// GAME 3: 🎰 TOKEN ALCHEMY & GACHA MACHINE
+// GAME 3: 🎰 REAL-REWARD GACHA MACHINE (Economic System: N 60% / R 28% / SR 10% / SSR 2%)
 // ============================================================
+const GACHA_EXCLUSIVE_IDS = [
+  "gacha_clover_clip", "gacha_capsule_bag", "gacha_ribbon_cape", "gacha_star_wand", "gacha_prism_crown",
+  "gacha_carrot_cushion", "gacha_lucky_flower", "gacha_mini_machine", "gacha_bubble_lights", "gacha_crystal_dome",
+];
 const GACHA_POOL = [
-  { id: 1,  r: "SSR", icon: "👑", name: "缓存命中 99.9% 之神", desc: "今日所有长上下文精准命中缓存，老板直呼省钱！" },
-  { id: 2,  r: "SSR", icon: "🚀", name: "一次编译通过圣兔", desc: "今天写的大重构居然零报错一次跑通，堪称神迹！" },
-  { id: 3,  r: "SSR", icon: "✨", name: "零幻觉暴击兔", desc: "AI 今天思路清晰得像开了天眼，连边界条件都帮你补齐了。" },
-  { id: 4,  r: "SSR", icon: "💎", name: "满血配额永动机", desc: "额度条怎么吸都吸不空，今天就是你的高产巅峰日！" },
-  { id: 5,  r: "SR",  icon: "⚡", name: "200 tok/s 极速闪电兔", desc: "输出像瀑布一样倾泻，你的眼睛快跟不上滚屏速度了。" },
-  { id: 6,  r: "SR",  icon: "🥕", name: "黄金胡萝卜收藏家", desc: "Token 转化效率拉满，每一千字都直击核心需求。" },
-  { id: 7,  r: "SR",  icon: "🧠", name: "深度思考冥想兔", desc: "首字多等了三秒，但换来了一套极其优雅的架构设计。" },
-  { id: 8,  r: "SR",  icon: "🔥", name: "深夜热修战神", desc: "越到晚上思路越丝滑，高峰时段就在今夜！" },
-  { id: 9,  r: "SR",  icon: "🎯", name: "精准 Diff 外科医生", desc: "只改三行代码，干掉困扰一周的隐蔽竞态 Bug。" },
-  { id: 10, r: "SR",  icon: "🌈", name: "多模型协同指挥官", desc: "AGY、Codex、OMP 轮番上阵，真正的 AI 军团长。" },
-  { id: 11, r: "R",   icon: "🛡️", name: "零回归守护兔", desc: "测试全绿，CI 一路畅通，晚上可以安心早点合电脑。" },
-  { id: 12, r: "R",   icon: "🧪", name: "神级 Prompt 炼金师", desc: "一句话精准命中模型心坎，免去十轮反复拉扯。" },
-  { id: 13, r: "R",   icon: "☕", name: "冰美式续命兔", desc: "边喝咖啡边看代码自动生长，摸鱼也是生产力。" },
-  { id: 14, r: "R",   icon: "📦", name: "整洁 Commit 强迫症", desc: "提交信息写得像诗一样工整，Reviewer 看完直接 Approve。" },
-  { id: 15, r: "R",   icon: "🔍", name: "日志侦探小兔", desc: "三秒从十万行日志里揪出罪魁祸首，深藏功与名。" },
-  { id: 16, r: "R",   icon: "🎧", name: "心流白噪音兔", desc: "戴上耳机进入心流，抬头一看已经狂飙 200M Token。" },
-  { id: 17, r: "R",   icon: "📝", name: "文档补全好心兔", desc: "顺手把 README 和注释也写明白了，未来的你会感谢现在。" },
-  { id: 18, r: "N",   icon: "🌱", name: "像素级细节控", desc: "把 1px 对齐和圆角强迫症打磨到极致，看着就舒服。" },
-  { id: 19, r: "N",   icon: "🐾", name: "快乐踩键盘兔", desc: "今天主打一个轻松愉悦，写代码像玩游戏一样上头。" },
-  { id: 20, r: "N",   icon: "🌙", name: "夜猫子算力收割者", desc: "月亮不睡你不睡，兔兔陪你一起刷满今天经验条。" },
-  { id: 21, r: "N",   icon: "🔋", name: "节能省流小能手", desc: "精简上下文立大功，小 Token 撬动大功能！" },
-  { id: 22, r: "N",   icon: "🎨", name: "丝滑动效魔法师", desc: "给产品加上灵魂微动效，用起来手感直接翻倍。" },
-  { id: 23, r: "N",   icon: "🍀", name: "防删库幸运兔", desc: "今天 git rebase 零冲突，本地分支干净如初。" },
-  { id: 24, r: "N",   icon: "🎉", name: "提前下班预言兔", desc: "效率太高提前收工，快奖励自己吃顿好的！" },
+  // ---- N (普通 · 60% 权重) ----
+  { id: 101, r: "N", w: 10, type: "coins",   amount: 1,                  icon: "🥕", name: "萝卜币返本 +1",     desc: "返还 1 枚萝卜币，不亏不赚再来一发！" },
+  { id: 102, r: "N", w: 12, type: "xp",      tokens: 5e6,                icon: "⚡", name: "迷你算力经验包 +5M", desc: "今日进化经验 +5M Token，加速兔兔升级！" },
+  { id: 103, r: "N", w: 9,  type: "weather", tier: "h2",                 icon: "🌦️", name: "呼风唤雨卡 · 2小时", desc: "存入背包，随时自由切换小家晴/雨/雪/风 2 小时！" },
+  { id: 104, r: "N", w: 8,  type: "coupon",  kind: "wear", discount: 0.9, icon: "🏷️", name: "9折饰品折扣券",     desc: "7天有效，在精品衣橱购买任意穿搭直接 9 折！" },
+  { id: 105, r: "N", w: 8,  type: "coupon",  kind: "rent", discount: 0.9, icon: "🏷️", name: "9折租房折扣券",     desc: "7天有效，在售楼处租住任意房型直接 9 折！" },
+  { id: 106, r: "N", w: 11, type: "prop",    propId: "ammo_box",         icon: "🔋", name: "弹药扩容匣",        desc: "大冒险道具：打Bug 立即补 +60 弹药并免弹 3 秒！" },
+  { id: 107, r: "N", w: 11, type: "prop",    propId: "rain_magnet",      icon: "🧲", name: "强力吸金磁铁",      desc: "大冒险道具：接Token雨 开启 8 秒超大范围磁铁！" },
+  { id: 108, r: "N", w: 9,  type: "prop",    propId: "slow_mo",          icon: "⏱️", name: "时光缓滞沙漏",      desc: "大冒险通用：打Bug 敌群减速 / Token雨 +10s 缓雷！" },
+
+  // ---- R (稀有 · 28% 权重) ----
+  { id: 201, r: "R", w: 8,  type: "coins",   amount: 2,                  icon: "🥕", name: "小袋萝卜币 +2",     desc: "净赚翻倍！+2 枚萝卜币已存入钱包！" },
+  { id: 202, r: "R", w: 9,  type: "xp",      tokens: 20e6,               icon: "⚡", name: "进阶算力经验包 +20M", desc: "今日进化经验 +20M Token，战力直冲！" },
+  { id: 203, r: "R", w: 7,  type: "weather", tier: "d1",                 icon: "⛈️", name: "呼风唤雨卡 · 1天",   desc: "存入背包，随时掌控小家天气一整天（24小时）！" },
+  { id: 204, r: "R", w: 7,  type: "coupon",  kind: "wear", discount: 0.8, icon: "🏷️", name: "8折饰品折扣券",     desc: "7天有效，精品衣橱购置心仪穿搭立省 20%！" },
+  { id: 205, r: "R", w: 7,  type: "coupon",  kind: "rent", discount: 0.8, icon: "🏷️", name: "8折租房折扣券",     desc: "7天有效，售楼处周租/月租任意房型立省 20%！" },
+  { id: 206, r: "R", w: 6,  type: "lease",   houses: ["pot", "giant_mushroom", "bamboo_basket", "cardboard"], days: 3, refund: 2, icon: "🔑", name: "平价房 3天体验租房卡", desc: "免费入住 T2/T3 经典房型 3 天（已永久拥有自动返 +2 币）" },
+  { id: 207, r: "R", w: 6,  type: "wear",    itemId: "gacha_clover_clip", refund: 2, icon: "🍀", name: "幸运四叶草发卡",   desc: "扭蛋限定 R 头饰：翡翠四叶草发卡（重复折返 +2 币）" },
+  { id: 208, r: "R", w: 6,  type: "wear",    itemId: "gacha_capsule_bag", refund: 2, icon: "🧸", name: "迷你扭蛋斜挎包",   desc: "扭蛋限定 R 配饰：圆滚滚透明扭蛋斜挎包（重复折返 +2 币）" },
+  { id: 209, r: "R", w: 6,  type: "decor",   itemId: "gacha_carrot_cushion", refund: 2, icon: "🧸", name: "软萌胡萝卜抱枕窝", desc: "扭蛋限定 R 家具：蓬松胡萝卜云朵大抱枕（重复折返 +2 币）" },
+  { id: 210, r: "R", w: 6,  type: "decor",   itemId: "gacha_lucky_flower", refund: 2, icon: "🌼", name: "幸运星花盆栽",     desc: "扭蛋限定 R 花园：扭蛋壳种出的发光星花（重复折返 +2 币）" },
+  { id: 211, r: "R", w: 9,  type: "prop",    propId: "energy_shield",    icon: "🛡️", name: "绝对防御护盾",      desc: "大冒险通用：打Bug 回血+6s护盾 / Token雨 +2层护盾！" },
+  { id: 212, r: "R", w: 9,  type: "prop",    propId: "overclock_core",   icon: "⚡", name: "五管超频核心",      desc: "大冒险道具：打Bug 立即触发 8 秒 5 管黄金弹幕！" },
+
+  // ---- SR (超稀有 · 10% 权重) ----
+  { id: 301, r: "SR", w: 10, type: "coins",  amount: 5,                  icon: "💰", name: "丰厚萝卜礼袋 +5",   desc: "5 倍回报！+5 枚萝卜币直接到账！" },
+  { id: 302, r: "SR", w: 10, type: "xp",     tokens: 60e6,               icon: "🔥", name: "高能算力经验包 +60M", desc: "今日进化经验暴涨 +60M Token，直逼下一阶级！" },
+  { id: 303, r: "SR", w: 8,  type: "lease",  houses: ["moganshan_cabin", "sunflower_glasshouse", "windmill_mill"], days: 7, refund: 4, icon: "🔑", name: "林间美宅 7天租房卡", desc: "免费入住 T4 精致林间美宅 7 天（已永久拥有自动返 +4 币）" },
+  { id: 304, r: "SR", w: 9,  type: "wear",   itemId: "gacha_ribbon_cape", refund: 5, icon: "🎀", name: "幻彩星愿丝带披肩", desc: "扭蛋限定 SR 服饰：紫粉渐变星纱鎏金披肩（重复折返 +5 币）" },
+  { id: 305, r: "SR", w: 9,  type: "wear",   itemId: "gacha_star_wand",   refund: 5, icon: "⭐", name: "星愿幸运魔法棒",   desc: "扭蛋限定 SR 配饰：黄金翼星魔法棒（重复折返 +5 币）" },
+  { id: 306, r: "SR", w: 9,  type: "decor",  itemId: "gacha_mini_machine", refund: 5, icon: "🎰", name: "迷你复古扭蛋机摆件", desc: "扭蛋限定 SR 家具：摆在屋里的兔耳迷你扭蛋机（重复折返 +5 币）" },
+  { id: 307, r: "SR", w: 9,  type: "decor",  itemId: "gacha_bubble_lights", refund: 5, icon: "🫧", name: "梦幻泡泡彩灯串",   desc: "扭蛋限定 SR 灯饰：七彩糖果扭蛋泡泡吊灯（重复折返 +5 币）" },
+  { id: 308, r: "SR", w: 12, type: "prop",   propId: "orbital_nuke",     icon: "☄️", name: "轨道清屏核弹",      desc: "大冒险王牌：打Bug 双倍清屏 / Token雨 全屏雷变彩虹+7s狂热！" },
+
+  // ---- SSR (传世神话 · 2% 超低稀缺概率！) ----
+  { id: 401, r: "SSR", w: 22, type: "coupon", kind: "rent", discount: 0.3, icon: "🔥", name: "3折租房神券",       desc: "SSR 传世神券！7天内租住任意顶豪立省 70%！" },
+  { id: 402, r: "SSR", w: 22, type: "coupon", kind: "wear", discount: 0.3, icon: "💎", name: "3折饰品神券",       desc: "SSR 传世神券！7天内购买任意顶奢穿搭立省 70%！" },
+  { id: 403, r: "SSR", w: 20, type: "coins",  amount: 12,                  icon: "🪙", name: "黄金萝卜宝箱 +12币", desc: "欧皇暴击 12 倍回报！+12 枚萝卜币瞬间入账！" },
+  { id: 404, r: "SSR", w: 18, type: "wear",   itemId: "gacha_prism_crown", refund: 10, icon: "👑", name: "传世幻彩扭蛋皇冠", desc: "SSR 扭蛋限定头饰：24K鎏金七彩棱镜星环皇冠（重复折返 +10 币）" },
+  { id: 405, r: "SSR", w: 18, type: "decor",  itemId: "gacha_crystal_dome", refund: 10, icon: "💎", name: "银河扭蛋水晶穹顶灯", desc: "SSR 扭蛋限定灯饰：棱镜星河 24K 金环穹顶吊灯（重复折返 +10 币）" },
 ];
 
 const DEFAULT_HOME_STATE = {
@@ -12551,6 +12849,11 @@ const DEFAULT_HOME_STATE = {
   coupons: [],
   friday_claim_week: "",
   claimed_house_gifts: [],
+  weather_cards: { h2: 0, d1: 0 },
+  weather_override: null,
+  xp_boost: { day: "", tokens: 0 },
+  arcade_items: { ammo_box: 0, rain_magnet: 0, slow_mo: 0, energy_shield: 0, overclock_core: 0, orbital_nuke: 0 },
+  adventure_reward_day: "",
 };
 
 const RETIRED_HOUSE_FALLBACK = {
@@ -12590,15 +12893,42 @@ function cloneHomeState(src) {
     ? Array.from(new Set(s.hidden_tier_acc.map(Number).filter(n => Number.isInteger(n) && n >= 4 && n <= 10))).sort((a, b) => a - b)
     : [];
   const coupons = Array.isArray(s.coupons)
-    ? s.coupons.filter(c => c && c.id && Number(c.discount) > 0 && Number(c.discount) < 1 && Number(c.expires_at) > 0).map(c => ({
-        id: String(c.id),
-        discount: Number(c.discount),
-        label: String(c.label || `${Math.round(Number(c.discount) * 10)}折租房券`),
-        rarity: c.rarity === "epic" ? "epic" : "normal",
-        expires_at: Math.floor(Number(c.expires_at)),
-        source: String(c.source || "friday"),
-      }))
+    ? s.coupons.filter(c => c && c.id && Number(c.discount) > 0 && Number(c.discount) < 1 && Number(c.expires_at) > 0).map(c => {
+        const ck = c.kind === "wear" ? "wear" : "rent";
+        return {
+          id: String(c.id),
+          kind: ck,
+          discount: Number(c.discount),
+          label: String(c.label || `${Math.round(Number(c.discount) * 10)}折${ck === "wear" ? "饰品" : "租房"}券`),
+          rarity: c.rarity === "epic" ? "epic" : "normal",
+          expires_at: Math.floor(Number(c.expires_at)),
+          source: String(c.source || "friday"),
+        };
+      })
     : [];
+  const wcSrc = (s.weather_cards && typeof s.weather_cards === "object") ? s.weather_cards : {};
+  const weather_cards = {
+    h2: Math.max(0, Math.floor(Number(wcSrc.h2 || 0) || 0)),
+    d1: Math.max(0, Math.floor(Number(wcSrc.d1 || 0) || 0)),
+  };
+  const woSrc = (s.weather_override && typeof s.weather_override === "object") ? s.weather_override : null;
+  const weather_override = (woSrc && typeof woSrc.kind === "string" && Number(woSrc.expires_at) > 0)
+    ? { kind: woSrc.kind, expires_at: Math.floor(Number(woSrc.expires_at)) }
+    : null;
+  const xbSrc = (s.xp_boost && typeof s.xp_boost === "object") ? s.xp_boost : {};
+  const xp_boost = {
+    day: typeof xbSrc.day === "string" ? xbSrc.day : "",
+    tokens: Math.max(0, Math.floor(Number(xbSrc.tokens || 0) || 0)),
+  };
+  const aiSrc = (s.arcade_items && typeof s.arcade_items === "object") ? s.arcade_items : {};
+  const arcade_items = {
+    ammo_box: Math.max(0, Math.floor(Number(aiSrc.ammo_box || 0) || 0)),
+    rain_magnet: Math.max(0, Math.floor(Number(aiSrc.rain_magnet || 0) || 0)),
+    slow_mo: Math.max(0, Math.floor(Number(aiSrc.slow_mo || 0) || 0)),
+    energy_shield: Math.max(0, Math.floor(Number(aiSrc.energy_shield || 0) || 0)),
+    overclock_core: Math.max(0, Math.floor(Number(aiSrc.overclock_core || 0) || 0)),
+    orbital_nuke: Math.max(0, Math.floor(Number(aiSrc.orbital_nuke || 0) || 0)),
+  };
   return {
     house,
     owned_houses: oh,
@@ -12623,6 +12953,11 @@ function cloneHomeState(src) {
     coupons,
     friday_claim_week: typeof s.friday_claim_week === "string" ? s.friday_claim_week : "",
     claimed_house_gifts: Array.isArray(s.claimed_house_gifts) ? Array.from(new Set(s.claimed_house_gifts)) : [],
+    weather_cards,
+    weather_override,
+    xp_boost,
+    arcade_items,
+    adventure_reward_day: typeof s.adventure_reward_day === "string" ? s.adventure_reward_day : "",
   };
 }
 
@@ -12828,10 +13163,225 @@ function claimCarrotCoins() {
   renderGachaMeta();
 }
 
+function pickWeightedGacha(tier) {
+  const bucket = GACHA_POOL.filter(x => x.r === tier);
+  const pool = bucket.length ? bucket : GACHA_POOL;
+  const totalW = pool.reduce((s, x) => s + (x.w || 1), 0);
+  let r = Math.random() * totalW;
+  for (const item of pool) {
+    r -= (item.w || 1);
+    if (r <= 0) return item;
+  }
+  return pool[pool.length - 1];
+}
+
+function grantGachaReward(pick) {
+  const h = cloneHomeState(getActiveHomeState());
+  const now = Date.now();
+  let actualName = pick.name;
+  let actualDesc = pick.desc;
+  let isNew = false;
+  let bonusCoins = 0;
+
+  if (pick.type === "coins") {
+    bonusCoins = Math.max(1, Number(pick.amount) || 1);
+  } else if (pick.type === "xp") {
+    const todayKey = getTodayKey();
+    const curTok = (h.xp_boost && h.xp_boost.day === todayKey) ? (Number(h.xp_boost.tokens) || 0) : 0;
+    h.xp_boost = { day: todayKey, tokens: curTok + (Number(pick.tokens) || 0) };
+  } else if (pick.type === "weather") {
+    const k = pick.tier === "d1" ? "d1" : "h2";
+    h.weather_cards[k] = (h.weather_cards[k] || 0) + 1;
+  } else if (pick.type === "coupon") {
+    const ck = pick.kind === "wear" ? "wear" : "rent";
+    const pctLabel = `${Math.round(pick.discount * 10)}折${ck === "wear" ? "饰品" : "租房"}券`;
+    h.coupons.push({
+      id: `gc_${ck}_${now}_${Math.random().toString(36).slice(2, 6)}`,
+      kind: ck,
+      discount: pick.discount,
+      label: pick.discount <= 0.35 ? `SSR ${pctLabel}` : pctLabel,
+      rarity: pick.discount <= 0.35 ? "epic" : "normal",
+      expires_at: now + 7 * 86400e3,
+      source: "gacha",
+    });
+  } else if (pick.type === "lease") {
+    const cand = (pick.houses || []).filter(id => TOOTOO_REG && TOOTOO_REG.getHouse(id));
+    const unowned = cand.filter(id => !h.owned_houses.includes(id));
+    if (unowned.length > 0) {
+      const chosenId = unowned[Math.floor(Math.random() * unowned.length)];
+      const house = TOOTOO_REG.getHouse(chosenId);
+      const baseExp = Math.max(now, Number(h.leases[chosenId]) || 0);
+      h.leases[chosenId] = baseExp + (pick.days || 3) * 86400e3;
+      actualName = `${house.name} · ${pick.days}天租房卡`;
+      actualDesc = `已入账！前往「TooToo 小家 → 我的房产」即可免费入住 ${house.icon} ${house.name} ${pick.days} 天！`;
+      isNew = true;
+    } else {
+      bonusCoins = pick.refund || 2;
+      actualName = `${pick.name}（已全拥有）`;
+      actualDesc = `该档房型已全部永久拥有，自动折返 +${bonusCoins} 枚萝卜币！`;
+    }
+  } else if (pick.type === "wear") {
+    const item = TOOTOO_REG && TOOTOO_REG.getWearable(pick.itemId);
+    if (!h.owned_wear.includes(pick.itemId)) {
+      h.owned_wear.push(pick.itemId);
+      isNew = true;
+      actualDesc = `扭蛋限定解锁！前往「TooToo 小家 → 我的衣橱」即可给兔兔穿戴 ${item ? item.name : pick.name}！`;
+    } else {
+      bonusCoins = pick.refund || 2;
+      actualDesc = `已拥有该扭蛋限定饰品，自动折返 +${bonusCoins} 枚萝卜币！`;
+    }
+  } else if (pick.type === "decor") {
+    const item = TOOTOO_REG && TOOTOO_REG.getDecor(pick.itemId);
+    if (!h.owned_decor.includes(pick.itemId)) {
+      h.owned_decor.push(pick.itemId);
+      isNew = true;
+      actualDesc = `扭蛋限定解锁！前往「TooToo 小家 → 我的装潢」即可摆进房间 ${item ? item.name : pick.name}！`;
+    } else {
+      bonusCoins = pick.refund || 2;
+      actualDesc = `已拥有该扭蛋限定装潢，自动折返 +${bonusCoins} 枚萝卜币！`;
+    }
+  } else if (pick.type === "prop") {
+    if (h.arcade_items && Object.prototype.hasOwnProperty.call(h.arcade_items, pick.propId)) {
+      h.arcade_items[pick.propId] = (h.arcade_items[pick.propId] || 0) + 1;
+    }
+  }
+
+  saveActiveHomeState(h, 0, bonusCoins);
+  if (typeof renderHomeModal === "function" && document.getElementById("homeModal")?.classList.contains("open")) {
+    renderHomeModal();
+  }
+  return { actualName, actualDesc, isNew, bonusCoins };
+}
+
+let gachaWeatherPickerTier = null; // "h2" | "d1" | null
+
+function renderGachaBag() {
+  const bagEl = document.getElementById("gachaBagCard");
+  if (!bagEl) return;
+  const h = getActiveHomeState();
+  const now = Date.now();
+  const h2 = (h.weather_cards && h.weather_cards.h2) || 0;
+  const d1 = (h.weather_cards && h.weather_cards.d1) || 0;
+  const rentCoupons = TOOTOO_REG ? TOOTOO_REG.getValidCoupons(h, now, "rent") : [];
+  const wearCoupons = TOOTOO_REG ? TOOTOO_REG.getValidCoupons(h, now, "wear") : [];
+  const bestRent = rentCoupons.length ? Math.round(rentCoupons[0].discount * 10) : null;
+  const bestWear = wearCoupons.length ? Math.round(wearCoupons[0].discount * 10) : null;
+  const todayXp = getTodayXpBoostTokens();
+  const ai = h.arcade_items || {};
+  const totalProps = Object.values(ai).reduce((s, v) => s + (Number(v) || 0), 0);
+
+  // Active weather card override badge
+  let activeWeatherTxt = "";
+  if (h.weather_override && h.weather_override.expires_at > now) {
+    const remMs = h.weather_override.expires_at - now;
+    const remH = Math.floor(remMs / 3600e3);
+    const remM = Math.max(1, Math.ceil((remMs % 3600e3) / 60e3));
+    const wMeta = (typeof HOME_WEATHER_META !== "undefined" && HOME_WEATHER_META[h.weather_override.kind]) || { icon: "🌦️", label: h.weather_override.kind };
+    activeWeatherTxt = `<span class="pill teal" style="font-size:9px;padding:1px 6px">🪄 生效中: ${wMeta.icon}${wMeta.label} (${remH > 0 ? `${remH}h` : ""}${remM}m)</span>`;
+  }
+
+  const chips = [];
+  chips.push(`<button class="bag-chip ${h2 > 0 ? "has" : ""}" data-bag-act="weather-h2" title="点击选择天气，覆盖小家天气 2 小时">🌦️ 2h天气卡 <strong>×${h2}</strong></button>`);
+  chips.push(`<button class="bag-chip ${d1 > 0 ? "has" : ""}" data-bag-act="weather-d1" title="点击选择天气，覆盖小家天气 24 小时">⛈️ 1天天气卡 <strong>×${d1}</strong></button>`);
+  chips.push(`<button class="bag-chip ${rentCoupons.length > 0 ? "has" : ""}" data-bag-act="go-rent" title="在售楼处租房时自动抵扣">🏠 租房券 <strong>×${rentCoupons.length}</strong>${bestRent ? ` (${bestRent}折)` : ""}</button>`);
+  chips.push(`<button class="bag-chip ${wearCoupons.length > 0 ? "has" : ""}" data-bag-act="go-wear" title="在精品衣橱买饰品时自动抵扣">🎀 饰品券 <strong>×${wearCoupons.length}</strong>${bestWear ? ` (${bestWear}折)` : ""}</button>`);
+  if (todayXp > 0) {
+    chips.push(`<span class="bag-chip has" title="已计入今日兔兔进化总 Token">⚡ 今日经验 <strong>+${fmtNum(todayXp)}</strong></span>`);
+  }
+  const propSummary = Object.entries(ADVENTURE_PROPS)
+    .filter(([k]) => (ai[k] || 0) > 0)
+    .map(([k, p]) => `${p.icon}×${ai[k]}`)
+    .join(" ");
+  chips.push(`<button class="bag-chip ${totalProps > 0 ? "has" : ""}" data-bag-act="go-adv" title="前往 TooToo 大冒险使用道具">⚔️ 冒险道具 <strong>×${totalProps}</strong>${propSummary ? ` · ${propSummary}` : ""}</button>`);
+
+  let pickerHtml = "";
+  if (gachaWeatherPickerTier && ((gachaWeatherPickerTier === "h2" && h2 > 0) || (gachaWeatherPickerTier === "d1" && d1 > 0))) {
+    const durLabel = gachaWeatherPickerTier === "d1" ? "24小时" : "2小时";
+    const opts = [
+      ["sunny", "☀️ 晴天"],
+      ["cloudy", "⛅ 多云"],
+      ["windy", "🍃 微风"],
+      ["rain", "🌧️ 下雨"],
+      ["snow", "❄️ 下雪"],
+    ];
+    pickerHtml = `
+      <div class="weather-picker-bar">
+        <span style="font-size:10px;color:var(--muted);width:100%">🪄 选择要召唤的天气（持续 ${durLabel}，消耗 1 张卡）：</span>
+        ${opts.map(([k, lbl]) => `<button class="dbg-mini-btn" data-cast-weather="${k}" data-cast-tier="${gachaWeatherPickerTier}">${lbl}</button>`).join("")}
+        <button class="dbg-mini-btn" data-bag-act="cancel-weather" style="margin-left:auto">取消</button>
+      </div>
+    `;
+  } else {
+    gachaWeatherPickerTier = null;
+  }
+
+  bagEl.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;margin-bottom:6px">
+      <span style="font-size:10.5px;font-weight:700;color:var(--ink)">🎒 扭蛋战利品背包 <span style="font-weight:400;color:var(--muted)">(概率: N 60% · R 28% · SR 10% · SSR 2%)</span></span>
+      ${activeWeatherTxt}
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:5px">${chips.join("")}</div>
+    ${pickerHtml}
+  `;
+}
+
+document.getElementById("gachaBagCard")?.addEventListener("click", (e) => {
+  const castBtn = e.target.closest("[data-cast-weather]");
+  if (castBtn) {
+    const kind = castBtn.dataset.castWeather;
+    const tier = castBtn.dataset.castTier === "d1" ? "d1" : "h2";
+    const h = cloneHomeState(getActiveHomeState());
+    if ((h.weather_cards[tier] || 0) <= 0) return;
+    h.weather_cards[tier] -= 1;
+    h.weather_override = { kind, expires_at: Date.now() + (tier === "d1" ? 86400e3 : 2 * 3600e3) };
+    gachaWeatherPickerTier = null;
+    saveActiveHomeState(h, 0);
+    playSfx("ssr");
+    if (typeof renderHomeStage === "function") renderHomeStage(null, false, true);
+    const res = document.getElementById("gachaResult");
+    const wMeta = (typeof HOME_WEATHER_META !== "undefined" && HOME_WEATHER_META[kind]) || { icon: "🌦️", label: kind };
+    if (res) {
+      res.className = "gacha-result pop tier-R";
+      res.innerHTML = `<div style="font-size:11.5px;color:var(--ink)">🪄 <strong>呼风唤雨成功！</strong>小家已切换为 ${wMeta.icon} <strong>${wMeta.label}</strong>（持续 ${tier === "d1" ? "24小时" : "2小时"}）！</div>`;
+    }
+    return;
+  }
+  const actBtn = e.target.closest("[data-bag-act]");
+  if (!actBtn) return;
+  const act = actBtn.dataset.bagAct;
+  const h = getActiveHomeState();
+  if (act === "weather-h2") {
+    if ((h.weather_cards?.h2 || 0) <= 0) { playSfx("bomb"); return; }
+    gachaWeatherPickerTier = gachaWeatherPickerTier === "h2" ? null : "h2";
+    renderGachaBag();
+  } else if (act === "weather-d1") {
+    if ((h.weather_cards?.d1 || 0) <= 0) { playSfx("bomb"); return; }
+    gachaWeatherPickerTier = gachaWeatherPickerTier === "d1" ? null : "d1";
+    renderGachaBag();
+  } else if (act === "cancel-weather") {
+    gachaWeatherPickerTier = null;
+    renderGachaBag();
+  } else if (act === "go-adv") {
+    closeGachaModal();
+    openArcadeModal();
+  } else if (act === "go-rent" || act === "go-wear") {
+    closeGachaModal();
+    openHomeModal();
+    homeUiState.view = "shop";
+    homeUiState.tab = act === "go-wear" ? "wear" : "houses";
+    renderHomeModal();
+  }
+});
+
 function renderGachaMeta() {
-  const coll = getGachaCollected();
+  const hState = getActiveHomeState();
+  const ownedEx = GACHA_EXCLUSIVE_IDS.filter(id =>
+    hState.owned_wear.includes(id) || hState.owned_decor.includes(id)
+  ).length;
   const el = document.getElementById("gachaColl");
-  if (el) el.textContent = `${coll.length} / ${GACHA_POOL.length}`;
+  if (el) el.textContent = `${ownedEx} / ${GACHA_EXCLUSIVE_IDS.length}`;
+  renderGachaBag();
+  if (typeof renderAdventurePropBars === "function") renderAdventurePropBars();
 
   const cs = getGachaCoinState();
   const coinEl = document.getElementById("gachaCoins");
@@ -13036,20 +13586,12 @@ document.getElementById("gachaPullBtn").addEventListener("click", () => {
     gachaBusy = false;
     const roll = Math.random();
     const forced = debugState.active && debugState.gachaForce !== "auto" ? debugState.gachaForce : null;
-    const tier = forced || (roll < 0.15 ? "SSR" : roll < 0.42 ? "SR" : roll < 0.75 ? "R" : "N");
-    const pool = GACHA_POOL.filter(x => x.r === tier);
-    const pick = pool[Math.floor(Math.random() * pool.length)] || GACHA_POOL[0];
-
-    const coll = getGachaCollected();
-    const isNew = !coll.includes(pick.id);
-    if (isNew) {
-      coll.push(pick.id);
-      if (!debugState.active) {
-        try { localStorage.setItem("tootoo_gacha_coll", JSON.stringify(coll)); } catch {}
-        persistCarrotPatch({ collection: coll });
-      }
-      renderGachaMeta();
-    }
+    // Economic drop table: SSR 2% | SR 10% | R 28% | N 60%
+    const tier = forced || (roll < 0.02 ? "SSR" : roll < 0.12 ? "SR" : roll < 0.40 ? "R" : "N");
+    const pick = pickWeightedGacha(tier);
+    const granted = grantGachaReward(pick);
+    const displayPick = { ...pick, name: granted.actualName, desc: granted.actualDesc };
+    const isNew = granted.isNew;
 
     const rarityMeta = {
       SSR: { label: "👑 SSR · 传世", sparks: `<div class="gacha-spark-layer"><span class="gacha-spark-dot" style="left:8%;top:14%;color:#f59e0b">✦</span><span class="gacha-spark-dot" style="right:9%;top:16%;color:#ec4899;animation-delay:.3s">★</span><span class="gacha-spark-dot" style="left:12%;bottom:12%;color:#f97316;animation-delay:.6s">✧</span><span class="gacha-spark-dot" style="right:11%;bottom:14%;color:#eab308;animation-delay:.9s">✦</span></div>` },
@@ -13057,35 +13599,35 @@ document.getElementById("gachaPullBtn").addEventListener("click", () => {
       R:   { label: "◆ R · 稀有",    sparks: `<div class="gacha-spark-layer"><span class="gacha-spark-dot" style="left:9%;top:18%;color:#38bdf8">◆</span><span class="gacha-spark-dot" style="right:10%;bottom:16%;color:#0ea5e9;animation-delay:.5s">✦</span></div>` },
       N:   { label: "普通",          sparks: "" },
     };
-    const rm = rarityMeta[pick.r] || rarityMeta.N;
+    const rm = rarityMeta[displayPick.r] || rarityMeta.N;
 
-    mac.classList.add(`res-${pick.r}`);
-    res.className = `gacha-result pop tier-${pick.r}`;
+    mac.classList.add(`res-${displayPick.r}`);
+    res.className = `gacha-result pop tier-${displayPick.r}`;
     res.innerHTML = `
       ${rm.sparks}
       <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center">
         ${debugState.active ? `<span class="pill amber" style="font-size:8.5px;padding:1px 5px">沙盒</span>` : ""}
-        <span class="gacha-rarity ${pick.r}">${rm.label}</span>
-        <strong style="font-size:12.5px;color:var(--ink)">${pick.icon} ${pick.name}</strong>
+        <span class="gacha-rarity ${displayPick.r}">${rm.label}</span>
+        <strong style="font-size:12.5px;color:var(--ink)">${displayPick.icon} ${displayPick.name}</strong>
         ${isNew ? `<span class="pill accent" style="font-size:8.5px;padding:1px 5px">NEW!</span>` : ""}
       </div>
-      <div style="font-size:11px;color:var(--muted);line-height:1.45">${pick.desc}</div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.45">${displayPick.desc}</div>
     `;
-    if (pick.r === "SSR") {
+    if (displayPick.r === "SSR") {
       spawnConfettiBurst(mac, 32);
       activateStardust(5200);
       playSfx("ssr");
-    } else if (pick.r === "SR") {
+    } else if (displayPick.r === "SR") {
       spawnConfettiBurst(mac, 16);
       playSfx("gold");
-    } else if (pick.r === "R") {
+    } else if (displayPick.r === "R") {
       spawnConfettiBurst(mac, 7);
       playSfx("cache");
     } else {
       playSfx("token");
     }
-    if (typeof gachaCinemaCtrl !== "undefined" && (pick.r === "SSR" || pick.r === "SR")) {
-      gachaCinemaCtrl.show(pick, isNew, debugState.active);
+    if (typeof gachaCinemaCtrl !== "undefined" && (displayPick.r === "SSR" || displayPick.r === "SR")) {
+      gachaCinemaCtrl.show(displayPick, isNew, debugState.active);
     }
   }, 480);
 });
@@ -13660,6 +14202,12 @@ document.getElementById("dbgGachaResetClaimBtn").addEventListener("click", () =>
 });
 document.getElementById("dbgGachaResetCollBtn").addEventListener("click", () => {
   debugState.gachaColl = [];
+  if (debugState.active) {
+    const h = cloneHomeState(getActiveHomeState());
+    h.owned_wear = h.owned_wear.filter(id => !GACHA_EXCLUSIVE_IDS.includes(id));
+    h.owned_decor = h.owned_decor.filter(id => !GACHA_EXCLUSIVE_IDS.includes(id));
+    saveActiveHomeState(h, 0);
+  }
   renderGachaMeta();
   playSfx("token");
 });
@@ -13741,16 +14289,15 @@ document.getElementById("dbgRainTimeBtn").addEventListener("click", () => {
   playSfx("token");
 });
 
-// Reflex inline debug controls
-document.getElementById("dbgRefFastBtn").addEventListener("click", () => {
-  debugState.reflexFast = !debugState.reflexFast;
-  syncDebugUi();
-});
-document.querySelectorAll("#dbgReflexChips button[data-ai]").forEach(btn => {
-  btn.addEventListener("click", () => {
-    debugState.reflexAiMock = btn.dataset.ai === "real" ? null : Number(btn.dataset.ai);
-    syncDebugUi();
-  });
+document.getElementById("dbgGachaItemsBtn")?.addEventListener("click", () => {
+  const h = cloneHomeState(getActiveHomeState());
+  h.weather_cards.h2 = (h.weather_cards.h2 || 0) + 3;
+  h.weather_cards.d1 = (h.weather_cards.d1 || 0) + 2;
+  Object.keys(h.arcade_items).forEach(k => { h.arcade_items[k] = (h.arcade_items[k] || 0) + 3; });
+  saveActiveHomeState(h, 0);
+  renderGachaMeta();
+  renderAdventurePropBars();
+  playSfx("gold");
 });
 
 // ============================================================
@@ -16826,11 +17373,17 @@ async function fetchLocalWeather(force = false) {
 function getEffectiveWeather() {
   if (debugState.active && debugWeatherMock && HOME_WEATHER_META[debugWeatherMock]) {
     const m = HOME_WEATHER_META[debugWeatherMock];
-    return { kind: debugWeatherMock, icon: m.icon, label: m.label, temp_c: localWeatherState.temp_c, city: localWeatherState.city, mocked: true };
+    return { kind: debugWeatherMock, icon: m.icon, label: m.label, temp_c: localWeatherState.temp_c, city: localWeatherState.city, mocked: true, cardOverride: false };
+  }
+  const h = typeof getActiveHomeState === "function" ? getActiveHomeState() : null;
+  if (h && h.weather_override && HOME_WEATHER_META[h.weather_override.kind] && Number(h.weather_override.expires_at) > Date.now()) {
+    const k = h.weather_override.kind;
+    const m = HOME_WEATHER_META[k];
+    return { kind: k, icon: m.icon, label: m.label, temp_c: localWeatherState.temp_c, city: "呼风唤雨卡", mocked: false, cardOverride: true, expires_at: h.weather_override.expires_at };
   }
   const kind = (localWeatherState && HOME_WEATHER_META[localWeatherState.kind]) ? localWeatherState.kind : "sunny";
   const m = HOME_WEATHER_META[kind];
-  return { kind, icon: m.icon, label: m.label, temp_c: localWeatherState.temp_c, city: localWeatherState.city, mocked: false };
+  return { kind, icon: m.icon, label: m.label, temp_c: localWeatherState.temp_c, city: localWeatherState.city, mocked: false, cardOverride: false };
 }
 
 function renderWeatherLayerSvg(houseId, weather, dayPhase = { phase: "day", isNight: false }) {
@@ -17094,8 +17647,16 @@ function renderHomeStage(freshDecorSlot = null, twirlBunny = false, forceRedraw 
       const wIcon = (weather.kind === "sunny" && dayPhase.isNight) ? "🌙" : weather.icon;
       const wLabel = (weather.kind === "sunny" && dayPhase.isNight) ? "晴夜" : weather.label;
       const mockTag = (weather.mocked || dayPhase.mocked) ? "*" : "";
-      weatherPillEl.textContent = `${wIcon} ${tempTxt}${mockTag}`;
-      weatherPillEl.title = `${weather.city ? weather.city + " " : ""}${dayPhase.hm} ${dayPhase.label} · ${wLabel} ${tempTxt}（点击刷新）`;
+      const cardTag = weather.cardOverride ? "🪄" : "";
+      let cardNote = "";
+      if (weather.cardOverride && weather.expires_at > Date.now()) {
+        const remMs = weather.expires_at - Date.now();
+        const remH = Math.floor(remMs / 3600e3);
+        const remM = Math.max(1, Math.ceil((remMs % 3600e3) / 60e3));
+        cardNote = ` · 呼风唤雨卡生效中(剩${remH > 0 ? `${remH}h` : ""}${remM}m)`;
+      }
+      weatherPillEl.textContent = `${cardTag}${wIcon} ${tempTxt}${mockTag}`;
+      weatherPillEl.title = `${weather.city ? weather.city + " " : ""}${dayPhase.hm} ${dayPhase.label} · ${wLabel} ${tempTxt}${cardNote}（点击刷新）`;
     } else {
       weatherPillEl.style.display = "inline-flex";
       const mockTag = dayPhase.mocked ? "*" : "";
@@ -17448,7 +18009,8 @@ function renderWearCardHtml(it, hState, cs, maxTier, activeEvents) {
   const tierLocked = reqTier > 0 && maxTier < reqTier && !owned;
   const secretLocked = !!it.secret && !isHomeSecretUnlocked(it, hState, maxTier);
   const locked = tierLocked || secretLocked;
-  const eff = TOOTOO_REG.getEffectivePrice(it, activeEvents);
+  const bestWearCoupon = TOOTOO_REG.getBestWearCoupon(hState);
+  const eff = owned ? TOOTOO_REG.getEffectivePrice(it, activeEvents) : TOOTOO_REG.getWearPriceWithCoupon(it, activeEvents, bestWearCoupon);
   const canAfford = cs.balance >= eff.price;
   const priceCls = eff.price === 0 ? " free" : (!owned && !canAfford ? " unaffordable" : "");
   const tag = renderGradeBadgeHtml(it, equipped, owned, reqTier, 0, tierLocked);
@@ -17579,11 +18141,14 @@ function renderHomeShop() {
 
   const couponPillEl = document.getElementById("homeCouponPill");
   if (couponPillEl) {
-    if (isShop && homeUiState.tab === "houses" && bestCoupon) {
+    const activeTabCoupon = (isShop && homeUiState.tab === "houses")
+      ? bestCoupon
+      : ((isShop && homeUiState.tab === "wear") ? TOOTOO_REG.getBestWearCoupon(hState) : null);
+    if (activeTabCoupon) {
       couponPillEl.style.display = "inline-flex";
-      couponPillEl.className = "home-coupon-pill" + (bestCoupon.rarity === "epic" ? " epic" : "");
-      couponPillEl.textContent = `${bestCoupon.label} · ${TOOTOO_REG.formatLeaseRemaining(bestCoupon.expires_at)}`;
-      couponPillEl.title = "点击任意房型的周租/月租时可自动勾选抵扣！";
+      couponPillEl.className = "home-coupon-pill" + (activeTabCoupon.rarity === "epic" ? " epic" : "");
+      couponPillEl.textContent = `${activeTabCoupon.label} · ${TOOTOO_REG.formatLeaseRemaining(activeTabCoupon.expires_at)}`;
+      couponPillEl.title = activeTabCoupon.kind === "wear" ? "购买精品衣橱饰品时可自动勾选抵扣！" : "点击任意房型的周租/月租时可自动勾选抵扣！";
     } else {
       couponPillEl.style.display = "none";
     }
@@ -18377,34 +18942,51 @@ document.getElementById("homeShopGrid").addEventListener("click", (e) => {
     const item = TOOTOO_REG.getWearable(id);
     if (!item) return;
     if (act === "buy-wear") {
-      const eff = TOOTOO_REG.getEffectivePrice(item, activeEvents);
-      if (cs.balance < eff.price) { playSfx("bomb"); return; }
-      const execBuy = () => {
+      const bestWearCoupon = TOOTOO_REG.getBestWearCoupon(h);
+      const effNoCoupon = TOOTOO_REG.getWearPriceWithCoupon(item, activeEvents, null);
+      const effWithCoupon = bestWearCoupon ? TOOTOO_REG.getWearPriceWithCoupon(item, activeEvents, bestWearCoupon) : effNoCoupon;
+      if (cs.balance < effWithCoupon.price) { playSfx("bomb"); return; }
+      const execBuy = (useCoupon = false) => {
         const curH = cloneHomeState(getActiveHomeState());
         const curCs = getGachaCoinState();
-        if (curCs.balance < eff.price) { playSfx("bomb"); return; }
+        const activeCoupon = useCoupon && bestWearCoupon ? TOOTOO_REG.getValidCoupons(curH, Date.now(), "wear").find(c => c.id === bestWearCoupon.id) : null;
+        const finalEff = TOOTOO_REG.getWearPriceWithCoupon(item, activeEvents, activeCoupon);
+        if (curCs.balance < finalEff.price) { playSfx("bomb"); return; }
         if (!curH.owned_wear.includes(item.id)) curH.owned_wear.push(item.id);
         curH.wear[item.slot] = item.id;
-        saveActiveHomeState(curH, eff.price);
+        if (activeCoupon) {
+          curH.coupons = (curH.coupons || []).filter(c => c.id !== activeCoupon.id);
+        }
+        saveActiveHomeState(curH, finalEff.price);
         homeUiState.view = "home";
         homeUiState.preview = null;
         _lastHomeStageKey = "";
         renderHomeModal(null, true);
         playDressFx(item);
       };
-      if (eff.price >= 300 || item.eventId || item.secret) {
+      if (bestWearCoupon || effNoCoupon.price >= 300 || item.eventId || item.secret) {
+        const couponOpt = bestWearCoupon ? {
+          defaultChecked: true,
+          label: `使用「${bestWearCoupon.label}」立省 ${TOOTOO_REG.formatCoins(effWithCoupon.savedByCoupon)} 币（${TOOTOO_REG.formatLeaseRemaining(bestWearCoupon.expires_at)}）`,
+          onToggle: (checked, priceEl, okBtnEl) => {
+            const eNow = checked ? effWithCoupon : effNoCoupon;
+            if (priceEl) priceEl.innerHTML = renderPriceHtml(eNow);
+            if (okBtnEl) okBtnEl.disabled = getGachaCoinState().balance < eNow.price;
+          },
+        } : null;
         const note = item.eventId
           ? "节日限时限定穿搭，购入后永久保留在你的衣橱，小家与主头像均可穿戴。"
-          : (eff.onSale ? `已享活动${eff.discountLabel}优惠，购入后永久保留在衣橱。` : "购入后永久拥有，小家与顶部主头像同步穿戴。");
+          : (effWithCoupon.onSale ? `已享${effWithCoupon.discountLabel}优惠，购入后永久保留在衣橱。` : "购入后永久拥有，小家与顶部主头像同步穿戴。");
         openHomeConfirm({
           title: `${item.icon} 购入穿搭「${item.name}」`,
-          priceHtml: renderPriceHtml(eff),
+          priceHtml: renderPriceHtml(effWithCoupon),
           note,
           okLabel: "确认购买",
+          couponOpt,
           onConfirm: execBuy,
         });
       } else {
-        execBuy();
+        execBuy(false);
       }
     } else {
       h.wear[item.slot] = item.id;

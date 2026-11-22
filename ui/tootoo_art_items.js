@@ -892,4 +892,138 @@
       </g>
     </g>
   `);
+
+  // ==================== GACHA-EXCLUSIVE DECORS (5) ====================
+  R.registerDecorArt("gacha_carrot_cushion", () => `
+    <g>
+      <ellipse cx="92" cy="171" rx="46" ry="7.5" fill="#000" opacity="0.16"/>
+      <ellipse cx="92" cy="160" rx="42" ry="15" fill="#fff7ed" stroke="#ea580c" stroke-width="1.6"/>
+      <ellipse cx="92" cy="158" rx="34" ry="11" fill="#fed7aa" opacity="0.72"/>
+      <!-- Plush hugging carrot pillow resting inside cushion nest -->
+      <g transform="translate(88, 152) rotate(-12)">
+        <path d="M-14 -4 Q0 -10 18 0 Q0 10 -14 4 Q-20 0 -14 -4 Z" fill="#f97316" stroke="#9a3412" stroke-width="1.1"/>
+        <path d="M-6 -4 Q-4 0 -6 4 M4 -5 Q6 0 4 5" fill="none" stroke="#fed7aa" stroke-width="0.9" opacity="0.7"/>
+        <path d="M-18 0 Q-25 -6 -21 -10 M-18 0 Q-26 0 -24 5" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round"/>
+      </g>
+      <circle cx="116" cy="153" r="4.5" fill="#fef08a" stroke="#f59e0b" stroke-width="0.8"/>
+    </g>
+  `);
+
+  R.registerDecorArt("gacha_lucky_flower", () => `
+    <g transform="translate(362, 160)">
+      <ellipse cx="0" cy="4" rx="18" ry="4" fill="#000" opacity="0.16"/>
+      <!-- Two-tone pastel gacha capsule planter pot -->
+      <path d="M-12 -16 H12 L9 2 Q0 5 -9 2 Z" fill="#38bdf8" stroke="#0369a1" stroke-width="1.2"/>
+      <rect x="-13.5" y="-19" width="27" height="4.5" rx="2" fill="#ffffff" stroke="#0369a1" stroke-width="1.1"/>
+      <!-- Sprouting four-leaf clover & glowing lucky star blossom -->
+      <path d="M0 -19 Q-4 -36 -10 -44 M0 -19 Q2 -40 0 -52 M0 -19 Q6 -35 12 -42" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round"/>
+      <g fill="#22c55e" stroke="#15803d" stroke-width="0.7">
+        <circle cx="-11" cy="-45" r="4"/><circle cx="-6" cy="-42" r="3.6"/>
+        <circle cx="12" cy="-43" r="4"/><circle cx="8" cy="-40" r="3.6"/>
+      </g>
+      <path d="M0 -60 L2.2 -54.5 L8 -54 L3.6 -50.2 L5 -44.5 L0 -47.6 L-5 -44.5 L-3.6 -50.2 L-8 -54 L-2.2 -54.5 Z" fill="#fef08a" stroke="#f59e0b" stroke-width="0.9" filter="url(#hsGlowSm)" class="h-pulse"/>
+      <circle cx="-14" cy="-54" r="1.5" fill="#fde047" class="h-twinkle"/>
+      <circle cx="15" cy="-52" r="1.4" fill="#38bdf8" class="h-twinkle-d1"/>
+    </g>
+  `);
+
+  R.registerDecorArt("gacha_mini_machine", () => `
+    <g transform="translate(88, 168)">
+      <ellipse cx="0" cy="3" rx="26" ry="5.5" fill="#000" opacity="0.18"/>
+      <!-- Cute retro bunny-ear desktop gacha machine figurine -->
+      <ellipse cx="-8" cy="-54" rx="3.4" ry="7.5" transform="rotate(-12 -8 -54)" fill="#fffdf8" stroke="#9a3412" stroke-width="1.2"/>
+      <ellipse cx="8" cy="-54" rx="3.4" ry="7.5" transform="rotate(12 8 -54)" fill="#fffdf8" stroke="#9a3412" stroke-width="1.2"/>
+      <circle cx="0" cy="-38" r="15" fill="#fff7ed" fill-opacity="0.88" stroke="#9a3412" stroke-width="1.4"/>
+      <circle cx="-5" cy="-35" r="3.4" fill="#38bdf8"/><circle cx="5" cy="-35" r="3.4" fill="#c084fc"/>
+      <circle cx="0" cy="-41" r="3.8" fill="#f59e0b"/><circle cx="0" cy="-32" r="3.1" fill="#fb7185"/>
+      <path d="M-9 -44 A11 11 0 0 1 2 -50" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity="0.85"/>
+      <rect x="-14" y="-25" width="28" height="4.5" rx="2" fill="#f59e0b" stroke="#9a3412" stroke-width="1.1"/>
+      <path d="M-13 -21 H13 L15 0 Q15 3 11 3 H-11 Q-15 3 -15 0 Z" fill="#f97316" stroke="#9a3412" stroke-width="1.4"/>
+      <circle cx="0" cy="-12" r="5" fill="#fffbeb" stroke="#9a3412" stroke-width="1.1"/>
+      <rect x="-4" y="-13.4" width="8" height="2.8" rx="1.2" fill="#f59e0b"/>
+      <rect x="-6" y="-4.5" width="12" height="5" rx="2" fill="#7c2d12"/>
+      <circle cx="0" cy="-2" r="2" fill="#fde047" class="h-twinkle"/>
+    </g>
+  `);
+
+  R.registerDecorArt("gacha_bubble_lights", () => `
+    <g>
+      <path d="M24 6 Q116 32 210 18 Q304 32 396 6" fill="none" stroke="#94a3b8" stroke-width="1.3"/>
+      <g filter="url(#hsGlowSm)">
+        <circle cx="72"  cy="19" r="6.5" fill="#38bdf8" fill-opacity="0.86" stroke="#e0f2fe" stroke-width="1" class="h-float"/>
+        <circle cx="136" cy="24" r="7.2" fill="#c084fc" fill-opacity="0.88" stroke="#f5d0fe" stroke-width="1" class="h-float-slow"/>
+        <circle cx="210" cy="20" r="8.2" fill="#fde047" fill-opacity="0.92" stroke="#fffbeb" stroke-width="1.1" class="h-pulse"/>
+        <circle cx="284" cy="24" r="7.2" fill="#f472b6" fill-opacity="0.88" stroke="#fce7f3" stroke-width="1" class="h-float"/>
+        <circle cx="348" cy="19" r="6.5" fill="#34d399" fill-opacity="0.86" stroke="#d1fae5" stroke-width="1" class="h-float-slow"/>
+      </g>
+      <circle cx="104" cy="36" r="1.6" fill="#fef08a" class="h-twinkle"/>
+      <circle cx="316" cy="36" r="1.6" fill="#f0abfc" class="h-twinkle-d1"/>
+    </g>
+  `);
+
+  R.registerDecorArt("gacha_crystal_dome", () => `
+    <g>
+      <polygon points="158,14 262,14 316,148 104,148" fill="url(#hsSunbeam)" opacity="0.24" class="h-pulse"/>
+      <line x1="210" y1="0" x2="210" y2="16" stroke="url(#hsGoldH)" stroke-width="2.4"/>
+      <g transform="translate(210, 34)">
+        <ellipse cx="0" cy="0" rx="52" ry="13" fill="none" stroke="url(#hsGoldH)" stroke-width="2" filter="url(#hsGlowSm)"/>
+        <ellipse cx="0" cy="0" rx="36" ry="9" fill="none" stroke="url(#hsPrism)" stroke-width="1.5" stroke-dasharray="10 5" class="h-flow"/>
+        <circle cx="0" cy="0" r="14" fill="#fffbeb" fill-opacity="0.88" stroke="url(#hsGoldH)" stroke-width="1.8" filter="url(#hsGlowMd)"/>
+        <polygon points="0,-10 7,0 0,10 -7,0" fill="url(#hsPrism)" opacity="0.85" class="h-pulse"/>
+        <circle cx="-44" cy="4" r="3" fill="#38bdf8" class="h-twinkle"/>
+        <circle cx="44" cy="4" r="3" fill="#f472b6" class="h-twinkle-d1"/>
+        <circle cx="0" cy="18" r="2.6" fill="#fde047" class="h-twinkle-d2"/>
+      </g>
+    </g>
+  `);
+
+  // ==================== GACHA-EXCLUSIVE WEARABLES (5) ====================
+  R.registerWearArt("gacha_clover_clip", () => `
+    <g transform="translate(10.8, 13.8) rotate(-18)">
+      <circle cx="-1.6" cy="-1.4" r="1.7" fill="#22c55e" stroke="#14532d" stroke-width="0.45"/>
+      <circle cx="1.6" cy="-1.4" r="1.7" fill="#4ade80" stroke="#14532d" stroke-width="0.45"/>
+      <circle cx="-1.6" cy="1.4" r="1.7" fill="#4ade80" stroke="#14532d" stroke-width="0.45"/>
+      <circle cx="1.6" cy="1.4" r="1.7" fill="#22c55e" stroke="#14532d" stroke-width="0.45"/>
+      <circle cx="0" cy="0" r="1.0" fill="#fef08a"/>
+    </g>
+  `);
+
+  R.registerWearArt("gacha_capsule_bag", () => `
+    <g transform="translate(28.4, 29.5)">
+      <path d="M-4.6 -5.4 Q-1 -1.8 0.4 -2.2" fill="none" stroke="#f59e0b" stroke-width="0.8"/>
+      <circle cx="0" cy="0" r="4.0" fill="#c084fc" stroke="#6b21a8" stroke-width="0.7"/>
+      <path d="M-3.8 0 A3.8 3.8 0 0 0 3.8 0 Z" fill="#ffffff"/>
+      <line x1="-3.9" y1="0" x2="3.9" y2="0" stroke="#6b21a8" stroke-width="0.6"/>
+      <circle cx="0" cy="-1.5" r="1.0" fill="#fef08a"/>
+    </g>
+  `);
+
+  R.registerWearArt("gacha_ribbon_cape", () => `
+    <g>
+      <path d="M7.8 28.6 L4.8 35.4 Q18 36.4 31.2 35.4 L28.2 28.6 Q18 32.8 7.8 28.6 Z" fill="#a855f7" stroke="#f472b6" stroke-width="0.9"/>
+      <path d="M9.6 30.8 Q18 34.4 26.4 30.8" fill="none" stroke="#fef08a" stroke-width="0.8" opacity="0.88"/>
+      <polygon points="15.2,30.2 18,31.4 15.2,32.6" fill="#f472b6" stroke="#fde047" stroke-width="0.4"/>
+      <polygon points="20.8,30.2 18,31.4 20.8,32.6" fill="#f472b6" stroke="#fde047" stroke-width="0.4"/>
+      <circle cx="18" cy="31.4" r="0.95" fill="#fef08a"/>
+    </g>
+  `);
+
+  R.registerWearArt("gacha_star_wand", () => `
+    <g transform="translate(29.8, 25.0) rotate(18)">
+      <line x1="0" y1="-2" x2="0" y2="8.5" stroke="#f59e0b" stroke-width="1.25" stroke-linecap="round"/>
+      <path d="M-4.6 -3.8 Q-2 -6 0 -3.4 Q2 -6 4.6 -3.8 Q2.4 -1.4 0 -2.4 Q-2.4 -1.4 -4.6 -3.8 Z" fill="#f0abfc" opacity="0.88"/>
+      <path d="M0 -7.6 L1.1 -4.7 L4.2 -4.5 L1.8 -2.6 L2.6 0.3 L0 -1.3 L-2.6 0.3 L-1.8 -2.6 L-4.2 -4.5 L-1.1 -4.7 Z" fill="#fef08a" stroke="#d97706" stroke-width="0.55" class="h-pulse"/>
+    </g>
+  `);
+
+  R.registerWearArt("gacha_prism_crown", () => `
+    <g>
+      <ellipse cx="18" cy="9.2" rx="8.6" ry="2.2" fill="none" stroke="#fde047" stroke-width="0.65" opacity="0.72" class="h-pulse"/>
+      <path d="M11.6 15.2 L10.6 9.6 L14.4 12.2 L18 7.8 L21.6 12.2 L25.4 9.6 L24.4 15.2 Z" fill="#f59e0b" stroke="#fef08a" stroke-width="0.75" stroke-linejoin="round"/>
+      <circle cx="18" cy="12.6" r="1.4" fill="#38bdf8"/>
+      <circle cx="13.8" cy="13.2" r="1.0" fill="#ec4899"/>
+      <circle cx="22.2" cy="13.2" r="1.0" fill="#a855f7"/>
+      <circle cx="18" cy="7.2" r="1.0" fill="#ffffff" class="h-twinkle"/>
+    </g>
+  `);
 })(typeof window !== "undefined" ? window : globalThis);
