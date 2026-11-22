@@ -6172,6 +6172,9 @@ function syncDebugUi() {
 }
 
 function getEffectiveTodayTokens() {
+  if (debugState.simTokens != null) {
+    return debugState.simTokens;
+  }
   if (debugState.level != null) {
     const t = BUNNY_TIERS.find(x => x.level === debugState.level);
     if (t) {
@@ -6184,6 +6187,7 @@ function getEffectiveTodayTokens() {
 }
 
 function applyDebugOverride(lv) {
+  debugState.simTokens = null;
   debugState.level = (lv >= 1 && lv <= 10) ? lv : null;
   document.querySelectorAll("#dbgLvChips button").forEach(b => {
     const blv = Number(b.dataset.lv);
@@ -11380,9 +11384,21 @@ document.getElementById("dbgLevelUpBtn").addEventListener("click", () => {
 document.getElementById("dbgStarUpBtn").addEventListener("click", () => {
   if (window.scrollY > 12) window.scrollTo({ top: 0, behavior: "smooth" });
   const curTok = getEffectiveTodayTokens();
-  const curTier = getBunnyTier(Math.max(curTok, 3e9));
-  const simStars = Math.max(1, getStarRankInfo(curTok).stars + 1);
-  celebrateLevelUp(curTier.level >= 9 ? curTier : BUNNY_TIERS[8], { isStarOnly: true, stars: simStars });
+  const nextStars = Math.max(1, getStarRankInfo(curTok).stars + 1);
+  // Advance simulated tokens past the next 5B star threshold so nameplate, XP bar, and gallery ALL update live!
+  const nextTok = nextStars * STAR_STEP_TOKENS + 0.35e9;
+  const nextTier = getBunnyTier(nextTok);
+  debugState.level = nextTier.level;
+  debugState.simTokens = nextTok;
+  document.querySelectorAll("#dbgLvChips button").forEach(b => {
+    b.classList.toggle("on", Number(b.dataset.lv) === nextTier.level);
+  });
+  renderBunnyState(nextTok);
+  if (document.getElementById("evoModal").classList.contains("open")) {
+    renderEvoModal();
+  }
+  postNative("setDebugTier", { level: nextTier.level });
+  celebrateLevelUp(nextTier, { isStarOnly: true, stars: nextStars });
 });
 
 document.getElementById("dbgUnlockBtn").addEventListener("click", (e) => {
