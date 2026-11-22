@@ -1248,18 +1248,361 @@
   }
 
   .mood-tag {
+    position: relative;
+    overflow: hidden;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     font-size: 9.5px;
     font-weight: 700;
-    padding: 2px 7px;
-    border-radius: 3px;
+    padding: 2px 7.5px;
+    border-radius: 4px;
     background: color-mix(in srgb, var(--accent) 13%, transparent);
     color: var(--accent);
     letter-spacing: 0.04em;
     border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
     cursor: pointer;
-    transition: all 0.14s ease;
+    transition: all 0.16s ease;
   }
   .mood-tag:hover { background: var(--accent); color: #fff; }
+  .mood-stars {
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-weight: 900;
+    color: #fde047;
+    text-shadow: 0 0 6px rgba(245, 158, 11, 0.85);
+    letter-spacing: -0.02em;
+    animation: moodStarTwinkle 2.2s ease-in-out infinite;
+  }
+  @keyframes moodStarTwinkle {
+    0%, 100% { filter: brightness(1); transform: scale(1); }
+    50%      { filter: brightness(1.3); transform: scale(1.06); }
+  }
+
+  /* ---- Lv.6+ Animated Prestige Nameplates ---- */
+  .mood-tag[data-lv="6"],
+  .mood-tag[data-lv="7"],
+  .mood-tag[data-lv="8"],
+  .mood-tag[data-lv="9"],
+  .mood-tag[data-lv="10"] {
+    padding: 2.5px 8.5px;
+    border-radius: 5px;
+    font-weight: 800;
+  }
+  .mood-tag[data-lv="6"]::after,
+  .mood-tag[data-lv="7"]::after,
+  .mood-tag[data-lv="8"]::after,
+  .mood-tag[data-lv="9"]::after,
+  .mood-tag[data-lv="10"]::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    width: 48%;
+    pointer-events: none;
+    background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.32), transparent);
+    transform: translateX(-140%);
+    animation: moodSheenSweep var(--sheen-dur, 3.6s) ease-in-out infinite;
+  }
+  @keyframes moodSheenSweep {
+    0%   { transform: translateX(-140%); }
+    38%, 100% { transform: translateX(260%); }
+  }
+  .mood-tag[data-lv="6"] {
+    --sheen-dur: 3.8s;
+    background: linear-gradient(135deg, #2a0a0a, #5c1111);
+    border-color: #ef4444;
+    color: #fecaca;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.35);
+    animation: moodLv6Pulse 2.8s ease-in-out infinite;
+  }
+  @keyframes moodLv6Pulse {
+    0%, 100% { box-shadow: 0 0 6px rgba(239, 68, 68, 0.3); }
+    50%      { box-shadow: 0 0 13px rgba(239, 68, 68, 0.65); }
+  }
+  .mood-tag[data-lv="7"] {
+    --sheen-dur: 3.2s;
+    background: linear-gradient(135deg, #26083b, #4a0e4e);
+    border-color: #c026d3;
+    color: #f5d0fe;
+    box-shadow: 0 0 10px rgba(192, 38, 211, 0.42);
+    animation: moodLv7Pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes moodLv7Pulse {
+    0%, 100% { box-shadow: 0 0 7px rgba(192, 38, 211, 0.35); border-color: #c026d3; }
+    50%      { box-shadow: 0 0 15px rgba(244, 63, 94, 0.65), 0 0 6px rgba(192, 38, 211, 0.8); border-color: #f43f5e; }
+  }
+  .mood-tag[data-lv="8"] {
+    --sheen-dur: 2.8s;
+    background: linear-gradient(135deg, #17122b, #2c1e4a 60%, #4a2d12);
+    border-color: #f59e0b;
+    color: #fef08a;
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.4), inset 0 1px 0 rgba(254, 240, 138, 0.3);
+    animation: moodLv8Pulse 2.6s ease-in-out infinite;
+  }
+  @keyframes moodLv8Pulse {
+    0%, 100% { box-shadow: 0 0 8px rgba(245, 158, 11, 0.35); }
+    50%      { box-shadow: 0 0 16px rgba(245, 158, 11, 0.72), 0 0 8px rgba(167, 139, 250, 0.55); }
+  }
+  .mood-tag[data-lv="9"] {
+    --sheen-dur: 2.4s;
+    background: linear-gradient(115deg, #3b133d 0%, #9a3412 42%, #d97706 78%, #581c6e 100%);
+    background-size: 220% 220%;
+    border-color: #fbbf24;
+    color: #fffbeb;
+    text-shadow: 0 1px 3px rgba(69, 26, 3, 0.55);
+    animation: moodGradFlow 4.2s ease infinite, moodLv9Pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes moodLv9Pulse {
+    0%, 100% { box-shadow: 0 0 9px rgba(251, 191, 36, 0.45); }
+    50%      { box-shadow: 0 0 18px rgba(251, 191, 36, 0.82), 0 0 8px rgba(229, 72, 38, 0.55); }
+  }
+  .mood-tag[data-lv="10"] {
+    --sheen-dur: 2.0s;
+    background: linear-gradient(115deg, #4c1d95 0%, #0284c7 30%, #be185d 62%, #d97706 88%, #4c1d95 100%);
+    background-size: 260% 260%;
+    border-color: #fde047;
+    color: #ffffff;
+    text-shadow: 0 1px 4px rgba(15, 23, 42, 0.65);
+    animation: moodGradFlow 3.4s linear infinite, moodLv10Pulse 2.2s ease-in-out infinite;
+  }
+  @keyframes moodGradFlow {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  @keyframes moodLv10Pulse {
+    0%, 100% { box-shadow: 0 0 10px rgba(139, 92, 246, 0.5), 0 0 4px rgba(56, 189, 248, 0.45); }
+    50%      { box-shadow: 0 0 20px rgba(56, 189, 248, 0.78), 0 0 14px rgba(251, 191, 36, 0.72); }
+  }
+  .mood-tag[data-lv="6"]:hover,
+  .mood-tag[data-lv="7"]:hover,
+  .mood-tag[data-lv="8"]:hover,
+  .mood-tag[data-lv="9"]:hover,
+  .mood-tag[data-lv="10"]:hover {
+    filter: brightness(1.14);
+    transform: translateY(-1px);
+  }
+
+  /* ---- CS Perfect-World Style Star Strip in Evo Modal ---- */
+  .evo-star-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 6px;
+    padding: 5px 8px;
+    border-radius: 7px;
+    background: linear-gradient(125deg, rgba(30, 18, 52, 0.08), rgba(245, 158, 11, 0.13));
+    border: 1px solid color-mix(in srgb, #f59e0b 42%, var(--border));
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+  }
+  .evo-star-pips {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 11px;
+    color: #f59e0b;
+    text-shadow: 0 0 6px rgba(245, 158, 11, 0.55);
+  }
+  .evo-star-pips .dim {
+    opacity: 0.25;
+    text-shadow: none;
+  }
+
+  /* ---- Full-Panel Escalating Level-Up Cinematic Takeover (Lv.4 -> EX 50B + Star Ascension) ---- */
+  .lvlup-stage {
+    position: fixed;
+    inset: 0;
+    z-index: 10050;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    cursor: pointer;
+    animation: lvlupBackdropIn 0.34s ease-out forwards;
+  }
+  .lvlup-stage.is-exiting {
+    animation: lvlupBackdropOut 0.52s ease-in forwards;
+    pointer-events: none;
+  }
+  @keyframes lvlupBackdropIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes lvlupBackdropOut {
+    from { opacity: 1; filter: blur(0); }
+    to   { opacity: 0; filter: blur(4px); }
+  }
+  .lvlup-bg {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .lvlup-rays {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 150vmax;
+    height: 150vmax;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    animation: lvlupSpinSlow 16s linear infinite;
+  }
+  .lvlup-mandala {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    border-radius: 50%;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+  }
+  .lvlup-mandala.m1 {
+    width: 240px;
+    height: 240px;
+    border: 2px dashed rgba(254, 240, 138, 0.65);
+    box-shadow: 0 0 32px rgba(245, 158, 11, 0.45), inset 0 0 24px rgba(168, 85, 247, 0.3);
+    animation: lvlupSpinSlow 10s linear infinite;
+  }
+  .lvlup-mandala.m2 {
+    width: 176px;
+    height: 176px;
+    border: 2px solid rgba(56, 189, 248, 0.62);
+    box-shadow: 0 0 24px rgba(56, 189, 248, 0.4);
+    animation: lvlupSpinRev 7s linear infinite;
+  }
+  @keyframes lvlupSpinSlow {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to   { transform: translate(-50%, -50%) rotate(360deg); }
+  }
+  @keyframes lvlupSpinRev {
+    from { transform: translate(-50%, -50%) rotate(360deg); }
+    to   { transform: translate(-50%, -50%) rotate(0deg); }
+  }
+  .lvlup-flame-curtain {
+    position: absolute;
+    left: -10%;
+    right: -10%;
+    bottom: -16px;
+    height: 55%;
+    pointer-events: none;
+    background: radial-gradient(ellipse at 50% 100%, rgba(251, 191, 36, 0.65) 0%, rgba(234, 88, 12, 0.35) 45%, transparent 78%);
+    animation: lvlupFlameRise 1.6s ease-in-out infinite alternate;
+  }
+  @keyframes lvlupFlameRise {
+    from { transform: translateY(10px) scaleY(0.92); opacity: 0.72; }
+    to   { transform: translateY(-14px) scaleY(1.12); opacity: 1; }
+  }
+  .lvlup-bolt {
+    position: absolute;
+    top: -10%;
+    width: 3px;
+    height: 120%;
+    pointer-events: none;
+    background: linear-gradient(180deg, transparent, #fde047 35%, #ffffff 50%, #f97316 68%, transparent);
+    box-shadow: 0 0 18px #facc15, 0 0 32px #ea580c;
+    animation: lvlupBoltFlash 0.62s ease-out forwards;
+  }
+  @keyframes lvlupBoltFlash {
+    0%   { opacity: 0; transform: skewX(var(--sk, -18deg)) scaleY(0.2); }
+    18%  { opacity: 1; transform: skewX(var(--sk, -18deg)) scaleY(1.05); }
+    55%  { opacity: 0.85; }
+    100% { opacity: 0; transform: skewX(var(--sk, -18deg)) scaleY(1.1); }
+  }
+  .lvlup-card {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 18px 26px 16px;
+    border-radius: 16px;
+    background: rgba(16, 13, 24, 0.86);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1.8px solid var(--lu-accent, #f59e0b);
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.14),
+      0 18px 50px rgba(0, 0, 0, 0.55),
+      0 0 38px var(--lu-glow, rgba(245, 158, 11, 0.5));
+    text-align: center;
+    max-width: min(360px, 88vw);
+    animation: lvlupCardSlam 0.62s cubic-bezier(0.18, 1.38, 0.34, 1) forwards;
+  }
+  @keyframes lvlupCardSlam {
+    0%   { opacity: 0; transform: scale(0.42) translateY(26px); filter: brightness(1.8); }
+    45%  { opacity: 1; transform: scale(1.06) translateY(-4px); filter: brightness(1.15); }
+    100% { opacity: 1; transform: scale(1) translateY(0); filter: brightness(1); }
+  }
+  .lvlup-kicker {
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--lu-accent, #fde047);
+  }
+  .lvlup-avatar-ring {
+    position: relative;
+    width: 78px;
+    height: 78px;
+    display: grid;
+    place-items: center;
+  }
+  .lvlup-avatar-ring .bunny-wrap {
+    width: 68px !important;
+    height: 68px !important;
+    border-radius: 14px !important;
+    pointer-events: none;
+  }
+  .lvlup-avatar-ring .bunny-svg {
+    width: 56px !important;
+    height: 56px !important;
+  }
+  .lvlup-title {
+    font-size: 18px;
+    font-weight: 900;
+    color: #fffdf8;
+    letter-spacing: 0.03em;
+    text-shadow: 0 2px 14px var(--lu-glow, rgba(245, 158, 11, 0.7));
+  }
+  .lvlup-sub {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 700;
+    color: rgba(254, 243, 199, 0.88);
+    line-height: 1.45;
+  }
+  .lvlup-star-slam {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 2px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.28), rgba(168, 85, 247, 0.25));
+    border: 1.2px solid #fde047;
+    color: #fef08a;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 900;
+    box-shadow: 0 0 18px rgba(250, 204, 21, 0.55);
+    animation: starLockSlam 0.75s cubic-bezier(0.18, 1.48, 0.34, 1) 0.16s both;
+  }
+  @keyframes starLockSlam {
+    0%   { opacity: 0; transform: scale(2.4) rotate(-25deg); filter: brightness(2.2); }
+    65%  { opacity: 1; transform: scale(0.92) rotate(5deg); filter: brightness(1.3); }
+    100% { opacity: 1; transform: scale(1) rotate(0deg); filter: brightness(1); }
+  }
+  .lvlup-hint {
+    margin-top: 2px;
+    font-family: var(--font-mono);
+    font-size: 8.5px;
+    color: rgba(255, 255, 255, 0.46);
+  }
 
   .brand-sub {
     font-size: 11px;
@@ -4936,6 +5279,7 @@
         <button class="btn" id="dbgFxBtn" style="padding:2px 6px;font-size:9.5px">⚡ 播特效</button>
         <button class="btn" id="dbgFeedBtn" style="padding:2px 6px;font-size:9.5px">✨ 模拟投喂</button>
         <button class="btn" id="dbgLevelUpBtn" style="padding:2px 6px;font-size:9.5px">🎉 模拟升级</button>
+        <button class="btn" id="dbgStarUpBtn" style="padding:2px 6px;font-size:9.5px;border-color:color-mix(in srgb,var(--amber) 50%,var(--border));color:var(--amber)">⭐ 模拟摘星</button>
         <button class="btn" id="dbgPatrolBtn" style="padding:2px 6px;font-size:9.5px">🐾 巡逻</button>
         <button class="btn" id="dbgUnlockBtn" style="padding:2px 6px;font-size:9.5px">全解锁: 关</button>
         <button class="btn" id="dbgCloseBtn" style="padding:2px 6px;font-size:9.5px">✕</button>
@@ -5745,32 +6089,302 @@ function showLevelUpToast(tier) {
   setTimeout(() => toast.remove(), 3000);
 }
 
-function celebrateLevelUp(tier) {
+// ---- CS Perfect-World Style Star System above Lv.9 (every 5B = 1 Star, EX 50B preserved!) ----
+const STAR_STEP_TOKENS = 5e9;
+
+function getStarRankInfo(tokens) {
+  const val = Math.max(0, Number(tokens) || 0);
+  if (val < 3e9) return { active: false, stars: 0, nextAt: 5e9, remain: 5e9 - val, pct: 0 };
+  const stars = Math.floor(val / STAR_STEP_TOKENS);
+  const prevAt = stars === 0 ? 3e9 : stars * STAR_STEP_TOKENS;
+  const nextAt = (stars + 1) * STAR_STEP_TOKENS;
+  const pct = Math.max(4, Math.min(100, Math.round(((val - prevAt) / (nextAt - prevAt)) * 100)));
+  return { active: true, stars, prevAt, nextAt, remain: Math.max(0, nextAt - val), pct };
+}
+
+function formatStarBadgeHtml(stars) {
+  if (!stars || stars <= 0) return "";
+  if (stars <= 3) return `<span class="mood-stars">${"★".repeat(stars)}</span>`;
+  return `<span class="mood-stars">★×${stars}</span>`;
+}
+
+// ---- First-Panel-Open Pending Level-Up Queue (Lv.4+ & Star-Up!) ----
+let pendingLevelUpEvent = null;
+let activeFullPanelTimer = null;
+
+function getTodaySeenRankKey() {
+  const day = (typeof getDataDayKey === "function") ? getDataDayKey() : new Date().toISOString().slice(0, 10);
+  return "tootoo_seen_rank_" + day;
+}
+
+function readTodaySeenRank() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(getTodaySeenRankKey()) || "null");
+    if (raw && typeof raw === "object") {
+      return { lv: Math.max(1, Number(raw.lv) || 1), stars: Math.max(0, Number(raw.stars) || 0) };
+    }
+  } catch {}
+  return null;
+}
+
+function writeTodaySeenRank(lv, stars) {
+  try {
+    localStorage.setItem(getTodaySeenRankKey(), JSON.stringify({ lv: Number(lv) || 1, stars: Math.max(0, Number(stars) || 0) }));
+  } catch {}
+}
+
+function isPanelCurrentlyVisible() {
+  if (typeof popoverVisible !== "undefined" && !popoverVisible) return false;
+  return document.visibilityState === "visible";
+}
+
+function dismissFullPanelLevelUp() {
+  clearTimeout(activeFullPanelTimer);
+  activeFullPanelTimer = null;
+  document.querySelectorAll(".lvlup-stage").forEach(el => {
+    if (el.classList.contains("is-exiting")) return;
+    el.classList.add("is-exiting");
+    setTimeout(() => el.remove(), 540);
+  });
+}
+
+// Distinct Full-Panel Level-Up Cinematic Takeover for Lv.4 -> EX 50B & CS 5B Star Ascension!
+// Higher tier = richer effects + progressively longer duration (2.0s -> 6.6s)
+function triggerFullPanelLevelUpFx(tier, opts = {}) {
+  if (!tier) return;
+  const lv = tier.level;
+  const isStarOnly = !!opts.isStarOnly;
+  const stars = Math.max(0, Number(opts.stars) || 0);
+  const vis = getTierVisual(tier);
+  const innateSvg = (typeof getActiveTierInnateSvg === "function") ? getActiveTierInnateSvg(lv, "lu") : "";
+
+  dismissFullPanelLevelUp();
+
+  // Duration scales progressively with tier (higher tier -> longer & grander!)
+  const durationMap = { 4: 2000, 5: 2600, 6: 3200, 7: 3900, 8: 4600, 9: 5500, 10: 6600 };
+  const durationMs = isStarOnly
+    ? Math.min(6200, 4500 + Math.min(8, stars) * 200)
+    : (durationMap[lv] || 2200);
+
+  const themeMap = {
+    4:  {
+      bg: "radial-gradient(circle at 50% 45%, rgba(234,88,12,0.34), rgba(20,12,8,0.82) 72%)",
+      accent: "#fb923c", glow: "rgba(234,88,12,0.72)",
+      kicker: "LEVEL UP · LV.4 AWAKENED", title: `⚡ Lv.4 ${tier.name}`,
+      sub: "算力暴击突破 100M · 黄金电弧破界！",
+      rays: null,
+    },
+    5:  {
+      bg: "radial-gradient(circle at 50% 60%, rgba(250,204,21,0.36), rgba(32,18,6,0.86) 74%)",
+      accent: "#fde047", glow: "rgba(250,204,21,0.78)",
+      kicker: "SUPER SAIYAN · LV.5", title: `🔥 Lv.5 ${tier.name}`,
+      sub: "解锁自带「⚡ 爆气金弧耳坠」+ 长按蓄力元气波！",
+      rays: "repeating-conic-gradient(from 0deg, rgba(253,224,71,0.16) 0deg 10deg, transparent 10deg 24deg)",
+    },
+    6:  {
+      bg: "radial-gradient(circle at 50% 45%, rgba(220,38,38,0.42), rgba(16,4,6,0.9) 72%)",
+      accent: "#f87171", glow: "rgba(239,68,68,0.82)",
+      kicker: "CRIMSON DOMAIN · LV.6", title: `🩸 Lv.6 ${tier.name}`,
+      sub: "动态名牌觉醒 · 自带「🔥 暗炎魔纹耳扣」+ 双击裂空斩！",
+      rays: "repeating-conic-gradient(from 0deg, rgba(239,68,68,0.15) 0deg 8deg, transparent 8deg 22deg)",
+    },
+    7:  {
+      bg: "radial-gradient(circle at 50% 45%, rgba(192,38,211,0.42), rgba(16,4,26,0.92) 72%)",
+      accent: "#e879f9", glow: "rgba(192,38,211,0.85)",
+      kicker: "ABYSSAL ASCENSION · LV.7", title: `🌀 Lv.7 ${tier.name}`,
+      sub: "头像进阶放大 · 自带「⛓️ 冥渊紫金星环」+ 3技轮播/右键召星！",
+      rays: "repeating-conic-gradient(from 0deg, rgba(192,38,211,0.18) 0deg 9deg, transparent 9deg 24deg)",
+    },
+    8:  {
+      bg: "radial-gradient(circle at 50% 42%, rgba(124,58,237,0.42), rgba(10,8,28,0.92) 72%)",
+      accent: "#fbbf24", glow: "rgba(245,158,11,0.82)",
+      kicker: "SOVEREIGN OF THE VOID · LV.8", title: `🪐 Lv.8 ${tier.name}`,
+      sub: "星渊霸主头像再升级 · 自带「🪐 微缩土星」+ 光标星轨卫星！",
+      rays: "repeating-conic-gradient(from 0deg, rgba(251,191,36,0.16) 0deg 10deg, rgba(167,139,250,0.08) 10deg 20deg, transparent 20deg 30deg)",
+    },
+    9:  {
+      bg: "radial-gradient(circle at 50% 42%, rgba(251,191,36,0.44), rgba(229,72,38,0.28) 38%, rgba(22,12,42,0.93) 76%)",
+      accent: "#fde047", glow: "rgba(251,191,36,0.88)",
+      kicker: "GENESIS ASCENSION · LV.9", title: `☀️ Lv.9 ${tier.name}`,
+      sub: "开启「每 5B 摘 1 星」荣誉体系 · 自带圣羽金铃 + 可戳创世光球！",
+      rays: "repeating-conic-gradient(from 0deg, rgba(254,240,138,0.22) 0deg 10deg, transparent 10deg 22deg)",
+    },
+    10: {
+      bg: "radial-gradient(circle at 50% 45%, rgba(139,92,246,0.46), rgba(6,24,44,0.92) 72%)",
+      accent: "#38bdf8", glow: "rgba(168,85,247,0.9)",
+      kicker: "MYTHIC SINGULARITY · 50B EX", title: `💠 EX ${tier.name}`,
+      sub: "50B 究极形态觉醒 · 满阶超大头像 + 3款限定皮肤 + 全套星乐互动！",
+      rays: "repeating-conic-gradient(from 0deg, rgba(56,189,248,0.2) 0deg 8deg, rgba(236,72,153,0.14) 8deg 16deg, rgba(251,191,36,0.16) 16deg 24deg, transparent 24deg 36deg)",
+    },
+  };
+
+  let th = themeMap[lv] || themeMap[4];
+  if (isStarOnly) {
+    th = {
+      bg: "radial-gradient(circle at 50% 44%, rgba(251,191,36,0.4), rgba(24,14,44,0.92) 72%)",
+      accent: "#fde047",
+      glow: "rgba(250,204,21,0.9)",
+      kicker: "PERFECT STAR ASCENSION · +5B",
+      title: `⭐ 完美摘星 · ${tier.secret ? "EX" : `Lv.${lv}`} ${tier.name}`,
+      sub: `今日算力突破 ${(stars * 5)}B · 荣耀晋升第 ${stars} 颗星！`,
+      rays: "repeating-conic-gradient(from 0deg, rgba(253,224,71,0.24) 0deg 10deg, transparent 10deg 24deg)",
+    };
+  }
+
+  const stage = document.createElement("div");
+  stage.className = `lvlup-stage lv${lv}${isStarOnly ? " lv-star" : ""}`;
+  stage.style.setProperty("--lu-accent", th.accent);
+  stage.style.setProperty("--lu-glow", th.glow);
+
+  let extrasHtml = "";
+  if (th.rays) {
+    extrasHtml += `<div class="lvlup-rays" style="background:${th.rays}"></div>`;
+  }
+  if (lv === 5) {
+    extrasHtml += `<div class="lvlup-flame-curtain"></div>`;
+  }
+  if (lv >= 7 || isStarOnly) {
+    extrasHtml += `<div class="lvlup-mandala m1"></div><div class="lvlup-mandala m2"></div>`;
+  }
+  const starBadgeHtml = (stars > 0 && (lv >= 9 || isStarOnly))
+    ? `<div class="lvlup-star-slam">${stars <= 5 ? "★".repeat(stars) : `★ × ${stars}`} ${isStarOnly ? "摘星成功！" : "摘星段位"}</div>`
+    : "";
+
+  stage.innerHTML = `
+    <div class="lvlup-bg" style="background:${th.bg}"></div>
+    ${extrasHtml}
+    <div class="lvlup-card">
+      <div class="lvlup-kicker">${th.kicker}</div>
+      <div class="lvlup-avatar-ring">
+        <div class="bunny-wrap ${vis.stage}" data-lv="${lv}">
+          <svg class="bunny-svg" viewBox="0 0 36 36" fill="none">${vis.svg}${innateSvg}</svg>
+        </div>
+      </div>
+      <div class="lvlup-title">${th.title}</div>
+      ${starBadgeHtml}
+      <div class="lvlup-sub">${th.sub}</div>
+      <div class="lvlup-hint">点击任意位置可提前关闭 · ${(durationMs / 1000).toFixed(1)}s</div>
+    </div>
+  `;
+  stage.addEventListener("click", dismissFullPanelLevelUp);
+  document.body.appendChild(stage);
+
+  // Trigger tier-signature full-panel dynamic choreography!
+  const cx = window.innerWidth / 2;
+  const cy = window.innerHeight / 2;
+  const wrap = document.getElementById("bunnyMascot");
+  if (wrap) spawnConfettiBurst(wrap, 24 + lv * 4);
+
+  if (lv === 4) {
+    // Lightning bolts across the panel
+    [22, 50, 78].forEach((leftPct, idx) => {
+      setTimeout(() => {
+        const bolt = document.createElement("div");
+        bolt.className = "lvlup-bolt";
+        bolt.style.left = leftPct + "%";
+        bolt.style.setProperty("--sk", (idx % 2 === 0 ? -18 : 16) + "deg");
+        stage.appendChild(bolt);
+      }, idx * 120);
+    });
+    playSfx("levelUp");
+  } else if (lv === 5) {
+    spawnBeamBlast(0, cy, 5);
+    playSfx("ssr");
+  } else if (lv === 6) {
+    spawnDemonSlashFx(cx, cy, 6);
+    setTimeout(() => spawnDemonSlashFx(cx, cy, 6), 340);
+    playSfx("ssr");
+  } else if (lv === 7) {
+    spawnMeteorShowerFx(["#c026d3", "#f43f5e", "#fde047"], 8);
+    spawnMagicSigilFx(cx, cy, "#c026d3", 180);
+    playSfx("ssr");
+  } else if (lv === 8) {
+    spawnMeteorShowerFx(["#f59e0b", "#a78bfa", "#fde047"], 10);
+    spawnMagicSigilFx(cx, cy, "#f59e0b", 210);
+    activateCursorSatellites(8, 5500);
+    playSfx("mythic");
+  } else if (lv === 9 || isStarOnly) {
+    spawnInteractiveFeathers(cx, cy - 60, 7);
+    spawnMeteorShowerFx(["#fde047", "#fbbf24", "#e54826"], 10);
+    spawnMagicSigilFx(cx, cy, "#fde047", 220);
+    activateCursorSatellites(9, 6000);
+    if (typeof activateStardust === "function") activateStardust(6000);
+    playSfx("mythic");
+  } else if (lv >= 10) {
+    const layer = document.getElementById("fxLayer");
+    if (layer) triggerSecretMythicFx(layer, cx, cy, getActiveSecretSkin());
+    spawnMeteorShowerFx(getActiveSecretSkin().fxColors, 12);
+    spawnInteractiveChimeOrbs(cx, cy, 10, 5);
+    activateCursorSatellites(10, 6800);
+    if (typeof activateStardust === "function") activateStardust(6800);
+    playSfx("mythic");
+  }
+
+  // Shell quake scaled by tier
+  const shell = document.querySelector(".shell");
+  if (shell) {
+    const qCls = lv >= 9 ? "fx-quake-mythic" : (lv >= 6 ? "fx-quake-lg" : "fx-quake-sm");
+    shell.classList.remove("fx-quake-sm", "fx-quake-lg", "fx-quake-mythic");
+    void shell.offsetWidth;
+    shell.classList.add(qCls);
+    setTimeout(() => shell.classList.remove(qCls), 780);
+  }
+
+  activeFullPanelTimer = setTimeout(dismissFullPanelLevelUp, durationMs);
+}
+
+function celebrateLevelUp(tier, opts = {}) {
   if (!tier) return;
   const wrap = document.getElementById("bunnyMascot");
   const mood = document.getElementById("bunnyMood");
-  if (wrap) {
-    triggerBunnyFx(wrap, tier.level);
-    spawnConfettiBurst(wrap, 24 + tier.level * 2);
+  const isStarOnly = !!opts.isStarOnly;
+  const stars = Math.max(0, Number(opts.stars) || 0);
+
+  // Lv.1 - Lv.3 keep the original crisp lightweight celebration!
+  if (tier.level <= 3 && !isStarOnly) {
+    if (wrap) {
+      triggerBunnyFx(wrap, tier.level);
+      spawnConfettiBurst(wrap, 24 + tier.level * 2);
+    }
+    if (typeof activateStardust === "function") activateStardust(5000);
+    if (typeof playSfx === "function") playSfx("levelUp");
+    showLevelUpToast(tier);
+  } else {
+    // Lv.4+ & Lv.9+ Star Ascension trigger full-panel escalating takeover!
+    triggerFullPanelLevelUpFx(tier, { isStarOnly, stars });
   }
-  if (typeof activateStardust === "function") activateStardust(5000);
-  if (typeof playSfx === "function") playSfx("levelUp");
-  showLevelUpToast(tier);
+
   if (mood) {
     mood.classList.remove("levelup-pop");
     void mood.offsetWidth;
     mood.classList.add("levelup-pop");
     setTimeout(() => mood.classList.remove("levelup-pop"), 760);
   }
-  showBunnySpeech(`🎉 进化成功！今日达成 Lv.${tier.level} ${tier.name}！`);
+  showBunnySpeech(isStarOnly
+    ? `⭐ 完美摘星！今日达成 ${tier.secret ? "EX" : `Lv.${tier.level}`} ★×${stars}！`
+    : `🎉 进化成功！今日达成 ${tier.secret ? "EX" : `Lv.${tier.level}`} ${tier.name}！`);
   if (document.getElementById("evoModal").classList.contains("open")) {
     renderEvoModal();
   }
 }
 
+function flushPendingLevelUpFx() {
+  if (!pendingLevelUpEvent || !isPanelCurrentlyVisible()) return;
+  const ev = pendingLevelUpEvent;
+  pendingLevelUpEvent = null;
+  writeTodaySeenRank(ev.tier.level, ev.stars);
+  setTimeout(() => celebrateLevelUp(ev.tier, { isStarOnly: ev.isStarOnly, stars: ev.stars }), 180);
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") flushPendingLevelUpFx();
+});
+window.addEventListener("focus", () => flushPendingLevelUpFx());
+
 function renderBunnyState(tokens) {
   const val = tokens || 0;
   const tier = getBunnyTier(val);
+  const starInfo = getStarRankInfo(val);
   const next = BUNNY_TIERS.find(t => t.level === tier.level + 1);
   const wrap = document.getElementById("bunnyMascot");
   const svg = document.getElementById("bunnySvg");
@@ -5782,11 +6396,19 @@ function renderBunnyState(tokens) {
     getMaxUnlockedLevel();
   }
 
-  // Celebrate real level-up live when today's tokens cross a tier threshold!
-  if (debugState.level == null && lastRealBunnyLv != null && tier.level > lastRealBunnyLv) {
-    setTimeout(() => celebrateLevelUp(tier), 180);
-  }
+  // Real level-up & 5B Star-Ascension detection (Lv.4+ queues for first panel open if hidden!)
   if (debugState.level == null && state.data) {
+    const seen = readTodaySeenRank();
+    if (!seen) {
+      // First sight today on this machine: baseline current rank so no spurious level-up on cold start
+      writeTodaySeenRank(tier.level, starInfo.stars);
+    } else if (tier.level > seen.lv || (tier.level >= 9 && starInfo.stars > seen.stars)) {
+      const isStarOnly = tier.level === seen.lv && starInfo.stars > seen.stars;
+      pendingLevelUpEvent = { tier, stars: starInfo.stars, isStarOnly };
+      if (isPanelCurrentlyVisible()) {
+        flushPendingLevelUpFx();
+      }
+    }
     lastRealBunnyLv = tier.level;
   }
 
@@ -5827,12 +6449,23 @@ function renderBunnyState(tokens) {
   }
   const dbgPrefix = debugState.level != null ? "[调试] " : "";
   const lvLabel = tier.secret ? "EX" : `Lv.${tier.level}`;
-  mood.textContent = `${dbgPrefix}今日 ${lvLabel} ${tier.name} ▸`;
+  const starHtml = starInfo.active ? formatStarBadgeHtml(starInfo.stars) : "";
+  mood.dataset.lv = String(tier.level);
+  mood.dataset.skin = curSkinId;
+  mood.innerHTML = `${dbgPrefix}今日 ${lvLabel} ${tier.name}${starHtml ? " " + starHtml : ""} ▸`;
   if (typeof renderHomeStage === "function" && document.getElementById("homeModal")?.classList.contains("open")) {
     renderHomeStage();
   }
 
-  if (next) {
+  if (starInfo.active) {
+    // Lv.9 & EX 50B: CS Perfect-World style 5B Star-Collection Progress Bar!
+    if (xpFill) xpFill.style.width = starInfo.pct + "%";
+    const starTag = starInfo.stars > 0 ? `★×${starInfo.stars}` : "冲刺首星";
+    const nextStarLbl = `★×${starInfo.stars + 1}`;
+    if (xpText) {
+      xpText.innerHTML = `<strong>${fmtNum(val)}</strong> · ${starTag} · 距${nextStarLbl} ${fmtNum(starInfo.remain)}`;
+    }
+  } else if (next) {
     const pct = Math.max(3, Math.min(100, Math.round((val / next.min) * 100)));
     const nextLbl = fmtNum(next.min).replace(/\.00([BMK])$/, "$1");
     if (xpFill) xpFill.style.width = pct + "%";
@@ -6423,6 +7056,7 @@ let evoProgTimer = null;
 function renderEvoModal() {
   const tokens = getEffectiveTodayTokens();
   const cur = getBunnyTier(tokens);
+  const starInfo = getStarRankInfo(tokens);
   const maxUnlockedLv = getMaxUnlockedLevel();
   const next = BUNNY_TIERS.find(t => t.level === cur.level + 1);
   const box = document.getElementById("evoProgressBox");
@@ -6431,23 +7065,39 @@ function renderEvoModal() {
     evoProgTimer = null;
   }
 
+  const renderStarStripHtml = () => {
+    if (!starInfo.active) return "";
+    const filled = Math.min(10, starInfo.stars);
+    const pips = starInfo.stars <= 10
+      ? "★".repeat(filled) + `<span class="dim">${"★".repeat(10 - filled)}</span>`
+      : `★×${starInfo.stars} <span style="font-size:9px;opacity:0.8">(${starInfo.stars * 5}B+)</span>`;
+    return `<div class="evo-star-strip">
+      <span>⭐ 摘星制度（每 5B = 1★）· <strong style="color:var(--accent)">距 ★×${starInfo.stars + 1} 还差 ${fmtNum(starInfo.remain)}</strong></span>
+      <span class="evo-star-pips">${pips}</span>
+    </div>`;
+  };
+
   if (next && (!next.secret || debugState.unlockAll || maxUnlockedLv >= next.level)) {
-    const rawPct = Math.round((tokens / next.min) * 100);
-    const remain = Math.max(0, next.min - tokens);
+    const rawPct = starInfo.active ? starInfo.pct : Math.round((tokens / next.min) * 100);
+    const remain = starInfo.active ? starInfo.remain : Math.max(0, next.min - tokens);
     const pct = remain > 0 ? Math.max(4, Math.min(95, rawPct)) : 100;
     const nextUnlocked = debugState.unlockAll || next.level <= maxUnlockedLv;
     const nextLabel = next.secret ? "EX" : `Lv.${next.level}`;
     const nextName = nextUnlocked ? `${nextLabel} ${next.name}` : (next.secret ? "EX 究极隐藏款" : `Lv.${next.level} 神秘形态`);
     const curLabel = cur.secret ? "EX" : `Lv.${cur.level}`;
+    const rightTxt = starInfo.active
+      ? `距 ★×${starInfo.stars + 1} 还差 ${fmtNum(starInfo.remain)}${next.secret ? ` · EX还差 ${fmtNum(Math.max(0, next.min - tokens))}` : ""}`
+      : `距「${nextName}」还差 ${fmtNum(remain)}`;
     box.innerHTML = `
       <div class="evo-prog-head">
-        <span>今日：<strong>${curLabel} ${cur.name}</strong> (${fmtNum(tokens)})</span>
-        <span class="evo-prog-rem${remain > 0 ? " is-waiting" : ""}" id="evoProgRem">距「${nextName}」还差 ${fmtNum(remain)}</span>
+        <span>今日：<strong>${curLabel} ${cur.name}${starInfo.stars > 0 ? ` ★×${starInfo.stars}` : ""}</strong> (${fmtNum(tokens)})</span>
+        <span class="evo-prog-rem${remain > 0 ? " is-waiting" : ""}" id="evoProgRem">${rightTxt}</span>
       </div>
       <div class="evo-prog-track">
         <div class="evo-prog-fill is-growing" id="evoProgFill" style="width:0%"></div>
         ${remain > 0 ? `<div class="evo-prog-gap" id="evoProgGap" title="还差 ${fmtNum(remain)} 升级"></div>` : ""}
       </div>
+      ${renderStarStripHtml()}
     `;
     const fillEl = document.getElementById("evoProgFill");
     const gapEl = document.getElementById("evoProgGap");
@@ -6469,19 +7119,21 @@ function renderEvoModal() {
     }, 640);
   } else {
     const isSecretNow = Boolean(cur.secret);
+    const barPct = starInfo.active ? starInfo.pct : 100;
     box.innerHTML = `
       <div class="evo-prog-head">
-        <span>今日：<strong>${isSecretNow ? "EX" : `Lv.${cur.level}`} ${cur.name}</strong> (${fmtNum(tokens)})</span>
+        <span>今日：<strong>${isSecretNow ? "EX" : `Lv.${cur.level}`} ${cur.name}${starInfo.stars > 0 ? ` ★×${starInfo.stars}` : ""}</strong> (${fmtNum(tokens)})</span>
         <span class="evo-prog-rem">${isSecretNow ? "50B 究极隐藏款已觉醒 ✦" : "今日已达满阶巅峰 ✨"}</span>
       </div>
       <div class="evo-prog-track">
         <div class="evo-prog-fill is-growing" id="evoProgFill" style="width:0%"></div>
       </div>
+      ${renderStarStripHtml()}
     `;
     const fillEl = document.getElementById("evoProgFill");
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        if (fillEl) fillEl.style.width = "100%";
+        if (fillEl) fillEl.style.width = barPct + "%";
       });
     });
     evoProgTimer = setTimeout(() => {
@@ -7113,6 +7765,9 @@ window.__onPopoverOpen = () => {
     syncSlidePill("rangeSeg", true);
     syncSlidePill("popTabs", true);
   });
+  if (typeof flushPendingLevelUpFx === "function") {
+    flushPendingLevelUpFx();
+  }
   if (state.data) {
     connectStream(true);
     syncCarrotFromDisk();
@@ -10560,9 +11215,18 @@ document.getElementById("dbgLevelUpBtn").addEventListener("click", () => {
   const delay = window.scrollY > 12 ? 320 : 220;
   dbgLevelUpTimer = setTimeout(() => {
     applyDebugOverride(targetLv);
-    celebrateLevelUp(targetTier);
+    const st = getStarRankInfo(getEffectiveTodayTokens());
+    celebrateLevelUp(targetTier, { stars: st.stars });
     dbgLevelUpTimer = null;
   }, delay);
+});
+
+document.getElementById("dbgStarUpBtn").addEventListener("click", () => {
+  if (window.scrollY > 12) window.scrollTo({ top: 0, behavior: "smooth" });
+  const curTok = getEffectiveTodayTokens();
+  const curTier = getBunnyTier(Math.max(curTok, 3e9));
+  const simStars = Math.max(1, getStarRankInfo(curTok).stars + 1);
+  celebrateLevelUp(curTier.level >= 9 ? curTier : BUNNY_TIERS[8], { isStarOnly: true, stars: simStars });
 });
 
 document.getElementById("dbgUnlockBtn").addEventListener("click", (e) => {
