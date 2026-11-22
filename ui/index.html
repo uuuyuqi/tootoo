@@ -1640,8 +1640,11 @@
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    cursor: pointer;
+    cursor: default;
     animation: lvlupBackdropIn 0.34s ease-out forwards;
+  }
+  .lvlup-stage.can-dismiss {
+    cursor: pointer;
   }
   .lvlup-stage.is-exiting {
     animation: lvlupBackdropOut 0.52s ease-in forwards;
@@ -6446,10 +6449,10 @@ function triggerFullPanelLevelUpFx(tier, opts = {}) {
   dismissFullPanelLevelUp();
 
   // Duration scales progressively with tier (higher tier -> longer & grander!)
-  const durationMap = { 4: 2000, 5: 2600, 6: 3200, 7: 3900, 8: 4600, 9: 5500, 10: 6600 };
+  const durationMap = { 4: 2400, 5: 3000, 6: 3600, 7: 4300, 8: 5000, 9: 5800, 10: 6800 };
   const durationMs = isStarOnly
-    ? Math.min(6200, 4500 + Math.min(8, stars) * 200)
-    : (durationMap[lv] || 2200);
+    ? Math.min(6400, 4600 + Math.min(8, stars) * 200)
+    : (durationMap[lv] || 2400);
 
   const themeMap = {
     4:  {
@@ -6548,10 +6551,16 @@ function triggerFullPanelLevelUpFx(tier, opts = {}) {
       <div class="lvlup-title">${th.title}</div>
       ${starBadgeHtml}
       <div class="lvlup-sub">${th.sub}</div>
-      <div class="lvlup-hint">点击任意位置可提前关闭 · ${(durationMs / 1000).toFixed(1)}s</div>
     </div>
   `;
-  stage.addEventListener("click", dismissFullPanelLevelUp);
+  let canDismiss = false;
+  setTimeout(() => {
+    canDismiss = true;
+    stage.classList.add("can-dismiss");
+  }, 2000);
+  stage.addEventListener("click", () => {
+    if (canDismiss) dismissFullPanelLevelUp();
+  });
   document.body.appendChild(stage);
 
   // Trigger tier-signature full-panel dynamic choreography!
