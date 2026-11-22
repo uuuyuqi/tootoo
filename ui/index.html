@@ -14984,13 +14984,16 @@ function walkHomeBunnyTo(targetX, targetY, rawClickY = targetY, opts = {}) {
   if (clickedHotTable && hotTbl) {
     tx = hotTbl.standX;
     ty = hotTbl.standY;
-  } else if (house.weatherMode === "shelter" && rawClickY >= 78 && rawClickY <= 168 && tx >= 156 && tx <= 264) {
-    // Clicked inside any T2 shelter doorway -> tuck snugly inside the dry shelter arch!
-    tx = Math.max(182, Math.min(226, tx));
-    ty = 162;
-  } else if (house.weatherMode === "shelter" && ty <= 168 && tx >= 104 && tx <= 316) {
-    // Clicked on the solid outer wall of a T2 shelter -> step to the front lawn in front of the wall instead of clipping inside solid stone/clay!
-    ty = 176;
+  } else if (house.weatherMode === "shelter") {
+    const a = house.shelterArch || { x0: 168, x1: 252, yMax: 170 };
+    if (rawClickY >= 78 && rawClickY <= 168 && tx >= a.x0 - 8 && tx <= a.x1 + 8) {
+      // Clicked inside shelter opening -> tuck snugly inside the dry shelter!
+      tx = Math.max(a.x0 + 14, Math.min(a.x1 - 24, tx));
+      ty = 162;
+    } else if (ty <= 168 && tx >= 92 && tx <= 316) {
+      // Clicked on solid outer wall -> step cleanly onto the front lawn in front of the wall!
+      ty = 176;
+    }
   } else if (worldW > 420 && homeCamera.x < 30 && targetX >= 378 && targetX <= 420 && !opts.exact) {
     // Clicked right on the far-right glass doorway while indoors -> step right out onto the terrace!
     tx = 478;
@@ -15135,8 +15138,8 @@ function getHomeHotTableInfo(houseId) {
   if (!houseId || houseId === "street") return null;
   const h = TOOTOO_REG && TOOTOO_REG.getHouse(houseId);
   if (h && h.weatherMode === "shelter") {
-    // Cozy warm stump/crate table tucked right inside any T2 shelter arch
-    return { x: 234, y: 159, standX: 198, standY: 162, facing: 1, style: h.hotTableStyle || "stump" };
+    // Cozy warm stump/crate table tucked right inside any T2 shelter arch (clear of boulder/arch rim)
+    return { x: 228, y: 159, standX: 194, standY: 162, facing: 1, style: h.hotTableStyle || "stump" };
   }
   const styleMap = {
     cardboard: "crate",
@@ -15656,7 +15659,9 @@ function renderWeatherLayerSvg(houseId, weather, dayPhase = { phase: "day", isNi
   // 1. Scrolling outdoor-world houses (T5 & T6 Hangzhou apartments/villas): indoor window + full outdoor world (416..720)!
   if (hasTerrace) {
     const winBounds = (hObj && hObj.indoorWindow) || { x0: 233, x1: 373, y0: 25, y1: 145 };
-    const winClip = `<rect x="${winBounds.x0}" y="${winBounds.y0}" width="${winBounds.x1 - winBounds.x0}" height="${winBounds.y1 - winBounds.y0}"/>`;
+    const winClip = winBounds.shape === "twin_arch"
+      ? `<path d="M154 146 V58 A50 34 0 0 1 254 58 V146 Z"/><path d="M272 146 V58 A50 34 0 0 1 372 58 V146 Z"/>`
+      : `<rect x="${winBounds.x0}" y="${winBounds.y0}" width="${winBounds.x1 - winBounds.x0}" height="${winBounds.y1 - winBounds.y0}"/>`;
     const outBounds = { x0: 416, x1: 720, y0: 0, y1: 208 };
 
     const defs = `<defs>
@@ -15665,11 +15670,12 @@ function renderWeatherLayerSvg(houseId, weather, dayPhase = { phase: "day", isNi
     </defs>`;
 
     const winFx = buildZoneFx(winBounds, { isSky: true, isFalling: true, sillSnow: true, darkOp: 0.24 });
+    const railSnowY = (hObj && "terraceRailY" in hObj) ? hObj.terraceRailY : 116;
     const outFx = buildZoneFx(outBounds, {
       isSky: true,
       isFalling: true,
       puddles: [[476, 178, 0], [548, 192, 1], [616, 174, 2], [678, 188, 3]],
-      railSnowY: (hObj && hObj.terraceRailY) || 116,
+      railSnowY,
       darkOp: 0.2,
     });
     const indoorAmbient = (kind === "rain" || kind === "overcast" || kind === "snow")
@@ -15695,8 +15701,11 @@ function renderWeatherLayerSvg(houseId, weather, dayPhase = { phase: "day", isNi
   const clipId = `hsWClip_${houseId}`;
   const arch = (hObj && hObj.shelterArch) || { x0: 168, x1: 252, yMax: 170 };
   const archRx = ((arch.x1 - arch.x0) / 2).toFixed(1);
+  const shelterHoleSvg = arch.shape === "lean_to"
+    ? `<polygon points="134,164 134,96 274,106 274,164" fill="#000000"/>`
+    : `<path d="M${arch.x0} 164 L${arch.x0} 108 A${archRx} 42 0 0 1 ${arch.x1} 108 L${arch.x1} 164 Z" fill="#000000"/>`;
   const shelterMaskDef = mode === "shelter"
-    ? `<defs><mask id="hsShelterMask_${houseId}"><rect width="420" height="208" fill="#ffffff"/><path d="M${arch.x0} 164 L${arch.x0} 108 A${archRx} 42 0 0 1 ${arch.x1} 108 L${arch.x1} 164 Z" fill="#000000"/></mask></defs>`
+    ? `<defs><mask id="hsShelterMask_${houseId}"><rect width="420" height="208" fill="#ffffff"/>${shelterHoleSvg}</mask></defs>`
     : "";
   const clipDef = isOutdoor ? shelterMaskDef : `<defs><clipPath id="${clipId}">${winShapeSvg}</clipPath></defs>`;
 
