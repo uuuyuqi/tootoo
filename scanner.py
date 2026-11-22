@@ -2029,9 +2029,12 @@ def scan_all_events(force: bool = False, rebuild: bool = False) -> tuple[list[di
 
 _AG_QUOTA_LOCK = threading.Lock()
 _AG_QUOTA_CACHE: dict[str, tuple[float, dict[str, Any]]] = {}
+_AG_LAST_QUOTA: dict[str, Any] | None = None
 _AG_SCAN_EMPTY_UNTIL = 0.0
 _AG_QUOTA_TTL = 300.0
-_AG_RETRY_TTL = 90.0
+_AG_RETRY_TTL = 12.0
+_AG_PERSIST_MAX_AGE = 7 * 86400.0
+AG_QUOTA_CACHE_FILE = os.path.join(CACHE_DIR, "ag_quota_cache.json")
 _AG_MAX_RESPONSE_BYTES = 2 * 1024 * 1024
 _AG_QUOTA_WINDOWS = (
     ("gemini-5h", "antigravity:gemini_5h", "Gemini 5h", 300),
@@ -2228,6 +2231,57 @@ def _normalize_antigravity_quota_summary(payload: Any) -> dict[str, Any]:
     return {"source": "provider", "buckets": rows} if rows else {}
 
 
+def _save_persisted_ag_quota(quota: dict[str, Any]) -> None:
+    global _AG_LAST_QUOTA
+    payload = {
+        "fetched_at": int(time.time()),
+        "source": quota.get("source", "provider"),
+        "buckets": quota.get("buckets", []),
+    }
+    _AG_LAST_QUOTA = payload
+    try:
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        tmp = AG_QUOTA_CACHE_FILE + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(payload, f, ensure_ascii=False, indent=2)
+        os.replace(tmp, AG_QUOTA_CACHE_FILE)
+    except OSError:
+        pass
+
+
+def _load_persisted_ag_quota() -> dict[str, Any]:
+    global _AG_LAST_QUOTA
+    raw = _AG_LAST_QUOTA
+    if raw is None:
+        try:
+            if os.path.exists(AG_QUOTA_CACHE_FILE):
+                with open(AG_QUOTA_CACHE_FILE, "r", encoding="utf-8") as f:
+                    loaded = json.load(f)
+                if isinstance(loaded, dict) and isinstance(loaded.get("buckets"), list):
+                    raw = loaded
+                    _AG_LAST_QUOTA = raw
+        except Exception:
+            raw = None
+    if not isinstance(raw, dict):
+        return {}
+    now = time.time()
+    fetched_at = float(raw.get("fetched_at") or 0)
+    if fetched_at <= 0 or (now - fetched_at) > _AG_PERSIST_MAX_AGE:
+        return {}
+    buckets = []
+    for b in raw.get("buckets", []):
+        if not isinstance(b, dict):
+            continue
+        item = dict(b)
+        rst = item.get("resets_at")
+        if isinstance(rst, (int, float)) and rst > 0 and now >= rst:
+            # Quota window has already reset since last snapshot
+            item["used_percent"] = 0.0
+            item["resets_at"] = None
+        buckets.append(item)
+    return {"source": "provider_cached", "cached": True, "fetched_at": int(fetched_at), "buckets": buckets} if buckets else {}
+
+
 def fetch_antigravity_quota(force: bool = False) -> dict[str, Any]:
     with _AG_QUOTA_LOCK:
         for process in _antigravity_running_processes(force=force):
@@ -2249,9 +2303,11 @@ def fetch_antigravity_quota(force: bool = False) -> dict[str, Any]:
                     continue
                 if quota:
                     _AG_QUOTA_CACHE[marker] = (time.monotonic() + _AG_QUOTA_TTL, quota)
+                    _save_persisted_ag_quota(quota)
                     return quota
             _AG_QUOTA_CACHE[marker] = (time.monotonic() + _AG_RETRY_TTL, {})
-    return {}
+        # No running AGY process right now: keep showing last-known quota snapshot instead of disappearing
+        return _load_persisted_ag_quota()
 
 
 def load_local_quota_configs() -> dict[str, dict[str, Any]]:
