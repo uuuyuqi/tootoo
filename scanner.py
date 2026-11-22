@@ -99,6 +99,7 @@ DEFAULT_HOME_STATE: dict[str, Any] = {
     "owned_decor": [],
     "wear": {"hat": None, "outfit": None, "acc": None},
     "owned_wear": [],
+    "hidden_tier_acc": [],
     "show_on_avatar": True,
 }
 
@@ -110,6 +111,7 @@ def _sanitize_home_state(raw: Any) -> dict[str, Any]:
     h["owned_houses"] = list(DEFAULT_HOME_STATE["owned_houses"])
     h["owned_decor"] = []
     h["owned_wear"] = []
+    h["hidden_tier_acc"] = []
     if not isinstance(raw, dict):
         return h
     if isinstance(raw.get("house"), str) and raw["house"].strip():
@@ -133,6 +135,8 @@ def _sanitize_home_state(raw: Any) -> dict[str, Any]:
             h["wear"][slot] = str(v).strip() if isinstance(v, str) and v.strip() else None
     if isinstance(raw.get("owned_wear"), list):
         h["owned_wear"] = list(dict.fromkeys(str(x).strip() for x in raw["owned_wear"] if isinstance(x, str) and x.strip()))
+    if isinstance(raw.get("hidden_tier_acc"), list):
+        h["hidden_tier_acc"] = sorted({int(x) for x in raw["hidden_tier_acc"] if isinstance(x, (int, float)) and 5 <= int(x) <= 10})
     if isinstance(raw.get("show_on_avatar"), bool):
         h["show_on_avatar"] = raw["show_on_avatar"]
     return h

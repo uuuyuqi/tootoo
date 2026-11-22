@@ -138,9 +138,211 @@
     box-shadow: 0 0 10px rgba(245, 158, 11, 0.38);
   }
   .bunny-wrap.stage-ascend {
-    background: radial-gradient(circle at 50% 35%, #fffdf5 0%, #fde6cf 55%, #f8d4c4 100%);
-    border-color: #e54826;
-    box-shadow: 0 0 0 2px rgba(229, 72, 38, 0.2), 0 3px 12px rgba(229, 72, 38, 0.32);
+    background:
+      radial-gradient(circle at 50% 34%, rgba(255, 250, 224, 0.96) 0%, rgba(251, 191, 36, 0.82) 34%, rgba(229, 72, 38, 0.78) 64%, rgba(88, 28, 108, 0.92) 88%, #1c1033 100%);
+    border-color: #f59e0b;
+    box-shadow:
+      0 0 0 2px rgba(251, 191, 36, 0.45),
+      0 0 18px rgba(229, 72, 38, 0.48),
+      0 4px 24px rgba(245, 158, 11, 0.36);
+    isolation: isolate;
+  }
+  .bunny-wrap.stage-ascend::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 0;
+    background: repeating-conic-gradient(
+      from 0deg at 50% 50%,
+      rgba(255, 251, 224, 0.32) 0deg 12deg,
+      rgba(255, 251, 224, 0) 12deg 30deg
+    );
+    -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 18%, rgba(0, 0, 0, 0.5) 68%, transparent 100%);
+    mask-image: radial-gradient(circle at 50% 50%, #000 18%, rgba(0, 0, 0, 0.5) 68%, transparent 100%);
+    animation: ascendRaysSpin 16s linear infinite;
+  }
+  .bunny-wrap.stage-ascend::after {
+    content: "";
+    position: absolute;
+    inset: 2px;
+    border-radius: calc(inherit - 2px);
+    border: 1px solid rgba(254, 240, 138, 0.58);
+    pointer-events: none;
+    z-index: 0;
+    box-shadow: inset 0 0 10px rgba(254, 240, 138, 0.35);
+  }
+  @keyframes ascendRaysSpin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+
+  /* ---- Progressive Avatar Size Scaling from Lv.7 -> Lv.8 -> Lv.9 -> EX 50B ---- */
+  .bunny-wrap[data-lv="7"]  { width: 48px; height: 48px; border-radius: 10px; }
+  .bunny-wrap[data-lv="7"]  .bunny-svg { width: 39px; height: 39px; }
+  .bunny-wrap[data-lv="8"]  { width: 54px; height: 54px; border-radius: 11px; }
+  .bunny-wrap[data-lv="8"]  .bunny-svg { width: 44px; height: 44px; }
+  .bunny-wrap[data-lv="9"]  { width: 60px; height: 60px; border-radius: 12px; }
+  .bunny-wrap[data-lv="9"]  .bunny-svg { width: 50px; height: 50px; }
+  .bunny-wrap[data-lv="10"] { width: 66px; height: 66px; border-radius: 13px; }
+  .bunny-wrap[data-lv="10"] .bunny-svg { width: 55px; height: 55px; }
+
+  /* Subtle dynamic cursor sheen & long-press ki-charge state (Lv.5+) */
+  .bunny-wrap.is-charging {
+    animation: bunnyChargeQuake 0.14s linear infinite !important;
+    box-shadow:
+      0 0 0 3px rgba(250, 204, 21, 0.85),
+      0 0 26px rgba(245, 158, 11, 0.95),
+      0 0 42px rgba(168, 85, 247, 0.65) !important;
+  }
+  @keyframes bunnyChargeQuake {
+    0%   { transform: translate(-1.5px, 1px) scale(1.08); }
+    33%  { transform: translate(1.8px, -1.2px) scale(1.12); }
+    66%  { transform: translate(-1.2px, -1.5px) scale(1.1); }
+    100% { transform: translate(1.5px, 1.2px) scale(1.09); }
+  }
+
+  /* ---- Diverse Lv.5+ Interactive Gameplay FX Elements ---- */
+  .fx-beam-wave {
+    position: fixed;
+    height: 22px;
+    border-radius: 999px;
+    pointer-events: none;
+    transform-origin: left center;
+    filter: blur(0.6px);
+    animation: fxBeamBlast 0.72s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  @keyframes fxBeamBlast {
+    0%   { opacity: 0.95; transform: translateY(-50%) scaleX(0.06) scaleY(0.5); }
+    25%  { opacity: 1; transform: translateY(-50%) scaleX(1) scaleY(1.25); }
+    100% { opacity: 0; transform: translateY(-50%) scaleX(1.22) scaleY(0.12); }
+  }
+  .fx-demon-slash {
+    position: fixed;
+    width: 240px;
+    height: 4px;
+    border-radius: 999px;
+    pointer-events: none;
+    background: linear-gradient(90deg, transparent, #ef4444 25%, #fef08a 50%, #ef4444 75%, transparent);
+    box-shadow: 0 0 16px #ef4444, 0 0 28px #dc2626;
+    animation: fxDemonSlashAnim 0.56s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  @keyframes fxDemonSlashAnim {
+    0%   { opacity: 0; transform: translate(-50%, -50%) rotate(var(--ang)) scaleX(0.1); }
+    24%  { opacity: 1; transform: translate(-50%, -50%) rotate(var(--ang)) scaleX(1.15); }
+    100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--ang)) scaleX(1.65) scaleY(0.2); }
+  }
+  .fx-magic-sigil {
+    position: fixed;
+    border-radius: 50%;
+    pointer-events: none;
+    border: 2px dashed var(--col, #c026d3);
+    box-shadow: 0 0 18px var(--col, #c026d3), inset 0 0 14px var(--col, #c026d3);
+    animation: fxSigilExpand 1.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  @keyframes fxSigilExpand {
+    0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.2) rotate(0deg); }
+    22%  { opacity: 0.92; transform: translate(-50%, -50%) scale(1.0) rotate(90deg); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(2.15) rotate(240deg); }
+  }
+  .fx-meteor {
+    position: fixed;
+    width: 68px;
+    height: 3px;
+    border-radius: 999px;
+    pointer-events: none;
+    transform-origin: right center;
+    animation: fxMeteorFly var(--dur, 0.85s) cubic-bezier(0.2, 0.6, 0.4, 1) forwards;
+  }
+  @keyframes fxMeteorFly {
+    0%   { opacity: 0; transform: translate(0, 0) rotate(32deg) scaleX(0.3); }
+    18%  { opacity: 1; }
+    85%  { opacity: 0.9; }
+    100% { opacity: 0; transform: translate(230px, 145px) rotate(32deg) scaleX(1.2); }
+  }
+  .fx-cursor-orb {
+    position: fixed;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transition: opacity 0.35s ease;
+  }
+  /* Interactive poppable floating orbs & creation feathers (Lv.7-10 click toys!) */
+  .fx-play-orb {
+    position: fixed;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 9997;
+    display: grid;
+    place-items: center;
+    font-size: 12px;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: transform 0.14s ease, opacity 0.25s ease;
+    animation: fxPlayOrbFloat var(--dur, 2.8s) ease-in-out infinite;
+  }
+  .fx-play-orb:hover {
+    transform: scale(1.32);
+    filter: brightness(1.22);
+  }
+  @keyframes fxPlayOrbFloat {
+    0%, 100% { transform: translate(-50%, -50%) translateY(0); }
+    50%      { transform: translate(-50%, -50%) translateY(-8px); }
+  }
+  .fx-play-feather {
+    position: fixed;
+    font-size: 16px;
+    cursor: pointer;
+    z-index: 9997;
+    user-select: none;
+    -webkit-user-select: none;
+    filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.82));
+    animation: fxFeatherDrift var(--dur, 4.6s) ease-in-out forwards;
+  }
+  @keyframes fxFeatherDrift {
+    0%   { opacity: 0; transform: translate(0, -10px) rotate(-18deg) scale(0.7); }
+    14%  { opacity: 1; }
+    50%  { transform: translate(var(--sway, 34px), 110px) rotate(22deg) scale(1.06); }
+    88%  { opacity: 0.92; }
+    100% { opacity: 0; transform: translate(calc(var(--sway, 34px) * -0.4), 230px) rotate(-16deg) scale(0.8); }
+  }
+  .evo-skill-pill {
+    margin-top: 3px;
+    font-family: var(--font-mono);
+    font-size: 8.2px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+    border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--border));
+    border-radius: 999px;
+    padding: 1.5px 6px;
+    line-height: 1.3;
+  }
+  .evo-innate-btn {
+    margin-top: 3px;
+    border: 1px solid color-mix(in srgb, #f59e0b 45%, var(--border));
+    background: color-mix(in srgb, #f59e0b 10%, var(--surface));
+    color: color-mix(in srgb, #b45309 85%, var(--ink));
+    font-family: var(--font-mono);
+    font-size: 8.2px;
+    font-weight: 800;
+    padding: 1.5px 6px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.14s ease;
+  }
+  [data-theme="dark"] .evo-innate-btn { color: #fde68a; }
+  .evo-innate-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+  .evo-innate-btn.off {
+    opacity: 0.62;
+    border-style: dashed;
+    background: var(--surface-2);
+    color: var(--muted);
   }
   /* EX 50B 奇点终焉兔 — 3 限定皮肤舞台背景 */
   .bunny-wrap.stage-secret-prism {
@@ -598,9 +800,12 @@
   }
 
   .bunny-svg {
+    position: relative;
+    z-index: 1;
     width: 34px;
     height: 34px;
     overflow: visible;
+    transition: width 0.28s cubic-bezier(0.22, 1.25, 0.36, 1), height 0.28s cubic-bezier(0.22, 1.25, 0.36, 1);
   }
 
   .b-blink { transform-origin: 18px 22px; animation: bunnyBlink 4.8s infinite; }
@@ -812,8 +1017,16 @@
   .evo-card.locked .evo-rng { letter-spacing: 0.14em; opacity: 0.72; }
   .evo-card.locked.shake { animation: fxBoxShake 0.35s ease-out; }
 
-  .evo-card .bunny-wrap { width: 48px; height: 48px; cursor: pointer; }
-  .evo-card .bunny-svg { width: 40px; height: 40px; }
+  .evo-card .bunny-wrap { width: 44px; height: 44px; cursor: pointer; }
+  .evo-card .bunny-svg { width: 36px; height: 36px; }
+  .evo-card .bunny-wrap[data-lv="7"]  { width: 52px; height: 52px; border-radius: 10px; }
+  .evo-card .bunny-wrap[data-lv="7"]  .bunny-svg { width: 43px; height: 43px; }
+  .evo-card .bunny-wrap[data-lv="8"]  { width: 60px; height: 60px; border-radius: 11px; }
+  .evo-card .bunny-wrap[data-lv="8"]  .bunny-svg { width: 50px; height: 50px; }
+  .evo-card .bunny-wrap[data-lv="9"]  { width: 68px; height: 68px; border-radius: 13px; }
+  .evo-card .bunny-wrap[data-lv="9"]  .bunny-svg { width: 57px; height: 57px; }
+  .evo-card .bunny-wrap[data-lv="10"] { width: 74px; height: 74px; border-radius: 14px; }
+  .evo-card .bunny-wrap[data-lv="10"] .bunny-svg { width: 62px; height: 62px; }
   .evo-card .evo-name { font-size: 11.5px; font-weight: 700; }
   .evo-card .evo-rng { font-family: var(--font-mono); font-size: 9.5px; color: var(--muted); }
   .evo-foot {
@@ -5593,18 +5806,23 @@ function renderBunnyState(tokens) {
     + (keepAway ? " is-away" : "");
   const prevKey = wrap.dataset.lv + ":" + (wrap.dataset.skin || "") + ":" + (wrap.dataset.wear || "");
   const curSkinId = vis.skin ? vis.skin.id : "";
-  const wearSig = (typeof getAvatarWearSig === "function") ? getAvatarWearSig() : "";
+  const wearSig = (typeof getAvatarWearSig === "function") ? getAvatarWearSig(tier.level) : "";
   const curKey = String(tier.level) + ":" + curSkinId + ":" + wearSig;
   wrap.dataset.lv = String(tier.level);
   wrap.dataset.skin = curSkinId;
   wrap.dataset.wear = wearSig;
+  if (typeof getTierInteractHint === "function") {
+    const ih = getTierInteractHint(tier.level);
+    wrap.title = ih ? `点点兔兔刷新 · ${ih}` : "点点兔兔刷新数据";
+  }
   if (prevKey !== curKey || !svg.innerHTML) {
-    const wearSvg = (typeof getAvatarWearOverlaySvg === "function") ? getAvatarWearOverlaySvg() : "";
-    const fullSvg = vis.svg + wearSvg;
+    const innateSvg = (typeof getActiveTierInnateSvg === "function") ? getActiveTierInnateSvg(tier.level, "av") : "";
+    const wearSvg = (typeof getAvatarWearOverlaySvg === "function") ? getAvatarWearOverlaySvg("av") : "";
+    const fullSvg = vis.svg + innateSvg + wearSvg;
     svg.innerHTML = fullSvg;
     if (keepAway) {
       const patrolSvg = document.querySelector(".patrol-bunny svg");
-      if (patrolSvg) patrolSvg.innerHTML = fullSvg;
+      if (patrolSvg) patrolSvg.innerHTML = vis.svg + ((typeof getActiveTierInnateSvg === "function") ? getActiveTierInnateSvg(tier.level, "pt") : "") + ((typeof getAvatarWearOverlaySvg === "function") ? getAvatarWearOverlaySvg("pt") : "");
     }
   }
   const dbgPrefix = debugState.level != null ? "[调试] " : "";
@@ -5753,6 +5971,262 @@ function triggerSecretMythicFx(layer, cx, cy, sk) {
   }
 }
 
+const TIER_INTERACT_HINTS = {
+  5:  "⚡ 磁力电弧 · 长按蓄力爆破",
+  6:  "🔥 目光追踪 · 双击红魔斩击",
+  7:  "🌀 引力吸附 · 3技轮播 · 右键召星",
+  8:  "🪐 光标卫星 · 4技星渊流星雨",
+  9:  "🕊️ 圣羽绘笔 · 5技可戳创世光球",
+  10: "💠 维度全玩法 · 皮肤大招 · 可戳音符球",
+};
+
+function getTierInteractHint(lv) {
+  return TIER_INTERACT_HINTS[Number(lv)] || "";
+}
+
+// ---- Diverse Lv.5-10 Playful Interactive FX Helpers ----
+const bunnySkillCycle = {};
+
+function playPentatonicChime(idx = 0) {
+  if (!sfxEnabled) return;
+  const notes = [523.25, 587.33, 659.25, 783.99, 880.0, 1046.5, 1174.66];
+  const f = notes[idx % notes.length];
+  playTone(f, 0.14, "sine", 0.075);
+  playTone(f * 1.5, 0.11, "triangle", 0.045, 0.035);
+}
+
+function spawnMiniPopBurst(x, y, cols, glyphs = ["✦", "★", "✨"]) {
+  const layer = document.getElementById("fxLayer");
+  if (!layer) return;
+  for (let i = 0; i < 8; i++) {
+    const p = document.createElement("span");
+    p.className = "fx-particle";
+    const ang = (Math.PI * 2 * i) / 8 + (Math.random() - 0.5) * 0.4;
+    const dist = 24 + Math.random() * 34;
+    const col = cols[i % cols.length];
+    p.textContent = glyphs[i % glyphs.length];
+    p.style.left = x + "px";
+    p.style.top = y + "px";
+    p.style.color = col;
+    p.style.fontSize = "12px";
+    p.style.textShadow = `0 0 8px ${col}`;
+    p.style.setProperty("--dx", (Math.cos(ang) * dist).toFixed(1) + "px");
+    p.style.setProperty("--dy", (Math.sin(ang) * dist).toFixed(1) + "px");
+    p.style.setProperty("--rot", ((Math.random() - 0.5) * 280).toFixed(0) + "deg");
+    p.style.setProperty("--dur", "0.52s");
+    layer.appendChild(p);
+    setTimeout(() => p.remove(), 600);
+  }
+}
+
+function spawnBeamBlast(cx, cy, lv) {
+  const layer = document.getElementById("fxLayer");
+  if (!layer) return;
+  const isEx = lv >= 10;
+  const bg = isEx
+    ? "linear-gradient(90deg, #fff, #38bdf8 22%, #a855f7 55%, #f59e0b 82%, transparent)"
+    : (lv >= 9
+      ? "linear-gradient(90deg, #fff, #fde047 26%, #e54826 65%, transparent)"
+      : (lv >= 7
+        ? "linear-gradient(90deg, #fff, #f472b6 24%, #a855f7 65%, transparent)"
+        : "linear-gradient(90deg, #fff, #fde047 30%, #f59e0b 70%, transparent)"));
+  const beam = document.createElement("div");
+  beam.className = "fx-beam-wave";
+  beam.style.left = cx + "px";
+  beam.style.top = cy + "px";
+  beam.style.width = Math.max(260, window.innerWidth - cx + 40) + "px";
+  beam.style.height = (isEx ? 36 : (lv >= 8 ? 28 : 20)) + "px";
+  beam.style.background = bg;
+  beam.style.boxShadow = `0 0 22px ${isEx ? "#38bdf8" : "#f59e0b"}`;
+  layer.appendChild(beam);
+  setTimeout(() => beam.remove(), 780);
+}
+
+function spawnDemonSlashFx(cx, cy, lv) {
+  const layer = document.getElementById("fxLayer");
+  if (!layer) return;
+  const angs = lv >= 8 ? ["-34deg", "34deg", "0deg"] : ["-32deg", "32deg"];
+  angs.forEach((ang, idx) => {
+    setTimeout(() => {
+      const s = document.createElement("div");
+      s.className = "fx-demon-slash";
+      s.style.left = cx + "px";
+      s.style.top = cy + "px";
+      s.style.setProperty("--ang", ang);
+      if (lv >= 9) {
+        s.style.background = "linear-gradient(90deg, transparent, #f59e0b 25%, #fff 50%, #e54826 75%, transparent)";
+        s.style.boxShadow = "0 0 18px #f59e0b, 0 0 28px #e54826";
+      } else if (lv >= 7) {
+        s.style.background = "linear-gradient(90deg, transparent, #c026d3 25%, #fde047 50%, #f43f5e 75%, transparent)";
+        s.style.boxShadow = "0 0 18px #c026d3";
+      }
+      layer.appendChild(s);
+      setTimeout(() => s.remove(), 620);
+    }, idx * 70);
+  });
+  playSfx(lv >= 8 ? "ssr" : "gold");
+}
+
+function spawnMagicSigilFx(cx, cy, col, size = 110) {
+  const layer = document.getElementById("fxLayer");
+  if (!layer) return;
+  [1, 0.68].forEach((scale, idx) => {
+    const sg = document.createElement("div");
+    sg.className = "fx-magic-sigil";
+    const s = Math.round(size * scale);
+    sg.style.left = cx + "px";
+    sg.style.top = cy + "px";
+    sg.style.width = s + "px";
+    sg.style.height = s + "px";
+    sg.style.setProperty("--col", col);
+    sg.style.animationDelay = (idx * 0.08) + "s";
+    layer.appendChild(sg);
+    setTimeout(() => sg.remove(), 1280);
+  });
+}
+
+function spawnMeteorShowerFx(cols, count = 6) {
+  const layer = document.getElementById("fxLayer");
+  if (!layer) return;
+  for (let i = 0; i < count; i++) {
+    const m = document.createElement("div");
+    m.className = "fx-meteor";
+    const col = cols[i % cols.length];
+    m.style.left = (4 + Math.random() * 64).toFixed(1) + "vw";
+    m.style.top = (2 + Math.random() * 24).toFixed(1) + "vh";
+    m.style.background = `linear-gradient(90deg, transparent, ${col} 60%, #ffffff 100%)`;
+    m.style.boxShadow = `0 0 12px ${col}`;
+    m.style.animationDelay = (i * 0.09) + "s";
+    m.style.setProperty("--dur", (0.72 + Math.random() * 0.32).toFixed(2) + "s");
+    layer.appendChild(m);
+    setTimeout(() => m.remove(), 1450);
+  }
+}
+
+function spawnInteractiveChimeOrbs(cx, cy, lv, count = 3) {
+  const palettes = {
+    7:  { cols: ["#c026d3", "#f43f5e", "#fde047"], icon: "✦" },
+    8:  { cols: ["#f59e0b", "#a78bfa", "#fde047"], icon: "★" },
+    9:  { cols: ["#fbbf24", "#e54826", "#fff7cc"], icon: "☀️" },
+    10: { cols: ["#38bdf8", "#a855f7", "#ec4899", "#fbbf24"], icon: "💠" },
+  };
+  const pal = palettes[lv] || palettes[9];
+  for (let i = 0; i < count; i++) {
+    const orb = document.createElement("div");
+    orb.className = "fx-play-orb";
+    const col = pal.cols[i % pal.cols.length];
+    const ox = Math.max(36, Math.min(window.innerWidth - 36, cx + (i - (count - 1) / 2) * 58 + (Math.random() - 0.5) * 28));
+    const oy = Math.max(46, Math.min(window.innerHeight - 60, cy + 44 + Math.random() * 76));
+    orb.style.left = ox.toFixed(0) + "px";
+    orb.style.top = oy.toFixed(0) + "px";
+    orb.style.background = `radial-gradient(circle at 35% 35%, #fff, ${col})`;
+    orb.style.boxShadow = `0 0 14px ${col}, inset 0 0 6px #fff`;
+    orb.style.setProperty("--dur", (2.2 + Math.random() * 1.1).toFixed(2) + "s");
+    orb.textContent = pal.icon;
+    orb.title = "戳破它！";
+    const popOrb = (ev) => {
+      ev.stopPropagation();
+      if (orb._popped) return;
+      orb._popped = true;
+      const r = orb.getBoundingClientRect();
+      spawnMiniPopBurst(r.left + r.width / 2, r.top + r.height / 2, pal.cols, ["✦", "♪", "★", "✨"]);
+      playPentatonicChime(i + lv);
+      orb.remove();
+    };
+    orb.addEventListener("click", popOrb);
+    orb.addEventListener("mouseenter", () => {
+      if (lv >= 10) playPentatonicChime(i);
+    });
+    document.body.appendChild(orb);
+    setTimeout(() => {
+      if (!orb._popped) {
+        orb.style.opacity = "0";
+        setTimeout(() => orb.remove(), 260);
+      }
+    }, 6200);
+  }
+}
+
+function spawnInteractiveFeathers(cx, cy, count = 5) {
+  const cols = ["#fbbf24", "#e54826", "#fef08a", "#f472b6"];
+  for (let i = 0; i < count; i++) {
+    const f = document.createElement("span");
+    f.className = "fx-play-feather";
+    f.textContent = i % 2 === 0 ? "🪶" : "✨";
+    const sx = Math.max(24, Math.min(window.innerWidth - 34, cx - 70 + i * 38 + (Math.random() - 0.5) * 24));
+    const sy = Math.max(16, cy - 12 + Math.random() * 20);
+    f.style.left = sx.toFixed(0) + "px";
+    f.style.top = sy.toFixed(0) + "px";
+    f.style.setProperty("--sway", ((i % 2 === 0 ? 1 : -1) * (24 + Math.random() * 26)).toFixed(0) + "px");
+    f.style.setProperty("--dur", (3.8 + Math.random() * 1.4).toFixed(2) + "s");
+    f.style.animationDelay = (i * 0.14) + "s";
+    f.title = "触碰圣羽";
+    const touchFeather = () => {
+      if (f._popped) return;
+      f._popped = true;
+      const r = f.getBoundingClientRect();
+      spawnMiniPopBurst(r.left + 8, r.top + 8, cols, ["✦", "★", "🪶"]);
+      playPentatonicChime(i + 2);
+      f.remove();
+    };
+    f.addEventListener("mouseenter", touchFeather);
+    f.addEventListener("click", touchFeather);
+    document.body.appendChild(f);
+    setTimeout(() => f.remove(), 5600);
+  }
+}
+
+// Lv.8+ Orbiting Cursor Satellites (active for 4.2s after interacting with Lv.8+ avatar)
+let cursorSatellitesUntil = 0;
+let cursorSatEls = [];
+let cursorSatRaf = null;
+let lastMousePos = { x: 120, y: 120 };
+
+function activateCursorSatellites(lv, ms = 4200) {
+  cursorSatellitesUntil = Math.max(cursorSatellitesUntil, Date.now() + ms);
+  const wantCount = lv >= 10 ? 3 : 2;
+  const cols = lv >= 10
+    ? ["#38bdf8", "#ec4899", "#fbbf24"]
+    : (lv >= 9 ? ["#fbbf24", "#e54826"] : ["#f59e0b", "#a78bfa"]);
+  while (cursorSatEls.length < wantCount) {
+    const el = document.createElement("div");
+    el.className = "fx-cursor-orb";
+    const c = cols[cursorSatEls.length % cols.length];
+    el.style.background = `radial-gradient(circle at 35% 35%, #fff, ${c})`;
+    el.style.boxShadow = `0 0 10px ${c}`;
+    document.body.appendChild(el);
+    cursorSatEls.push(el);
+  }
+  cursorSatEls.forEach((el, idx) => {
+    const c = cols[idx % cols.length];
+    el.style.background = `radial-gradient(circle at 35% 35%, #fff, ${c})`;
+    el.style.boxShadow = `0 0 10px ${c}`;
+    el.style.opacity = "0.95";
+  });
+  if (!cursorSatRaf) {
+    const tick = (t) => {
+      if (Date.now() > cursorSatellitesUntil) {
+        cursorSatEls.forEach(el => {
+          el.style.opacity = "0";
+          setTimeout(() => el.remove(), 350);
+        });
+        cursorSatEls = [];
+        cursorSatRaf = null;
+        return;
+      }
+      const rad = 22;
+      cursorSatEls.forEach((el, idx) => {
+        const ang = (t * 0.0042) + (Math.PI * 2 * idx) / cursorSatEls.length;
+        const x = lastMousePos.x + Math.cos(ang) * rad;
+        const y = lastMousePos.y + Math.sin(ang) * rad;
+        el.style.transform = `translate3d(${(x - 4.5).toFixed(1)}px, ${(y - 4.5).toFixed(1)}px, 0)`;
+      });
+      cursorSatRaf = requestAnimationFrame(tick);
+    };
+    cursorSatRaf = requestAnimationFrame(tick);
+  }
+}
+
 function triggerBunnyFx(el, level) {
   const lv = Math.max(1, Math.min(10, Number(level) || 1));
   el.classList.remove("fx-click");
@@ -5767,11 +6241,82 @@ function triggerBunnyFx(el, level) {
   const cx = rect.left + rect.width / 2;
   const cy = rect.top + rect.height / 2;
   let cfg = TIER_FX_PALETTES[lv] || TIER_FX_PALETTES[1];
-  if (lv === 10) {
+
+  // Escalating multi-skill click cycling starting at Lv.5!
+  const cycle = (bunnySkillCycle[lv] || 0);
+  bunnySkillCycle[lv] = cycle + 1;
+  let overrideCallout = null;
+
+  if (lv === 5 && cycle % 2 === 1) {
+    spawnBeamBlast(cx, cy, 5);
+    overrideCallout = "⚡ 元气冲击波！";
+  } else if (lv === 6 && cycle % 2 === 1) {
+    spawnDemonSlashFx(cx, cy, 6);
+    overrideCallout = "🔥 暗红裂空斩！";
+  } else if (lv === 7) {
+    const mode = cycle % 3;
+    if (mode === 1) {
+      spawnMeteorShowerFx(cfg.colors, 5);
+      overrideCallout = "☄️ 冥渊陨石雨！";
+    } else if (mode === 2) {
+      spawnMagicSigilFx(cx, cy, "#c026d3", 120);
+      spawnInteractiveChimeOrbs(cx, cy, 7, 2);
+      overrideCallout = "🌀 狱火法阵 · 戳破星核！";
+    }
+  } else if (lv === 8) {
+    const mode = cycle % 4;
+    if (mode === 1) {
+      spawnMeteorShowerFx(["#f59e0b", "#a78bfa", "#fde047"], 7);
+      overrideCallout = "🌠 星渊流星许愿雨！";
+    } else if (mode === 2) {
+      spawnMagicSigilFx(cx, cy, "#f59e0b", 132);
+      activateCursorSatellites(8, 4800);
+      overrideCallout = "🪐 霸王星轨环绕鼠标！";
+    } else if (mode === 3) {
+      spawnInteractiveChimeOrbs(cx, cy, 8, 3);
+      overrideCallout = "★ 星渊星核 · 点击弹奏！";
+    }
+  } else if (lv === 9) {
+    const mode = cycle % 5;
+    if (mode === 1) {
+      spawnInteractiveFeathers(cx, cy, 6);
+      overrideCallout = "🪶 创世圣羽降临 · 触碰化星！";
+    } else if (mode === 2) {
+      spawnMagicSigilFx(cx, cy, "#fbbf24", 148);
+      spawnBeamBlast(cx, cy, 9);
+      overrideCallout = "☀️ 创世日轮圣光柱！";
+    } else if (mode === 3) {
+      spawnInteractiveChimeOrbs(cx, cy, 9, 4);
+      overrideCallout = "✨ 创世光球 · 戳破奏乐！";
+    } else if (mode === 4) {
+      spawnMeteorShowerFx(["#fbbf24", "#e54826", "#fff7cc"], 8);
+      activateCursorSatellites(9, 5200);
+      overrideCallout = "✦ 飞升星雨 · 光标赐福！";
+    }
+  } else if (lv === 10) {
     const sk = getActiveSecretSkin();
     cfg = { ...cfg, colors: sk.fxColors, flash: sk.flash, callout: null };
-    triggerSecretMythicFx(layer, cx, cy, sk);
+    const mode = cycle % 4;
+    if (mode === 0) {
+      triggerSecretMythicFx(layer, cx, cy, sk);
+    } else if (mode === 1) {
+      spawnInteractiveChimeOrbs(cx, cy, 10, 5);
+      activateCursorSatellites(10, 6000);
+      playSfx("mythic");
+      overrideCallout = "💠 奇点音符球 · 戳破奏星乐！";
+    } else if (mode === 2) {
+      spawnMeteorShowerFx(sk.fxColors, 10);
+      spawnMagicSigilFx(cx, cy, sk.fxColors[0], 164);
+      playSfx("ssr");
+      overrideCallout = "🌠 50B 维度裂隙流星雨！";
+    } else {
+      spawnInteractiveFeathers(cx, cy, 6);
+      spawnBeamBlast(cx, cy, 10);
+      playSfx("mythic");
+      overrideCallout = "✦ 奇点圣羽光束！";
+    }
   }
+  if (overrideCallout) cfg = { ...cfg, callout: overrideCallout };
 
   // Screen-level quake for Lv.3+ (and Mythic 0.72s tremor for EX 50B!)
   if (cfg.quake) {
@@ -5957,15 +6502,19 @@ function renderEvoModal() {
       const skinBtns = Object.values(SECRET_SKINS).map(sk =>
         `<button class="evo-skin-btn${sk.id === activeSkin.id ? " active" : ""}" data-skin="${sk.id}">${sk.label}</button>`
       ).join("");
+      const innateSvg = (typeof getActiveTierInnateSvg === "function") ? getActiveTierInnateSvg(10, "ev10") : "";
+      const innateOn = (typeof isTierInnateVisible === "function") ? isTierInnateVisible(10) : true;
+      const innateMeta = (typeof TIER_INNATE_ACCESSORIES !== "undefined") ? TIER_INNATE_ACCESSORIES[10] : null;
       return `<div class="${cls}" style="--d:${delay}ms" data-locked="0" data-lv="${t.level}">
         <div class="evo-secret-left">
-          <div class="bunny-wrap ${vis.stage}" data-lv="${t.level}" data-skin="${activeSkin.id}" title="点击触发 EX 奇点终焉兔（${activeSkin.label}）专属动效">
-            <svg class="bunny-svg" viewBox="0 0 36 36" fill="none">${vis.svg}</svg>
+          <div class="bunny-wrap ${vis.stage}" data-lv="${t.level}" data-skin="${activeSkin.id}" title="点击轮播 EX 奇点终焉兔（${activeSkin.label}）多重玩法动效">
+            <svg class="bunny-svg" viewBox="0 0 36 36" fill="none">${vis.svg}${innateSvg}</svg>
           </div>
           <div class="evo-secret-meta">
             <span class="evo-secret-badge">✦ EX 究极隐藏款 · ${t.range}</span>
             <div class="evo-name">${t.name} · ${activeSkin.label}</div>
-            <div class="evo-rng">已永久解锁 · 点击下方随时切换 3 款限定皮肤</div>
+            <div class="evo-rng">已永久解锁 · ${getTierInteractHint(10)}</div>
+            ${innateMeta ? `<button class="evo-innate-btn${innateOn ? "" : " off"}" data-toggle-innate="10" title="等级自带专属饰品（不可购买），点击可随时取下或戴上">${innateMeta.icon} 自带「${innateMeta.name}」: ${innateOn ? "佩戴中 · 点此取下" : "已取下 · 点此戴上"}</button>` : ""}
           </div>
         </div>
         <div class="evo-skin-pills">${skinBtns}</div>
@@ -5988,14 +6537,31 @@ function renderEvoModal() {
         <div class="evo-rng">???</div>
       </div>`;
     }
+    const innateSvg = (t.level >= 5 && typeof getActiveTierInnateSvg === "function") ? getActiveTierInnateSvg(t.level, "ev" + t.level) : "";
+    const innateMeta = (t.level >= 5 && typeof TIER_INNATE_ACCESSORIES !== "undefined") ? TIER_INNATE_ACCESSORIES[t.level] : null;
+    const innateOn = (t.level >= 5 && typeof isTierInnateVisible === "function") ? isTierInnateVisible(t.level) : true;
+    const skillHint = getTierInteractHint(t.level);
     return `<div class="${cls}" style="--d:${delay}ms" data-locked="0" data-lv="${t.level}">
-      <div class="bunny-wrap ${t.stage}" data-lv="${t.level}" title="点击触发 Lv.${t.level} ${t.name} 专属动效">
-        <svg class="bunny-svg" viewBox="0 0 36 36" fill="none">${t.svg}</svg>
+      <div class="bunny-wrap ${t.stage}" data-lv="${t.level}" title="点击触发 Lv.${t.level} ${t.name} 专属玩法动效">
+        <svg class="bunny-svg" viewBox="0 0 36 36" fill="none">${t.svg}${innateSvg}</svg>
       </div>
       <div class="evo-name">Lv.${t.level} ${t.name}</div>
       <div class="evo-rng">${t.range}</div>
+      ${skillHint ? `<div class="evo-skill-pill">${skillHint}</div>` : ""}
+      ${innateMeta ? `<button class="evo-innate-btn${innateOn ? "" : " off"}" data-toggle-innate="${t.level}" title="Lv.${t.level} 等级自带小饰品（不可购买），点击可取下或戴上">${innateMeta.icon} ${innateOn ? "取下自带饰品" : "戴上自带饰品"}</button>` : ""}
     </div>`;
   }).join("");
+
+  grid.querySelectorAll(".evo-innate-btn[data-toggle-innate]").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const lvNum = Number(btn.dataset.toggleInnate);
+      if (typeof toggleTierInnateAcc === "function") {
+        toggleTierInnateAcc(lvNum);
+        renderEvoModal();
+      }
+    });
+  });
 
   grid.querySelectorAll(".evo-skin-btn[data-skin]").forEach(btn => {
     btn.addEventListener("click", (e) => {
@@ -6129,20 +6695,162 @@ function hopBunny() {
 
 let petCombo = 0;
 let petComboResetTimer = null;
+let bunnyChargeTimer = null;
+let bunnyCharged = false;
+let lastAvatarSparkTs = 0;
 const bunnyMascotEl = document.getElementById("bunnyMascot");
+
+// Global cursor tracking for Lv.6+ proximity gaze-lean & Lv.8+ orbiting cursor satellites
+document.addEventListener("mousemove", (e) => {
+  lastMousePos.x = e.clientX;
+  lastMousePos.y = e.clientY;
+  const lv = Number(bunnyMascotEl.dataset.lv || 1);
+  if (lv >= 6 && !bunnyMascotEl.matches(":hover") && !bunnyMascotEl.classList.contains("is-charging")) {
+    const r = bunnyMascotEl.getBoundingClientRect();
+    if (r.width > 0) {
+      const dx = e.clientX - (r.left + r.width / 2);
+      const dy = e.clientY - (r.top + r.height / 2);
+      const dist = Math.hypot(dx, dy);
+      const maxRange = lv >= 9 ? 260 : 200;
+      if (dist < maxRange && dist > r.width * 0.5) {
+        const pull = (1 - dist / maxRange) * (lv >= 9 ? 5.5 : 3.5);
+        const mx = (dx / dist) * pull;
+        const my = (dy / dist) * pull;
+        const ry = (dx / dist) * (lv >= 8 ? 11 : 7);
+        const rx = -(dy / dist) * (lv >= 8 ? 11 : 7);
+        bunnyMascotEl.style.transform = `translate(${mx.toFixed(1)}px, ${my.toFixed(1)}px) perspective(180px) rotateY(${ry.toFixed(1)}deg) rotateX(${rx.toFixed(1)}deg)`;
+      } else if (bunnyMascotEl.style.transform) {
+        bunnyMascotEl.style.transform = "";
+      }
+    }
+  }
+});
 
 bunnyMascotEl.addEventListener("mousemove", (e) => {
   const r = bunnyMascotEl.getBoundingClientRect();
   const nx = ((e.clientX - r.left) / r.width - 0.5) * 2;
   const ny = ((e.clientY - r.top) / r.height - 0.5) * 2;
-  bunnyMascotEl.style.transform = `perspective(160px) rotateY(${(nx * 11).toFixed(1)}deg) rotateX(${(-ny * 11).toFixed(1)}deg) scale(1.04)`;
+  const lv = Number(bunnyMascotEl.dataset.lv || 1);
+  const tilt = lv >= 8 ? 15 : (lv >= 5 ? 13 : 11);
+  const magX = lv >= 5 ? (nx * (lv >= 8 ? 4.2 : 2.6)) : 0;
+  const magY = lv >= 5 ? (ny * (lv >= 8 ? 4.2 : 2.6)) : 0;
+  bunnyMascotEl.style.transform = `translate(${magX.toFixed(1)}px, ${magY.toFixed(1)}px) perspective(160px) rotateY(${(nx * tilt).toFixed(1)}deg) rotateX(${(-ny * tilt).toFixed(1)}deg) scale(${lv >= 8 ? 1.07 : 1.04})`;
+
+  // Tier-specific live cursor hover particles (Lv.5+!)
+  const now = Date.now();
+  if (lv >= 5 && now - lastAvatarSparkTs > (lv >= 9 ? 55 : 85)) {
+    lastAvatarSparkTs = now;
+    const layer = document.getElementById("fxLayer");
+    if (layer) {
+      const p = document.createElement("span");
+      p.className = "fx-particle";
+      const pal = TIER_FX_PALETTES[lv] || TIER_FX_PALETTES[5];
+      const cols = lv === 10 ? getActiveSecretSkin().fxColors : pal.colors;
+      const col = cols[Math.floor(Math.random() * cols.length)];
+      const hoverGlyphs = {
+        5:  ["⚡", "✦"],
+        6:  ["🔥", "◆", "✦"],
+        7:  ["🌀", "◆", "✦"],
+        8:  ["★", "✧", "🪐"],
+        9:  ["🪶", "✦", "☀️"],
+        10: ["💠", "✦", "◈", "⚡"],
+      }[lv] || ["✦"];
+      p.textContent = hoverGlyphs[Math.floor(Math.random() * hoverGlyphs.length)];
+      if (lv === 7) {
+        // Lv.7 Abyssal Gravity Pull: spawn around rim and pull INWARD toward bunny center!
+        const ang = Math.random() * Math.PI * 2;
+        const sr = 36 + Math.random() * 18;
+        p.style.left = (r.left + r.width / 2 + Math.cos(ang) * sr) + "px";
+        p.style.top = (r.top + r.height / 2 + Math.sin(ang) * sr) + "px";
+        p.style.setProperty("--dx", (-Math.cos(ang) * sr).toFixed(1) + "px");
+        p.style.setProperty("--dy", (-Math.sin(ang) * sr).toFixed(1) + "px");
+      } else {
+        p.style.left = e.clientX + "px";
+        p.style.top = e.clientY + "px";
+        p.style.setProperty("--dx", ((Math.random() - 0.5) * 34).toFixed(1) + "px");
+        p.style.setProperty("--dy", (-14 - Math.random() * 22).toFixed(1) + "px");
+      }
+      p.style.color = col;
+      p.style.fontSize = (9 + Math.random() * 4).toFixed(1) + "px";
+      p.style.textShadow = `0 0 8px ${col}`;
+      p.style.setProperty("--rot", ((Math.random() - 0.5) * 180).toFixed(0) + "deg");
+      p.style.setProperty("--dur", "0.48s");
+      layer.appendChild(p);
+      setTimeout(() => p.remove(), 540);
+    }
+    if (lv >= 8 && Math.random() < 0.28) {
+      activateCursorSatellites(lv, 3600);
+    }
+    if (lv >= 9 && typeof activateStardust === "function") {
+      activateStardust(2400);
+    }
+  }
 });
 bunnyMascotEl.addEventListener("mouseleave", () => {
   bunnyMascotEl.style.transform = "";
+  clearTimeout(bunnyChargeTimer);
+  bunnyMascotEl.classList.remove("is-charging");
+});
+
+// Lv.5+ Long-Press Ki Charge & Energy Wave Release!
+bunnyMascotEl.addEventListener("mousedown", (e) => {
+  if (e.button !== 0 || patrolRunning) return;
+  const lv = Number(bunnyMascotEl.dataset.lv || 1);
+  if (lv < 5) return;
+  bunnyCharged = false;
+  clearTimeout(bunnyChargeTimer);
+  bunnyChargeTimer = setTimeout(() => {
+    bunnyCharged = true;
+    bunnyMascotEl.classList.add("is-charging");
+    playSfx("gacha");
+  }, 340);
+});
+window.addEventListener("mouseup", () => {
+  clearTimeout(bunnyChargeTimer);
+  if (!bunnyCharged) return;
+  bunnyCharged = false;
+  bunnyMascotEl.classList.remove("is-charging");
+  const lv = Number(bunnyMascotEl.dataset.lv || 5);
+  const r = bunnyMascotEl.getBoundingClientRect();
+  const cx = r.left + r.width / 2;
+  const cy = r.top + r.height / 2;
+  spawnBeamBlast(cx, cy, lv);
+  spawnMagicSigilFx(cx, cy, lv >= 10 ? "#38bdf8" : (lv >= 9 ? "#fbbf24" : "#f59e0b"), 126);
+  if (lv >= 9) spawnInteractiveChimeOrbs(cx, cy, lv, lv >= 10 ? 5 : 3);
+  if (lv >= 8) activateCursorSatellites(lv, 5200);
+  playSfx(lv >= 9 ? "mythic" : "ssr");
+  showBunnySpeech(lv >= 10 ? "💥 50B 奇点超新星蓄力释放！！" : (lv >= 8 ? "⚡ 蓄力满格！星渊元气波发射！" : "⚡ 超赛爆气蓄力波发射！！"));
+  bunnyMascotEl._skipNextClick = true;
+  setTimeout(() => { bunnyMascotEl._skipNextClick = false; }, 160);
+});
+
+// Lv.6+ Double-Click Signature Slash / Nova!
+bunnyMascotEl.addEventListener("dblclick", (e) => {
+  if (patrolRunning) return;
+  const lv = Number(bunnyMascotEl.dataset.lv || 1);
+  if (lv < 6) return;
+  const r = bunnyMascotEl.getBoundingClientRect();
+  const cx = r.left + r.width / 2;
+  const cy = r.top + r.height / 2;
+  spawnDemonSlashFx(cx, cy, lv);
+  if (lv >= 8) spawnMeteorShowerFx((TIER_FX_PALETTES[lv] || TIER_FX_PALETTES[8]).colors, 7);
+  if (lv >= 9) spawnInteractiveFeathers(cx, cy, 5);
+  showBunnySpeech(lv >= 9 ? "⚔️ 创世裂空斩 · 万象生辉！" : (lv >= 7 ? "🔥 魔神双连斩！算力全开！" : "🔥 红魔裂空斩！"));
+});
+
+// Lv.7+ Right-Click Easter Egg: Summon Playable Lucky Star Orbs!
+bunnyMascotEl.addEventListener("contextmenu", (e) => {
+  const lv = Number(bunnyMascotEl.dataset.lv || 1);
+  if (lv < 7) return;
+  e.preventDefault();
+  const r = bunnyMascotEl.getBoundingClientRect();
+  spawnInteractiveChimeOrbs(r.left + r.width / 2, r.top + r.height / 2, lv, lv >= 9 ? 4 : 2);
+  playSfx("gold");
+  showBunnySpeech("✨ 右键彩蛋触发！快去戳破漂浮的星光球听音乐吧～");
 });
 
 bunnyMascotEl.addEventListener("click", () => {
-  if (patrolRunning) return;
+  if (patrolRunning || bunnyMascotEl._skipNextClick) return;
   hopBunny();
   petCombo++;
   clearTimeout(petComboResetTimer);
@@ -7939,8 +8647,9 @@ function summonBunnyPatrol() {
 
   const runner = document.createElement("div");
   runner.className = "patrol-bunny";
+  const innateSvgPatrol = (typeof getActiveTierInnateSvg === "function") ? getActiveTierInnateSvg(tier.level, "pt") : "";
   const wearSvgPatrol = (typeof getAvatarWearOverlaySvg === "function") ? getAvatarWearOverlaySvg("pt") : "";
-  runner.innerHTML = `<div class="pb-flip"><div class="pb-inner"><svg viewBox="0 0 36 36" fill="none" style="width:100%;height:100%">${getTierVisual(tier).svg}${wearSvgPatrol}</svg></div></div>`;
+  runner.innerHTML = `<div class="pb-flip"><div class="pb-inner"><svg viewBox="0 0 36 36" fill="none" style="width:100%;height:100%">${getTierVisual(tier).svg}${innateSvgPatrol}${wearSvgPatrol}</svg></div></div>`;
   runner.style.transform = `translate3d(${startX.toFixed(1)}px, ${startY.toFixed(1)}px, 0)`;
   document.body.appendChild(runner);
   playSfx("token");
@@ -9345,6 +10054,7 @@ const DEFAULT_HOME_STATE = {
   owned_decor: [],
   wear: { hat: null, outfit: null, acc: null },
   owned_wear: [],
+  hidden_tier_acc: [],
   show_on_avatar: true,
 };
 
@@ -9353,6 +10063,9 @@ function cloneHomeState(src) {
   const oh = Array.isArray(s.owned_houses) ? Array.from(new Set(["street", ...s.owned_houses])) : ["street"];
   const house = (typeof s.house === "string" && s.house) ? s.house : "street";
   if (!oh.includes(house)) oh.push(house);
+  const hta = Array.isArray(s.hidden_tier_acc)
+    ? Array.from(new Set(s.hidden_tier_acc.map(Number).filter(n => Number.isInteger(n) && n >= 5 && n <= 10))).sort((a, b) => a - b)
+    : [];
   return {
     house,
     owned_houses: oh,
@@ -9370,6 +10083,7 @@ function cloneHomeState(src) {
       acc: (s.wear && s.wear.acc) || null,
     },
     owned_wear: Array.isArray(s.owned_wear) ? Array.from(new Set(s.owned_wear)) : [],
+    hidden_tier_acc: hta,
     show_on_avatar: s.show_on_avatar !== false,
   };
 }
@@ -10007,6 +10721,17 @@ const WEAR_SLOT_META = {
   hat:    { label: "🎩 头饰帽子" },
   outfit: { label: "🧥 衣服披风" },
   acc:    { label: "👜 包包配饰" },
+  innate: { label: "✨ 等级自带" },
+};
+
+// Built-in non-purchasable mini-accessories automatically granted starting at Lv.5 (toggleable: 取下 / 戴上)
+const TIER_INNATE_ACCESSORIES = {
+  5:  { level: 5,  icon: "⚡", name: "爆气金弧耳坠",   tierName: "Lv.5 超赛爆气兔", desc: "Lv.5 自动附带：双耳侧跃动的黄金超赛电弧与悬浮气珠（不可购买，可随时取下）" },
+  6:  { level: 6,  icon: "🔥", name: "暗炎魔纹耳扣",   tierName: "Lv.6 红魔兔",     desc: "Lv.6 自动附带：左耳赤金魔环耳扣与右下角浮游小冥火（不可购买，可随时取下）" },
+  7:  { level: 7,  icon: "⛓️", name: "冥渊紫金星环",   tierName: "Lv.7 狱火魔神兔", desc: "Lv.7 自动附带：身侧浮空的紫金冥渊符文环与微缩魔珠（不可购买，可随时取下）" },
+  8:  { level: 8,  icon: "🪐", name: "微缩土星浮游饰", tierName: "Lv.8 星渊霸王兔", desc: "Lv.8 自动附带：肩头自转的黄金微缩土星与星渊微光（不可购买，可随时取下）" },
+  9:  { level: 9,  icon: "🕊️", name: "创世圣羽金铃坠", tierName: "Lv.9 创世飞升兔", desc: "Lv.9 自动附带：双耳畔轻盈流转的鎏金圣羽铃与四芒星坠（不可购买，可随时取下）" },
+  10: { level: 10, icon: "💠", name: "维度双棱镜星芒", tierName: "EX 奇点终焉兔",   desc: "50B 自动附带：环绕头顶双侧的霓虹维度晶棱与星尘（不可购买，可随时取下）" },
 };
 
 const HOME_GRADE_META = {
@@ -10602,6 +11327,98 @@ function getWearableItemSvg(id, pfx = "av") {
   }
 }
 
+function isTierInnateVisible(level) {
+  const lv = Number(level) || 0;
+  if (lv < 5 || !TIER_INNATE_ACCESSORIES[lv]) return false;
+  const h = getActiveHomeState();
+  return !(Array.isArray(h.hidden_tier_acc) && h.hidden_tier_acc.includes(lv));
+}
+
+function toggleTierInnateAcc(level) {
+  const lv = Number(level) || 0;
+  if (lv < 5 || !TIER_INNATE_ACCESSORIES[lv]) return;
+  const h = cloneHomeState(getActiveHomeState());
+  const set = new Set(h.hidden_tier_acc || []);
+  const willHide = !set.has(lv);
+  if (willHide) set.add(lv);
+  else set.delete(lv);
+  h.hidden_tier_acc = Array.from(set).sort((a, b) => a - b);
+  saveActiveHomeState(h, 0);
+  playSfx(willHide ? "token" : "cache");
+  if (document.getElementById("homeModal")?.classList.contains("open")) {
+    renderHomeModal(null, true);
+  }
+}
+
+function getTierInnateAccSvg(level, pfx = "av") {
+  const lv = Number(level) || 0;
+  const g = (k) => `${pfx}_in_${k}`;
+  switch (lv) {
+    case 5: // ⚡ 爆气金弧耳坠
+      return `<g>
+        <path d="M4.2 14.4 L6.4 16.2 L5.1 17.0 L7.0 19.2" fill="none" stroke="#FDE047" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round" class="h-twinkle"/>
+        <path d="M31.8 14.4 L29.6 16.2 L30.9 17.0 L29.0 19.2" fill="none" stroke="#FDE047" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round" class="h-twinkle-d1"/>
+        <circle cx="4.8" cy="21.4" r="1.25" fill="#FACC15" stroke="#B45309" stroke-width="0.45" class="h-float"/>
+        <circle cx="31.2" cy="21.4" r="1.25" fill="#FACC15" stroke="#B45309" stroke-width="0.45" class="h-float-slow"/>
+      </g>`;
+    case 6: // 🔥 暗炎魔纹耳扣
+      return `<g>
+        <ellipse cx="9.6" cy="11.2" rx="1.9" ry="1.2" transform="rotate(-18 9.6 11.2)" fill="none" stroke="#FBBF24" stroke-width="0.95"/>
+        <circle cx="8.1" cy="12.2" r="0.85" fill="#EF4444" stroke="#FEF08A" stroke-width="0.35"/>
+        <g class="h-float">
+          <path d="M31.4 25.2 C30.0 23.8 30.8 21.4 31.8 20.6 C31.8 22.0 33.2 22.4 33.0 24.4 C32.8 25.5 31.9 25.8 31.4 25.2 Z" fill="#EF4444" stroke="#FDE047" stroke-width="0.45"/>
+          <circle cx="31.7" cy="23.8" r="0.65" fill="#FEF08A"/>
+        </g>
+      </g>`;
+    case 7: // ⛓️ 冥渊紫金星环
+      return `<g class="h-float">
+        <circle cx="4.8" cy="23.2" r="2.1" fill="#1E0624" stroke="#F43F5E" stroke-width="0.8"/>
+        <ellipse cx="4.8" cy="23.2" rx="3.4" ry="1.15" transform="rotate(-24 4.8 23.2)" fill="none" stroke="#FDE047" stroke-width="0.65"/>
+        <circle cx="4.8" cy="23.2" r="0.7" fill="#F0ABFC" class="h-twinkle"/>
+        <path d="M31.2 19.8 L32.2 21.4 L33.8 22.0 L32.2 22.6 L31.2 24.2 L30.2 22.6 L28.6 22.0 L30.2 21.4 Z" fill="#FDE047" stroke="#C026D3" stroke-width="0.4" class="h-twinkle-d1"/>
+      </g>`;
+    case 8: // 🪐 微缩土星浮游饰
+      return `<g class="h-float-slow">
+        <defs>
+          <radialGradient id="${g("sat")}" cx="35%" cy="35%" r="65%">
+            <stop offset="0%" stop-color="#FEF08A"/><stop offset="100%" stop-color="#D97706"/>
+          </radialGradient>
+        </defs>
+        <g transform="translate(31.2, 10.6)">
+          <ellipse cx="0" cy="0" rx="4.2" ry="1.35" transform="rotate(-22)" fill="none" stroke="#C4B5FD" stroke-width="0.7"/>
+          <circle cx="0" cy="0" r="2.0" fill="url(#${g("sat")})" stroke="#92400E" stroke-width="0.4"/>
+          <path d="M-3.7 1.4 A4.2 1.35 -22 0 0 3.7 -1.4" fill="none" stroke="#FEF08A" stroke-width="0.75"/>
+        </g>
+        <path d="M4.6 10.4 L5.3 11.7 L6.6 12.2 L5.3 12.7 L4.6 14.0 L3.9 12.7 L2.6 12.2 L3.9 11.7 Z" fill="#FDE047" class="h-twinkle"/>
+      </g>`;
+    case 9: // 🕊️ 创世圣羽金铃坠
+      return `<g>
+        <!-- Left & right celestial gold bell-tassel ear charms -->
+        <line x1="7.8" y1="15.0" x2="6.2" y2="18.2" stroke="#FBBF24" stroke-width="0.65"/>
+        <circle cx="5.9" cy="18.8" r="1.25" fill="#FDE047" stroke="#E54826" stroke-width="0.5"/>
+        <line x1="28.2" y1="15.0" x2="29.8" y2="18.2" stroke="#FBBF24" stroke-width="0.65"/>
+        <circle cx="30.1" cy="18.8" r="1.25" fill="#FDE047" stroke="#E54826" stroke-width="0.5"/>
+        <!-- Tiny floating golden creation stars -->
+        <path d="M5.2 9.4 L5.9 10.8 L7.3 11.3 L5.9 11.8 L5.2 13.2 L4.5 11.8 L3.1 11.3 L4.5 10.8 Z" fill="#FFFBEB" stroke="#F59E0B" stroke-width="0.35" class="h-twinkle"/>
+        <path d="M30.8 9.4 L31.5 10.8 L32.9 11.3 L31.5 11.8 L30.8 13.2 L30.1 11.8 L28.7 11.3 L30.1 10.8 Z" fill="#FFFBEB" stroke="#E54826" stroke-width="0.35" class="h-twinkle-d1"/>
+      </g>`;
+    case 10: // 💠 维度双棱镜星芒
+      return `<g class="h-float">
+        <path d="M4.6 7.0 L6.4 9.6 L4.6 12.2 L2.8 9.6 Z" fill="#38BDF8" stroke="#FFFBEB" stroke-width="0.55" class="h-twinkle"/>
+        <path d="M31.4 7.0 L33.2 9.6 L31.4 12.2 L29.6 9.6 Z" fill="#F472B6" stroke="#FFFBEB" stroke-width="0.55" class="h-twinkle-d1"/>
+        <circle cx="7.4" cy="6.2" r="0.8" fill="#FDE047" class="h-twinkle-d2"/>
+        <circle cx="28.6" cy="6.2" r="0.8" fill="#34D399" class="h-twinkle"/>
+      </g>`;
+    default:
+      return "";
+  }
+}
+
+function getActiveTierInnateSvg(level, pfx = "av") {
+  if (!isTierInnateVisible(level)) return "";
+  return getTierInnateAccSvg(level, pfx);
+}
+
 function getWearOverlaySvgFor(wear, pfx = "st") {
   if (!wear) return "";
   return (wear.outfit ? getWearableItemSvg(wear.outfit, pfx) : "")
@@ -10609,10 +11426,11 @@ function getWearOverlaySvgFor(wear, pfx = "st") {
     + (wear.acc ? getWearableItemSvg(wear.acc, pfx) : "");
 }
 
-function getAvatarWearSig() {
+function getAvatarWearSig(level = 0) {
   const h = getActiveHomeState();
-  if (!h.show_on_avatar) return "off";
-  return `${h.wear.hat || ""}|${h.wear.outfit || ""}|${h.wear.acc || ""}`;
+  const inFlag = (level >= 5 && isTierInnateVisible(level)) ? `in${level}` : "in0";
+  if (!h.show_on_avatar) return `off|${inFlag}`;
+  return `${h.wear.hat || ""}|${h.wear.outfit || ""}|${h.wear.acc || ""}|${inFlag}`;
 }
 
 function getAvatarWearOverlaySvg(pfx = "av") {
@@ -11832,6 +12650,7 @@ function renderHomeStage(freshDecorSlot = null, twirlBunny = false) {
   const house = HOME_HOUSES.find(x => x.id === view.houseId) || HOME_HOUSES[0];
   const tier = getBunnyTier(getEffectiveTodayTokens());
   const vis = getTierVisual(tier);
+  const innateSvg = getActiveTierInnateSvg(tier.level, "st");
   const wearSvg = getWearOverlaySvgFor(view.wear, "st");
 
   const wrapEl = document.getElementById("homeStageWrap");
@@ -11879,6 +12698,7 @@ function renderHomeStage(freshDecorSlot = null, twirlBunny = false) {
       <ellipse cx="18" cy="34.2" rx="11.5" ry="2.6" fill="rgba(12,10,16,0.28)"/>
       <g class="${twirlBunny ? "bunny-twirl" : ""}">
         ${vis.svg}
+        ${innateSvg}
         ${wearSvg}
       </g>
     </g>
@@ -12126,13 +12946,42 @@ function renderHomeShop() {
     }
   } else {
     // Wardrobe
-    const wSlots = ["hat", "outfit", "acc"];
+    const wSlots = ["hat", "outfit", "acc", "innate"];
     if (pillsEl) {
       pillsEl.innerHTML = wSlots.map(s =>
         `<button class="home-slot-pill${homeUiState.wearSlot === s ? " active" : ""}" data-wslot="${s}">${WEAR_SLOT_META[s].label}</button>`
       ).join("");
     }
     if (gridEl) {
+      if (homeUiState.wearSlot === "innate") {
+        const curTier = getBunnyTier(getEffectiveTodayTokens());
+        const list = Object.values(TIER_INNATE_ACCESSORIES);
+        gridEl.innerHTML = list.map(it => {
+          const unlocked = debugState.unlockAll || maxTier >= it.level;
+          const isCur = curTier.level === it.level;
+          const visible = isTierInnateVisible(it.level);
+          const tag = !unlocked
+            ? `<span class="hc-tag vip">${it.level === 10 ? "50B自带" : `Lv.${it.level}自带`}</span>`
+            : (isCur
+              ? (visible ? `<span class="hc-tag eq">当前佩戴</span>` : `<span class="hc-tag">已取下</span>`)
+              : (visible ? `<span class="hc-tag own">默认开启</span>` : `<span class="hc-tag">已取下</span>`));
+          const btnHtml = !unlocked
+            ? `<button class="hc-btn" disabled>🔒 升级解锁</button>`
+            : (visible
+              ? `<button class="hc-btn unequip" data-act="toggle-innate" data-id="${it.level}">取下</button>`
+              : `<button class="hc-btn equip" data-act="toggle-innate" data-id="${it.level}">戴上</button>`);
+          return `<div class="home-card grade-${it.level >= 9 ? "mythic" : "luxury"}${isCur && visible ? " equipped" : ""}${!unlocked ? " tier-locked" : ""}">
+            <div>
+              <div class="hc-top"><span class="hc-name">${it.icon} ${it.name}</span>${tag}</div>
+              <div class="hc-desc" style="margin-top:3px">${it.desc}</div>
+            </div>
+            <div class="hc-act">
+              <span class="hc-price" style="color:var(--teal)">🎁 ${it.tierName}自带 · 不可购买</span>
+              <span class="hc-btns">${btnHtml}</span>
+            </div>
+          </div>`;
+        }).join("");
+      } else {
       const items = HOME_WEARABLES.filter(w => w.slot === homeUiState.wearSlot);
       gridEl.innerHTML = items.map(it => {
         const owned = hState.owned_wear.includes(it.id);
@@ -12174,6 +13023,7 @@ function renderHomeShop() {
           </div>
         </div>`;
       }).join("");
+      }
     }
   }
 }
@@ -12338,6 +13188,8 @@ document.getElementById("homeShopGrid").addEventListener("click", (e) => {
     saveActiveHomeState(h, 0);
     renderHomeModal(null, true);
     playSfx("token");
+  } else if (act === "toggle-innate") {
+    toggleTierInnateAcc(Number(id));
   }
 });
 
