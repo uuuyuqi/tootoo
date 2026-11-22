@@ -147,6 +147,22 @@
       <circle cx="341" cy="146" r="2.6" fill="#fde047"/><circle cx="352" cy="149" r="2.1" fill="#f8fafc" class="h-float-slow"/>
     `;
   });
+  R.registerHouseFg("wall_corner", (dp) => {
+    const s = skyOf(dp);
+    const id = `wc_${s.phase}`;
+    const wood = s.isNight ? "#634022" : "#9c6838";
+    return `
+      <!-- Foreground brick corner edge, upper brick parapet above awning, drainpipe, timber awning roof & front support post -->
+      <path d="M132 86 V46 H178 V62 H214 V52 H278 V98 Z" fill="url(#${id}_brk)" stroke="#4a1e16" stroke-width="1.5" stroke-linejoin="round"/>
+      <polygon points="84,162 84,56 132,46 132,162" fill="url(#${id}_side)" stroke="#4a1e16" stroke-width="1.4" stroke-linejoin="round"/>
+      <rect x="128" y="46" width="6" height="114" rx="2" fill="${s.isNight ? "#64748b" : "#94a3b8"}" stroke="#475569" stroke-width="1"/>
+      <path d="M96 64 Q108 84 100 106 Q110 122 102 140" stroke="${s.isNight ? "#14532d" : "#15803d"}" stroke-width="2" fill="none"/>
+      <circle cx="105" cy="82" r="4" fill="${s.isNight ? "#15803d" : "#22c55e"}"/><circle cx="100" cy="104" r="3.6" fill="${s.isNight ? "#166534" : "#4ade80"}"/><circle cx="106" cy="124" r="3.4" fill="${s.isNight ? "#15803d" : "#22c55e"}"/>
+      <polygon points="134,86 286,98 286,107 134,96" fill="${wood}" stroke="#3d2410" stroke-width="1.4" stroke-linejoin="round"/>
+      <line x1="138" y1="89" x2="284" y2="101" stroke="#fde68a" stroke-width="0.9" opacity="0.32"/>
+      <rect x="268" y="106" width="5.5" height="58" fill="${wood}" stroke="#3d2410" stroke-width="1"/>
+    `;
+  });
 
   // 2. 🌿 蓬松小草堆 — Sun-baked fluffy meadow haystack burrow with overhanging straw fringe
   R.registerHouseArt("hay_pile", (dp) => {
@@ -203,6 +219,22 @@
         <circle cx="348" cy="122" r="1.8" fill="#fde047" filter="url(#hsGlowSm)" class="h-twinkle-d1"/>` : `
         <circle cx="88" cy="104" r="2.1" fill="#fff" opacity="0.82" class="h-float"/>
         <circle cx="334" cy="98" r="1.9" fill="#fff" opacity="0.76" class="h-float-slow"/>`}
+    `;
+  });
+  R.registerHouseFg("hay_pile", (dp) => {
+    const s = skyOf(dp);
+    const id = `hp_${s.phase}`;
+    const h1 = s.isNight ? "#967123" : (s.isDusk ? "#f59e0b" : "#fde047");
+    const h2 = s.isNight ? "#705216" : (s.isDusk ? "#d97706" : "#eab308");
+    const h3 = s.isNight ? "#4a350d" : (s.isDusk ? "#92400e" : "#ca8a04");
+    return `
+      <!-- Foreground haystack shell with burrow arch cut out (evenodd) + overhanging straw brow -->
+      <path d="M104 164 C104 134 114 102 132 76 C152 48 182 38 210 36 C240 38 270 50 288 78 C306 104 316 134 316 164 Q264 170 210 168 Q156 170 104 164 Z M167 166 C167 125 182 100 210 98 C238 100 253 125 253 166 Z" fill="url(#${id}_hay)" fill-rule="evenodd"/>
+      <path d="M160 165 C160 120 176 92 210 90 C244 92 260 120 260 165 L253 165 C253 125 238 100 210 98 C182 100 167 125 167 165 Z" fill="#5c3610"/>
+      <g stroke="${h1}" stroke-width="1.5" stroke-linecap="round" opacity="0.72">
+        <path d="M132 118 L148 96 M146 84 L166 64 M186 50 L204 42 M224 44 L242 54 M254 66 L274 86 M276 102 L292 122"/>
+      </g>
+      <path d="M162 118 Q174 100 186 108 Q198 92 210 104 Q224 92 236 108 Q248 100 258 118 Q244 102 228 100 Q210 96 192 100 Q176 102 162 118 Z" fill="${h2}" stroke="${h3}" stroke-width="0.9"/>
     `;
   });
 
@@ -279,6 +311,26 @@
       <circle cx="272" cy="88" r="1.8" fill="#86efac" filter="url(#hsGlowSm)" class="h-twinkle-d1"/>
     `;
   });
+  R.registerHouseFg("moss_rocks", (dp) => {
+    const s = skyOf(dp);
+    const id = `mr_${s.phase}`;
+    const stD = s.isNight ? "#2b3648" : (s.isDusk ? "#485361" : "#5a6878");
+    const moss2 = s.isNight ? "#14532d" : (s.isDusk ? "#2d7a38" : "#228b3b");
+    return `
+      <!-- Foreground 4 natural boulders, moss cushions & hanging cave vines occluding bunny inside grotto -->
+      <path d="M104 164 C94 146 98 118 118 106 C138 94 162 100 172 118 C178 130 168 148 164 166 C142 169 116 169 104 164 Z" fill="url(#${id}_rkA)" stroke="#3b4552" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M116 126 Q132 118 148 124 M124 144 Q142 140 154 146" fill="none" stroke="${stD}" stroke-width="1" opacity="0.45"/>
+      <path d="M308 164 C318 146 312 116 290 104 C268 92 246 102 242 122 C240 136 248 150 250 166 C272 169 296 169 308 164 Z" fill="url(#${id}_rkB)" stroke="#3b4552" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M262 124 Q280 118 296 128" fill="none" stroke="${stD}" stroke-width="1" opacity="0.42"/>
+      <path d="M118 106 C112 80 138 56 184 50 C226 44 274 54 294 78 C306 92 300 110 282 112 C258 114 242 102 212 100 C180 98 164 114 138 114 C124 114 120 110 118 106 Z" fill="url(#${id}_rkA)" stroke="#3b4552" stroke-width="1.6" stroke-linejoin="round"/>
+      <path d="M154 56 C158 40 184 34 206 42 C218 46 218 56 206 58 C186 62 162 62 154 56 Z" fill="url(#${id}_rkB)" stroke="#3b4552" stroke-width="1.3"/>
+      <path d="M128 84 C140 62 174 52 214 54 C248 56 278 66 286 84 C272 90 258 82 244 88 C228 94 214 82 198 88 C182 94 166 80 150 88 C138 92 132 88 128 84 Z" fill="url(#${id}_moss)" stroke="${moss2}" stroke-width="0.9"/>
+      <path d="M108 124 C118 108 136 106 148 114 C138 124 120 128 108 124 Z" fill="url(#${id}_moss)"/>
+      <path d="M298 122 C290 108 272 106 260 114 C270 122 288 126 298 122 Z" fill="url(#${id}_moss)"/>
+      <path d="M180 99 Q176 114 182 122 M224 100 Q228 112 224 118" stroke="${moss2}" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+      <circle cx="182" cy="122" r="2.2" fill="#86efac"/><circle cx="224" cy="118" r="2" fill="#86efac"/>
+    `;
+  });
 
   // 4. 🍄 野生大蘑菇棚 — Storybook spotted scarlet mushroom house with warm underside gills & baby mushrooms
   R.registerHouseArt("giant_mushroom", (dp) => {
@@ -340,6 +392,22 @@
         <rect x="-3.5" y="-10" width="7" height="10" rx="2" fill="#fef3c7" stroke="#8c6844" stroke-width="0.9"/>
         <path d="M-9 -9 A9 7 0 0 1 9 -9 Z" fill="#f59e0b" stroke="#92400e" stroke-width="1"/>
       </g>
+    `;
+  });
+  R.registerHouseFg("giant_mushroom", (dp) => {
+    const s = skyOf(dp);
+    const id = `gm_${s.phase}`;
+    return `
+      <!-- Foreground mushroom stem shell (with doorway cut out) + gills + scarlet umbrella cap -->
+      <path d="M142 164 C148 136 154 112 152 90 L268 90 C266 112 272 136 278 164 Z M168 165 L168 118 A42 36 0 0 1 252 118 L252 165 Z" fill="url(#${id}_stem)" fill-rule="evenodd"/>
+      <path d="M162 164 L162 114 A48 40 0 0 1 258 114 L258 164 L252 164 L252 118 A42 36 0 0 0 168 118 L168 164 Z" fill="#6b3e1b"/>
+      <ellipse cx="210" cy="88" rx="112" ry="18" fill="${s.isNight ? "#b89658" : "#fde68a"}" stroke="#92400e" stroke-width="1.3"/>
+      <path d="M92 90 C100 26 154 14 210 14 C266 14 320 26 328 90 Q210 104 92 90 Z" fill="url(#${id}_cap)" stroke="#7f1d1d" stroke-width="1.7"/>
+      <ellipse cx="148" cy="52" rx="14" ry="9.5" fill="#fffbeb" opacity="0.92" transform="rotate(-16 148 52)"/>
+      <ellipse cx="212" cy="36" rx="17" ry="11" fill="#fffbeb" opacity="0.96"/>
+      <ellipse cx="274" cy="54" rx="13" ry="9" fill="#fffbeb" opacity="0.92" transform="rotate(15 274 54)"/>
+      <circle cx="182" cy="68" r="7.5" fill="#fffbeb" opacity="0.88"/><circle cx="242" cy="70" r="7" fill="#fffbeb" opacity="0.88"/>
+      <circle cx="118" cy="74" r="6" fill="#fffbeb" opacity="0.82"/><circle cx="302" cy="74" r="6" fill="#fffbeb" opacity="0.82"/>
     `;
   });
 

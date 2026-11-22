@@ -679,6 +679,7 @@
   const decorArtMap = new Map();
   const wearArtMap = new Map();
   const houseArtMap = new Map();
+  const houseFgMap = new Map();
 
   // Register handcrafted SVG art for the 4 flagship festival decor items
   decorArtMap.set("evt_1024_matrix", () => `
@@ -1096,9 +1097,11 @@
     registerDecorArt(id, fn) { if (id && typeof fn === "function") decorArtMap.set(id, fn); },
     registerWearArt(id, fn)  { if (id && typeof fn === "function") wearArtMap.set(id, fn); },
     registerHouseArt(id, fn) { if (id && typeof fn === "function") houseArtMap.set(id, fn); },
+    registerHouseFg(id, fn)  { if (id && typeof fn === "function") houseFgMap.set(id, fn); },
     getDecorArt(id, ctx)     { const fn = decorArtMap.get(id); return fn ? fn(ctx) : ""; },
     getWearArt(id, pfx)      { const fn = wearArtMap.get(id);  return fn ? fn(pfx || "st") : ""; },
     getHouseArt(id, dp)      { const fn = houseArtMap.get(id); return fn ? fn(dp) : ""; },
+    getHouseFg(id, dp)       { const fn = houseFgMap.get(id);  return fn ? fn(dp) : ""; },
   };
 
   global.TooTooRegistry = Registry;

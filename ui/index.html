@@ -13331,6 +13331,38 @@ function renderHouseBackdropSvg(houseId, dayPhase = { phase: "day", isNight: fal
   return svgOut;
 }
 
+const _fgSvgCache = new Map();
+function renderHouseForegroundSvg(houseId, dayPhase = { phase: "day", isNight: false }) {
+  const phase = (dayPhase && dayPhase.phase) || "day";
+  const isNight = phase === "night";
+  const cacheKey = `${houseId}|${phase}`;
+  if (_fgSvgCache.has(cacheKey)) return _fgSvgCache.get(cacheKey);
+  const pluginFg = TOOTOO_REG && TOOTOO_REG.getHouseFg && TOOTOO_REG.getHouseFg(houseId, dayPhase);
+  if (pluginFg) {
+    _fgSvgCache.set(cacheKey, pluginFg);
+    return pluginFg;
+  }
+  let out = "";
+  if (houseId === "pot") {
+    const clayStops = isNight
+      ? ["#5c1d0c", "#8c3b1e", "#742e15", "#431407"]
+      : ["#9a3412", "#d96b43", "#c25934", "#7c2d12"];
+    const stroke = isNight ? "#431407" : "#7c2d12";
+    out = `
+      <!-- Foreground terracotta pot outer shell with arched doorway cut out (evenodd) -->
+      <path d="M122 164 L146 54 L274 54 L298 164 Z M168 165 L168 108 A42 42 0 0 1 252 108 L252 165 Z" fill="url(#hPotClay_${phase})" fill-rule="evenodd"/>
+      <path d="M122 164 L146 54 L274 54 L298 164" fill="none" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M162 164 L162 104 A48 48 0 0 1 258 104 L258 164 L252 164 L252 108 A42 42 0 0 0 168 108 L168 164 Z" fill="#5c280a"/>
+      <rect x="136" y="40" width="148" height="17" rx="6" fill="${clayStops[1]}" stroke="${stroke}" stroke-width="1.9"/>
+      <line x1="146" y1="46" x2="274" y2="46" stroke="#fed7aa" stroke-width="1.4" opacity="${isNight ? "0.22" : "0.45"}"/>
+      <path d="M150 56 Q142 74 152 88 Q146 100 154 112" stroke="${isNight ? "#14532d" : "#15803d"}" stroke-width="2" fill="none"/>
+      <circle cx="144" cy="70" r="4" fill="${isNight ? "#15803d" : "#22c55e"}"/><circle cx="154" cy="84" r="3.6" fill="${isNight ? "#166534" : "#16a34a"}"/><circle cx="147" cy="98" r="3.5" fill="${isNight ? "#15803d" : "#4ade80"}"/>
+    `;
+  }
+  _fgSvgCache.set(cacheKey, out);
+  return out;
+}
+
 function _buildHouseBackdropSvg(houseId, dayPhase = { phase: "day", isNight: false }) {
   const phase = (dayPhase && dayPhase.phase) || "day";
   const isNight = phase === "night";
@@ -14802,6 +14834,12 @@ function updateHomeBunnyTransformDom() {
     sh.setAttribute("ry", (2.6 * shScale).toFixed(2));
     sh.setAttribute("opacity", Math.max(0.12, 0.28 - hop * 0.014).toFixed(2));
   }
+  // 2.5D depth sorting: when TooToo is inside a shelter arch (y <= doorY), front wall/roof occludes bunny!
+  const fg = document.getElementById("homeStageForeground");
+  if (fg) {
+    const doorY = Number(fg.dataset.doorY || 168);
+    fg.style.display = homeBunnyPos.y <= doorY ? "inline" : "none";
+  }
 }
 
 function stopHomeBunnyWalk() {
@@ -14946,10 +14984,13 @@ function walkHomeBunnyTo(targetX, targetY, rawClickY = targetY, opts = {}) {
   if (clickedHotTable && hotTbl) {
     tx = hotTbl.standX;
     ty = hotTbl.standY;
-  } else if (house.weatherMode === "shelter" && rawClickY >= 88 && rawClickY < 166 && tx >= 164 && tx <= 256) {
-    // Clicked inside any T2 shelter arch -> walk right into the dry cozy shelter!
-    tx = Math.max(182, Math.min(214, tx));
+  } else if (house.weatherMode === "shelter" && rawClickY >= 78 && rawClickY <= 168 && tx >= 156 && tx <= 264) {
+    // Clicked inside any T2 shelter doorway -> tuck snugly inside the dry shelter arch!
+    tx = Math.max(182, Math.min(226, tx));
     ty = 162;
+  } else if (house.weatherMode === "shelter" && ty <= 168 && tx >= 104 && tx <= 316) {
+    // Clicked on the solid outer wall of a T2 shelter -> step to the front lawn in front of the wall instead of clipping inside solid stone/clay!
+    ty = 176;
   } else if (worldW > 420 && homeCamera.x < 30 && targetX >= 378 && targetX <= 420 && !opts.exact) {
     // Clicked right on the far-right glass doorway while indoors -> step right out onto the terrace!
     tx = 478;
@@ -15786,6 +15827,12 @@ function renderHomeStage(freshDecorSlot = null, twirlBunny = false, forceRedraw 
 
   const defs = renderHomeStageDefs();
   const backdrop = renderHouseBackdropSvg(house.id, dayPhase);
+  const foreground = renderHouseForegroundSvg(house.id, dayPhase);
+  const fgDoorY = 168;
+  const fgVisible = !!foreground && homeBunnyPos.y <= fgDoorY;
+  const fgLayer = foreground
+    ? `<g id="homeStageForeground" data-door-y="${fgDoorY}" pointer-events="none" style="display:${fgVisible ? "inline" : "none"}">${foreground}</g>`
+    : "";
   const wLayers = hasWeather ? renderWeatherLayerSvg(house.id, weather, dayPhase) : { under: "", over: "" };
   const decorLayer = renderDecorLayerSvg(view.decor, house.slots, freshDecorSlot, house.id);
   const hotTableLayer = renderHomeHotTableSvg(house.id, !!homeBunnyClimate.condition);
@@ -15810,7 +15857,7 @@ function renderHomeStage(freshDecorSlot = null, twirlBunny = false, forceRedraw 
     </g>
   `;
 
-  svgEl.innerHTML = `${defs}<g id="homeStageWorld" transform="translate(${(-homeCamera.x).toFixed(2)}, 0)">${backdrop}${wLayers.under}${decorLayer}${hotTableLayer}${bunnyGroup}${wLayers.over}</g>`;
+  svgEl.innerHTML = `${defs}<g id="homeStageWorld" transform="translate(${(-homeCamera.x).toFixed(2)}, 0)">${backdrop}${wLayers.under}${decorLayer}${hotTableLayer}${bunnyGroup}${fgLayer}${wLayers.over}</g>`;
   syncHomeZoneBtnDom();
 
   if (homeBunnyClimate.condition && !homeBunnyClimate.sneezeTimer && document.getElementById("homeModal")?.classList.contains("open")) {
