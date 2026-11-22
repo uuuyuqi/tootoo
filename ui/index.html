@@ -3242,6 +3242,373 @@
     100% { background-position: 220% 50%; }
   }
 
+  /* ---- FULL-SCREEN CINEMATIC GACHA REVEAL OVERLAY (N / R / SR / SSR) ---- */
+  .gacha-cinema {
+    position: fixed;
+    inset: 0;
+    z-index: 2600;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    animation: gcFadeIn 0.22s ease forwards;
+  }
+  .gacha-cinema.open { display: flex; }
+  .gacha-cinema.shake-ssr { animation: gcScreenShakeHard 0.48s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+  .gacha-cinema.shake-sr  { animation: gcScreenShakeMed 0.34s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+
+  /* Tiered Full-Screen Atmosphere Backdrops */
+  .gacha-cinema.tier-N   { background: radial-gradient(circle at 50% 48%, rgba(250, 246, 239, 0.72), rgba(30, 25, 22, 0.62) 85%); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
+  .gacha-cinema.tier-R   { background: radial-gradient(circle at 50% 46%, rgba(14, 116, 144, 0.72), rgba(7, 25, 52, 0.92) 78%); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+  .gacha-cinema.tier-SR  { background: radial-gradient(circle at 50% 46%, rgba(126, 34, 206, 0.76), rgba(32, 10, 58, 0.94) 68%, rgba(12, 4, 24, 0.98)); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  .gacha-cinema.tier-SSR { background: radial-gradient(circle at 50% 45%, rgba(217, 119, 6, 0.62), rgba(88, 28, 135, 0.78) 46%, rgba(10, 6, 22, 0.97) 84%); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+
+  .gacha-cinema-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /* Full-Screen Rotating Celestial God-Rays */
+  .gc-rays {
+    position: absolute;
+    left: 50%;
+    top: 46%;
+    width: 150vmax;
+    height: 150vmax;
+    margin-left: -75vmax;
+    margin-top: -75vmax;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+  }
+  .gacha-cinema.revealed .gc-rays { opacity: 1; }
+  .gacha-cinema.tier-N .gc-rays { display: none; }
+  .gacha-cinema.tier-R .gc-rays {
+    background: repeating-conic-gradient(from 0deg, rgba(56, 189, 248, 0.16) 0deg 9deg, transparent 9deg 45deg);
+    animation: gachaHaloSpin 26s linear infinite;
+  }
+  .gacha-cinema.tier-SR .gc-rays {
+    background: repeating-conic-gradient(from 0deg, rgba(192, 132, 252, 0.24) 0deg 10deg, rgba(244, 114, 182, 0.12) 10deg 16deg, transparent 16deg 30deg);
+    animation: gachaHaloSpin 18s linear infinite;
+  }
+  .gacha-cinema.tier-SSR .gc-rays {
+    background: repeating-conic-gradient(from 0deg, rgba(254, 240, 138, 0.34) 0deg 9deg, rgba(245, 158, 11, 0.18) 9deg 14deg, transparent 14deg 22.5deg);
+    animation: gachaHaloSpin 13s linear infinite;
+  }
+
+  /* Sky Meteor Beam (Phase 1) */
+  .gc-beam {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 4px;
+    height: 48%;
+    transform: translateX(-50%) scaleY(0);
+    transform-origin: top center;
+    pointer-events: none;
+    z-index: 3;
+    opacity: 0;
+  }
+  .gacha-cinema.charging .gc-beam {
+    animation: gcBeamDrop 0.36s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  .gacha-cinema.tier-R .gc-beam   { width: 6px; background: linear-gradient(180deg, transparent, #38bdf8, #e0f2fe); box-shadow: 0 0 24px #38bdf8; }
+  .gacha-cinema.tier-SR .gc-beam  { width: 12px; background: linear-gradient(180deg, transparent, #a855f7, #f472b6, #fff); box-shadow: 0 0 42px #c084fc; }
+  .gacha-cinema.tier-SSR .gc-beam { width: 22px; background: linear-gradient(180deg, transparent, #f59e0b, #fef08a, #fff); box-shadow: 0 0 68px #fbbf24, 0 0 28px #fff; }
+
+  /* Full-Screen Blinding Impact Flash */
+  .gc-flash {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 5;
+    opacity: 0;
+  }
+  .gacha-cinema.revealed.tier-R .gc-flash   { background: radial-gradient(circle, rgba(224, 242, 254, 0.72), rgba(56, 189, 248, 0.25) 60%, transparent); animation: gcFlashBoom 0.55s ease-out forwards; }
+  .gacha-cinema.revealed.tier-SR .gc-flash  { background: radial-gradient(circle, rgba(255, 255, 255, 0.92), rgba(192, 132, 252, 0.55) 55%, transparent); animation: gcFlashBoom 0.68s ease-out forwards; }
+  .gacha-cinema.revealed.tier-SSR .gc-flash { background: radial-gradient(circle, #ffffff 10%, rgba(254, 240, 138, 0.92) 48%, rgba(245, 158, 11, 0.45) 82%, transparent); animation: gcFlashBoom 0.85s ease-out forwards; }
+
+  /* Expanding Full-Screen Shockwave Rings */
+  .gc-ring {
+    position: absolute;
+    left: 50%;
+    top: 46%;
+    width: 40px;
+    height: 40px;
+    margin-left: -20px;
+    margin-top: -20px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 3;
+    opacity: 0;
+  }
+  .gacha-cinema.revealed .gc-ring.r1 { animation: gcShockRing 0.78s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  .gacha-cinema.revealed .gc-ring.r2 { animation: gcShockRing 0.92s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards; }
+  .gacha-cinema.revealed .gc-ring.r3 { animation: gcShockRing 1.08s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards; }
+  .gacha-cinema.tier-R .gc-ring   { border: 2.5px solid #38bdf8; box-shadow: 0 0 18px #38bdf8; }
+  .gacha-cinema.tier-SR .gc-ring  { border: 3px solid #d8b4fe; box-shadow: 0 0 26px #a855f7, inset 0 0 18px #ec4899; }
+  .gacha-cinema.tier-SSR .gc-ring { border: 3.5px solid #fef08a; box-shadow: 0 0 38px #f59e0b, 0 0 16px #fff, inset 0 0 24px #fbbf24; }
+  .gacha-cinema.tier-N .gc-ring   { display: none; }
+
+  /* Phase 1: Charging Giant Capsule in Center */
+  .gc-capsule-wrap {
+    position: absolute;
+    left: 50%;
+    top: 46%;
+    transform: translate(-50%, -50%);
+    z-index: 4;
+    pointer-events: none;
+    opacity: 0;
+  }
+  .gacha-cinema.charging .gc-capsule-wrap {
+    opacity: 1;
+    animation: gcCapCharge 0.38s ease-in-out forwards;
+  }
+  .gacha-cinema.revealed .gc-capsule-wrap { opacity: 0; display: none; }
+
+  /* Phase 2: Hero 3D Collectible Reveal Card */
+  .gc-stage {
+    position: relative;
+    z-index: 4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 16px;
+    width: 100%;
+    max-width: 344px;
+    opacity: 0;
+    transform: scale(0.42) translateY(24px);
+    pointer-events: none;
+  }
+  .gacha-cinema.revealed .gc-stage {
+    pointer-events: auto;
+    animation: gcCardSlam 0.52s cubic-bezier(0.18, 1.38, 0.32, 1) forwards;
+  }
+  .gc-card {
+    position: relative;
+    width: 100%;
+    padding: 22px 20px 20px;
+    border-radius: 18px;
+    text-align: center;
+    overflow: hidden;
+    transform-style: preserve-3d;
+    transition: transform 0.14s ease-out;
+  }
+  .gc-card::before {
+    content: "";
+    position: absolute;
+    inset: -60% -80%;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .gc-card > * { position: relative; z-index: 2; }
+
+  .gacha-cinema.tier-N .gc-card {
+    background: linear-gradient(160deg, #faf7f2, #efeae0);
+    border: 2px solid #d6cfc2;
+    box-shadow: 0 18px 42px rgba(20, 16, 12, 0.28);
+    color: #292524;
+  }
+  .gacha-cinema.tier-R .gc-card {
+    background: linear-gradient(155deg, #0c2744, #0f3b66 52%, #08203a);
+    border: 2px solid #38bdf8;
+    box-shadow: 0 0 42px rgba(56, 189, 248, 0.45), 0 18px 44px rgba(2, 12, 28, 0.72), inset 0 0 26px rgba(125, 211, 252, 0.2);
+    color: #f0f9ff;
+  }
+  .gacha-cinema.tier-R .gc-card::before {
+    background: linear-gradient(115deg, transparent 36%, rgba(186, 230, 253, 0.32) 50%, transparent 64%);
+    animation: gachaFoilSweep 3.2s ease-in-out infinite;
+  }
+  .gacha-cinema.tier-SR .gc-card {
+    background: linear-gradient(150deg, #270e4a, #4c1d95 45%, #831843 85%, #240c3d);
+    border: 2.2px solid #d8b4fe;
+    box-shadow: 0 0 58px rgba(168, 85, 247, 0.65), 0 0 20px rgba(236, 72, 153, 0.45), 0 22px 50px rgba(10, 4, 24, 0.8), inset 0 0 32px rgba(233, 213, 255, 0.22);
+    color: #fdf4ff;
+  }
+  .gacha-cinema.tier-SR .gc-card::before {
+    background: linear-gradient(115deg, transparent 32%, rgba(255, 255, 255, 0.42) 47%, rgba(244, 114, 182, 0.35) 54%, transparent 66%);
+    animation: gachaFoilSweep 2.2s ease-in-out infinite;
+  }
+  .gacha-cinema.tier-SSR .gc-card {
+    background: linear-gradient(145deg, #2a1808, #5c2d0c 32%, #4c1d6e 68%, #1e120a);
+    border: 2.5px solid #fde047;
+    box-shadow: 0 0 74px rgba(245, 158, 11, 0.78), 0 0 28px rgba(254, 240, 138, 0.62), 0 24px 56px rgba(0, 0, 0, 0.85), inset 0 0 38px rgba(254, 240, 138, 0.28);
+    color: #fffbeb;
+  }
+  .gacha-cinema.tier-SSR .gc-card::before {
+    background: linear-gradient(112deg, transparent 28%, rgba(255, 255, 255, 0.62) 45%, rgba(253, 224, 71, 0.48) 52%, rgba(244, 114, 182, 0.36) 58%, transparent 72%);
+    animation: gachaFoilSweep 1.65s ease-in-out infinite;
+  }
+
+  .gc-tier-banner {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    margin-bottom: 12px;
+  }
+  .gacha-cinema.tier-N .gc-tier-banner   { background: #e7e2d8; color: #57534e; }
+  .gacha-cinema.tier-R .gc-tier-banner   { background: linear-gradient(90deg, #0284c7, #38bdf8); color: #fff; box-shadow: 0 4px 14px rgba(56, 189, 248, 0.5); }
+  .gacha-cinema.tier-SR .gc-tier-banner  { background: linear-gradient(90deg, #9333ea, #ec4899); color: #fff; box-shadow: 0 4px 18px rgba(192, 132, 252, 0.6); }
+  .gacha-cinema.tier-SSR .gc-tier-banner { background: linear-gradient(90deg, #f59e0b, #f97316, #ec4899, #eab308); background-size: 220% 100%; color: #fff; box-shadow: 0 4px 24px rgba(251, 191, 36, 0.72); animation: gachaBadgeShimmer 2s linear infinite; }
+
+  .gc-emblem {
+    width: 78px;
+    height: 78px;
+    margin: 0 auto 12px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    position: relative;
+    animation: gachaIdleFloat 2.4s ease-in-out infinite;
+  }
+  .gacha-cinema.tier-N .gc-emblem   { background: #ffffff; border: 2px solid #d6cfc2; box-shadow: 0 4px 14px rgba(0,0,0,0.08); }
+  .gacha-cinema.tier-R .gc-emblem   { background: radial-gradient(circle, rgba(125,211,252,0.38), rgba(14,165,233,0.12)); border: 2px solid #7dd3fc; box-shadow: 0 0 28px rgba(56,189,248,0.62); }
+  .gacha-cinema.tier-SR .gc-emblem  { background: radial-gradient(circle, rgba(233,213,255,0.45), rgba(168,85,247,0.16)); border: 2.2px solid #f0abfc; box-shadow: 0 0 36px rgba(192,132,252,0.75); }
+  .gacha-cinema.tier-SSR .gc-emblem { background: radial-gradient(circle, rgba(254,240,138,0.65), rgba(245,158,11,0.22)); border: 2.5px solid #fef08a; box-shadow: 0 0 46px rgba(251,191,36,0.9), 0 0 18px #fff; }
+
+  .gc-title {
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: 0.02em;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .gacha-cinema.tier-SSR .gc-title {
+    background: linear-gradient(90deg, #fffbeb, #fde047, #fb923c, #fef08a);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 2px 10px rgba(245, 158, 11, 0.55));
+  }
+  .gc-desc {
+    font-size: 12px;
+    line-height: 1.55;
+    opacity: 0.88;
+  }
+  .gc-new-ribbon {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #f97316, #ef4444);
+    color: #fff;
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 900;
+    box-shadow: 0 2px 10px rgba(239, 68, 68, 0.5);
+  }
+  .gc-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+  }
+  .gc-btn {
+    border: none;
+    border-radius: 999px;
+    padding: 8px 18px;
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform 0.16s ease, box-shadow 0.18s ease, opacity 0.16s ease;
+  }
+  .gc-btn:hover { transform: translateY(-2px) scale(1.03); }
+  .gc-btn:active { transform: scale(0.96); }
+  .gc-btn.primary {
+    background: linear-gradient(135deg, #f97316, #ef4444);
+    color: #fff;
+    box-shadow: 0 6px 20px rgba(249, 115, 22, 0.45);
+  }
+  .gacha-cinema.tier-SSR .gc-btn.primary {
+    background: linear-gradient(135deg, #f59e0b, #f97316, #ec4899);
+    box-shadow: 0 6px 24px rgba(245, 158, 11, 0.6);
+  }
+  .gc-btn.secondary {
+    background: rgba(255, 255, 255, 0.16);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.34);
+    backdrop-filter: blur(8px);
+  }
+  .gacha-cinema.tier-N .gc-btn.secondary {
+    background: rgba(255, 255, 255, 0.92);
+    color: #44403c;
+    border-color: #d6cfc2;
+  }
+  .gc-hint {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.68);
+    letter-spacing: 0.04em;
+  }
+  .gacha-cinema.tier-N .gc-hint { color: rgba(41, 37, 36, 0.62); }
+
+  @keyframes gcFadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes gcBeamDrop {
+    0%   { transform: translateX(-50%) scaleY(0); opacity: 0.4; }
+    65%  { transform: translateX(-50%) scaleY(1.06); opacity: 1; }
+    100% { transform: translateX(-50%) scaleY(1); opacity: 0; }
+  }
+  @keyframes gcCapCharge {
+    0%   { transform: translate(-50%, -180%) scale(0.45) rotate(-18deg); opacity: 0.6; }
+    52%  { transform: translate(-50%, -50%) scale(1.08) rotate(8deg); opacity: 1; }
+    72%  { transform: translate(-52%, -48%) scale(1.18) rotate(-12deg); opacity: 1; }
+    88%  { transform: translate(-48%, -52%) scale(1.32) rotate(12deg); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1.55); opacity: 0; }
+  }
+  @keyframes gcFlashBoom {
+    0%   { opacity: 1; }
+    35%  { opacity: 0.85; }
+    100% { opacity: 0; }
+  }
+  @keyframes gcShockRing {
+    0%   { transform: scale(0.5); opacity: 1; }
+    100% { transform: scale(22); opacity: 0; }
+  }
+  @keyframes gcCardSlam {
+    0%   { opacity: 0; transform: scale(0.35) translateY(28px); }
+    68%  { opacity: 1; transform: scale(1.04) translateY(-3px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  @keyframes gcScreenShakeHard {
+    0%, 100% { transform: translate(0, 0); }
+    12% { transform: translate(-7px, 5px); }
+    25% { transform: translate(8px, -6px); }
+    38% { transform: translate(-6px, -5px); }
+    52% { transform: translate(6px, 5px); }
+    68% { transform: translate(-4px, 3px); }
+    84% { transform: translate(3px, -2px); }
+  }
+  @keyframes gcScreenShakeMed {
+    0%, 100% { transform: translate(0, 0); }
+    20% { transform: translate(-4px, 3px); }
+    45% { transform: translate(4px, -3px); }
+    70% { transform: translate(-2px, 2px); }
+  }
+
   /* ---- Carrot Coin Wallet Pill, Token->Carrot Exchange Card & KPI Link ---- */
   .carrot-wallet-pill {
     display: inline-flex;
@@ -7074,6 +7441,23 @@
   </div>
 </div>
 <div class="fx-layer" id="fxLayer"></div>
+
+<!-- FULL-SCREEN CINEMATIC GACHA REVEAL OVERLAY -->
+<div class="gacha-cinema" id="gachaCinema" role="dialog" aria-modal="true">
+  <div class="gc-rays"></div>
+  <canvas class="gacha-cinema-canvas" id="gachaCinemaCanvas"></canvas>
+  <div class="gc-beam"></div>
+  <div class="gc-ring r1"></div>
+  <div class="gc-ring r2"></div>
+  <div class="gc-ring r3"></div>
+  <div class="gc-capsule-wrap" id="gcCapsuleWrap"></div>
+  <div class="gc-stage" id="gcStage">
+    <div class="gc-card" id="gcCard"></div>
+    <div class="gc-actions" id="gcActions"></div>
+    <div class="gc-hint">点击空白处或按 ESC 收起</div>
+  </div>
+  <div class="gc-flash"></div>
+</div>
 
 <script src="/ui/tootoo_catalog.js"></script>
 <script src="/ui/tootoo_art_houses.js"></script>
@@ -12709,12 +13093,297 @@ document.getElementById("gachaPullBtn").addEventListener("click", () => {
     } else {
       playSfx("token");
     }
-  }, 600);
+    if (typeof gachaCinemaCtrl !== "undefined") {
+      gachaCinemaCtrl.show(pick, isNew, debugState.active);
+    }
+  }, 480);
 });
 document.getElementById("gachaMachine")?.addEventListener("click", () => {
   const btn = document.getElementById("gachaPullBtn");
   if (btn && !btn.disabled) btn.click();
 });
+
+// ---- Full-Screen 60fps Canvas & Cinematic Gacha Reveal Controller ----
+const gachaCinemaCtrl = (() => {
+  const el = document.getElementById("gachaCinema");
+  const canvas = document.getElementById("gachaCinemaCanvas");
+  const capWrap = document.getElementById("gcCapsuleWrap");
+  const cardEl = document.getElementById("gcCard");
+  const actEl = document.getElementById("gcActions");
+  let rafId = null;
+  let revealTimer = null;
+  let particles = [];
+  let meteors = [];
+
+  const PALETTE = {
+    SSR: ["#fef08a", "#fbbf24", "#f59e0b", "#f97316", "#ec4899", "#38bdf8", "#ffffff"],
+    SR:  ["#f0abfc", "#d8b4fe", "#a855f7", "#ec4899", "#f472b6", "#fef08a", "#ffffff"],
+    R:   ["#e0f2fe", "#7dd3fc", "#38bdf8", "#0ea5e9", "#93c5fd", "#ffffff"],
+    N:   ["#fed7aa", "#fde68a", "#e7e5e4", "#fb923c", "#ffffff"],
+  };
+
+  function capsuleSvg(tier) {
+    const map = {
+      SSR: { top: "#f59e0b", bot: "#fffbeb", rim: "#fef08a", glow: "#fbbf24" },
+      SR:  { top: "#a855f7", bot: "#fdf4ff", rim: "#f0abfc", glow: "#c084fc" },
+      R:   { top: "#0284c7", bot: "#f0f9ff", rim: "#7dd3fc", glow: "#38bdf8" },
+      N:   { top: "#fb923c", bot: "#fff7ed", rim: "#fed7aa", glow: "#fdba74" },
+    };
+    const c = map[tier] || map.N;
+    return `<svg width="92" height="92" viewBox="0 0 92 92" style="filter:drop-shadow(0 0 24px ${c.glow})">
+      <circle cx="46" cy="46" r="36" fill="${c.top}" stroke="${c.rim}" stroke-width="3.2"/>
+      <path d="M10.5 46 A35.5 35.5 0 0 0 81.5 46 Z" fill="${c.bot}"/>
+      <line x1="10" y1="46" x2="82" y2="46" stroke="${c.rim}" stroke-width="3"/>
+      <circle cx="46" cy="46" r="8.5" fill="#fff" stroke="${c.rim}" stroke-width="2.6"/>
+      <path d="M26 28 A26 26 0 0 1 48 16" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity="0.82"/>
+    </svg>`;
+  }
+
+  function resizeCanvas() {
+    if (!canvas) return { w: 400, h: 600 };
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const w = window.innerWidth || 420;
+    const h = window.innerHeight || 640;
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    const ctx = canvas.getContext("2d");
+    if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { w, h };
+  }
+
+  function spawnBurst(tier, w, h) {
+    const cx = w * 0.5, cy = h * 0.46;
+    const cols = PALETTE[tier] || PALETTE.N;
+    const count = tier === "SSR" ? 135 : (tier === "SR" ? 85 : (tier === "R" ? 42 : 16));
+    const shapes = tier === "SSR" ? ["star", "diamond", "ribbon", "orb"] : (tier === "SR" ? ["star", "diamond", "orb"] : ["diamond", "orb"]);
+    for (let i = 0; i < count; i++) {
+      const ang = Math.random() * Math.PI * 2;
+      const spd = (tier === "SSR" ? 150 : (tier === "SR" ? 115 : 85)) + Math.random() * (tier === "SSR" ? 420 : (tier === "SR" ? 300 : 180));
+      particles.push({
+        x: cx + (Math.random() - 0.5) * 20,
+        y: cy + (Math.random() - 0.5) * 20,
+        vx: Math.cos(ang) * spd,
+        vy: Math.sin(ang) * spd - (tier === "SSR" ? 80 : 40),
+        size: (tier === "SSR" ? 3.2 : 2.6) + Math.random() * (tier === "SSR" ? 5.2 : 3.8),
+        color: cols[Math.floor(Math.random() * cols.length)],
+        shape: shapes[Math.floor(Math.random() * shapes.length)],
+        rot: Math.random() * Math.PI * 2,
+        vrot: (Math.random() - 0.5) * 9,
+        life: 1.0,
+        decay: 0.34 + Math.random() * 0.45,
+        gravity: 170 + Math.random() * 140,
+      });
+    }
+    // Add diagonal shooting meteors across screen for SR & SSR!
+    const mCount = tier === "SSR" ? 14 : (tier === "SR" ? 7 : (tier === "R" ? 3 : 0));
+    for (let i = 0; i < mCount; i++) {
+      meteors.push({
+        x: Math.random() * w * 1.15,
+        y: -20 - Math.random() * h * 0.45,
+        vx: -260 - Math.random() * 240,
+        vy: 340 + Math.random() * 280,
+        len: 42 + Math.random() * 54,
+        color: cols[Math.floor(Math.random() * cols.length)],
+        alpha: 0.95,
+      });
+    }
+  }
+
+  function spawnAmbient(tier, w, h) {
+    if (tier === "N") return;
+    const cols = PALETTE[tier] || PALETTE.R;
+    const chance = tier === "SSR" ? 0.55 : (tier === "SR" ? 0.32 : 0.14);
+    if (Math.random() < chance) {
+      particles.push({
+        x: Math.random() * w,
+        y: h + 8,
+        vx: (Math.random() - 0.5) * 32,
+        vy: -(70 + Math.random() * 120),
+        size: 2.2 + Math.random() * 3.8,
+        color: cols[Math.floor(Math.random() * cols.length)],
+        shape: tier === "SSR" ? "star" : "diamond",
+        rot: Math.random() * Math.PI,
+        vrot: (Math.random() - 0.5) * 4,
+        life: 1.0,
+        decay: 0.45 + Math.random() * 0.35,
+        gravity: -14,
+      });
+    }
+  }
+
+  function drawStar(ctx, r) {
+    ctx.beginPath();
+    for (let i = 0; i < 8; i++) {
+      const a = (i * Math.PI) / 4;
+      const rad = i % 2 === 0 ? r : r * 0.36;
+      if (i === 0) ctx.moveTo(Math.cos(a) * rad, Math.sin(a) * rad);
+      else ctx.lineTo(Math.cos(a) * rad, Math.sin(a) * rad);
+    }
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  let activeTier = "N";
+  let lastTs = 0;
+  function tick(ts) {
+    if (!el || !el.classList.contains("open")) {
+      rafId = null;
+      return;
+    }
+    const dt = lastTs ? Math.min(0.032, (ts - lastTs) / 1000) : 0.016;
+    lastTs = ts;
+    const ctx = canvas.getContext("2d");
+    const w = window.innerWidth || 420;
+    const h = window.innerHeight || 640;
+    ctx.clearRect(0, 0, w, h);
+
+    if (el.classList.contains("revealed")) spawnAmbient(activeTier, w, h);
+
+    // Draw shooting meteors
+    for (let i = meteors.length - 1; i >= 0; i--) {
+      const m = meteors[i];
+      m.x += m.vx * dt;
+      m.y += m.vy * dt;
+      m.alpha -= dt * 0.95;
+      if (m.alpha <= 0 || m.y > h + 80) { meteors.splice(i, 1); continue; }
+      const grad = ctx.createLinearGradient(m.x, m.y, m.x - m.vx * 0.14, m.y - m.vy * 0.14);
+      grad.addColorStop(0, m.color);
+      grad.addColorStop(1, "transparent");
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, m.alpha);
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = activeTier === "SSR" ? 3 : 2;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(m.x, m.y);
+      ctx.lineTo(m.x - m.vx * 0.14, m.y - m.vy * 0.14);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Draw burst & ambient particles
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.vy += p.gravity * dt;
+      p.vx *= 0.975;
+      p.vy *= 0.985;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.rot += p.vrot * dt;
+      p.life -= p.decay * dt;
+      if (p.life <= 0) { particles.splice(i, 1); continue; }
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, Math.min(1, p.life));
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.fillStyle = p.color;
+      if (activeTier === "SSR" || activeTier === "SR") {
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = activeTier === "SSR" ? 10 : 6;
+      }
+      if (p.shape === "star") {
+        drawStar(ctx, p.size);
+      } else if (p.shape === "diamond") {
+        ctx.beginPath();
+        ctx.moveTo(0, -p.size); ctx.lineTo(p.size * 0.65, 0); ctx.lineTo(0, p.size); ctx.lineTo(-p.size * 0.65, 0);
+        ctx.closePath(); ctx.fill();
+      } else if (p.shape === "ribbon") {
+        ctx.fillRect(-p.size * 0.9, -p.size * 0.35, p.size * 1.8, p.size * 0.7);
+      } else {
+        ctx.beginPath(); ctx.arc(0, 0, p.size * 0.55, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.restore();
+    }
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function close() {
+    if (revealTimer) { clearTimeout(revealTimer); revealTimer = null; }
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+    particles = [];
+    meteors = [];
+    if (el) el.className = "gacha-cinema";
+    if (cardEl) cardEl.style.transform = "";
+  }
+
+  function show(pick, isNew, isSandbox) {
+    if (!el || !canvas || !cardEl || !actEl) return;
+    close();
+    activeTier = pick.r || "N";
+    const { w, h } = resizeCanvas();
+
+    const tierLabel = {
+      SSR: "👑 SSR · 传世神话",
+      SR:  "★ SR · 超稀有",
+      R:   "◆ R · 稀有",
+      N:   "普通 · 幸运签",
+    }[activeTier] || "普通";
+
+    capWrap.innerHTML = capsuleSvg(activeTier);
+    cardEl.innerHTML = `
+      <div class="gc-tier-banner">${tierLabel}${isSandbox ? " · 沙盒" : ""}</div>
+      <div class="gc-emblem">${pick.icon}</div>
+      <div class="gc-title">
+        <span>${pick.name}</span>
+        ${isNew ? `<span class="gc-new-ribbon">NEW!</span>` : ""}
+      </div>
+      <div class="gc-desc">${pick.desc}</div>
+    `;
+    const cs = getGachaCoinState();
+    const canAgain = cs.balance > 0;
+    actEl.innerHTML = `
+      ${canAgain ? `<button type="button" class="gc-btn primary" id="gcPullAgainBtn">🥕 再扭一颗 (剩 ${cs.balance} 币)</button>` : ""}
+      <button type="button" class="gc-btn secondary" id="gcCloseBtn">${activeTier === "SSR" ? "👑 供奉入图鉴" : "✨ 收下"}</button>
+    `;
+    document.getElementById("gcCloseBtn")?.addEventListener("click", (e) => { e.stopPropagation(); close(); });
+    document.getElementById("gcPullAgainBtn")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      close();
+      const btn = document.getElementById("gachaPullBtn");
+      if (btn && !btn.disabled) btn.click();
+    });
+
+    el.className = `gacha-cinema open tier-${activeTier} charging`;
+    lastTs = 0;
+    rafId = requestAnimationFrame(tick);
+
+    const chargeMs = activeTier === "SSR" ? 390 : (activeTier === "SR" ? 310 : (activeTier === "R" ? 220 : 120));
+    revealTimer = setTimeout(() => {
+      el.classList.remove("charging");
+      el.classList.add("revealed");
+      if (activeTier === "SSR") el.classList.add("shake-ssr");
+      else if (activeTier === "SR") el.classList.add("shake-sr");
+      spawnBurst(activeTier, w, h);
+      if (activeTier === "SSR") {
+        // Secondary celebratory firework burst 280ms later!
+        setTimeout(() => {
+          if (el.classList.contains("open")) spawnBurst("SSR", w, h);
+        }, 280);
+      }
+    }, chargeMs);
+  }
+
+  // Interactive 3D holographic tilt on mousemove over hero card
+  if (cardEl) {
+    cardEl.addEventListener("mousemove", (e) => {
+      const r = cardEl.getBoundingClientRect();
+      const rx = ((e.clientY - r.top) / r.height - 0.5) * -14;
+      const ry = ((e.clientX - r.left) / r.width - 0.5) * 16;
+      cardEl.style.transform = `perspective(720px) rotateX(${rx.toFixed(1)}deg) rotateY(${ry.toFixed(1)}deg) scale(1.02)`;
+    });
+    cardEl.addEventListener("mouseleave", () => {
+      cardEl.style.transform = "";
+    });
+  }
+  el?.addEventListener("click", (e) => {
+    if (e.target === el || e.target.classList.contains("gc-hint")) close();
+  });
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && el?.classList.contains("open")) close();
+  });
+
+  return { show, close };
+})();
 
 // ---- Real 2D Rigid-Body Capsule Physics inside the Crystal Gacha Dome ----
 const gachaDomeSim = (() => {
