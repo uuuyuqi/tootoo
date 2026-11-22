@@ -3025,20 +3025,12 @@
   .gacha-machine:hover .gm-ear-l { animation: gmEarWiggleL 0.65s ease-in-out infinite; }
   .gacha-machine:hover .gm-ear-r { animation: gmEarWiggleR 0.65s ease-in-out infinite 0.08s; }
   .gacha-machine:hover .gm-crank { transform: rotate(72deg); }
-  .gacha-machine:hover .gm-cap-1 { animation: gmCapBounce 0.55s ease-in-out infinite; }
-  .gacha-machine:hover .gm-cap-2 { animation: gmCapBounce 0.62s ease-in-out infinite 0.12s; }
-  .gacha-machine:hover .gm-cap-3 { animation: gmCapBounce 0.52s ease-in-out infinite 0.22s; }
   .gacha-machine:hover .gm-spark { opacity: 1; animation: gmSparkPop 0.9s ease-in-out infinite; }
   .gacha-machine.shaking {
     animation: gachaShake 0.58s ease-in-out !important;
   }
   .gacha-machine.shaking .gm-crank {
     animation: gmCrankSpin 0.56s cubic-bezier(0.3, 0.8, 0.4, 1);
-  }
-  .gacha-machine.shaking .gm-cap-1,
-  .gacha-machine.shaking .gm-cap-2,
-  .gacha-machine.shaking .gm-cap-3 {
-    animation: gmCapTumble 0.28s ease-in-out infinite;
   }
   .gacha-machine.res-R   { border-color: #38bdf8; box-shadow: 0 8px 24px rgba(56, 189, 248, 0.34); }
   .gacha-machine.res-SR  { border-color: #a855f7; box-shadow: 0 8px 26px rgba(168, 85, 247, 0.4); }
@@ -6789,6 +6781,9 @@
               <stop offset="55%" stop-color="#f59e0b"/>
               <stop offset="100%" stop-color="#d97706"/>
             </linearGradient>
+            <clipPath id="gmDomeClip">
+              <circle cx="56" cy="46" r="25.6"/>
+            </clipPath>
           </defs>
           <!-- Ambient sparkles around dome -->
           <path class="gm-spark" d="M16 32 L18 36 L22 38 L18 40 L16 44 L14 40 L10 38 L14 36 Z" fill="#f59e0b"/>
@@ -6806,40 +6801,57 @@
           </g>
           <!-- Machine soft base shadow -->
           <ellipse cx="56" cy="102" rx="30" ry="5" fill="#9a3412" opacity="0.16"/>
-          <!-- Crystal dome back -->
-          <circle cx="56" cy="46" r="27" fill="url(#gmDomeGlass)" stroke="#9a3412" stroke-width="2.4"/>
-          <!-- Colorful gacha capsules nestled inside the dome (bounce on hover!) -->
-          <g class="gm-cap-1">
-            <circle cx="43" cy="52" r="8.2" fill="#38bdf8" stroke="#0369a1" stroke-width="1.3"/>
-            <path d="M35.2 52 A8.2 8.2 0 0 0 50.8 52 Z" fill="#ffffff"/>
-            <line x1="35" y1="52" x2="51" y2="52" stroke="#0369a1" stroke-width="1"/>
+          <!-- Crystal dome interior glass fill (behind capsules) -->
+          <circle cx="56" cy="46" r="27" fill="url(#gmDomeGlass)"/>
+          <!-- 2D Rigid-body physics capsules strictly clipped inside crystal dome -->
+          <g id="gmCapsulesLayer" clip-path="url(#gmDomeClip)">
+            <!-- 0: Sky-blue R capsule -->
+            <g class="gm-ball" data-r="5.6" transform="translate(42, 54)">
+              <circle cx="0" cy="0" r="5.6" fill="#38bdf8" stroke="#0369a1" stroke-width="1.1"/>
+              <path d="M-5.4 0 A5.4 5.4 0 0 0 5.4 0 Z" fill="#ffffff"/>
+              <line x1="-5.5" y1="0" x2="5.5" y2="0" stroke="#0369a1" stroke-width="0.9"/>
+              <circle cx="-1.8" cy="-2.2" r="1.2" fill="#e0f2fe" opacity="0.9"/>
+            </g>
+            <!-- 1: Royal violet SR capsule -->
+            <g class="gm-ball" data-r="5.6" transform="translate(70, 54)">
+              <circle cx="0" cy="0" r="5.6" fill="#c084fc" stroke="#6b21a8" stroke-width="1.1"/>
+              <path d="M-5.4 0 A5.4 5.4 0 0 0 5.4 0 Z" fill="#fdf4ff"/>
+              <line x1="-5.5" y1="0" x2="5.5" y2="0" stroke="#6b21a8" stroke-width="0.9"/>
+              <circle cx="-1.8" cy="-2.2" r="1.2" fill="#f3e8ff" opacity="0.9"/>
+            </g>
+            <!-- 2: Golden SSR star capsule -->
+            <g class="gm-ball" data-r="6.1" transform="translate(56, 44)">
+              <circle cx="0" cy="0" r="6.1" fill="url(#gmGold)" stroke="#92400e" stroke-width="1.2"/>
+              <path d="M-5.9 0 A5.9 5.9 0 0 0 5.9 0 Z" fill="#fffbeb"/>
+              <line x1="-6" y1="0" x2="6" y2="0" stroke="#92400e" stroke-width="0.9"/>
+              <path d="M0 -4.5 L0.9 -2.3 L3.2 -2.1 L1.5 -0.6 L2 1.6 L0 0.4 L-2 1.6 L-1.5 -0.6 L-3.2 -2.1 L-0.9 -2.3 Z" fill="#fffbeb"/>
+            </g>
+            <!-- 3: Coral peach capsule -->
+            <g class="gm-ball" data-r="5.5" transform="translate(56, 55)">
+              <circle cx="0" cy="0" r="5.5" fill="#fb7185" stroke="#9f1239" stroke-width="1.1"/>
+              <path d="M-5.3 0 A5.3 5.3 0 0 0 5.3 0 Z" fill="#fff1f2"/>
+              <line x1="-5.4" y1="0" x2="5.4" y2="0" stroke="#9f1239" stroke-width="0.9"/>
+              <circle cx="-1.7" cy="-2.1" r="1.1" fill="#ffe4e6" opacity="0.9"/>
+            </g>
+            <!-- 4: Mint green capsule -->
+            <g class="gm-ball" data-r="5.3" transform="translate(46, 43)">
+              <circle cx="0" cy="0" r="5.3" fill="#34d399" stroke="#047857" stroke-width="1.1"/>
+              <path d="M-5.1 0 A5.1 5.1 0 0 0 5.1 0 Z" fill="#ecfdf5"/>
+              <line x1="-5.2" y1="0" x2="5.2" y2="0" stroke="#047857" stroke-width="0.9"/>
+              <circle cx="-1.6" cy="-2" r="1.1" fill="#d1fae5" opacity="0.9"/>
+            </g>
+            <!-- 5: Sakura pink capsule -->
+            <g class="gm-ball" data-r="5.3" transform="translate(66, 43)">
+              <circle cx="0" cy="0" r="5.3" fill="#f472b6" stroke="#9d174d" stroke-width="1.1"/>
+              <path d="M-5.1 0 A5.1 5.1 0 0 0 5.1 0 Z" fill="#fdf2f8"/>
+              <line x1="-5.2" y1="0" x2="5.2" y2="0" stroke="#9d174d" stroke-width="0.9"/>
+              <circle cx="-1.6" cy="-2" r="1.1" fill="#fce7f3" opacity="0.9"/>
+            </g>
           </g>
-          <g class="gm-cap-2">
-            <circle cx="68" cy="52" r="8.2" fill="#c084fc" stroke="#6b21a8" stroke-width="1.3"/>
-            <path d="M60.2 52 A8.2 8.2 0 0 0 75.8 52 Z" fill="#fdf4ff"/>
-            <line x1="60" y1="52" x2="76" y2="52" stroke="#6b21a8" stroke-width="1"/>
-          </g>
-          <g class="gm-cap-3">
-            <circle cx="56" cy="40" r="8.8" fill="url(#gmGold)" stroke="#92400e" stroke-width="1.4"/>
-            <path d="M47.4 40 A8.8 8.8 0 0 0 64.6 40 Z" fill="#fffbeb"/>
-            <line x1="47.2" y1="40" x2="64.8" y2="40" stroke="#92400e" stroke-width="1"/>
-            <path d="M56 33.4 L57.2 36.2 L60.2 36.5 L57.9 38.4 L58.6 41.2 L56 39.7 L53.4 41.2 L54.1 38.4 L51.8 36.5 L54.8 36.2 Z" fill="#fffbeb"/>
-          </g>
-          <g class="gm-cap-2">
-            <circle cx="56" cy="55" r="7.5" fill="#fb7185" stroke="#9f1239" stroke-width="1.2"/>
-            <path d="M48.8 55 A7.5 7.5 0 0 0 63.2 55 Z" fill="#fff1f2"/>
-          </g>
-          <g class="gm-cap-1">
-            <circle cx="43" cy="39" r="6.4" fill="#34d399" stroke="#047857" stroke-width="1.2"/>
-            <path d="M36.8 39 A6.4 6.4 0 0 0 49.2 39 Z" fill="#ecfdf5"/>
-          </g>
-          <g class="gm-cap-3">
-            <circle cx="69" cy="40" r="6.2" fill="#f472b6" stroke="#9d174d" stroke-width="1.2"/>
-            <path d="M63 40 A6.2 6.2 0 0 0 75 40 Z" fill="#fdf2f8"/>
-          </g>
-          <!-- Glossy curved glass specular highlight -->
-          <path d="M37 36 A21 21 0 0 1 56 23" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity="0.88"/>
-          <circle cx="34" cy="44" r="2.2" fill="#ffffff" opacity="0.85"/>
+          <!-- Glossy curved glass specular highlight + crisp outer glass rim ON TOP of capsules -->
+          <path d="M37 36 A21 21 0 0 1 56 23" fill="none" stroke="#ffffff" stroke-width="3.6" stroke-linecap="round" opacity="0.86"/>
+          <circle cx="34" cy="44" r="2.1" fill="#ffffff" opacity="0.82"/>
+          <circle cx="56" cy="46" r="27" fill="none" stroke="#9a3412" stroke-width="2.4"/>
           <!-- Dome gold collar -->
           <rect x="31" y="61" width="50" height="7" rx="3.5" fill="url(#gmGold)" stroke="#9a3412" stroke-width="2"/>
           <!-- Plump coral-peach gacha body -->
@@ -12640,6 +12652,7 @@ document.getElementById("gachaPullBtn").addEventListener("click", () => {
   mac.classList.remove("shaking", "res-N", "res-R", "res-SR", "res-SSR");
   void mac.offsetWidth;
   mac.classList.add("shaking");
+  if (typeof gachaDomeSim !== "undefined") gachaDomeSim.burstShake(650);
   playSfx("gacha");
   res.className = "gacha-result";
   res.innerHTML = `<span style="font-size:11px;color:var(--muted)">🎲 扭蛋机咔哒转动中… 正在注入今日算力欧气…</span>`;
@@ -12702,6 +12715,196 @@ document.getElementById("gachaMachine")?.addEventListener("click", () => {
   const btn = document.getElementById("gachaPullBtn");
   if (btn && !btn.disabled) btn.click();
 });
+
+// ---- Real 2D Rigid-Body Capsule Physics inside the Crystal Gacha Dome ----
+const gachaDomeSim = (() => {
+  const CX = 56, CY = 46, DOME_R = 24.8, FLOOR_Y = 59.6;
+  const balls = [];
+  let rafId = null;
+  let lastTs = 0;
+  let hoverActive = false;
+  let shakeUntil = 0;
+  let nextKickAt = 0;
+
+  function ensureInit() {
+    if (balls.length > 0) return;
+    const els = Array.from(document.querySelectorAll("#gmCapsulesLayer .gm-ball"));
+    const initPos = [
+      [42, 53], [70, 53], [56, 42], [56, 54], [45, 42], [67, 42],
+    ];
+    els.forEach((el, i) => {
+      const r = Number(el.dataset.r) || 5.5;
+      const p = initPos[i] || [56, 46];
+      balls.push({
+        el, r,
+        x: p[0], y: p[1],
+        vx: (Math.random() - 0.5) * 18,
+        vy: (Math.random() - 0.5) * 10,
+        a: (Math.random() - 0.5) * 50,
+        va: (Math.random() - 0.5) * 40,
+      });
+    });
+  }
+
+  function kickRandom(power = 1, count = 2) {
+    ensureInit();
+    for (let k = 0; k < count; k++) {
+      const b = balls[Math.floor(Math.random() * balls.length)];
+      if (!b) continue;
+      b.vx += (Math.random() - 0.5) * 140 * power;
+      b.vy -= (85 + Math.random() * 95) * power;
+      b.va += (Math.random() - 0.5) * 520 * power;
+    }
+  }
+
+  function burstShake(durationMs = 680) {
+    ensureInit();
+    shakeUntil = performance.now() + durationMs;
+    balls.forEach(b => {
+      const ang = Math.random() * Math.PI * 2;
+      const spd = 120 + Math.random() * 110;
+      b.vx += Math.cos(ang) * spd;
+      b.vy += Math.sin(ang) * spd - 70;
+      b.va += (Math.random() - 0.5) * 760;
+    });
+    start();
+  }
+
+  function step(ts) {
+    const modal = document.getElementById("gachaModal");
+    if (!modal || !modal.classList.contains("open")) {
+      rafId = null;
+      lastTs = 0;
+      return;
+    }
+    const dt = lastTs ? Math.min(0.028, (ts - lastTs) / 1000) : 0.016;
+    lastTs = ts;
+
+    const shaking = ts < shakeUntil;
+    if (shaking && ts >= nextKickAt) {
+      kickRandom(1.18, 3);
+      nextKickAt = ts + 75 + Math.random() * 55;
+    } else if (hoverActive && ts >= nextKickAt) {
+      kickRandom(0.86, 1 + (Math.random() < 0.45 ? 1 : 0));
+      nextKickAt = ts + 140 + Math.random() * 150;
+    } else if (!hoverActive && !shaking && ts >= nextKickAt) {
+      // Subtle playful idle nudge every few seconds so dome feels alive
+      kickRandom(0.28, 1);
+      nextKickAt = ts + 2200 + Math.random() * 1800;
+    }
+
+    const gravity = shaking ? 170 : 255;
+    const damp = shaking ? 0.992 : 0.985;
+    for (const b of balls) {
+      b.vy += gravity * dt;
+      if (shaking) {
+        // Gentle swirling vortex inside globe while twisting crank
+        const dx = b.x - CX, dy = b.y - CY;
+        b.vx += (-dy * 2.4) * dt;
+        b.vy += (dx * 2.4) * dt;
+      }
+      b.vx *= damp;
+      b.vy *= damp;
+      b.va *= 0.982;
+      b.x += b.vx * dt;
+      b.y += b.vy * dt;
+      b.a += b.va * dt;
+    }
+
+    // 3 iterations of rigid-body elastic circle-circle + curved dome & collar collision
+    for (let iter = 0; iter < 3; iter++) {
+      for (let i = 0; i < balls.length; i++) {
+        for (let j = i + 1; j < balls.length; j++) {
+          const a = balls[i], b = balls[j];
+          let dx = b.x - a.x;
+          let dy = b.y - a.y;
+          let d = Math.hypot(dx, dy);
+          const minD = a.r + b.r + 0.5;
+          if (d < minD) {
+            if (d < 0.001) { dx = 1; dy = 0; d = 1; }
+            const nx = dx / d, ny = dy / d;
+            const overlap = (minD - d) * 0.52;
+            a.x -= nx * overlap; a.y -= ny * overlap;
+            b.x += nx * overlap; b.y += ny * overlap;
+            if (iter === 0) {
+              const rvx = b.vx - a.vx, rvy = b.vy - a.vy;
+              const vn = rvx * nx + rvy * ny;
+              if (vn < 0) {
+                const imp = -(1 + 0.72) * vn * 0.5;
+                a.vx -= imp * nx; a.vy -= imp * ny;
+                b.vx += imp * nx; b.vy += imp * ny;
+                const vt = -rvx * ny + rvy * nx;
+                a.va += vt * 1.4;
+                b.va -= vt * 1.4;
+              }
+            }
+          }
+        }
+      }
+      for (const b of balls) {
+        // Flat collar floor boundary
+        const maxY = FLOOR_Y - b.r;
+        if (b.y > maxY) {
+          b.y = maxY;
+          if (b.vy > 0) b.vy = -b.vy * 0.58;
+          b.vx *= 0.94;
+          b.va = b.vx * 5.2;
+        }
+        // Circular crystal glass wall boundary (never clips outside!)
+        const dx = b.x - CX, dy = b.y - CY;
+        const dist = Math.hypot(dx, dy);
+        const maxR = DOME_R - b.r;
+        if (dist > maxR && dist > 0.001) {
+          const nx = dx / dist, ny = dy / dist;
+          b.x = CX + nx * maxR;
+          b.y = CY + ny * maxR;
+          const vn = b.vx * nx + b.vy * ny;
+          if (vn > 0) {
+            b.vx -= (1 + 0.72) * vn * nx;
+            b.vy -= (1 + 0.72) * vn * ny;
+            b.va += (-b.vx * ny + b.vy * nx) * 2.2;
+          }
+        }
+      }
+    }
+
+    for (const b of balls) {
+      b.el.setAttribute("transform", `translate(${b.x.toFixed(2)}, ${b.y.toFixed(2)}) rotate(${(b.a % 360).toFixed(1)})`);
+    }
+    rafId = requestAnimationFrame(step);
+  }
+
+  function start() {
+    ensureInit();
+    if (!rafId) {
+      lastTs = 0;
+      rafId = requestAnimationFrame(step);
+    }
+  }
+
+  const macEl = document.getElementById("gachaMachine");
+  if (macEl) {
+    macEl.addEventListener("mouseenter", () => {
+      hoverActive = true;
+      nextKickAt = 0;
+      kickRandom(0.95, 2);
+      start();
+    });
+    macEl.addEventListener("mouseleave", () => {
+      hoverActive = false;
+    });
+  }
+  const gachaModalEl = document.getElementById("gachaModal");
+  if (gachaModalEl && typeof MutationObserver !== "undefined") {
+    new MutationObserver(() => {
+      if (gachaModalEl.classList.contains("open")) {
+        nextKickAt = performance.now() + 260;
+        start();
+      }
+    }).observe(gachaModalEl, { attributes: true, attributeFilter: ["class"] });
+  }
+  return { burstShake, start };
+})();
 
 let dbgLevelUpTimer = null;
 document.getElementById("dbgLevelUpBtn").addEventListener("click", () => {
