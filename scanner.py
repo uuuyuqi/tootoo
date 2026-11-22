@@ -130,8 +130,15 @@ def _sanitize_home_state(raw: Any) -> dict[str, Any]:
         "energy_shield": 0,
         "overclock_core": 0,
         "orbital_nuke": 0,
+        "homing_drones": 0,
+        "laser_beam": 0,
+        "time_freeze": 0,
     }
+    h["owned_backdrops"] = ["paper"]
+    h["active_backdrop"] = "paper"
     h["adventure_reward_day"] = ""
+    h["adventure_coins_day"] = ""
+    h["adventure_coins_earned"] = 0
     if not isinstance(raw, dict):
         return h
     if isinstance(raw.get("house"), str) and raw["house"].strip():
@@ -220,12 +227,27 @@ def _sanitize_home_state(raw: Any) -> dict[str, Any]:
             h["xp_boost"] = {"day": xday, "tokens": min(2_000_000_000, int(xtok))}
     if isinstance(raw.get("arcade_items"), dict):
         ai = raw["arcade_items"]
-        for k in ("ammo_box", "rain_magnet", "slow_mo", "energy_shield", "overclock_core", "orbital_nuke"):
+        for k in (
+            "ammo_box", "rain_magnet", "slow_mo", "energy_shield",
+            "overclock_core", "orbital_nuke", "homing_drones", "laser_beam", "time_freeze",
+        ):
             v = ai.get(k)
             if isinstance(v, (int, float)) and v >= 0:
                 h["arcade_items"][k] = min(999, int(v))
+    valid_bgs = ("paper", "cyber_neon", "starry_nebula", "sakura_zen", "matrix_core", "golden_citadel")
+    if isinstance(raw.get("owned_backdrops"), list):
+        ob = [str(x).strip() for x in raw["owned_backdrops"] if isinstance(x, str) and x.strip() in valid_bgs]
+        if "paper" not in ob:
+            ob.insert(0, "paper")
+        h["owned_backdrops"] = list(dict.fromkeys(ob))
+    if isinstance(raw.get("active_backdrop"), str) and raw["active_backdrop"].strip() in h["owned_backdrops"]:
+        h["active_backdrop"] = raw["active_backdrop"].strip()
     if isinstance(raw.get("adventure_reward_day"), str):
         h["adventure_reward_day"] = raw["adventure_reward_day"].strip()[:10]
+    if isinstance(raw.get("adventure_coins_day"), str):
+        h["adventure_coins_day"] = raw["adventure_coins_day"].strip()[:10]
+    if isinstance(raw.get("adventure_coins_earned"), (int, float)) and raw["adventure_coins_earned"] >= 0:
+        h["adventure_coins_earned"] = min(20, int(raw["adventure_coins_earned"]))
     return h
 
 
@@ -2807,13 +2829,13 @@ def build_telemetry(
     ttft_p50 = histogram_percentile(overall_perf["th"], 0.50)
     ttft_p95 = histogram_percentile(overall_perf["th"], 0.95)
 
-    # Build readable TTFT histogram bins for charting
+    # Build readable TTFT histogram bins aligned to 0–3s / 3–8s / >8s tiers
     ttft_edges = [
-        (0.0, 0.5, "<0.5s"),
-        (0.5, 1.0, "0.5–1s"),
+        (0.0, 1.0, "<1s"),
         (1.0, 2.0, "1–2s"),
-        (2.0, 4.0, "2–4s"),
-        (4.0, 8.0, "4–8s"),
+        (2.0, 3.0, "2–3s"),
+        (3.0, 5.0, "3–5s"),
+        (5.0, 8.0, "5–8s"),
         (8.0, 16.0, "8–16s"),
         (16.0, 120.0, "16s+"),
     ]

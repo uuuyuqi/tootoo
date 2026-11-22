@@ -3690,6 +3690,57 @@
     align-items: center;
     margin-top: 7px;
   }
+  .adv-backdrop-bar {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
+    margin: 2px 0 8px;
+    padding: 5px 8px;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  .adv-bg-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 7px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--ink);
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform .12s ease, border-color .14s ease, box-shadow .14s ease;
+  }
+  .adv-bg-chip:hover { transform: translateY(-1px); border-color: var(--accent); }
+  .adv-bg-chip.active {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+    color: var(--accent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 26%, transparent);
+  }
+  .adv-bg-chip.locked { opacity: 0.56; border-style: dashed; }
+  .adv-bg-chip .swatch {
+    width: 9px; height: 9px; border-radius: 50%; display: inline-block;
+    border: 1px solid rgba(0,0,0,0.22);
+  }
+  .adv-coin-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--amber) 45%, var(--border));
+    background: color-mix(in srgb, var(--amber) 14%, var(--surface));
+    color: var(--amber);
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 700;
+  }
   .adv-prop-btn {
     display: inline-flex;
     align-items: center;
@@ -6871,8 +6922,8 @@
       <div class="hero-val"><span id="kpiTtft">—</span><span class="unit">s 中位</span></div>
       <div class="stack-bar" id="ttftStack"></div>
       <div class="hero-sub" id="ttftLegend">
-        <span>≤2s —%</span>
-        <span>2-8s —%</span>
+        <span>≤3s —%</span>
+        <span>3-8s —%</span>
         <span>&gt;8s —%</span>
       </div>
     </div>
@@ -7362,7 +7413,7 @@
         </svg>
       </button>
       <div style="font-size:11px;color:var(--muted);margin-bottom:8px">
-        当前余额 <strong id="gachaCoins" style="color:var(--accent)">0</strong> 枚萝卜币 · 扭蛋限定藏品 <strong id="gachaColl" style="color:var(--ink)">0 / 10</strong>
+        当前余额 <strong id="gachaCoins" style="color:var(--accent)">0</strong> 枚萝卜币 · 扭蛋限定藏品 <strong id="gachaColl" style="color:var(--ink)">0 / 15</strong>
       </div>
       <button class="arc-primary-btn" id="gachaPullBtn">🥕 消耗 1 枚萝卜币扭一颗！</button>
       <div class="gacha-result" id="gachaResult">
@@ -7397,6 +7448,7 @@
     <div class="evo-head">
       <span class="kicker" style="font-size:11px;color:var(--ink)">⚔️ TooToo 大冒险</span>
       <span style="display:flex;gap:5px;align-items:center">
+        <span class="adv-coin-pill" id="advCoinCapPill" title="玩打Bug(破800/1800/3200或斩Boss)和接Token雨(破600/1200/2000)每日最高可赢 5 枚萝卜币！">🎁 今日奖励 0/5 币</span>
         <button class="carrot-wallet-pill" id="arcWalletBtn" title="当前萝卜币余额（点击前往兑换与扭蛋）">🥕 <span id="arcHeaderCoins">0</span></button>
         <button class="btn" id="arcSfxBtn" style="padding:3px 7px;font-size:10px" title="开关合成复古音效">🔇 静音</button>
         <button class="btn" id="arcadeCloseBtn" style="padding:3px 8px;font-size:10.5px">✕</button>
@@ -7407,6 +7459,8 @@
       <button data-game="blaster" class="active">🚀 弹药打Bug</button>
       <button data-game="rain">🥕 接Token雨</button>
     </div>
+
+    <div class="adv-backdrop-bar" id="advBackdropBar"></div>
 
     <!-- GAME 1 (FLAGSHIP): 🚀 TOKEN AMMO BUG BLASTER -->
     <div class="arcade-pane active" id="arcPane-blaster">
@@ -7432,7 +7486,7 @@
         <canvas id="blasterCanvas"></canvas>
         <div class="rain-overlay" id="blasterOverlay">
           <h3 id="blasterTitle">🚀 TooToo 大冒险 · Bug 歼灭战</h3>
-          <p id="blasterDesc">真实 Token = 弹药库，真实缓存 = 免弹率！新增连击倍率、狂热充能、分裂 Bug 与扭蛋冒险道具（快捷键 1–5 释放）！破 1200 分每日赠 +1 萝卜币！</p>
+          <p id="blasterDesc">4大机制Boss（OOM巨兽/死循环魔眼/防火墙泰坦/幽灵内存体）轮番登场！局内低概率掉落「🎁神秘扭蛋宝箱」直接开出扭蛋真奖！斩Boss或破 800/1800/3200 分赢萝卜币（快捷键 1–8 放神装道具）！</p>
           <button class="arc-primary-btn" id="blasterStartBtn">▶ 装填今日弹药出击</button>
         </div>
       </div>
@@ -7445,10 +7499,19 @@
         <div class="dbg-inline-row">
           <span class="dbg-tag">🛠 打Bug调试:</span>
           <button class="dbg-mini-btn" id="dbgBlGodBtn">🔥 无双: 关</button>
-          <button class="dbg-mini-btn" id="dbgBlBossBtn">👾 刷OOM Boss</button>
+          <button class="dbg-mini-btn" id="dbgBlAddPropsBtn">🎒 +全套道具</button>
+          <button class="dbg-mini-btn" id="dbgBlAllBgBtn">🎨 解锁全背景</button>
+          <button class="dbg-mini-btn" id="dbgBlLootBtn">🎁 掉扭蛋宝箱</button>
           <button class="dbg-mini-btn" id="dbgBlAmmoBtn">🔋 掉弹药包</button>
           <button class="dbg-mini-btn" id="dbgBlOverclockBtn">⚡ 掉超频(5管)</button>
           <button class="dbg-mini-btn" id="dbgBlNovaBtn">💥 免费清屏</button>
+        </div>
+        <div class="dbg-inline-row" style="margin-top:4px">
+          <span class="dbg-tag">👾 空投Boss:</span>
+          <button class="dbg-mini-btn" id="dbgBlBossBtn">👾 OOM巨兽</button>
+          <button class="dbg-mini-btn" id="dbgBlBossLoopBtn">🌀 死循环魔眼</button>
+          <button class="dbg-mini-btn" id="dbgBlBossFwBtn">🛡️ 防火墙泰坦</button>
+          <button class="dbg-mini-btn" id="dbgBlBossPhBtn">👻 幽灵内存体</button>
         </div>
       </div>
     </div>
@@ -7463,7 +7526,7 @@
         <canvas id="rainCanvas"></canvas>
         <div class="rain-overlay" id="rainOverlay">
           <h3 id="rainTitle">🥕 TooToo 大冒险 · 接 Token 雨</h3>
-          <p id="rainDesc">移动接住 Token/缓存/💎反弹蓝钻/⏰续命沙漏！点击画布或按空格可「⚡ 闪避冲刺」无敌穿梭，最后 8 秒开启黄金狂潮，快捷键 1–4 释放冒险道具！</p>
+          <p id="rainDesc">接住 Token/💎蓝钻/⏰续命/🎁神秘扭蛋宝箱！点击画布或空格「⚡闪避冲刺」无敌穿梭，最后 8 秒黄金狂潮！破 600/1200/2000 分赢萝卜币（快捷键 1–7 放神装道具）！</p>
           <button class="arc-primary-btn" id="rainStartBtn">▶ 开始 30 秒冲刺</button>
         </div>
       </div>
@@ -7471,6 +7534,9 @@
       <div class="dbg-only dbg-inline">
         <div class="dbg-inline-row">
           <span class="dbg-tag">🛠 Token雨调试:</span>
+          <button class="dbg-mini-btn" id="dbgRainAddPropsBtn">🎒 +全套道具</button>
+          <button class="dbg-mini-btn" id="dbgRainAllBgBtn">🎨 解锁全背景</button>
+          <button class="dbg-mini-btn" id="dbgRainLootBtn">🎁 掉扭蛋宝箱</button>
           <button class="dbg-mini-btn" id="dbgRainShieldBtn">🛡️ +护盾</button>
           <button class="dbg-mini-btn" id="dbgRainGoldBtn">🥕 掉金胡萝卜</button>
           <button class="dbg-mini-btn" id="dbgRainRainbowBtn">🌈 掉彩虹星</button>
@@ -9720,7 +9786,6 @@ window.__onPopoverClose = () => {
   if (typeof clearBunnySpeech === "function") clearBunnySpeech();
   if (typeof stopBlasterGame === "function") stopBlasterGame();
   if (typeof stopRainGame === "function") stopRainGame();
-  if (typeof cancelReflexTimer === "function") cancelReflexTimer();
   if (typeof cancelBunnyPatrol === "function") cancelBunnyPatrol();
   disconnectStream();
 };
@@ -9949,7 +10014,7 @@ function renderHero(d) {
   animateMetric("kpiTtft", k.ttft_p50, v => v.toFixed(2));
   document.getElementById("p95Pill").textContent = k.ttft_p95 != null ? `P95 ${k.ttft_p95.toFixed(1)}s` : "P95 —";
 
-  // 3-tier semantic TTFT breakdown (fast <=2s / normal 2-8s / slow >8s) for instant readability
+  // 3-tier semantic TTFT breakdown (fast <=3s / normal 3-8s / slow >8s) for instant readability
   const bins = d.ttft_histogram || [];
   const fastC = (bins[0]?.count || 0) + (bins[1]?.count || 0) + (bins[2]?.count || 0);
   const midC  = (bins[3]?.count || 0) + (bins[4]?.count || 0);
@@ -9962,8 +10027,8 @@ function renderHero(d) {
     const sPct = Math.round((slowC / ttftTot) * 100);
     const mPct = Math.max(0, 100 - fPct - sPct);
     const tSegs = [
-      { v: fastC, c: "var(--teal)",   t: `极快 ≤2s: ${fPct}% (${fastC}次)` },
-      { v: midC,  c: "var(--amber)",  t: `正常 2–8s: ${mPct}% (${midC}次)` },
+      { v: fastC, c: "var(--teal)",   t: `极快 ≤3s: ${fPct}% (${fastC}次)` },
+      { v: midC,  c: "var(--amber)",  t: `正常 3–8s: ${mPct}% (${midC}次)` },
       { v: slowC, c: "var(--accent)", t: `偏慢 >8s: ${sPct}% (${slowC}次)` },
     ];
     ttftStackEl.innerHTML = tSegs
@@ -9971,8 +10036,8 @@ function renderHero(d) {
       .map(s => `<div style="width:${(s.v / ttftTot * 100).toFixed(2)}%;background:${s.c}" title="${s.t}"></div>`)
       .join("");
     ttftLegEl.innerHTML = `
-      <span style="color:var(--teal)">≤2s ${fPct}%</span>
-      <span style="color:var(--amber)">2-8s ${mPct}%</span>
+      <span style="color:var(--teal)">≤3s ${fPct}%</span>
+      <span style="color:var(--amber)">3-8s ${mPct}%</span>
       <span style="color:var(--accent)">&gt;8s ${sPct}%</span>
     `;
   } else {
@@ -11047,8 +11112,14 @@ function toggleDebugBar(forceState) {
     if (!debugState.gachaColl) debugState.gachaColl = getRealGachaCollected().slice();
     if (!debugState.homeSandbox && typeof cloneHomeState === "function") {
       debugState.homeSandbox = cloneHomeState(getRealHomeState());
+      // Auto-stock sandbox with adventure props so debug mode is immediately playable!
+      Object.keys(debugState.homeSandbox.arcade_items).forEach(k => {
+        debugState.homeSandbox.arcade_items[k] = Math.max(5, debugState.homeSandbox.arcade_items[k] || 0);
+      });
     }
     syncDebugUi();
+    if (typeof renderAdventurePropBars === "function") renderAdventurePropBars();
+    if (typeof renderBackdropBar === "function") renderBackdropBar();
     if (typeof renderHomeModal === "function" && document.getElementById("homeModal")?.classList.contains("open")) {
       renderHomeModal();
     }
@@ -11515,12 +11586,13 @@ document.getElementById("gachaModal").addEventListener("click", (e) => {
 function openArcadeModal() {
   document.getElementById("arcadeModal").classList.add("open");
   refreshArcadeContext();
+  if (typeof renderBackdropBar === "function") renderBackdropBar();
+  if (typeof renderAdventurePropBars === "function") renderAdventurePropBars();
 }
 function closeArcadeModal() {
   document.getElementById("arcadeModal").classList.remove("open");
   stopBlasterGame();
   stopRainGame();
-  cancelReflexTimer();
 }
 document.getElementById("arcadeBtn").addEventListener("click", openArcadeModal);
 document.getElementById("arcadeCloseBtn").addEventListener("click", closeArcadeModal);
@@ -11586,7 +11658,254 @@ function refreshArcadeContext() {
 }
 
 // ============================================================
-// GAME 1 (FLAGSHIP): 🚀 TOKEN AMMO BUG BLASTER (60fps Canvas)
+// ADVENTURE STAGE BACKDROPS (6 Animated Themes — 5 Unlockable via Gacha!)
+// ============================================================
+const ADVENTURE_BACKDROPS = [
+  { id: "paper",          r: "N",   icon: "📜", name: "复古网格",   swatch: "#E7E2D4", dark: false, desc: "经典手账网格雷达画板（默认解锁）" },
+  { id: "cyber_neon",     r: "R",   icon: "🌆", name: "赛博霓虹城", swatch: "#0F172A", dark: true,  desc: "R 扭蛋限定：霓虹透视网格与赛博夜空天际线" },
+  { id: "starry_nebula",  r: "R",   icon: "🌌", name: "深空星云",   swatch: "#1E1B4B", dark: true,  desc: "R 扭蛋限定：双层视差星空与旋转紫粉星云" },
+  { id: "sakura_zen",     r: "SR",  icon: "🌸", name: "樱花道场",   swatch: "#FBCFE8", dark: false, desc: "SR 扭蛋限定：绯红落日、飘舞樱瓣与鸟居剪影" },
+  { id: "matrix_core",    r: "SR",  icon: "💚", name: "矩阵终端",   swatch: "#052E16", dark: true,  desc: "SR 扭蛋限定：翠绿代码瀑布流与脉冲芯片总线" },
+  { id: "golden_citadel", r: "SSR", icon: "👑", name: "黄金星穹殿", swatch: "#F59E0B", dark: true,  desc: "SSR 传世限定：鎏金星空神殿与旋转光环法阵" },
+];
+const ADVENTURE_BACKDROP_MAP = Object.fromEntries(ADVENTURE_BACKDROPS.map(b => [b.id, b]));
+
+function getActiveBackdropId() {
+  const h = typeof getActiveHomeState === "function" ? getActiveHomeState() : null;
+  const id = (h && h.active_backdrop) || "paper";
+  return ADVENTURE_BACKDROP_MAP[id] ? id : "paper";
+}
+
+function renderBackdropBar() {
+  const bar = document.getElementById("advBackdropBar");
+  if (!bar) return;
+  const h = getActiveHomeState();
+  const owned = new Set((h && h.owned_backdrops) || ["paper"]);
+  const active = getActiveBackdropId();
+  bar.innerHTML = `<span style="font-size:9.5px;font-weight:700;color:var(--muted)">🎨 舞台背景:</span>` +
+    ADVENTURE_BACKDROPS.map(bg => {
+      const has = owned.has(bg.id) || debugState.unlockAll;
+      const isAct = bg.id === active;
+      const cls = `adv-bg-chip${isAct ? " active" : ""}${has ? "" : " locked"}`;
+      const title = has ? `${bg.name} · ${bg.desc}` : `🔒 未解锁（${bg.r} · 请前往扭蛋机抽取）`;
+      return `<button type="button" class="${cls}" data-bg-id="${bg.id}" title="${title}">
+        <span class="swatch" style="background:${bg.swatch}"></span>
+        <span>${has ? bg.icon : "🔒"}${bg.name}</span>
+      </button>`;
+    }).join("");
+  const pill = document.getElementById("advCoinCapPill");
+  if (pill) {
+    const todayKey = getTodayKey();
+    const earned = (h && h.adventure_coins_day === todayKey) ? (Number(h.adventure_coins_earned) || 0) : 0;
+    pill.textContent = `🥕 今日掉落 ${earned}/5 币`;
+  }
+}
+
+document.getElementById("advBackdropBar")?.addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-bg-id]");
+  if (!btn) return;
+  const id = btn.dataset.bgId;
+  const h = cloneHomeState(getActiveHomeState());
+  if (!h.owned_backdrops.includes(id) && !debugState.unlockAll) {
+    playSfx("bomb");
+    return;
+  }
+  if (!h.owned_backdrops.includes(id)) h.owned_backdrops.push(id);
+  h.active_backdrop = id;
+  saveActiveHomeState(h, 0);
+  renderBackdropBar();
+  playSfx("token");
+});
+
+function drawAdventureBackdrop(ctx, w, h, now, isFrozen = false) {
+  const id = getActiveBackdropId();
+  const t = now * 0.001;
+  if (id === "cyber_neon") {
+    const g = ctx.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, "#090B1E");
+    g.addColorStop(0.55, "#17113A");
+    g.addColorStop(1, "#2A124C");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+    // Neon sunset glow
+    const sun = ctx.createRadialGradient(w * 0.5, h * 0.58, 6, w * 0.5, h * 0.58, 86);
+    sun.addColorStop(0, "rgba(244, 114, 182, 0.52)");
+    sun.addColorStop(0.5, "rgba(168, 85, 247, 0.22)");
+    sun.addColorStop(1, "rgba(15, 23, 42, 0)");
+    ctx.fillStyle = sun;
+    ctx.fillRect(0, 0, w, h);
+    // City skyline silhouettes
+    ctx.fillStyle = "rgba(15, 23, 42, 0.72)";
+    const bld = [18, 42, 26, 56, 32, 48, 22, 60, 36, 44, 24, 52];
+    const bw = w / bld.length;
+    bld.forEach((bh, idx) => {
+      ctx.fillRect(idx * bw, h * 0.62 - bh, bw - 2, bh + 4);
+    });
+    // Perspective scrolling neon grid
+    ctx.strokeStyle = "rgba(56, 189, 248, 0.28)";
+    ctx.lineWidth = 1;
+    const hy = h * 0.62;
+    for (let i = 0; i < 6; i++) {
+      const p = ((i / 6) + (t * 0.35) % (1 / 6));
+      const y = hy + Math.pow(p, 1.55) * (h - hy);
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    }
+    for (let i = -5; i <= 5; i++) {
+      ctx.beginPath();
+      ctx.moveTo(w * 0.5 + i * 24, hy);
+      ctx.lineTo(w * 0.5 + i * 95, h);
+      ctx.stroke();
+    }
+  } else if (id === "starry_nebula") {
+    const g = ctx.createLinearGradient(0, 0, w, h);
+    g.addColorStop(0, "#070B19");
+    g.addColorStop(0.5, "#151138");
+    g.addColorStop(1, "#0C1838");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+    // Drifting nebula clouds
+    const n1 = ctx.createRadialGradient(w * (0.28 + Math.sin(t * 0.4) * 0.08), h * 0.35, 10, w * 0.3, h * 0.35, 120);
+    n1.addColorStop(0, "rgba(192, 132, 252, 0.28)");
+    n1.addColorStop(1, "rgba(15, 23, 42, 0)");
+    ctx.fillStyle = n1;
+    ctx.fillRect(0, 0, w, h);
+    const n2 = ctx.createRadialGradient(w * (0.72 + Math.cos(t * 0.35) * 0.07), h * 0.62, 10, w * 0.72, h * 0.62, 110);
+    n2.addColorStop(0, "rgba(56, 189, 248, 0.24)");
+    n2.addColorStop(1, "rgba(15, 23, 42, 0)");
+    ctx.fillStyle = n2;
+    ctx.fillRect(0, 0, w, h);
+    // Parallax stars
+    for (let i = 0; i < 42; i++) {
+      const sx = ((i * 73.1) % w);
+      const sy = ((i * 41.7 + t * (12 + (i % 3) * 14)) % h);
+      const a = 0.35 + 0.55 * Math.abs(Math.sin(t * 2 + i));
+      ctx.fillStyle = i % 5 === 0 ? `rgba(254,240,138,${a})` : `rgba(224,242,254,${a})`;
+      ctx.beginPath(); ctx.arc(sx, sy, i % 4 === 0 ? 1.7 : 1.0, 0, Math.PI * 2); ctx.fill();
+    }
+  } else if (id === "sakura_zen") {
+    const g = ctx.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, "#FFF1F2");
+    g.addColorStop(0.55, "#FCE7F3");
+    g.addColorStop(1, "#FDE68A");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+    // Soft sun disc
+    ctx.fillStyle = "rgba(251, 113, 133, 0.22)";
+    ctx.beginPath(); ctx.arc(w * 0.76, h * 0.34, 46, 0, Math.PI * 2); ctx.fill();
+    // Distant Torii silhouette
+    ctx.fillStyle = "rgba(190, 24, 93, 0.16)";
+    ctx.fillRect(w * 0.16, h * 0.54, 54, 5);
+    ctx.fillRect(w * 0.19, h * 0.61, 44, 3.5);
+    ctx.fillRect(w * 0.21, h * 0.54, 4.5, h * 0.46);
+    ctx.fillRect(w * 0.21 + 32, h * 0.54, 4.5, h * 0.46);
+    // Floating sakura petals
+    for (let i = 0; i < 20; i++) {
+      const px = ((i * 59 + t * 24 + Math.sin(t * 1.6 + i) * 18) % (w + 20)) - 10;
+      const py = ((i * 37 + t * 32) % (h + 20)) - 10;
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.rotate(t * 1.4 + i);
+      ctx.fillStyle = i % 2 === 0 ? "rgba(244, 114, 182, 0.58)" : "rgba(251, 113, 133, 0.48)";
+      ctx.beginPath(); ctx.ellipse(0, 0, 4.2, 2.2, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+  } else if (id === "matrix_core") {
+    ctx.fillStyle = "#03140A";
+    ctx.fillRect(0, 0, w, h);
+    ctx.font = "bold 10px monospace";
+    const chars = "01λ∑∞#<>";
+    for (let c = 0; c < 18; c++) {
+      const x = (c + 0.5) * (w / 18);
+      const head = ((t * (55 + (c % 5) * 18) + c * 37) % (h + 70)) - 30;
+      for (let k = 0; k < 6; k++) {
+        const y = head - k * 12;
+        if (y < 0 || y > h) continue;
+        ctx.fillStyle = k === 0 ? "rgba(187, 247, 208, 0.72)" : `rgba(34, 197, 94, ${Math.max(0.06, 0.34 - k * 0.055)})`;
+        ctx.fillText(chars[(c + k + Math.floor(t * 5)) % chars.length], x, y);
+      }
+    }
+  } else if (id === "golden_citadel") {
+    const g = ctx.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, "#1C1206");
+    g.addColorStop(0.55, "#2E1C07");
+    g.addColorStop(1, "#452708");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+    const halo = ctx.createRadialGradient(w * 0.5, h * 0.45, 10, w * 0.5, h * 0.45, 145);
+    halo.addColorStop(0, "rgba(251, 191, 36, 0.30)");
+    halo.addColorStop(0.6, "rgba(245, 158, 11, 0.10)");
+    halo.addColorStop(1, "rgba(28, 18, 6, 0)");
+    ctx.fillStyle = halo;
+    ctx.fillRect(0, 0, w, h);
+    // Rotating sacred golden astrolabe ring
+    ctx.save();
+    ctx.translate(w * 0.5, h * 0.46);
+    ctx.rotate(t * 0.35);
+    ctx.strokeStyle = "rgba(253, 224, 71, 0.25)";
+    ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.arc(0, 0, 68, 0, Math.PI * 2); ctx.stroke();
+    ctx.setLineDash([6, 6]);
+    ctx.beginPath(); ctx.arc(0, 0, 50, 0, Math.PI * 2); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+    // Rising gold motes
+    for (let i = 0; i < 24; i++) {
+      const gx = (i * 53.7) % w;
+      const gy = h - ((i * 29 + t * 22) % h);
+      ctx.fillStyle = `rgba(254, 240, 138, ${0.25 + 0.45 * Math.abs(Math.sin(t * 2 + i))})`;
+      ctx.beginPath(); ctx.arc(gx, gy, 1.5, 0, Math.PI * 2); ctx.fill();
+    }
+  } else {
+    const cs = getComputedStyle(document.documentElement);
+    const bg = cs.getPropertyValue("--surface-2").trim() || "#EFECE4";
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = "rgba(128,128,128,0.09)";
+    ctx.lineWidth = 1;
+    for (let gx = 40; gx < w; gx += 46) {
+      ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, h); ctx.stroke();
+    }
+    const scanY = (t * 48) % h;
+    ctx.strokeStyle = "rgba(229, 72, 38, 0.08)";
+    ctx.beginPath(); ctx.moveTo(0, scanY); ctx.lineTo(w, scanY); ctx.stroke();
+  }
+  if (isFrozen) {
+    ctx.fillStyle = "rgba(56, 189, 248, 0.16)";
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = "rgba(186, 230, 253, 0.55)";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(2, 2, w - 4, h - 4);
+  }
+}
+
+const ADVENTURE_DAILY_COIN_CAP = 5;
+function grantAdventureCoins(amount = 1) {
+  const todayKey = getTodayKey();
+  const h = cloneHomeState(getActiveHomeState());
+  const curEarned = h.adventure_coins_day === todayKey ? (Number(h.adventure_coins_earned) || 0) : 0;
+  const avail = Math.max(0, ADVENTURE_DAILY_COIN_CAP - curEarned);
+  const actual = Math.min(avail, Math.max(0, Math.floor(amount)));
+  if (actual <= 0) return 0;
+  h.adventure_coins_day = todayKey;
+  h.adventure_coins_earned = curEarned + actual;
+  saveActiveHomeState(h, 0, actual);
+  renderBackdropBar();
+  return actual;
+}
+
+function rollInGameMysteryLoot() {
+  // Low-chance real Gacha pool drop during gameplay: N 68% / R 25% / SR 6% / SSR 1%
+  const roll = Math.random();
+  const tier = roll < 0.01 ? "SSR" : roll < 0.07 ? "SR" : roll < 0.32 ? "R" : "N";
+  const pick = pickWeightedGacha(tier);
+  const res = grantGachaReward(pick);
+  renderAdventurePropBars();
+  renderBackdropBar();
+  return { ...pick, actualName: res.actualName, actualDesc: res.actualDesc, isNew: res.isNew };
+}
+
+// ============================================================
+// GAME 1 (FLAGSHIP): 🚀 TOKEN AMMO BUG BLASTER (60fps Canvas + 4 Mechanism Bosses!)
 // ============================================================
 const blasterCanvas = document.getElementById("blasterCanvas");
 const blCtx = blasterCanvas.getContext("2d");
@@ -11602,7 +11921,10 @@ window.addEventListener("keydown", (e) => {
     e.preventDefault();
     triggerBlasterNova();
   }
-  const propKeys = { "1": "ammo_box", "2": "overclock_core", "3": "energy_shield", "4": "slow_mo", "5": "orbital_nuke" };
+  const propKeys = {
+    "1": "ammo_box", "2": "overclock_core", "3": "energy_shield", "4": "slow_mo",
+    "5": "orbital_nuke", "6": "homing_drones", "7": "laser_beam", "8": "time_freeze",
+  };
   if (propKeys[e.key]) useAdventureProp("blaster", propKeys[e.key]);
 });
 window.addEventListener("keyup", (e) => {
@@ -11629,6 +11951,100 @@ function stopBlasterGame() {
   if (blasterState) blasterState.running = false;
 }
 
+function spawnSpecialBoss(s, kind, wave = 1) {
+  const cx = Math.max(58, Math.min(s.w - 58, s.w * (0.28 + Math.random() * 0.44)));
+  const hpScale = 1 + Math.max(0, wave - 1) * 0.16;
+  if (kind === "boss_loop") {
+    s.enemies.push({
+      boss: true, bossType: "boss_loop", lbl: "LOOP", name: "🌀 死循环魔眼",
+      hp: Math.round(24 * hpScale), maxHp: Math.round(24 * hpScale),
+      r: 22, vy: 12, col: "#7C3AED", pts: 320, x: cx, y: 46,
+      wobble: 0, phaseT: 0, atkCd: 2.1, satAngle: 0,
+      satellites: [{ angle: 0, hp: 3 }, { angle: Math.PI, hp: 3 }],
+    });
+    s.bossBanner = { txt: "⚠️ 警告：🌀 死循环魔眼 降临！（击破护卫球可反伤 Boss）", col: "#A78BFA", life: 2.6 };
+  } else if (kind === "boss_firewall") {
+    s.enemies.push({
+      boss: true, bossType: "boss_firewall", lbl: "WAF", name: "🛡️ 防火墙泰坦",
+      hp: Math.round(30 * hpScale), maxHp: Math.round(30 * hpScale),
+      r: 24, vy: 10, col: "#0284C7", pts: 380, x: cx, y: 48,
+      wobble: 0, phaseT: 0, shieldOn: true, atkCd: 2.6,
+    });
+    s.bossBanner = { txt: "⚠️ 警告：🛡️ 防火墙泰坦 降临！（护盾过热时 2× 暴击！）", col: "#38BDF8", life: 2.6 };
+  } else if (kind === "boss_phantom") {
+    s.enemies.push({
+      boss: true, bossType: "boss_phantom", lbl: "404", name: "👻 幽灵内存体",
+      hp: Math.round(22 * hpScale), maxHp: Math.round(22 * hpScale),
+      r: 21, vy: 14, col: "#EC4899", pts: 350, x: cx, y: 48,
+      wobble: 0, phaseT: 0, atkCd: 2.2, tpHits: 0, splitDone: false,
+    });
+    s.bossBanner = { txt: "⚠️ 警告：👻 幽灵内存体 降临！（会瞬移+分身，瞄准金边真身！）", col: "#F472B6", life: 2.6 };
+  } else {
+    s.enemies.push({
+      boss: true, bossType: "boss_oom", lbl: "OOM", name: "👾 OOM 内存巨兽",
+      hp: Math.round(26 * hpScale), maxHp: Math.round(26 * hpScale),
+      r: 23, vy: 16, col: "#9333EA", pts: 300, x: cx, y: 44,
+      wobble: 0, phaseT: 0, atkCd: 1.9, enraged: false,
+    });
+    s.bossBanner = { txt: "⚠️ 警告：👾 OOM 内存巨兽 降临！（躲避紫色毒液弹！）", col: "#C084FC", life: 2.6 };
+  }
+  s.shakeTimer = 0.25;
+  playSfx("bomb");
+}
+
+function handleBlasterEnemyDeath(s, en, wave) {
+  s.kills++;
+  s.combo++;
+  s.comboTimer = 2.6;
+  const cMult = s.combo >= 15 ? 3 : (s.combo >= 8 ? 2 : (s.combo >= 4 ? 1.5 : 1));
+  const gain = Math.round(en.pts * cMult);
+  s.score += gain;
+  s.feverCharge = Math.min(100, s.feverCharge + (en.boss ? 36 : 8));
+  if (s.feverCharge >= 100) {
+    s.feverCharge = 0;
+    s.overclockTimer = Math.max(s.overclockTimer, 4.5);
+    s.floats.push({ x: s.w / 2, y: s.h * 0.35, txt: "🔥 狂热满能！5管黄金暴走 4.5s!", col: "#F59E0B", life: 1.1 });
+    playSfx("ssr");
+  }
+  spawnBlasterParts(en.x, en.y, en.col, en.boss ? 26 : 10);
+  s.floats.push({ x: en.x, y: en.y, txt: en.boss ? `💥 斩杀 ${en.name || en.lbl} +${gain}!` : (cMult > 1 ? `+${gain} ×${cMult}` : `+${gain}`), col: en.col, life: en.boss ? 1.2 : 0.72 });
+  playSfx(en.boss ? "ssr" : "token");
+
+  if (en.boss && en.bossType === "boss_phantom" && !en.isDecoy) {
+    // Killing real Phantom destroys any decoy!
+    s.enemies = s.enemies.filter(other => !other.isDecoy);
+  }
+  if (en.split) {
+    for (const dir of [-1, 1]) {
+      s.enemies.push({
+        lbl: "mini", hp: 1, maxHp: 1, r: 9.5, vy: 112 + wave * 6, col: "#38BDF8", pts: 20, boss: false,
+        x: Math.max(16, Math.min(s.w - 16, en.x + dir * 18)), y: en.y, wobble: Math.random() * 6,
+      });
+    }
+  }
+  if (en.boss && !en.isDecoy) {
+    s.bossKills = (s.bossKills || 0) + 1;
+    // Boss always drops a physical Carrot Coin + high chance of Mystery Gacha Box + Overclock!
+    s.pickups.push({ x: Math.max(24, en.x - 16), y: en.y, vy: 76, kind: "carrot_coin", amt: 1 });
+    if (Math.random() < 0.34) {
+      s.pickups.push({ x: Math.min(s.w - 24, en.x + 16), y: en.y - 6, vy: 72, kind: "gacha_box", amt: 1 });
+    } else {
+      s.pickups.push({ x: Math.min(s.w - 24, en.x + 16), y: en.y, vy: 82, kind: "overclock", amt: 0 });
+    }
+  } else if (!en.isDecoy) {
+    const dropRoll = Math.random();
+    const boxChance = en.split ? 0.055 : 0.022;
+    const coinChance = en.split ? 0.06 : 0.032;
+    if (dropRoll < boxChance) {
+      s.pickups.push({ x: en.x, y: en.y, vy: 76, kind: "gacha_box", amt: 1 });
+    } else if (dropRoll < boxChance + coinChance) {
+      s.pickups.push({ x: en.x, y: en.y, vy: 82, kind: "carrot_coin", amt: 1 });
+    } else if (dropRoll < boxChance + coinChance + 0.10) {
+      s.pickups.push({ x: en.x, y: en.y, vy: 88, kind: "ammo", amt: 14 });
+    }
+  }
+}
+
 function triggerBlasterNova(freeDebug = false) {
   const s = blasterState;
   if (!s || !s.running) return;
@@ -11642,16 +12058,25 @@ function triggerBlasterNova(freeDebug = false) {
   if (!isFree) s.ammo -= 25;
   s.novaRing = { r: 16, maxR: Math.max(s.w, s.h) * 1.1, alpha: 1 };
   s.shakeTimer = 0.36;
+  s.enemyBullets = [];
+  s.bossBeams = [];
   playSfx("ssr");
   let wiped = 0;
+  const survivors = [];
   for (const en of s.enemies) {
-    wiped++;
-    s.kills++;
-    s.score += en.pts;
-    spawnBlasterParts(en.x, en.y, en.col, 12);
+    if (en.boss && en.hp > 10) {
+      en.hp -= 10;
+      spawnBlasterParts(en.x, en.y, "#F59E0B", 12);
+      survivors.push(en);
+    } else {
+      wiped++;
+      s.kills++;
+      s.score += en.pts;
+      spawnBlasterParts(en.x, en.y, en.col, 12);
+    }
   }
-  s.enemies = [];
-  s.floats.push({ x: s.w / 2, y: s.h * 0.45, txt: `⚡ 算力清屏! 蒸发 ${wiped} 只 Bug!`, col: "#F59E0B", life: 1.1 });
+  s.enemies = survivors;
+  s.floats.push({ x: s.w / 2, y: s.h * 0.45, txt: `⚡ 算力清屏! 蒸发 ${wiped} 只 Bug & 清除敌弹!`, col: "#F59E0B", life: 1.1 });
 }
 
 function spawnBlasterParts(x, y, col, n = 10) {
@@ -11688,7 +12113,15 @@ function startBlasterGame() {
     tierLv: lo.tier.level,
     aura: auraColors[lo.tier.level - 1] || "#E54826",
     fireAcc: 0,
+    droneFireAcc: 0,
+    laserTickAcc: 0,
     spawnAcc: 0,
+    nextBossAt: 12,
+    bossIdx: 0,
+    bossKills: 0,
+    coinsCaught: 0,
+    lootsFound: [],
+    bossBanner: null,
     elapsed: 0,
     lives: 3,
     score: 0,
@@ -11699,11 +12132,16 @@ function startBlasterGame() {
     shieldTimer: 0,
     slowTimer: 0,
     freeAmmoTimer: 0,
+    droneTimer: 0,
+    laserTimer: 0,
+    freezeTimer: 0,
     shakeTimer: 0,
     overclockTimer: 0,
     debugTainted: Boolean(debugState.active && debugState.godMode),
     novaRing: null,
     bullets: [],
+    enemyBullets: [],
+    bossBeams: [],
     enemies: [],
     pickups: [],
     parts: [],
@@ -11730,6 +12168,13 @@ function tickBlasterGame(now) {
   if (s.shieldTimer > 0) s.shieldTimer = Math.max(0, s.shieldTimer - dt);
   if (s.slowTimer > 0) s.slowTimer = Math.max(0, s.slowTimer - dt);
   if (s.freeAmmoTimer > 0) s.freeAmmoTimer = Math.max(0, s.freeAmmoTimer - dt);
+  if (s.droneTimer > 0) s.droneTimer = Math.max(0, s.droneTimer - dt);
+  if (s.laserTimer > 0) s.laserTimer = Math.max(0, s.laserTimer - dt);
+  if (s.freezeTimer > 0) s.freezeTimer = Math.max(0, s.freezeTimer - dt);
+  if (s.bossBanner) {
+    s.bossBanner.life -= dt;
+    if (s.bossBanner.life <= 0) s.bossBanner = null;
+  }
   if (s.comboTimer > 0) {
     s.comboTimer = Math.max(0, s.comboTimer - dt);
     if (s.comboTimer === 0) s.combo = 0;
@@ -11744,8 +12189,10 @@ function tickBlasterGame(now) {
   s.x += (s.targetX - s.x) * Math.min(1, dt * 18);
 
   const by = s.h - 26;
+  const wave = 1 + Math.floor(s.elapsed / 10);
+  const frozen = s.freezeTimer > 0;
 
-  // Auto-fire bullets using real Token Ammo & TPS fire rate (or Overclock 5-cannon frenzy!)
+  // Auto-fire player bullets
   const effHz = (isGod ? 11.0 : s.fireHz) * (s.overclockTimer > 0 ? 1.55 : 1);
   const fireInterval = 1 / effHz;
   s.fireAcc += dt;
@@ -11772,7 +12219,6 @@ function tickBlasterGame(now) {
       s.bullets.push({ x: s.x - 10, y: by - 12, vx: -58, vy: -440, col: bCol, dmg: 1 });
       s.bullets.push({ x: s.x + 10, y: by - 12, vx: 58, vy: -440, col: bCol, dmg: 1 });
     } else {
-      // Hidden Overclock 5-cannon golden fan barrage!
       s.bullets.push({ x: s.x, y: by - 20, vx: 0, vy: -500, col: bCol, dmg: 2 });
       s.bullets.push({ x: s.x - 8, y: by - 15, vx: -48, vy: -470, col: bCol, dmg: 1 });
       s.bullets.push({ x: s.x + 8, y: by - 15, vx: 48, vy: -470, col: bCol, dmg: 1 });
@@ -11782,19 +12228,57 @@ function tickBlasterGame(now) {
     if (Math.random() < 0.25) playTone(s.overclockTimer > 0 ? 1046 : (isCacheFree ? 880 : 620), 0.04, "triangle", 0.025);
   }
 
-  // Spawn escalating programmer enemies
-  const wave = 1 + Math.floor(s.elapsed / 10);
-  const spawnInterval = Math.max(0.28, 0.85 - wave * 0.07);
-  s.spawnAcc += dt;
-  while (s.spawnAcc >= spawnInterval) {
+  // Homing Wingman Drones auto-fire cyan seeking missiles!
+  if (s.droneTimer > 0) {
+    s.droneFireAcc += dt;
+    if (s.droneFireAcc >= 0.28) {
+      s.droneFireAcc = 0;
+      for (const side of [-26, 26]) {
+        s.bullets.push({ x: s.x + side, y: by - 6, vx: side * 2, vy: -320, col: "#38BDF8", dmg: 1.5, homing: true });
+      }
+      playTone(1180, 0.03, "sine", 0.02);
+    }
+  }
+
+  // Piercing Hyper-Laser Beam continuous DPS tick!
+  if (s.laserTimer > 0) {
+    s.laserTickAcc += dt;
+    if (s.laserTickAcc >= 0.09) {
+      s.laserTickAcc = 0;
+      for (let i = s.enemies.length - 1; i >= 0; i--) {
+        const en = s.enemies[i];
+        if (Math.abs(en.x - s.x) < en.r + 16) {
+          const dmg = frozen ? 2.8 : 1.4; // Pierces Firewall shield!
+          en.hp -= dmg;
+          spawnBlasterParts(en.x, en.y, "#F472B6", 3);
+          if (en.hp <= 0) {
+            handleBlasterEnemyDeath(s, en, wave);
+            s.enemies.splice(i, 1);
+          }
+        }
+      }
+    }
+  }
+
+  // Periodic Special Mechanism Bosses!
+  const hasActiveBoss = s.enemies.some(e => e.boss && !e.isDecoy);
+  if (!frozen && !hasActiveBoss && s.elapsed >= s.nextBossAt) {
+    const bossCycle = ["boss_oom", "boss_loop", "boss_firewall", "boss_phantom"];
+    spawnSpecialBoss(s, bossCycle[s.bossIdx % bossCycle.length], wave);
+    s.bossIdx++;
+    s.nextBossAt = s.elapsed + 18;
+  }
+
+  // Spawn regular enemies
+  const spawnInterval = Math.max(0.30, 0.88 - wave * 0.065) * (hasActiveBoss ? 1.55 : 1);
+  if (!frozen) s.spawnAcc += dt;
+  while (!frozen && s.spawnAcc >= spawnInterval) {
     s.spawnAcc -= spawnInterval;
     const roll = Math.random();
     let spec;
-    if (roll < 0.12 && s.elapsed > 4) {
-      spec = { lbl: "OOM", hp: 5 + Math.floor(wave * 0.6), r: 17, vy: 46 + wave * 4, col: "#9333EA", pts: 120, boss: true };
-    } else if (roll < 0.25 && s.elapsed > 6) {
+    if (roll < 0.18 && s.elapsed > 4) {
       spec = { lbl: "SPLT", hp: 2, r: 14, vy: 64 + wave * 5, col: "#0EA5E9", pts: 55, boss: false, split: true };
-    } else if (roll < 0.44) {
+    } else if (roll < 0.40) {
       spec = { lbl: "429", hp: 1, r: 12, vy: 118 + wave * 9, col: "#D97706", pts: 35, boss: false };
     } else if (roll < 0.64) {
       spec = { lbl: "502", hp: 2, r: 13.5, vy: 72 + wave * 5, col: "#52525B", pts: 45, boss: false };
@@ -11802,71 +12286,159 @@ function tickBlasterGame(now) {
       spec = { lbl: "BUG", hp: 1 + (wave >= 4 ? 1 : 0), r: 12.5, vy: 82 + wave * 6, col: "#DC2626", pts: 25, boss: false };
     }
     s.enemies.push({
-      ...spec,
-      maxHp: spec.hp,
-      x: 22 + Math.random() * (s.w - 44),
-      y: -18,
-      wobble: Math.random() * Math.PI * 2,
+      ...spec, maxHp: spec.hp, x: 22 + Math.random() * (s.w - 44), y: -18, wobble: Math.random() * Math.PI * 2,
     });
   }
 
-  // Update bullets
+  // Update player bullets (including homing missiles!)
   for (let i = s.bullets.length - 1; i >= 0; i--) {
     const b = s.bullets[i];
+    if (b.homing && s.enemies.length > 0) {
+      let best = null, bestD = 9999;
+      for (const en of s.enemies) {
+        const d = Math.hypot(en.x - b.x, en.y - b.y);
+        if (d < bestD) { bestD = d; best = en; }
+      }
+      if (best) {
+        const ang = Math.atan2(best.y - b.y, best.x - b.x);
+        const sp = 390;
+        b.vx += (Math.cos(ang) * sp - b.vx) * Math.min(1, dt * 11);
+        b.vy += (Math.sin(ang) * sp - b.vy) * Math.min(1, dt * 11);
+      }
+    }
     b.x += b.vx * dt;
     b.y += b.vy * dt;
-    if (b.y < -12 || b.x < -12 || b.x > s.w + 12) {
+    if (b.y < -14 || b.y > s.h + 14 || b.x < -14 || b.x > s.w + 14) {
       s.bullets.splice(i, 1);
     }
   }
 
-  // Update enemies & collisions (slow-mo prop halves enemy fall speed!)
-  const enemySpeedMult = s.slowTimer > 0 ? 0.46 : 1;
+  // Update enemies, Boss mechanics & collisions
+  const enemySpeedMult = frozen ? 0 : (s.slowTimer > 0 ? 0.46 : 1);
   for (let i = s.enemies.length - 1; i >= 0; i--) {
     const en = s.enemies[i];
-    en.wobble += dt * 3.5 * enemySpeedMult;
-    en.y += en.vy * dt * enemySpeedMult;
-    en.x += Math.sin(en.wobble) * (en.lbl === "429" ? 42 : 14) * dt * enemySpeedMult;
-    en.x = Math.max(en.r + 4, Math.min(s.w - en.r - 4, en.x));
+    if (en.boss) {
+      if (!frozen) {
+        en.phaseT = (en.phaseT || 0) + dt * enemySpeedMult;
+        en.atkCd = (en.atkCd || 1.8) - dt * enemySpeedMult;
+        if (en.bossType === "boss_loop") {
+          en.x = s.w * 0.5 + Math.sin(en.phaseT * 1.15) * (s.w * 0.34);
+          en.y = 54 + Math.sin(en.phaseT * 2.3) * 18;
+          en.satAngle = (en.satAngle || 0) + dt * 2.4 * enemySpeedMult;
+          if (en.atkCd <= 0) {
+            en.atkCd = 2.5;
+            for (let k = 0; k < 6; k++) {
+              const a = (Math.PI * 2 * k) / 6 + en.satAngle;
+              s.enemyBullets.push({ x: en.x, y: en.y, vx: Math.cos(a) * 115, vy: Math.sin(a) * 115 + 42, r: 4.5, col: "#A78BFA" });
+            }
+          }
+        } else if (en.bossType === "boss_firewall") {
+          en.x = s.w * 0.5 + Math.sin(en.phaseT * 0.85) * (s.w * 0.30);
+          en.y = Math.min(56, en.y + 18 * dt * enemySpeedMult);
+          en.shieldOn = Math.floor(en.phaseT / 3.0) % 2 === 0;
+          if (en.atkCd <= 0) {
+            en.atkCd = 3.2;
+            s.bossBeams.push({ x: s.x, warn: 1.05, active: 0.55, w: 22 });
+            s.floats.push({ x: s.x, y: 74, txt: "⚠️ 激光锁定！快躲开!", col: "#EF4444", life: 0.9 });
+          }
+        } else if (en.bossType === "boss_phantom") {
+          en.x += Math.sin(en.phaseT * 2.2) * 58 * dt * enemySpeedMult;
+          en.x = Math.max(30, Math.min(s.w - 30, en.x));
+          en.y = Math.min(62, en.y + 16 * dt * enemySpeedMult);
+          if (!en.isDecoy && !en.splitDone && en.hp <= en.maxHp * 0.5) {
+            en.splitDone = true;
+            s.enemies.push({
+              boss: true, bossType: "boss_phantom", isDecoy: true, lbl: "404?", name: "幽灵假身",
+              hp: 6, maxHp: 6, r: 19, vy: 10, col: "#F472B6", pts: 60,
+              x: Math.max(34, Math.min(s.w - 34, s.w - en.x)), y: en.y + 14, phaseT: 1.4, atkCd: 2.5,
+            });
+            s.floats.push({ x: en.x, y: en.y - 18, txt: "👻 幽灵分裂！找金边真身!", col: "#F472B6", life: 1.1 });
+          }
+          if (en.atkCd <= 0) {
+            en.atkCd = 2.2;
+            const ang = Math.atan2(by - en.y, s.x - en.x);
+            s.enemyBullets.push({ x: en.x, y: en.y, vx: Math.cos(ang) * 160, vy: Math.sin(ang) * 160, r: 5, col: "#F472B6" });
+          }
+        } else {
+          // boss_oom
+          en.x = s.w * 0.5 + Math.sin(en.phaseT * 0.95) * (s.w * 0.32);
+          en.y = Math.min(58, en.y + 16 * dt * enemySpeedMult);
+          if (!en.enraged && en.hp <= en.maxHp * 0.5) {
+            en.enraged = true;
+            s.floats.push({ x: en.x, y: en.y - 20, txt: "💢 OOM 巨兽狂暴！召唤 MEM!", col: "#C084FC", life: 1.0 });
+            for (const dir of [-1, 1]) {
+              s.enemies.push({
+                lbl: "MEM", hp: 2, maxHp: 2, r: 11, vy: 118, col: "#A855F7", pts: 45, boss: false,
+                x: Math.max(20, Math.min(s.w - 20, en.x + dir * 32)), y: en.y + 14, wobble: 0,
+              });
+            }
+          }
+          if (en.atkCd <= 0) {
+            en.atkCd = en.enraged ? 1.5 : 2.1;
+            const baseA = Math.atan2(by - en.y, s.x - en.x);
+            for (const off of [-0.26, 0, 0.26]) {
+              s.enemyBullets.push({ x: en.x, y: en.y + 12, vx: Math.cos(baseA + off) * 145, vy: Math.sin(baseA + off) * 145, r: 5, col: "#C084FC" });
+            }
+          }
+        }
+      }
+    } else {
+      en.wobble += dt * 3.5 * enemySpeedMult;
+      en.y += en.vy * dt * enemySpeedMult;
+      en.x += Math.sin(en.wobble) * (en.lbl === "429" ? 42 : 14) * dt * enemySpeedMult;
+      en.x = Math.max(en.r + 4, Math.min(s.w - en.r - 4, en.x));
+    }
 
     let killed = false;
     for (let j = s.bullets.length - 1; j >= 0; j--) {
       const b = s.bullets[j];
+      // Check boss_loop orbiting satellites first!
+      if (en.bossType === "boss_loop" && en.satellites && en.satellites.length) {
+        let hitSat = false;
+        for (let si = en.satellites.length - 1; si >= 0; si--) {
+          const sat = en.satellites[si];
+          const sx = en.x + Math.cos(en.satAngle + sat.angle) * 34;
+          const sy = en.y + Math.sin(en.satAngle + sat.angle) * 24;
+          if (Math.hypot(b.x - sx, b.y - sy) < 11) {
+            s.bullets.splice(j, 1);
+            sat.hp -= b.dmg;
+            spawnBlasterParts(sx, sy, "#C4B5FD", 5);
+            if (sat.hp <= 0) {
+              en.satellites.splice(si, 1);
+              en.hp -= 4;
+              s.floats.push({ x: sx, y: sy, txt: "💥 破卫星反伤 -4!", col: "#A78BFA", life: 0.85 });
+            }
+            hitSat = true;
+            break;
+          }
+        }
+        if (hitSat) {
+          if (en.hp <= 0) { killed = true; handleBlasterEnemyDeath(s, en, wave); break; }
+          continue;
+        }
+      }
+
       if (Math.hypot(b.x - en.x, b.y - en.y) < en.r + 6) {
         s.bullets.splice(j, 1);
-        en.hp -= b.dmg;
-        spawnBlasterParts(b.x, b.y, b.col, 4);
+        let effDmg = b.dmg * (frozen ? 2 : 1);
+        if (en.bossType === "boss_firewall") {
+          effDmg = en.shieldOn ? effDmg * 0.3 : effDmg * 2.0;
+        }
+        en.hp -= effDmg;
+        spawnBlasterParts(b.x, b.y, en.bossType === "boss_firewall" && !en.shieldOn ? "#FACC15" : b.col, 4);
+        // Phantom teleports every 5 hits!
+        if (en.bossType === "boss_phantom" && !en.isDecoy && en.hp > 0 && !frozen) {
+          en.tpHits = (en.tpHits || 0) + 1;
+          if (en.tpHits >= 5) {
+            en.tpHits = 0;
+            s.enemyBullets.push({ x: en.x, y: en.y, vx: 0, vy: 115, r: 6.5, col: "#EC4899" });
+            en.x = 42 + Math.random() * (s.w - 84);
+            spawnBlasterParts(en.x, en.y, "#F472B6", 10);
+          }
+        }
         if (en.hp <= 0) {
           killed = true;
-          s.kills++;
-          s.combo++;
-          s.comboTimer = 2.4;
-          const cMult = s.combo >= 15 ? 3 : (s.combo >= 8 ? 2 : (s.combo >= 4 ? 1.5 : 1));
-          const gain = Math.round(en.pts * cMult);
-          s.score += gain;
-          s.feverCharge = Math.min(100, s.feverCharge + (en.boss ? 28 : 8));
-          if (s.feverCharge >= 100) {
-            s.feverCharge = 0;
-            s.overclockTimer = Math.max(s.overclockTimer, 4.5);
-            s.floats.push({ x: s.w / 2, y: s.h * 0.35, txt: "🔥 狂热满能！5管黄金暴走 4.5s!", col: "#F59E0B", life: 1.1 });
-            playSfx("ssr");
-          }
-          spawnBlasterParts(en.x, en.y, en.col, en.boss ? 18 : 10);
-          s.floats.push({ x: en.x, y: en.y, txt: cMult > 1 ? `+${gain} ×${cMult}` : `+${gain}`, col: en.col, life: 0.72 });
-          playSfx(en.boss ? "gold" : "token");
-          if (en.split) {
-            for (const dir of [-1, 1]) {
-              s.enemies.push({
-                lbl: "mini", hp: 1, maxHp: 1, r: 9.5, vy: 112 + wave * 6, col: "#38BDF8", pts: 20, boss: false,
-                x: Math.max(16, Math.min(s.w - 16, en.x + dir * 18)), y: en.y, wobble: Math.random() * 6,
-              });
-            }
-          }
-          if (en.boss && Math.random() < 0.45) {
-            s.pickups.push({ x: en.x, y: en.y, vy: 82, kind: "overclock", amt: 0 });
-          } else if (en.boss || Math.random() < 0.1) {
-            s.pickups.push({ x: en.x, y: en.y, vy: 88, kind: "ammo", amt: en.boss ? 28 : 12 });
-          }
+          handleBlasterEnemyDeath(s, en, wave);
           break;
         }
       }
@@ -11891,15 +12463,83 @@ function tickBlasterGame(now) {
     }
   }
 
-  // Update ammo & hidden overclock pickups
+  // Update enemy bullets
+  for (let i = s.enemyBullets.length - 1; i >= 0; i--) {
+    const eb = s.enemyBullets[i];
+    if (!frozen) {
+      eb.x += eb.vx * dt * enemySpeedMult;
+      eb.y += eb.vy * dt * enemySpeedMult;
+    }
+    if (Math.hypot(eb.x - s.x, eb.y - by) < eb.r + 14) {
+      s.enemyBullets.splice(i, 1);
+      if (isGod || s.shieldTimer > 0) {
+        spawnBlasterParts(eb.x, eb.y, "#38BDF8", 8);
+        s.floats.push({ x: s.x, y: by - 22, txt: "🛡️ 格挡敌弹!", col: "#38BDF8", life: 0.65 });
+        playSfx("cache");
+      } else {
+        s.combo = 0;
+        s.lives = Math.max(0, s.lives - 1);
+        s.shakeTimer = 0.34;
+        s.shieldTimer = 1.1; // Brief i-frames after hit
+        spawnBlasterParts(s.x, by, "#EF4444", 14);
+        s.floats.push({ x: s.x, y: by - 22, txt: "💥 中弹 -1❤️!", col: "#EF4444", life: 0.9 });
+        playSfx("bomb");
+      }
+      continue;
+    }
+    if (eb.y > s.h + 18 || eb.y < -18 || eb.x < -18 || eb.x > s.w + 18) {
+      s.enemyBullets.splice(i, 1);
+    }
+  }
+
+  // Update Firewall Boss laser beams
+  for (let i = s.bossBeams.length - 1; i >= 0; i--) {
+    const bm = s.bossBeams[i];
+    if (!frozen) {
+      if (bm.warn > 0) bm.warn -= dt * enemySpeedMult;
+      else bm.active -= dt * enemySpeedMult;
+    }
+    if (bm.warn <= 0 && bm.active > 0 && Math.abs(s.x - bm.x) < bm.w * 0.5 + 12) {
+      if (!isGod && s.shieldTimer <= 0) {
+        s.combo = 0;
+        s.lives = Math.max(0, s.lives - 1);
+        s.shakeTimer = 0.36;
+        s.shieldTimer = 1.2;
+        s.floats.push({ x: s.x, y: by - 22, txt: "🔥 防火墙激光命中 -1❤️!", col: "#EF4444", life: 0.95 });
+        playSfx("bomb");
+      }
+    }
+    if (bm.active <= 0) s.bossBeams.splice(i, 1);
+  }
+
+  // Update pickups (ammo, overclock, carrot_coin, gacha_box!)
   for (let i = s.pickups.length - 1; i >= 0; i--) {
     const pk = s.pickups[i];
     pk.y += pk.vy * dt;
-    if (Math.hypot(pk.x - s.x, pk.y - by) < 30) {
+    if (Math.hypot(pk.x - s.x, pk.y - by) < 32) {
       if (pk.kind === "overclock") {
         s.overclockTimer = 6.0;
         spawnBlasterParts(pk.x, pk.y, "#F59E0B", 20);
         s.floats.push({ x: pk.x, y: by - 22, txt: "⚡ 隐藏超频! 5管狂暴 6s!", col: "#F59E0B", life: 1.15 });
+        playSfx("ssr");
+      } else if (pk.kind === "carrot_coin") {
+        const added = grantAdventureCoins(1);
+        if (added > 0) {
+          s.coinsCaught += added;
+          spawnBlasterParts(pk.x, pk.y, "#FBBF24", 20);
+          s.floats.push({ x: pk.x, y: by - 24, txt: "🥕 接到 +1 萝卜币!", col: "#F59E0B", life: 1.25 });
+          playSfx("ssr");
+        } else {
+          s.score += 150;
+          spawnBlasterParts(pk.x, pk.y, "#F59E0B", 14);
+          s.floats.push({ x: pk.x, y: by - 24, txt: "🥕 今日满5币 · 折算 +150分!", col: "#F59E0B", life: 1.05 });
+          playSfx("gold");
+        }
+      } else if (pk.kind === "gacha_box") {
+        const loot = rollInGameMysteryLoot();
+        s.lootsFound.push(`${loot.icon}${loot.actualName}`);
+        spawnBlasterParts(pk.x, pk.y, loot.r === "SSR" ? "#FACC15" : loot.r === "SR" ? "#C084FC" : "#38BDF8", 24);
+        s.floats.push({ x: s.w / 2, y: by - 34, txt: `🎁 [${loot.r}] ${loot.icon} ${loot.actualName}!`, col: loot.r === "SSR" ? "#FACC15" : "#A855F7", life: 1.65 });
         playSfx("ssr");
       } else {
         s.ammo += pk.amt;
@@ -11908,7 +12548,7 @@ function tickBlasterGame(now) {
         playSfx("cache");
       }
       s.pickups.splice(i, 1);
-    } else if (pk.y > s.h + 16) {
+    } else if (pk.y > s.h + 18) {
       s.pickups.splice(i, 1);
     }
   }
@@ -11933,21 +12573,44 @@ function tickBlasterGame(now) {
     if (f.life <= 0) s.floats.splice(i, 1);
   }
 
-  // Render blaster canvas
-  const cs = getComputedStyle(document.documentElement);
-  const bg = cs.getPropertyValue("--surface-2").trim() || "#EFECE4";
+  // Render blaster canvas with unlocked Adventure Backdrop!
   blCtx.save();
   if (s.shakeTimer > 0) {
     blCtx.translate((Math.random() - 0.5) * 7, (Math.random() - 0.5) * 5);
   }
-  blCtx.fillStyle = bg;
-  blCtx.fillRect(0, 0, s.w, s.h);
+  drawAdventureBackdrop(blCtx, s.w, s.h, now, frozen);
 
-  // Subtle radar grid
-  blCtx.strokeStyle = "rgba(128,128,128,0.08)";
-  blCtx.lineWidth = 1;
-  for (let gx = 40; gx < s.w; gx += 46) {
-    blCtx.beginPath(); blCtx.moveTo(gx, 0); blCtx.lineTo(gx, s.h); blCtx.stroke();
+  // Boss Laser Beams
+  for (const bm of s.bossBeams) {
+    if (bm.warn > 0) {
+      blCtx.save();
+      blCtx.strokeStyle = `rgba(239, 68, 68, ${0.45 + 0.45 * Math.sin(now * 0.03)})`;
+      blCtx.lineWidth = 2;
+      blCtx.setLineDash([5, 5]);
+      blCtx.beginPath(); blCtx.moveTo(bm.x, 0); blCtx.lineTo(bm.x, s.h); blCtx.stroke();
+      blCtx.restore();
+    } else {
+      blCtx.save();
+      blCtx.fillStyle = "rgba(239, 68, 68, 0.42)";
+      blCtx.fillRect(bm.x - bm.w / 2, 0, bm.w, s.h);
+      blCtx.fillStyle = "rgba(254, 240, 138, 0.85)";
+      blCtx.fillRect(bm.x - bm.w * 0.2, 0, bm.w * 0.4, s.h);
+      blCtx.restore();
+    }
+  }
+
+  // Player Hyper-Laser Beam!
+  if (s.laserTimer > 0) {
+    blCtx.save();
+    const lg = blCtx.createLinearGradient(s.x - 16, 0, s.x + 16, 0);
+    lg.addColorStop(0, "rgba(56, 189, 248, 0.1)");
+    lg.addColorStop(0.25, "rgba(192, 132, 252, 0.72)");
+    lg.addColorStop(0.5, "rgba(254, 249, 195, 0.96)");
+    lg.addColorStop(0.75, "rgba(244, 114, 182, 0.72)");
+    lg.addColorStop(1, "rgba(56, 189, 248, 0.1)");
+    blCtx.fillStyle = lg;
+    blCtx.fillRect(s.x - 16, 0, 32, by - 10);
+    blCtx.restore();
   }
 
   // Nova shockwave
@@ -11956,30 +12619,71 @@ function tickBlasterGame(now) {
     blCtx.globalAlpha = s.novaRing.alpha;
     blCtx.strokeStyle = "#F59E0B";
     blCtx.lineWidth = 5;
-    blCtx.beginPath();
-    blCtx.arc(s.x, by, s.novaRing.r, 0, Math.PI * 2);
-    blCtx.stroke();
+    blCtx.beginPath(); blCtx.arc(s.x, by, s.novaRing.r, 0, Math.PI * 2); blCtx.stroke();
     blCtx.restore();
   }
 
   // Bullets
   for (const b of s.bullets) {
     blCtx.fillStyle = b.col;
-    blCtx.beginPath();
-    blCtx.roundRect(b.x - 2, b.y - 6, 4, 12, 2);
-    blCtx.fill();
+    if (b.homing) {
+      blCtx.beginPath(); blCtx.arc(b.x, b.y, 4, 0, Math.PI * 2); blCtx.fill();
+    } else {
+      blCtx.beginPath(); blCtx.roundRect(b.x - 2, b.y - 6, 4, 12, 2); blCtx.fill();
+    }
   }
 
-  // Ammo & Overclock pickups
+  // Enemy Bullets
+  for (const eb of s.enemyBullets) {
+    blCtx.save();
+    blCtx.shadowColor = eb.col;
+    blCtx.shadowBlur = 8;
+    blCtx.fillStyle = eb.col;
+    blCtx.beginPath(); blCtx.arc(eb.x, eb.y, eb.r, 0, Math.PI * 2); blCtx.fill();
+    blCtx.fillStyle = "#fff";
+    blCtx.beginPath(); blCtx.arc(eb.x, eb.y, eb.r * 0.42, 0, Math.PI * 2); blCtx.fill();
+    blCtx.restore();
+  }
+
+  // Pickups
   for (const pk of s.pickups) {
-    if (pk.kind === "overclock") {
+    if (pk.kind === "carrot_coin") {
+      blCtx.save();
+      blCtx.shadowColor = "rgba(251, 191, 36, 0.9)";
+      blCtx.shadowBlur = 12;
+      blCtx.fillStyle = "#F59E0B";
+      blCtx.beginPath(); blCtx.arc(pk.x, pk.y, 11, 0, Math.PI * 2); blCtx.fill();
+      blCtx.strokeStyle = "#FEF08A";
+      blCtx.lineWidth = 1.6;
+      blCtx.stroke();
+      blCtx.shadowBlur = 0;
+      blCtx.font = "12px sans-serif";
+      blCtx.textAlign = "center";
+      blCtx.textBaseline = "middle";
+      blCtx.fillText("🥕", pk.x, pk.y + 0.5);
+      blCtx.restore();
+    } else if (pk.kind === "gacha_box") {
+      blCtx.save();
+      blCtx.shadowColor = "rgba(192, 132, 252, 0.95)";
+      blCtx.shadowBlur = 14;
+      const gg = blCtx.createRadialGradient(pk.x - 3, pk.y - 3, 2, pk.x, pk.y, 13);
+      gg.addColorStop(0, "#FEF08A");
+      gg.addColorStop(0.6, "#C084FC");
+      gg.addColorStop(1, "#F472B6");
+      blCtx.fillStyle = gg;
+      blCtx.beginPath(); blCtx.arc(pk.x, pk.y, 12.5, 0, Math.PI * 2); blCtx.fill();
+      blCtx.shadowBlur = 0;
+      blCtx.font = "13px sans-serif";
+      blCtx.textAlign = "center";
+      blCtx.textBaseline = "middle";
+      blCtx.fillText("🎁", pk.x, pk.y + 0.5);
+      blCtx.restore();
+    } else if (pk.kind === "overclock") {
       blCtx.save();
       blCtx.shadowColor = "rgba(245, 158, 11, 0.8)";
       blCtx.shadowBlur = 12;
       blCtx.fillStyle = "#F59E0B";
-      blCtx.beginPath();
-      blCtx.roundRect(pk.x - 15, pk.y - 10, 30, 20, 6);
-      blCtx.fill();
+      blCtx.beginPath(); blCtx.roundRect(pk.x - 15, pk.y - 10, 30, 20, 6); blCtx.fill();
       blCtx.shadowBlur = 0;
       blCtx.fillStyle = "#fff";
       blCtx.font = "bold 9.5px monospace";
@@ -11989,9 +12693,7 @@ function tickBlasterGame(now) {
       blCtx.restore();
     } else {
       blCtx.fillStyle = "#0E8A78";
-      blCtx.beginPath();
-      blCtx.roundRect(pk.x - 12, pk.y - 9, 24, 18, 5);
-      blCtx.fill();
+      blCtx.beginPath(); blCtx.roundRect(pk.x - 12, pk.y - 9, 24, 18, 5); blCtx.fill();
       blCtx.fillStyle = "#fff";
       blCtx.font = "bold 9px monospace";
       blCtx.textAlign = "center";
@@ -12000,30 +12702,76 @@ function tickBlasterGame(now) {
     }
   }
 
-  // Enemies
+  // Enemies & Special Bosses
+  let activeBossForBar = null;
   for (const en of s.enemies) {
+    if (en.boss && !en.isDecoy) activeBossForBar = en;
     blCtx.save();
     blCtx.translate(en.x, en.y);
-    blCtx.fillStyle = en.col;
+    if (en.isDecoy) blCtx.globalAlpha = 0.52;
+    if (en.bossType === "boss_firewall") {
+      blCtx.strokeStyle = en.shieldOn ? "#38BDF8" : "#FACC15";
+      blCtx.lineWidth = en.shieldOn ? 3.2 : 2.2;
+      blCtx.beginPath(); blCtx.arc(0, 0, en.r + 6, 0, Math.PI * 2); blCtx.stroke();
+    } else if (en.bossType === "boss_phantom" && !en.isDecoy) {
+      blCtx.strokeStyle = "rgba(253, 224, 71, 0.82)";
+      blCtx.lineWidth = 2;
+      blCtx.beginPath(); blCtx.arc(0, 0, en.r + 3, 0, Math.PI * 2); blCtx.stroke();
+    }
+    blCtx.fillStyle = frozen ? "#38BDF8" : en.col;
     blCtx.beginPath();
-    blCtx.roundRect(-en.r, -en.r * 0.78, en.r * 2, en.r * 1.56, 6);
+    if (en.boss) {
+      blCtx.roundRect(-en.r, -en.r * 0.78, en.r * 2, en.r * 1.56, 9);
+    } else {
+      blCtx.roundRect(-en.r, -en.r * 0.78, en.r * 2, en.r * 1.56, 6);
+    }
     blCtx.fill();
     blCtx.fillStyle = "#fff";
-    blCtx.font = `bold ${en.boss ? 10 : 8.5}px monospace`;
+    blCtx.font = `bold ${en.boss ? 10.5 : 8.5}px monospace`;
     blCtx.textAlign = "center";
     blCtx.textBaseline = "middle";
-    blCtx.fillText(en.lbl, 0, 0.5);
-    if (en.maxHp > 1) {
+    blCtx.fillText(en.bossType === "boss_firewall" ? (en.shieldOn ? "🛡️WAF" : "🔥破防") : en.lbl, 0, 0.5);
+    if (en.maxHp > 1 && !en.boss) {
       const bw = en.r * 1.8;
       blCtx.fillStyle = "rgba(0,0,0,0.28)";
       blCtx.fillRect(-bw / 2, -en.r * 0.78 - 5, bw, 3);
       blCtx.fillStyle = "#FEF08A";
-      blCtx.fillRect(-bw / 2, -en.r * 0.78 - 5, bw * (en.hp / en.maxHp), 3);
+      blCtx.fillRect(-bw / 2, -en.r * 0.78 - 5, bw * Math.max(0, en.hp / en.maxHp), 3);
     }
     blCtx.restore();
+
+    // Draw Loop Boss orbiting satellites
+    if (en.bossType === "boss_loop" && en.satellites) {
+      for (const sat of en.satellites) {
+        const sx = en.x + Math.cos(en.satAngle + sat.angle) * 34;
+        const sy = en.y + Math.sin(en.satAngle + sat.angle) * 24;
+        blCtx.fillStyle = "#C4B5FD";
+        blCtx.beginPath(); blCtx.arc(sx, sy, 7.5, 0, Math.PI * 2); blCtx.fill();
+        blCtx.fillStyle = "#4C1D95";
+        blCtx.font = "bold 8px monospace";
+        blCtx.textAlign = "center";
+        blCtx.textBaseline = "middle";
+        blCtx.fillText("∞", sx, sy + 0.5);
+      }
+    }
   }
 
-  // Draw Bunny Turret + Shield/Slow-Mo/Fever HUD
+  // Draw Homing Wingman Drones beside TooToo!
+  if (s.droneTimer > 0) {
+    for (const side of [-26, 26]) {
+      const dx = s.x + side;
+      const dy = by - 5 + Math.sin(now * 0.01 + side) * 3;
+      blCtx.save();
+      blCtx.translate(dx, dy);
+      blCtx.fillStyle = "#0EA5E9";
+      blCtx.beginPath(); blCtx.arc(0, 0, 7, 0, Math.PI * 2); blCtx.fill();
+      blCtx.fillStyle = "#E0F2FE";
+      blCtx.beginPath(); blCtx.arc(0, 0, 3.2, 0, Math.PI * 2); blCtx.fill();
+      blCtx.restore();
+    }
+  }
+
+  // Draw Bunny Turret + Shield/Overclock Aura
   blCtx.save();
   blCtx.translate(s.x, by);
   if (s.shieldTimer > 0) {
@@ -12075,18 +12823,50 @@ function tickBlasterGame(now) {
     blCtx.fillText(f.txt, f.x, f.y);
   }
   blCtx.globalAlpha = 1;
-  // Live combo & fever charge HUD inside blaster canvas
+
+  // Top Boss HP Bar
+  if (activeBossForBar) {
+    const bw = Math.min(240, s.w - 60);
+    const bx = (s.w - bw) / 2;
+    blCtx.fillStyle = "rgba(15, 23, 42, 0.72)";
+    blCtx.beginPath(); blCtx.roundRect(bx - 4, 7, bw + 8, 17, 6); blCtx.fill();
+    blCtx.fillStyle = "rgba(255,255,255,0.16)";
+    blCtx.fillRect(bx, 18, bw, 3.5);
+    blCtx.fillStyle = activeBossForBar.col;
+    blCtx.fillRect(bx, 18, bw * Math.max(0, activeBossForBar.hp / activeBossForBar.maxHp), 3.5);
+    blCtx.fillStyle = "#FEF08A";
+    blCtx.font = "bold 9px monospace";
+    blCtx.textAlign = "center";
+    blCtx.fillText(`${activeBossForBar.name} (${Math.ceil(activeBossForBar.hp)}/${activeBossForBar.maxHp})`, s.w / 2, 14.5);
+  }
+  if (s.bossBanner) {
+    blCtx.save();
+    blCtx.globalAlpha = Math.min(1, s.bossBanner.life * 1.4);
+    blCtx.fillStyle = "rgba(15, 23, 42, 0.82)";
+    blCtx.beginPath(); blCtx.roundRect(16, s.h * 0.40 - 12, s.w - 32, 24, 7); blCtx.fill();
+    blCtx.fillStyle = s.bossBanner.col;
+    blCtx.font = "bold 10px monospace";
+    blCtx.textAlign = "center";
+    blCtx.fillText(s.bossBanner.txt, s.w / 2, s.h * 0.40 + 3.5);
+    blCtx.restore();
+  }
+
+  // Live combo & active prop HUD inside canvas
   if (s.combo >= 3) {
     blCtx.fillStyle = s.combo >= 15 ? "#F59E0B" : "#E54826";
-    blCtx.font = "bold 11.5px monospace";
+    blCtx.font = "bold 11px monospace";
     blCtx.textAlign = "left";
-    blCtx.fillText(`🔥 COMBO ×${s.combo}`, 10, 18);
+    blCtx.fillText(`🔥 COMBO ×${s.combo}`, 10, activeBossForBar ? 36 : 18);
   }
-  if (s.slowTimer > 0) {
-    blCtx.fillStyle = "#0284C7";
-    blCtx.font = "bold 10.5px monospace";
+  const activeTag = frozen ? `❄️ 时停 ${s.freezeTimer.toFixed(1)}s`
+    : s.laserTimer > 0 ? `🌈 激光 ${s.laserTimer.toFixed(1)}s`
+    : s.droneTimer > 0 ? `🤖 僚机 ${s.droneTimer.toFixed(1)}s`
+    : s.slowTimer > 0 ? `⏱️ 缓时 ${s.slowTimer.toFixed(1)}s` : "";
+  if (activeTag) {
+    blCtx.fillStyle = frozen ? "#38BDF8" : "#F59E0B";
+    blCtx.font = "bold 10px monospace";
     blCtx.textAlign = "right";
-    blCtx.fillText(`⏱️ 缓时 ${s.slowTimer.toFixed(1)}s`, s.w - 10, 18);
+    blCtx.fillText(activeTag, s.w - 10, activeBossForBar ? 36 : 18);
   }
   // Fever progress bar along very top
   blCtx.fillStyle = "rgba(128,128,128,0.14)";
@@ -12100,13 +12880,15 @@ function tickBlasterGame(now) {
   const ocTxt = s.overclockTimer > 0 ? ` · ⚡超频 ${s.overclockTimer.toFixed(1)}s` : (s.shieldTimer > 0 ? ` · 🛡️盾 ${s.shieldTimer.toFixed(1)}s` : "");
   document.getElementById("blWaveInfo").textContent = `防线 ${isGod ? "🛡️无双" : ("❤️".repeat(s.lives) + "🖤".repeat(Math.max(0, 3 - s.lives)))} · 第 ${wave} 波 · 免弹 ${s.refunded}${ocTxt}`;
 
-  // End check: out of lives OR (ammo depleted and no bullets left)
+  // End check
   if (!isGod && (s.lives <= 0 || (s.ammo <= 0 && s.bullets.length === 0))) {
     s.running = false;
     let best = 0;
     try { best = Number(localStorage.getItem("tootoo_blaster_best") || 0) || 0; } catch {}
     const isNew = !s.debugTainted && s.score > best;
-    const bonusCoin = (!s.debugTainted && s.score >= 1200) ? grantDailyAdventureBonusCoin() : false;
+    const scoreTierCoins = !s.debugTainted ? ((s.score >= 3200 ? 3 : s.score >= 1800 ? 2 : s.score >= 800 ? 1 : 0)) : 0;
+    const milestoneCoins = scoreTierCoins > 0 ? grantAdventureCoins(scoreTierCoins) : 0;
+    const totalCoins = (s.coinsCaught || 0) + milestoneCoins;
     if (isNew) {
       best = s.score;
       try { localStorage.setItem("tootoo_blaster_best", String(best)); } catch {}
@@ -12118,9 +12900,10 @@ function tickBlasterGame(now) {
     }
     const reason = s.lives <= 0 ? "防线被 Bug 突破！" : "今日 Token 弹药全部倾泻完毕！";
     const dbgPrefix = s.debugTainted ? "[调试] " : "";
-    const bonusTxt = bonusCoin ? " 🎁 破 1200 分解锁今日大冒险奖励 +1 萝卜币！" : "";
+    const coinTxt = totalCoins > 0 ? ` 🥕 本局共赢 +${totalCoins} 萝卜币！` : "";
+    const lootTxt = s.lootsFound.length ? ` 🎁 神秘宝箱开出：${s.lootsFound.join("、")}` : "";
     document.getElementById("blasterTitle").textContent = `${dbgPrefix}${isNew ? "🏆 新纪录！" : "🎯 战报"} 得分 ${s.score}`;
-    document.getElementById("blasterDesc").textContent = `${reason} 共歼灭 ${s.kills} 只 Bug，真实缓存白嫖 ${s.refunded} 发弹药！${bonusTxt}`;
+    document.getElementById("blasterDesc").textContent = `${reason} 歼灭 ${s.kills} 只 Bug（斩Boss ${s.bossKills}），白嫖 ${s.refunded} 弹！${coinTxt}${lootTxt}`;
     document.getElementById("blasterStartBtn").textContent = "↻ 重新装填弹药";
     document.getElementById("blasterOverlay").classList.remove("hidden");
     return;
@@ -12145,7 +12928,10 @@ window.addEventListener("keydown", (e) => {
   if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") rainKeys.left = true;
   if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") rainKeys.right = true;
   if (e.code === "Space") { e.preventDefault(); triggerRainDash(); }
-  const rProps = { "1": "rain_magnet", "2": "energy_shield", "3": "slow_mo", "4": "orbital_nuke" };
+  const rProps = {
+    "1": "rain_magnet", "2": "energy_shield", "3": "slow_mo",
+    "4": "orbital_nuke", "5": "homing_drones", "6": "laser_beam", "7": "time_freeze",
+  };
   if (rProps[e.key]) useAdventureProp("rain", rProps[e.key]);
 });
 window.addEventListener("keyup", (e) => {
@@ -12211,10 +12997,15 @@ function startRainGame() {
     magnetTimer: 0,
     feverTimer: 0,
     slowTimer: 0,
+    droneTimer: 0,
+    laserTimer: 0,
+    freezeTimer: 0,
     dashTimer: 0,
     dashCd: 0,
     dizzyTimer: 0,
     shakeTimer: 0,
+    coinsCaught: 0,
+    lootsFound: [],
     shields,
     debugTainted: Boolean(debugState.active && debugState.godMode),
     tps,
@@ -12248,10 +13039,13 @@ function tickRainGame(now) {
   const dt = Math.min(0.05, (now - s.lastTs) / 1000);
   s.lastTs = now;
 
-  s.timeLeft = Math.max(0, s.timeLeft - dt);
+  if (s.freezeTimer > 0) s.freezeTimer = Math.max(0, s.freezeTimer - dt);
+  else s.timeLeft = Math.max(0, s.timeLeft - dt);
   if (s.magnetTimer > 0) s.magnetTimer = Math.max(0, s.magnetTimer - dt);
   if (s.feverTimer > 0) s.feverTimer = Math.max(0, s.feverTimer - dt);
   if (s.slowTimer > 0) s.slowTimer = Math.max(0, s.slowTimer - dt);
+  if (s.droneTimer > 0) s.droneTimer = Math.max(0, s.droneTimer - dt);
+  if (s.laserTimer > 0) s.laserTimer = Math.max(0, s.laserTimer - dt);
   if (s.dashTimer > 0) s.dashTimer = Math.max(0, s.dashTimer - dt);
   if (s.dashCd > 0) s.dashCd = Math.max(0, s.dashCd - dt);
   if (s.dizzyTimer > 0) s.dizzyTimer = Math.max(0, s.dizzyTimer - dt);
@@ -12263,28 +13057,30 @@ function tickRainGame(now) {
   s.targetX = Math.max(24, Math.min(s.w - 24, s.targetX));
   s.x += (s.targetX - s.x) * Math.min(1, dt * (s.dashTimer > 0 ? 34 : 16));
 
-  // Spawn items scaled by real TPS + Final 8s Golden Rush!
+  // Spawn items scaled by real TPS + Final 8s Golden Rush + rare Carrot Coin & Mystery Gacha Box!
   const isRush = s.timeLeft <= 8;
-  const spawnInterval = Math.max(0.18, (0.58 - (s.tps / 180) * 0.28) * (isRush ? 0.68 : 1));
+  const spawnInterval = Math.max(0.18, (0.58 - (s.tps / 180) * 0.28) * (isRush ? 0.68 : 1) * (s.freezeTimer > 0 ? 0.72 : 1));
   s.spawnAcc += dt;
   while (s.spawnAcc >= spawnInterval) {
     s.spawnAcc -= spawnInterval;
     const roll = Math.random();
     let kind = "token";
-    if (roll < 0.035) kind = "rainbow";
-    else if (roll < 0.07) kind = "hourglass";
-    else if (roll < 0.13) kind = "diamond";
-    else if (roll < (isRush ? 0.28 : 0.19)) kind = "gold";
-    else if (roll < (isRush ? 0.38 : 0.31)) kind = "bomb";
-    else if (roll < 0.31 + s.cacheRate * 0.55) kind = "cache";
+    if (roll < 0.018) kind = "gacha_box";
+    else if (roll < 0.043) kind = "carrot_coin";
+    else if (roll < 0.078) kind = "rainbow";
+    else if (roll < 0.112) kind = "hourglass";
+    else if (roll < 0.172) kind = "diamond";
+    else if (roll < (isRush ? 0.31 : 0.22)) kind = "gold";
+    else if (s.freezeTimer <= 0 && roll < (isRush ? 0.41 : 0.34)) kind = "bomb";
+    else if (roll < 0.34 + s.cacheRate * 0.55) kind = "cache";
     const baseVy = 115 + (s.tps / 180) * 115 + Math.random() * 55;
     s.items.push({
       kind,
       x: 20 + Math.random() * (s.w - 40),
       y: -14,
       vx: kind === "diamond" ? ((Math.random() < 0.5 ? -1 : 1) * (95 + Math.random() * 55)) : 0,
-      vy: (kind === "gold" || kind === "rainbow" || kind === "diamond") ? baseVy * 1.12 : baseVy,
-      r: kind === "rainbow" ? 12.5 : (kind === "gold" || kind === "diamond" || kind === "hourglass") ? 11 : kind === "bomb" ? 11 : 9.5,
+      vy: (kind === "gacha_box" || kind === "carrot_coin") ? baseVy * 0.88 : ((kind === "gold" || kind === "rainbow" || kind === "diamond") ? baseVy * 1.12 : baseVy),
+      r: (kind === "rainbow" || kind === "gacha_box") ? 12.5 : (kind === "gold" || kind === "diamond" || kind === "hourglass" || kind === "carrot_coin") ? 11 : kind === "bomb" ? 11 : 9.5,
       rot: Math.random() * Math.PI * 2,
     });
   }
@@ -12293,11 +13089,16 @@ function tickRainGame(now) {
   const magnetOn = s.magnetTimer > 0 || s.feverTimer > 0;
   for (let i = s.items.length - 1; i >= 0; i--) {
     const it = s.items[i];
+    // Golden purifier beam turns touching bombs into golden carrots!
+    if (s.laserTimer > 0 && it.kind === "bomb" && Math.abs(it.x - s.x) < 28) {
+      it.kind = "gold";
+      spawnRainParticles(it.x, it.y, "#FACC15", 10);
+    }
     if (magnetOn && it.kind !== "bomb") {
       const dx = s.x - it.x;
       const dy = by - it.y;
       const dist = Math.hypot(dx, dy) || 1;
-      if (dist < (s.feverTimer > 0 ? 255 : 190)) {
+      if (dist < (s.feverTimer > 0 ? 255 : 195)) {
         it.x += (dx / dist) * 380 * dt;
         it.y += (dy / dist) * 290 * dt;
       }
@@ -12309,12 +13110,19 @@ function tickRainGame(now) {
         it.x = Math.max(it.r + 6, Math.min(s.w - it.r - 6, it.x));
       }
     }
-    const fallMult = (s.slowTimer > 0 && it.kind === "bomb") ? 0.42 : (s.slowTimer > 0 ? 0.78 : 1);
+    const fallMult = s.freezeTimer > 0 ? 0.55 : ((s.slowTimer > 0 && it.kind === "bomb") ? 0.42 : (s.slowTimer > 0 ? 0.78 : 1));
     it.y += it.vy * dt * fallMult;
     it.rot += dt * 3;
 
-    const hitDist = Math.hypot(it.x - s.x, it.y - by);
-    if (hitDist < it.r + 20) {
+    // Hit check: player OR wingman collector drones!
+    let caught = Math.hypot(it.x - s.x, it.y - by) < it.r + 20;
+    if (!caught && s.droneTimer > 0 && it.kind !== "bomb") {
+      for (const side of [-52, 52]) {
+        const dx = Math.max(18, Math.min(s.w - 18, s.x + side));
+        if (Math.hypot(it.x - dx, it.y - (by - 12)) < it.r + 20) { caught = true; break; }
+      }
+    }
+    if (caught) {
       if (it.kind === "bomb") {
         if (s.dashTimer > 0) {
           spawnRainParticles(it.x, it.y, "#38BDF8", 10);
@@ -12334,6 +13142,29 @@ function tickRainGame(now) {
           s.floats.push({ x: it.x, y: by - 16, txt: "TTFT 卡顿! -2.5s", col: "#DC2626", life: 0.9 });
           playSfx("bomb");
         }
+      } else if (it.kind === "carrot_coin") {
+        s.combo++;
+        if (s.combo > s.maxCombo) s.maxCombo = s.combo;
+        const added = grantAdventureCoins(1);
+        if (added > 0) {
+          s.coinsCaught += added;
+          spawnRainParticles(it.x, it.y, "#FBBF24", 22);
+          s.floats.push({ x: it.x, y: by - 22, txt: "🥕 接到 +1 萝卜币!", col: "#F59E0B", life: 1.25 });
+          playSfx("ssr");
+        } else {
+          s.score += 120;
+          spawnRainParticles(it.x, it.y, "#F59E0B", 16);
+          s.floats.push({ x: it.x, y: by - 20, txt: "🥕 今日满5币 · +120分!", col: "#F59E0B", life: 1.0 });
+          playSfx("gold");
+        }
+      } else if (it.kind === "gacha_box") {
+        s.combo++;
+        if (s.combo > s.maxCombo) s.maxCombo = s.combo;
+        const loot = rollInGameMysteryLoot();
+        s.lootsFound.push(`${loot.icon}${loot.actualName}`);
+        spawnRainParticles(it.x, it.y, loot.r === "SSR" ? "#FACC15" : "#C084FC", 26);
+        s.floats.push({ x: s.w / 2, y: by - 32, txt: `🎁 [${loot.r}] ${loot.icon} ${loot.actualName}!`, col: loot.r === "SSR" ? "#FACC15" : "#A855F7", life: 1.65 });
+        playSfx("ssr");
       } else {
         s.combo++;
         if (s.combo > s.maxCombo) s.maxCombo = s.combo;
@@ -12397,26 +13228,41 @@ function tickRainGame(now) {
     if (f.life <= 0) s.floats.splice(i, 1);
   }
 
-  // Render scene
-  const cs = getComputedStyle(document.documentElement);
-  const bg = cs.getPropertyValue("--surface-2").trim() || "#EFECE4";
-  const ink = cs.getPropertyValue("--ink").trim() || "#171614";
-  const muted = cs.getPropertyValue("--muted").trim() || "#6E6A63";
+  // Render scene with shared Adventure Backdrop!
   rainCtx.save();
   if (s.shakeTimer > 0) {
     rainCtx.translate((Math.random() - 0.5) * 7, (Math.random() - 0.5) * 5);
   }
-  rainCtx.fillStyle = bg;
-  rainCtx.fillRect(0, 0, s.w, s.h);
+  drawAdventureBackdrop(rainCtx, s.w, s.h, now, s.freezeTimer > 0);
 
-  // Subtle vertical speed lanes
-  rainCtx.strokeStyle = "rgba(128,128,128,0.08)";
-  rainCtx.lineWidth = 1;
-  for (let gx = 40; gx < s.w; gx += 48) {
-    rainCtx.beginPath();
-    rainCtx.moveTo(gx, 0);
-    rainCtx.lineTo(gx, s.h);
-    rainCtx.stroke();
+  // Golden Purifier Beam (laser_beam prop in Rain!)
+  if (s.laserTimer > 0) {
+    rainCtx.save();
+    const lg = rainCtx.createLinearGradient(s.x - 26, 0, s.x + 26, 0);
+    lg.addColorStop(0, "rgba(250, 204, 21, 0)");
+    lg.addColorStop(0.5, "rgba(250, 204, 21, 0.34)");
+    lg.addColorStop(1, "rgba(250, 204, 21, 0)");
+    rainCtx.fillStyle = lg;
+    rainCtx.fillRect(s.x - 26, 0, 52, by);
+    rainCtx.restore();
+  }
+
+  // Collector Drones in Rain!
+  if (s.droneTimer > 0) {
+    for (const side of [-52, 52]) {
+      const dx = Math.max(18, Math.min(s.w - 18, s.x + side));
+      const dy = by - 12 + Math.sin(now * 0.01 + side) * 3;
+      rainCtx.save();
+      rainCtx.translate(dx, dy);
+      rainCtx.fillStyle = "#0EA5E9";
+      rainCtx.beginPath(); rainCtx.arc(0, 0, 9, 0, Math.PI * 2); rainCtx.fill();
+      rainCtx.fillStyle = "#E0F2FE";
+      rainCtx.font = "9px sans-serif";
+      rainCtx.textAlign = "center";
+      rainCtx.textBaseline = "middle";
+      rainCtx.fillText("🤖", 0, 0.5);
+      rainCtx.restore();
+    }
   }
 
   // Magnet / Rainbow fever aura ring
@@ -12500,6 +13346,37 @@ function tickRainGame(now) {
       rainCtx.textAlign = "center";
       rainCtx.textBaseline = "middle";
       rainCtx.fillText("⏰", 0, 1);
+    } else if (it.kind === "carrot_coin") {
+      rainCtx.fillStyle = "#F59E0B";
+      rainCtx.shadowColor = "rgba(251,191,36,0.92)";
+      rainCtx.shadowBlur = 12;
+      rainCtx.beginPath();
+      rainCtx.arc(0, 0, it.r, 0, Math.PI * 2);
+      rainCtx.fill();
+      rainCtx.strokeStyle = "#FEF08A";
+      rainCtx.lineWidth = 1.6;
+      rainCtx.stroke();
+      rainCtx.shadowBlur = 0;
+      rainCtx.font = "12px sans-serif";
+      rainCtx.textAlign = "center";
+      rainCtx.textBaseline = "middle";
+      rainCtx.fillText("🥕", 0, 1);
+    } else if (it.kind === "gacha_box") {
+      const grad = rainCtx.createRadialGradient(-2, -2, 2, 0, 0, it.r);
+      grad.addColorStop(0, "#FEF08A");
+      grad.addColorStop(0.55, "#C084FC");
+      grad.addColorStop(1, "#F472B6");
+      rainCtx.fillStyle = grad;
+      rainCtx.shadowColor = "rgba(192,132,252,0.95)";
+      rainCtx.shadowBlur = 15;
+      rainCtx.beginPath();
+      rainCtx.arc(0, 0, it.r, 0, Math.PI * 2);
+      rainCtx.fill();
+      rainCtx.shadowBlur = 0;
+      rainCtx.font = "13px sans-serif";
+      rainCtx.textAlign = "center";
+      rainCtx.textBaseline = "middle";
+      rainCtx.fillText("🎁", 0, 1);
     } else if (it.kind === "gold") {
       rainCtx.fillStyle = "#F59E0B";
       rainCtx.shadowColor = "rgba(245,158,11,0.7)";
@@ -12630,7 +13507,9 @@ function tickRainGame(now) {
     let best = 0;
     try { best = Number(localStorage.getItem("tootoo_rain_best") || 0) || 0; } catch {}
     const isNewRecord = !s.debugTainted && s.score > best;
-    const bonusCoin = (!s.debugTainted && s.score >= 900) ? grantDailyAdventureBonusCoin() : false;
+    const scoreTierCoins = !s.debugTainted ? ((s.score >= 2000 ? 3 : s.score >= 1200 ? 2 : s.score >= 600 ? 1 : 0)) : 0;
+    const milestoneCoins = scoreTierCoins > 0 ? grantAdventureCoins(scoreTierCoins) : 0;
+    const totalCoins = (s.coinsCaught || 0) + milestoneCoins;
     if (isNewRecord) {
       best = s.score;
       try { localStorage.setItem("tootoo_rain_best", String(best)); } catch {}
@@ -12644,9 +13523,10 @@ function tickRainGame(now) {
       : s.score >= 450 ? "Token 收割机本机！兔兔吃饱啦！"
       : "热身完毕！善用闪避冲刺与扭蛋道具冲高分！";
     const dbgPrefix = s.debugTainted ? "[调试] " : "";
-    const bonusTxt = bonusCoin ? " 🎁 破 900 分解锁今日大冒险奖励 +1 萝卜币！" : "";
+    const coinTxt = totalCoins > 0 ? ` 🥕 本局共赢 +${totalCoins} 萝卜币！` : "";
+    const lootTxt = s.lootsFound.length ? ` 🎁 神秘宝箱开出：${s.lootsFound.join("、")}` : "";
     document.getElementById("rainTitle").textContent = `${dbgPrefix}${isNewRecord ? "🏆 新纪录！" : "⏱ 时间到！"} 得分 ${s.score}`;
-    document.getElementById("rainDesc").textContent = `最高连击 ×${s.maxCombo} · ${remark}${bonusTxt}`;
+    document.getElementById("rainDesc").textContent = `最高连击 ×${s.maxCombo} · ${remark}${coinTxt}${lootTxt}`;
     document.getElementById("rainStartBtn").textContent = "↻ 再来一局";
     document.getElementById("rainOverlay").classList.remove("hidden");
     return;
@@ -12666,7 +13546,10 @@ const ADVENTURE_PROPS = {
   rain_magnet:    { icon: "🧲", name: "吸金磁铁", games: ["rain"],             desc: "接Token雨 立刻开启 8 秒超大范围磁铁" },
   energy_shield:  { icon: "🛡️", name: "能量护盾", games: ["blaster", "rain"],  desc: "打Bug +1命+6s护盾 / Token雨 +2层护盾" },
   slow_mo:        { icon: "⏱️", name: "时光缓滞", games: ["blaster", "rain"],  desc: "打Bug 敌群减速6s / Token雨 +10s且雷减速" },
-  orbital_nuke:   { icon: "☄️", name: "轨道核弹", games: ["blaster", "rain"],  desc: "打Bug 零耗双倍清屏 / Token雨 全屏雷变彩虹+7s狂热" },
+  orbital_nuke:   { icon: "☄️", name: "轨道核弹", games: ["blaster", "rain"],  desc: "打Bug 零耗双倍清屏+重创Boss / Token雨 全屏雷变彩虹+7s狂热" },
+  homing_drones:  { icon: "🤖", name: "僚机追踪", games: ["blaster", "rain"],  desc: "打Bug 召唤2台自动追踪导弹僚机10s / Token雨 召唤2台自动采集无人机10s" },
+  laser_beam:     { icon: "🌈", name: "贯通激光", games: ["blaster", "rain"],  desc: "打Bug 4.5s无视护盾超粗彩虹激光炮 / Token雨 6s黄金净化光柱将雷化作金萝卜" },
+  time_freeze:    { icon: "❄️", name: "绝对时停", games: ["blaster", "rain"],  desc: "SSR神装：打Bug 冻结全屏敌弹6s+2×暴击 / Token雨 冻结倒计时8s+全屏炸弹碎裂" },
 };
 
 function renderAdventurePropBars() {
@@ -12683,8 +13566,8 @@ function renderAdventurePropBars() {
       </button>`;
     }).join("");
   };
-  renderBar("blPropBar", "blaster", ["ammo_box", "overclock_core", "energy_shield", "slow_mo", "orbital_nuke"]);
-  renderBar("rainPropBar", "rain", ["rain_magnet", "energy_shield", "slow_mo", "orbital_nuke"]);
+  renderBar("blPropBar", "blaster", ["ammo_box", "overclock_core", "energy_shield", "slow_mo", "orbital_nuke", "homing_drones", "laser_beam", "time_freeze"]);
+  renderBar("rainPropBar", "rain", ["rain_magnet", "energy_shield", "slow_mo", "orbital_nuke", "homing_drones", "laser_beam", "time_freeze"]);
 }
 
 function useAdventureProp(game, propId) {
@@ -12716,15 +13599,38 @@ function useAdventureProp(game, propId) {
     } else if (propId === "orbital_nuke") {
       s.novaRing = { r: 18, maxR: Math.max(s.w, s.h) * 1.25, alpha: 1 };
       s.shakeTimer = 0.48;
+      s.enemyBullets = [];
+      s.bossBeams = [];
       let wiped = 0;
+      const surv = [];
       for (const en of s.enemies) {
-        wiped++;
-        s.kills++;
-        s.score += en.pts * 2;
-        spawnBlasterParts(en.x, en.y, "#F59E0B", 16);
+        if (en.boss && en.hp > 18) {
+          en.hp -= 18;
+          spawnBlasterParts(en.x, en.y, "#F59E0B", 16);
+          surv.push(en);
+        } else {
+          wiped++;
+          handleBlasterEnemyDeath(s, en, 1 + Math.floor(s.elapsed / 10));
+          s.score += en.pts;
+        }
       }
-      s.enemies = [];
+      s.enemies = surv;
       s.floats.push({ x: s.w / 2, y: s.h * 0.42, txt: `☄️ 轨道核弹！双倍蒸发 ${wiped} 只 Bug!`, col: "#F59E0B", life: 1.2 });
+      playSfx("ssr");
+    } else if (propId === "homing_drones") {
+      s.droneTimer = Math.max(s.droneTimer || 0, 10.0);
+      s.floats.push({ x: s.x, y: s.h - 48, txt: "🤖 双僚机出击！自动追踪导弹 10s!", col: "#38BDF8", life: 1.1 });
+      playSfx("gold");
+    } else if (propId === "laser_beam") {
+      s.laserTimer = Math.max(s.laserTimer || 0, 4.5);
+      s.shakeTimer = 0.2;
+      s.floats.push({ x: s.x, y: s.h - 48, txt: "🌈 贯通彩虹超能激光 4.5s（无视护盾）!", col: "#F472B6", life: 1.15 });
+      playSfx("ssr");
+    } else if (propId === "time_freeze") {
+      s.freezeTimer = Math.max(s.freezeTimer || 0, 6.0);
+      s.enemyBullets = [];
+      s.bossBeams = [];
+      s.floats.push({ x: s.w / 2, y: s.h * 0.42, txt: "❄️ 绝对零度时停 6s · 全场 2× 暴击!", col: "#38BDF8", life: 1.25 });
       playSfx("ssr");
     } else {
       return false;
@@ -12756,6 +13662,19 @@ function useAdventureProp(game, propId) {
       s.magnetTimer = Math.max(s.magnetTimer || 0, 7.0);
       s.floats.push({ x: s.w / 2, y: s.h * 0.42, txt: `☄️ 彩虹天降！${conv}颗雷化作彩虹 + 7s 2×狂热!`, col: "#A855F7", life: 1.2 });
       playSfx("ssr");
+    } else if (propId === "homing_drones") {
+      s.droneTimer = Math.max(s.droneTimer || 0, 10.0);
+      s.floats.push({ x: s.x, y: s.h - 48, txt: "🤖 双采集无人机出动 10s!", col: "#38BDF8", life: 1.1 });
+      playSfx("gold");
+    } else if (propId === "laser_beam") {
+      s.laserTimer = Math.max(s.laserTimer || 0, 6.0);
+      s.floats.push({ x: s.x, y: s.h - 48, txt: "🌈 黄金净化光柱 6s · 炸弹变金萝卜!", col: "#FACC15", life: 1.15 });
+      playSfx("ssr");
+    } else if (propId === "time_freeze") {
+      s.freezeTimer = Math.max(s.freezeTimer || 0, 8.0);
+      s.items = s.items.filter(it => it.kind !== "bomb");
+      s.floats.push({ x: s.w / 2, y: s.h * 0.42, txt: "❄️ 绝对时停 8s · 倒计时冻结 + 雷碎裂!", col: "#38BDF8", life: 1.25 });
+      playSfx("ssr");
     } else {
       return false;
     }
@@ -12778,12 +13697,7 @@ function useAdventureProp(game, propId) {
 });
 
 function grantDailyAdventureBonusCoin() {
-  const todayKey = getTodayKey();
-  const h = cloneHomeState(getActiveHomeState());
-  if (h.adventure_reward_day === todayKey) return false;
-  h.adventure_reward_day = todayKey;
-  saveActiveHomeState(h, 0, 1);
-  return true;
+  return grantAdventureCoins(1) > 0;
 }
 
 // ============================================================
@@ -12792,6 +13706,7 @@ function grantDailyAdventureBonusCoin() {
 const GACHA_EXCLUSIVE_IDS = [
   "gacha_clover_clip", "gacha_capsule_bag", "gacha_ribbon_cape", "gacha_star_wand", "gacha_prism_crown",
   "gacha_carrot_cushion", "gacha_lucky_flower", "gacha_mini_machine", "gacha_bubble_lights", "gacha_crystal_dome",
+  "cyber_neon", "starry_nebula", "sakura_zen", "matrix_core", "golden_citadel",
 ];
 const GACHA_POOL = [
   // ---- N (普通 · 60% 权重) ----
@@ -12805,35 +13720,43 @@ const GACHA_POOL = [
   { id: 108, r: "N", w: 9,  type: "prop",    propId: "slow_mo",          icon: "⏱️", name: "时光缓滞沙漏",      desc: "大冒险通用：打Bug 敌群减速 / Token雨 +10s 缓雷！" },
 
   // ---- R (稀有 · 28% 权重) ----
-  { id: 201, r: "R", w: 8,  type: "coins",   amount: 2,                  icon: "🥕", name: "小袋萝卜币 +2",     desc: "净赚翻倍！+2 枚萝卜币已存入钱包！" },
-  { id: 202, r: "R", w: 9,  type: "xp",      tokens: 20e6,               icon: "⚡", name: "进阶算力经验包 +20M", desc: "今日进化经验 +20M Token，战力直冲！" },
-  { id: 203, r: "R", w: 7,  type: "weather", tier: "d1",                 icon: "⛈️", name: "呼风唤雨卡 · 1天",   desc: "存入背包，随时掌控小家天气一整天（24小时）！" },
-  { id: 204, r: "R", w: 7,  type: "coupon",  kind: "wear", discount: 0.8, icon: "🏷️", name: "8折饰品折扣券",     desc: "7天有效，精品衣橱购置心仪穿搭立省 20%！" },
-  { id: 205, r: "R", w: 7,  type: "coupon",  kind: "rent", discount: 0.8, icon: "🏷️", name: "8折租房折扣券",     desc: "7天有效，售楼处周租/月租任意房型立省 20%！" },
-  { id: 206, r: "R", w: 6,  type: "lease",   houses: ["pot", "giant_mushroom", "bamboo_basket", "cardboard"], days: 3, refund: 2, icon: "🔑", name: "平价房 3天体验租房卡", desc: "免费入住 T2/T3 经典房型 3 天（已永久拥有自动返 +2 币）" },
-  { id: 207, r: "R", w: 6,  type: "wear",    itemId: "gacha_clover_clip", refund: 2, icon: "🍀", name: "幸运四叶草发卡",   desc: "扭蛋限定 R 头饰：翡翠四叶草发卡（重复折返 +2 币）" },
-  { id: 208, r: "R", w: 6,  type: "wear",    itemId: "gacha_capsule_bag", refund: 2, icon: "🧸", name: "迷你扭蛋斜挎包",   desc: "扭蛋限定 R 配饰：圆滚滚透明扭蛋斜挎包（重复折返 +2 币）" },
-  { id: 209, r: "R", w: 6,  type: "decor",   itemId: "gacha_carrot_cushion", refund: 2, icon: "🧸", name: "软萌胡萝卜抱枕窝", desc: "扭蛋限定 R 家具：蓬松胡萝卜云朵大抱枕（重复折返 +2 币）" },
-  { id: 210, r: "R", w: 6,  type: "decor",   itemId: "gacha_lucky_flower", refund: 2, icon: "🌼", name: "幸运星花盆栽",     desc: "扭蛋限定 R 花园：扭蛋壳种出的发光星花（重复折返 +2 币）" },
-  { id: 211, r: "R", w: 9,  type: "prop",    propId: "energy_shield",    icon: "🛡️", name: "绝对防御护盾",      desc: "大冒险通用：打Bug 回血+6s护盾 / Token雨 +2层护盾！" },
-  { id: 212, r: "R", w: 9,  type: "prop",    propId: "overclock_core",   icon: "⚡", name: "五管超频核心",      desc: "大冒险道具：打Bug 立即触发 8 秒 5 管黄金弹幕！" },
+  { id: 201, r: "R", w: 8,  type: "coins",    amount: 2,                  icon: "🥕", name: "小袋萝卜币 +2",     desc: "净赚翻倍！+2 枚萝卜币已存入钱包！" },
+  { id: 202, r: "R", w: 8,  type: "xp",       tokens: 20e6,               icon: "⚡", name: "进阶算力经验包 +20M", desc: "今日进化经验 +20M Token，战力直冲！" },
+  { id: 203, r: "R", w: 6,  type: "weather",  tier: "d1",                 icon: "⛈️", name: "呼风唤雨卡 · 1天",   desc: "存入背包，随时掌控小家天气一整天（24小时）！" },
+  { id: 204, r: "R", w: 6,  type: "coupon",   kind: "wear", discount: 0.8, icon: "🏷️", name: "8折饰品折扣券",     desc: "7天有效，精品衣橱购置心仪穿搭立省 20%！" },
+  { id: 205, r: "R", w: 6,  type: "coupon",   kind: "rent", discount: 0.8, icon: "🏷️", name: "8折租房折扣券",     desc: "7天有效，售楼处周租/月租任意房型立省 20%！" },
+  { id: 206, r: "R", w: 5,  type: "lease",    houses: ["pot", "giant_mushroom", "bamboo_basket", "cardboard"], days: 3, refund: 2, icon: "🔑", name: "平价房 3天体验租房卡", desc: "免费入住 T2/T3 经典房型 3 天（已永久拥有自动返 +2 币）" },
+  { id: 207, r: "R", w: 5,  type: "wear",     itemId: "gacha_clover_clip", refund: 2, icon: "🍀", name: "幸运四叶草发卡",   desc: "扭蛋限定 R 头饰：翡翠四叶草发卡（重复折返 +2 币）" },
+  { id: 208, r: "R", w: 5,  type: "wear",     itemId: "gacha_capsule_bag", refund: 2, icon: "🧸", name: "迷你扭蛋斜挎包",   desc: "扭蛋限定 R 配饰：圆滚滚透明扭蛋斜挎包（重复折返 +2 币）" },
+  { id: 209, r: "R", w: 5,  type: "decor",    itemId: "gacha_carrot_cushion", refund: 2, icon: "🧸", name: "软萌胡萝卜抱枕窝", desc: "扭蛋限定 R 家具：蓬松胡萝卜云朵大抱枕（重复折返 +2 币）" },
+  { id: 210, r: "R", w: 5,  type: "decor",    itemId: "gacha_lucky_flower", refund: 2, icon: "🌼", name: "幸运星花盆栽",     desc: "扭蛋限定 R 花园：扭蛋壳种出的发光星花（重复折返 +2 币）" },
+  { id: 211, r: "R", w: 8,  type: "prop",     propId: "energy_shield",    icon: "🛡️", name: "绝对防御护盾",      desc: "大冒险通用：打Bug 回血+6s护盾 / Token雨 +2层护盾！" },
+  { id: 212, r: "R", w: 8,  type: "prop",     propId: "overclock_core",   icon: "⚡", name: "五管超频核心",      desc: "大冒险道具：打Bug 立即触发 8 秒 5 管黄金弹幕！" },
+  { id: 213, r: "R", w: 8,  type: "prop",     propId: "homing_drones",    icon: "🤖", name: "僚机追踪炮",        desc: "大冒险强力道具：召唤 2 台追踪导弹僚机 / 自动采集无人机 10 秒！" },
+  { id: 214, r: "R", w: 6,  type: "backdrop", bgId: "cyber_neon",         refund: 2, icon: "🌆", name: "背景板·赛博霓虹城", desc: "大冒险动态舞台背景：赛博霓虹透视网格夜空（重复折返 +2 币）" },
+  { id: 215, r: "R", w: 6,  type: "backdrop", bgId: "starry_nebula",      refund: 2, icon: "🌌", name: "背景板·深空星云",   desc: "大冒险动态舞台背景：双层视差星空与旋转星云（重复折返 +2 币）" },
 
   // ---- SR (超稀有 · 10% 权重) ----
-  { id: 301, r: "SR", w: 10, type: "coins",  amount: 5,                  icon: "💰", name: "丰厚萝卜礼袋 +5",   desc: "5 倍回报！+5 枚萝卜币直接到账！" },
-  { id: 302, r: "SR", w: 10, type: "xp",     tokens: 60e6,               icon: "🔥", name: "高能算力经验包 +60M", desc: "今日进化经验暴涨 +60M Token，直逼下一阶级！" },
-  { id: 303, r: "SR", w: 8,  type: "lease",  houses: ["moganshan_cabin", "sunflower_glasshouse", "windmill_mill"], days: 7, refund: 4, icon: "🔑", name: "林间美宅 7天租房卡", desc: "免费入住 T4 精致林间美宅 7 天（已永久拥有自动返 +4 币）" },
-  { id: 304, r: "SR", w: 9,  type: "wear",   itemId: "gacha_ribbon_cape", refund: 5, icon: "🎀", name: "幻彩星愿丝带披肩", desc: "扭蛋限定 SR 服饰：紫粉渐变星纱鎏金披肩（重复折返 +5 币）" },
-  { id: 305, r: "SR", w: 9,  type: "wear",   itemId: "gacha_star_wand",   refund: 5, icon: "⭐", name: "星愿幸运魔法棒",   desc: "扭蛋限定 SR 配饰：黄金翼星魔法棒（重复折返 +5 币）" },
-  { id: 306, r: "SR", w: 9,  type: "decor",  itemId: "gacha_mini_machine", refund: 5, icon: "🎰", name: "迷你复古扭蛋机摆件", desc: "扭蛋限定 SR 家具：摆在屋里的兔耳迷你扭蛋机（重复折返 +5 币）" },
-  { id: 307, r: "SR", w: 9,  type: "decor",  itemId: "gacha_bubble_lights", refund: 5, icon: "🫧", name: "梦幻泡泡彩灯串",   desc: "扭蛋限定 SR 灯饰：七彩糖果扭蛋泡泡吊灯（重复折返 +5 币）" },
-  { id: 308, r: "SR", w: 12, type: "prop",   propId: "orbital_nuke",     icon: "☄️", name: "轨道清屏核弹",      desc: "大冒险王牌：打Bug 双倍清屏 / Token雨 全屏雷变彩虹+7s狂热！" },
+  { id: 301, r: "SR", w: 9,  type: "coins",    amount: 5,                  icon: "💰", name: "丰厚萝卜礼袋 +5",   desc: "5 倍回报！+5 枚萝卜币直接到账！" },
+  { id: 302, r: "SR", w: 9,  type: "xp",       tokens: 60e6,               icon: "🔥", name: "高能算力经验包 +60M", desc: "今日进化经验暴涨 +60M Token，直逼下一阶级！" },
+  { id: 303, r: "SR", w: 7,  type: "lease",    houses: ["moganshan_cabin", "sunflower_glasshouse", "windmill_mill"], days: 7, refund: 4, icon: "🔑", name: "林间美宅 7天租房卡", desc: "免费入住 T4 精致林间美宅 7 天（已永久拥有自动返 +4 币）" },
+  { id: 304, r: "SR", w: 8,  type: "wear",     itemId: "gacha_ribbon_cape", refund: 5, icon: "🎀", name: "幻彩星愿丝带披肩", desc: "扭蛋限定 SR 服饰：紫粉渐变星纱鎏金披肩（重复折返 +5 币）" },
+  { id: 305, r: "SR", w: 8,  type: "wear",     itemId: "gacha_star_wand",   refund: 5, icon: "⭐", name: "星愿幸运魔法棒",   desc: "扭蛋限定 SR 配饰：黄金翼星魔法棒（重复折返 +5 币）" },
+  { id: 306, r: "SR", w: 8,  type: "decor",    itemId: "gacha_mini_machine", refund: 5, icon: "🎰", name: "迷你复古扭蛋机摆件", desc: "扭蛋限定 SR 家具：摆在屋里的兔耳迷你扭蛋机（重复折返 +5 币）" },
+  { id: 307, r: "SR", w: 8,  type: "decor",    itemId: "gacha_bubble_lights", refund: 5, icon: "🫧", name: "梦幻泡泡彩灯串",   desc: "扭蛋限定 SR 灯饰：七彩糖果扭蛋泡泡吊灯（重复折返 +5 币）" },
+  { id: 308, r: "SR", w: 10, type: "prop",     propId: "orbital_nuke",     icon: "☄️", name: "轨道清屏核弹",      desc: "大冒险王牌：打Bug 双倍清屏 / Token雨 全屏雷变彩虹+7s狂热！" },
+  { id: 309, r: "SR", w: 10, type: "prop",     propId: "laser_beam",       icon: "🌈", name: "贯通超能激光",      desc: "大冒险神装：4.5s无视护盾彩虹激光炮 / Token雨 6s黄金净化光柱！" },
+  { id: 310, r: "SR", w: 8,  type: "backdrop", bgId: "sakura_zen",         refund: 5, icon: "🌸", name: "背景板·樱花道场",   desc: "SR 扭蛋限定动态舞台：落日樱花花瓣飘舞道场（重复折返 +5 币）" },
+  { id: 311, r: "SR", w: 8,  type: "backdrop", bgId: "matrix_core",        refund: 5, icon: "💚", name: "背景板·矩阵终端",   desc: "SR 扭蛋限定动态舞台：黑客帝国翠绿代码雨终端（重复折返 +5 币）" },
 
   // ---- SSR (传世神话 · 2% 超低稀缺概率！) ----
-  { id: 401, r: "SSR", w: 22, type: "coupon", kind: "rent", discount: 0.3, icon: "🔥", name: "3折租房神券",       desc: "SSR 传世神券！7天内租住任意顶豪立省 70%！" },
-  { id: 402, r: "SSR", w: 22, type: "coupon", kind: "wear", discount: 0.3, icon: "💎", name: "3折饰品神券",       desc: "SSR 传世神券！7天内购买任意顶奢穿搭立省 70%！" },
-  { id: 403, r: "SSR", w: 20, type: "coins",  amount: 12,                  icon: "🪙", name: "黄金萝卜宝箱 +12币", desc: "欧皇暴击 12 倍回报！+12 枚萝卜币瞬间入账！" },
-  { id: 404, r: "SSR", w: 18, type: "wear",   itemId: "gacha_prism_crown", refund: 10, icon: "👑", name: "传世幻彩扭蛋皇冠", desc: "SSR 扭蛋限定头饰：24K鎏金七彩棱镜星环皇冠（重复折返 +10 币）" },
-  { id: 405, r: "SSR", w: 18, type: "decor",  itemId: "gacha_crystal_dome", refund: 10, icon: "💎", name: "银河扭蛋水晶穹顶灯", desc: "SSR 扭蛋限定灯饰：棱镜星河 24K 金环穹顶吊灯（重复折返 +10 币）" },
+  { id: 401, r: "SSR", w: 18, type: "coupon",   kind: "rent", discount: 0.3, icon: "🔥", name: "3折租房神券",       desc: "SSR 传世神券！7天内租住任意顶豪立省 70%！" },
+  { id: 402, r: "SSR", w: 18, type: "coupon",   kind: "wear", discount: 0.3, icon: "💎", name: "3折饰品神券",       desc: "SSR 传世神券！7天内购买任意顶奢穿搭立省 70%！" },
+  { id: 403, r: "SSR", w: 16, type: "coins",    amount: 12,                  icon: "🪙", name: "黄金萝卜宝箱 +12币", desc: "欧皇暴击 12 倍回报！+12 枚萝卜币瞬间入账！" },
+  { id: 404, r: "SSR", w: 14, type: "wear",     itemId: "gacha_prism_crown", refund: 10, icon: "👑", name: "传世幻彩扭蛋皇冠", desc: "SSR 扭蛋限定头饰：24K鎏金七彩棱镜星环皇冠（重复折返 +10 币）" },
+  { id: 405, r: "SSR", w: 14, type: "decor",    itemId: "gacha_crystal_dome", refund: 10, icon: "💎", name: "银河扭蛋水晶穹顶灯", desc: "SSR 扭蛋限定灯饰：棱镜星河 24K 金环穹顶吊灯（重复折返 +10 币）" },
+  { id: 406, r: "SSR", w: 10, type: "backdrop", bgId: "golden_citadel",      refund: 10, icon: "👑", name: "背景板·黄金星穹殿", desc: "SSR 传世动态舞台：鎏金星空神殿与神圣星环阵（重复折返 +10 币）" },
+  { id: 407, r: "SSR", w: 10, type: "prop",     propId: "time_freeze",       icon: "❄️", name: "绝对零度时停怀表", desc: "SSR 传世大冒险神装：冻结全屏敌弹6s+2×暴击 / Token雨 8s冻结时间！" },
 ];
 
 const DEFAULT_HOME_STATE = {
@@ -12853,8 +13776,15 @@ const DEFAULT_HOME_STATE = {
   weather_cards: { h2: 0, d1: 0 },
   weather_override: null,
   xp_boost: { day: "", tokens: 0 },
-  arcade_items: { ammo_box: 0, rain_magnet: 0, slow_mo: 0, energy_shield: 0, overclock_core: 0, orbital_nuke: 0 },
+  arcade_items: {
+    ammo_box: 0, rain_magnet: 0, slow_mo: 0, energy_shield: 0, overclock_core: 0,
+    orbital_nuke: 0, homing_drones: 0, laser_beam: 0, time_freeze: 0,
+  },
+  owned_backdrops: ["paper"],
+  active_backdrop: "paper",
   adventure_reward_day: "",
+  adventure_coins_day: "",
+  adventure_coins_earned: 0,
 };
 
 const RETIRED_HOUSE_FALLBACK = {
@@ -12929,7 +13859,16 @@ function cloneHomeState(src) {
     energy_shield: Math.max(0, Math.floor(Number(aiSrc.energy_shield || 0) || 0)),
     overclock_core: Math.max(0, Math.floor(Number(aiSrc.overclock_core || 0) || 0)),
     orbital_nuke: Math.max(0, Math.floor(Number(aiSrc.orbital_nuke || 0) || 0)),
+    homing_drones: Math.max(0, Math.floor(Number(aiSrc.homing_drones || 0) || 0)),
+    laser_beam: Math.max(0, Math.floor(Number(aiSrc.laser_beam || 0) || 0)),
+    time_freeze: Math.max(0, Math.floor(Number(aiSrc.time_freeze || 0) || 0)),
   };
+  const validBgSet = new Set(["paper", "cyber_neon", "starry_nebula", "sakura_zen", "matrix_core", "golden_citadel"]);
+  const owned_backdrops = Array.isArray(s.owned_backdrops)
+    ? Array.from(new Set(["paper", ...s.owned_backdrops.filter(id => validBgSet.has(id))]))
+    : ["paper"];
+  const active_backdrop = (typeof s.active_backdrop === "string" && owned_backdrops.includes(s.active_backdrop))
+    ? s.active_backdrop : "paper";
   return {
     house,
     owned_houses: oh,
@@ -12958,7 +13897,11 @@ function cloneHomeState(src) {
     weather_override,
     xp_boost,
     arcade_items,
+    owned_backdrops,
+    active_backdrop,
     adventure_reward_day: typeof s.adventure_reward_day === "string" ? s.adventure_reward_day : "",
+    adventure_coins_day: typeof s.adventure_coins_day === "string" ? s.adventure_coins_day : "",
+    adventure_coins_earned: Math.max(0, Math.min(20, Math.floor(Number(s.adventure_coins_earned || 0) || 0))),
   };
 }
 
@@ -13241,6 +14184,17 @@ function grantGachaReward(pick) {
       bonusCoins = pick.refund || 2;
       actualDesc = `已拥有该扭蛋限定装潢，自动折返 +${bonusCoins} 枚萝卜币！`;
     }
+  } else if (pick.type === "backdrop") {
+    const bg = ADVENTURE_BACKDROP_MAP[pick.bgId];
+    if (!h.owned_backdrops.includes(pick.bgId)) {
+      h.owned_backdrops.push(pick.bgId);
+      h.active_backdrop = pick.bgId;
+      isNew = true;
+      actualDesc = `扭蛋限定舞台背景解锁并已自动装备！前往「TooToo 大冒险」体验 ${bg ? bg.icon + " " + bg.name : pick.name}！`;
+    } else {
+      bonusCoins = pick.refund || 2;
+      actualDesc = `已拥有该大冒险动态背景板，自动折返 +${bonusCoins} 枚萝卜币！`;
+    }
   } else if (pick.type === "prop") {
     if (h.arcade_items && Object.prototype.hasOwnProperty.call(h.arcade_items, pick.propId)) {
       h.arcade_items[pick.propId] = (h.arcade_items[pick.propId] || 0) + 1;
@@ -13294,6 +14248,8 @@ function renderGachaBag() {
     .map(([k, p]) => `${p.icon}×${ai[k]}`)
     .join(" ");
   chips.push(`<button class="bag-chip ${totalProps > 0 ? "has" : ""}" data-bag-act="go-adv" title="前往 TooToo 大冒险使用道具">⚔️ 冒险道具 <strong>×${totalProps}</strong>${propSummary ? ` · ${propSummary}` : ""}</button>`);
+  const bgOwnedCnt = (h.owned_backdrops || ["paper"]).length;
+  chips.push(`<button class="bag-chip ${bgOwnedCnt > 1 ? "has" : ""}" data-bag-act="go-adv" title="前往 TooToo 大冒险切换动态舞台背景">🎨 舞台背景 <strong>${bgOwnedCnt}/${ADVENTURE_BACKDROPS.length}</strong></button>`);
 
   let pickerHtml = "";
   if (gachaWeatherPickerTier && ((gachaWeatherPickerTier === "h2" && h2 > 0) || (gachaWeatherPickerTier === "d1" && d1 > 0))) {
@@ -13377,12 +14333,13 @@ document.getElementById("gachaBagCard")?.addEventListener("click", (e) => {
 function renderGachaMeta() {
   const hState = getActiveHomeState();
   const ownedEx = GACHA_EXCLUSIVE_IDS.filter(id =>
-    hState.owned_wear.includes(id) || hState.owned_decor.includes(id)
+    hState.owned_wear.includes(id) || hState.owned_decor.includes(id) || (hState.owned_backdrops || []).includes(id)
   ).length;
   const el = document.getElementById("gachaColl");
   if (el) el.textContent = `${ownedEx} / ${GACHA_EXCLUSIVE_IDS.length}`;
   renderGachaBag();
   if (typeof renderAdventurePropBars === "function") renderAdventurePropBars();
+  if (typeof renderBackdropBar === "function") renderBackdropBar();
 
   const cs = getGachaCoinState();
   const coinEl = document.getElementById("gachaCoins");
@@ -14207,6 +15164,8 @@ document.getElementById("dbgGachaResetCollBtn").addEventListener("click", () => 
     const h = cloneHomeState(getActiveHomeState());
     h.owned_wear = h.owned_wear.filter(id => !GACHA_EXCLUSIVE_IDS.includes(id));
     h.owned_decor = h.owned_decor.filter(id => !GACHA_EXCLUSIVE_IDS.includes(id));
+    h.owned_backdrops = ["paper"];
+    h.active_backdrop = "paper";
     saveActiveHomeState(h, 0);
   }
   renderGachaMeta();
@@ -14219,18 +15178,53 @@ document.querySelectorAll("#dbgGachaForceChips button[data-rarity]").forEach(btn
   });
 });
 
-// Blaster inline debug item spawners
+function grantDebugAllPropsAndBg(unlockBgOnly = false) {
+  const h = cloneHomeState(getActiveHomeState());
+  if (unlockBgOnly) {
+    h.owned_backdrops = ADVENTURE_BACKDROPS.map(b => b.id);
+    if (h.active_backdrop === "paper") h.active_backdrop = "cyber_neon";
+  } else {
+    h.weather_cards.h2 = (h.weather_cards.h2 || 0) + 3;
+    h.weather_cards.d1 = (h.weather_cards.d1 || 0) + 2;
+    Object.keys(h.arcade_items).forEach(k => { h.arcade_items[k] = (h.arcade_items[k] || 0) + 5; });
+  }
+  saveActiveHomeState(h, 0);
+  renderGachaMeta();
+  renderAdventurePropBars();
+  renderBackdropBar();
+  playSfx("gold");
+}
+
+// Blaster inline debug item & Boss spawners
 document.getElementById("dbgBlGodBtn").addEventListener("click", toggleDebugGodMode);
-document.getElementById("dbgBlBossBtn").addEventListener("click", () => {
+document.getElementById("dbgBlAddPropsBtn")?.addEventListener("click", () => grantDebugAllPropsAndBg(false));
+document.getElementById("dbgBlAllBgBtn")?.addEventListener("click", () => grantDebugAllPropsAndBg(true));
+document.getElementById("dbgBlLootBtn")?.addEventListener("click", () => {
   if (!blasterState || !blasterState.running) startBlasterGame();
   const s = blasterState;
   s.debugTainted = true;
-  s.enemies.push({
-    lbl: "OOM", hp: 7, maxHp: 7, r: 18, vy: 50, col: "#9333EA", pts: 120, boss: true,
-    x: 40 + Math.random() * (s.w - 80), y: -14, wobble: 0,
-  });
-  s.floats.push({ x: s.w / 2, y: 26, txt: "👾 [调试] 空投 OOM Boss!", col: "#9333EA", life: 0.9 });
-  playSfx("bomb");
+  s.pickups.push({ x: Math.max(28, Math.min(s.w - 28, s.x)), y: 12, vy: 82, kind: "gacha_box", amt: 1 });
+  playSfx("ssr");
+});
+document.getElementById("dbgBlBossBtn").addEventListener("click", () => {
+  if (!blasterState || !blasterState.running) startBlasterGame();
+  blasterState.debugTainted = true;
+  spawnSpecialBoss(blasterState, "boss_oom", 2);
+});
+document.getElementById("dbgBlBossLoopBtn")?.addEventListener("click", () => {
+  if (!blasterState || !blasterState.running) startBlasterGame();
+  blasterState.debugTainted = true;
+  spawnSpecialBoss(blasterState, "boss_loop", 2);
+});
+document.getElementById("dbgBlBossFwBtn")?.addEventListener("click", () => {
+  if (!blasterState || !blasterState.running) startBlasterGame();
+  blasterState.debugTainted = true;
+  spawnSpecialBoss(blasterState, "boss_firewall", 2);
+});
+document.getElementById("dbgBlBossPhBtn")?.addEventListener("click", () => {
+  if (!blasterState || !blasterState.running) startBlasterGame();
+  blasterState.debugTainted = true;
+  spawnSpecialBoss(blasterState, "boss_phantom", 2);
 });
 document.getElementById("dbgBlAmmoBtn").addEventListener("click", () => {
   if (!blasterState || !blasterState.running) startBlasterGame();
@@ -14252,6 +15246,15 @@ document.getElementById("dbgBlNovaBtn").addEventListener("click", () => {
 });
 
 // Rain inline debug item spawners
+document.getElementById("dbgRainAddPropsBtn")?.addEventListener("click", () => grantDebugAllPropsAndBg(false));
+document.getElementById("dbgRainAllBgBtn")?.addEventListener("click", () => grantDebugAllPropsAndBg(true));
+document.getElementById("dbgRainLootBtn")?.addEventListener("click", () => {
+  if (!rainState || !rainState.running) startRainGame();
+  const s = rainState;
+  s.debugTainted = true;
+  s.items.push({ kind: "gacha_box", x: Math.max(24, Math.min(s.w - 24, s.x)), y: -8, vy: 135, r: 12.5, rot: 0, vx: 0 });
+  playSfx("ssr");
+});
 document.getElementById("dbgRainShieldBtn").addEventListener("click", () => {
   if (!rainState || !rainState.running) startRainGame();
   const s = rainState;
@@ -14290,16 +15293,7 @@ document.getElementById("dbgRainTimeBtn").addEventListener("click", () => {
   playSfx("token");
 });
 
-document.getElementById("dbgGachaItemsBtn")?.addEventListener("click", () => {
-  const h = cloneHomeState(getActiveHomeState());
-  h.weather_cards.h2 = (h.weather_cards.h2 || 0) + 3;
-  h.weather_cards.d1 = (h.weather_cards.d1 || 0) + 2;
-  Object.keys(h.arcade_items).forEach(k => { h.arcade_items[k] = (h.arcade_items[k] || 0) + 3; });
-  saveActiveHomeState(h, 0);
-  renderGachaMeta();
-  renderAdventurePropBars();
-  playSfx("gold");
-});
+document.getElementById("dbgGachaItemsBtn")?.addEventListener("click", () => grantDebugAllPropsAndBg(false));
 
 // ============================================================
 // DAILY CHECK-IN (+1 🥕) + TOOTOO COZY HOME STUDIO (HOUSES / DECOR / WARDROBE / HIDDEN EDITIONS)

@@ -361,6 +361,10 @@
       <!-- Giant fairy mushroom shadow & tapered sculpted stem -->
       <ellipse cx="210" cy="168" rx="98" ry="12" fill="#052e16" opacity="0.26"/>
       <path d="M142 164 C148 136 154 112 152 90 L268 90 C266 112 272 136 278 164 Z" fill="url(#${id}_stem)" stroke="#8c6844" stroke-width="1.6"/>
+      <!-- Warm arched shelter hollow inside mushroom stem (drawn beneath gills & canopy so cap naturally overlaps!) -->
+      <path d="M162 164 L162 114 A48 40 0 0 1 258 114 L258 164 Z" fill="#6b3e1b"/>
+      <path d="M168 164 L168 118 A42 36 0 0 1 252 118 L252 164 Z" fill="${s.isNight ? "#fef08a" : "#fef3c7"}"/>
+      <rect x="168" y="152" width="84" height="12" fill="#d6b286"/>
       <!-- Warm shaded mushroom gills under canopy -->
       <ellipse cx="210" cy="88" rx="112" ry="18" fill="${s.isNight ? "#b89658" : "#fde68a"}" stroke="#92400e" stroke-width="1.3"/>
       <g stroke="#b45309" stroke-width="0.9" opacity="0.42">
@@ -374,10 +378,6 @@
       <ellipse cx="274" cy="54" rx="13" ry="9" fill="#fffbeb" opacity="0.92" transform="rotate(15 274 54)"/>
       <circle cx="182" cy="68" r="7.5" fill="#fffbeb" opacity="0.88"/><circle cx="242" cy="70" r="7" fill="#fffbeb" opacity="0.88"/>
       <circle cx="118" cy="74" r="6" fill="#fffbeb" opacity="0.82"/><circle cx="302" cy="74" r="6" fill="#fffbeb" opacity="0.82"/>
-      <!-- Warm arched shelter hollow inside mushroom stem -->
-      <path d="M162 164 L162 114 A48 40 0 0 1 258 114 L258 164 Z" fill="#6b3e1b"/>
-      <path d="M168 164 L168 118 A42 36 0 0 1 252 118 L252 164 Z" fill="${s.isNight ? "#fef08a" : "#fef3c7"}"/>
-      <rect x="168" y="152" width="84" height="12" fill="#d6b286"/>
       <!-- Adorable baby mushrooms & glowing dew-lanterns hanging from cap rim -->
       <line x1="126" y1="95" x2="126" y2="108" stroke="#92400e" stroke-width="1"/>
       <circle cx="126" cy="110" r="3" fill="#fef08a" filter="url(#hsGlowSm)" class="h-twinkle"/>
