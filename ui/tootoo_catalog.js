@@ -101,7 +101,7 @@
       id: "street", tier: 1, icon: "🛣️", name: "露宿马路边", price: 0, tierTag: "起点", grade: "basic",
       rentable: false, series: "初始起点", tags: ["起点", "户外", "街头"],
       slots: [],
-      desc: "暖黄路灯与旧报纸铺地，捧着热咖啡从零起家（刮风下雨会淋湿哦）",
+      desc: "暖黄路灯与旧报纸铺地，捧着热咖啡从零起家",
     },
     {
       id: "pot", tier: 2, icon: "🪴", name: "简陋花盆屋", price: 20, tierTag: "蜗居", grade: "basic",
@@ -129,7 +129,7 @@
       rentable: true, rent7d: 78, rent30d: 260,
       series: "城市住宅", tags: ["和安居", "可租房", "阳台", "可出门", "地面"],
       slots: ["bed", "light", "floor", "garden"],
-      desc: "城市精装公寓配横版可步出大露台与夜景串灯，支持租房入住，解锁地面铺装！",
+      desc: "城市精装公寓配可步出大露台与夜景串灯，解锁地面铺装",
     },
     {
       id: "xixi", tier: 6, icon: "🏡", name: "西溪壹号别墅", price: 6800, tierTag: "顶豪", grade: "luxury",

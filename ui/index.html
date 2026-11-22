@@ -3284,16 +3284,18 @@
     pointer-events: auto;
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    padding: 3px 8.5px;
+    gap: 4px;
+    padding: 2.5px 7px;
     border-radius: 999px;
     background: rgba(20, 18, 16, 0.74);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     color: #faf8f3;
     font-family: var(--font-mono);
-    font-size: 9.5px;
+    font-size: 9px;
     font-weight: 700;
+    white-space: nowrap;
+    flex-shrink: 0;
     border: 1px solid rgba(255, 255, 255, 0.16);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
   }
@@ -3822,6 +3824,41 @@
     text-align: center;
   }
   .home-load-more:hover { border-color: var(--active-border); color: var(--ink); }
+  .home-confirm-bar {
+    display: none;
+    flex-direction: column;
+    gap: 6px;
+    padding: 9px 11px;
+    margin-bottom: 8px;
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--surface) 92%, #f59e0b 8%);
+    border: 1.2px solid color-mix(in srgb, var(--active-border) 70%, #f59e0b);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+    animation: panelFadeUp 0.16s ease-out;
+  }
+  .home-confirm-bar.open { display: flex; }
+  .home-confirm-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .home-confirm-title {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--ink);
+  }
+  .home-confirm-note {
+    font-size: 9.5px;
+    color: var(--ink-soft);
+    line-height: 1.45;
+  }
+  .home-confirm-acts {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+  }
   .home-card:hover {
     border-color: color-mix(in srgb, var(--active-border) 75%, var(--border));
     transform: translateY(-1px);
@@ -5918,8 +5955,8 @@
 
     <div class="checkin-strip" id="homeCheckinStrip">
       <div class="checkin-info">
-        <span class="checkin-title">📅 每日签到 · 领 +1 枚萝卜币</span>
-        <span class="checkin-sub" id="homeCheckinSub">今天还没签到，签一下领 1 枚萝卜币 🥕</span>
+        <span class="checkin-title">📅 每日签到</span>
+        <span class="checkin-sub" id="homeCheckinSub">今日可领 +1 萝卜币 🥕</span>
       </div>
       <button class="checkin-btn" id="homeCheckinBtn">🥕 签到 +1</button>
     </div>
@@ -5957,8 +5994,20 @@
       <button class="dbg-mini-btn" id="homeAvatarWearToggle" title="是否将已穿戴的衣服饰品同步显示在顶部主头像上">头像同步穿戴: 开</button>
     </div>
 
+    <div class="home-confirm-bar" id="homeConfirmBar">
+      <div class="home-confirm-top">
+        <span class="home-confirm-title" id="homeConfirmTitle"></span>
+        <span class="hc-price" id="homeConfirmPrice"></span>
+      </div>
+      <div class="home-confirm-note" id="homeConfirmNote"></div>
+      <div class="home-confirm-acts">
+        <button class="hc-btn unequip" id="homeConfirmCancelBtn">取消</button>
+        <button class="hc-btn buy" id="homeConfirmOkBtn">确认</button>
+      </div>
+    </div>
+
     <div class="home-filter-bar" id="homeFilterBar">
-      <input type="search" class="home-search-input" id="homeSearchInput" placeholder="🔍 搜索房型 / 装潢 / 穿搭 / 节日标签..." autocomplete="off"/>
+      <input type="search" class="home-search-input" id="homeSearchInput" placeholder="🔍 搜索名称或标签..." autocomplete="off"/>
       <div class="home-filter-chips" id="homeFilterChips">
         <button class="home-filter-chip active" data-hf="all">全部</button>
         <button class="home-filter-chip" data-hf="affordable">买得起</button>
@@ -12038,15 +12087,15 @@ const WEAR_SLOT_META = {
   innate: { label: "✨ 等级自带" },
 };
 
-// Built-in non-purchasable mini-accessories automatically granted starting at Lv.4 (toggleable: 取下 / 戴上)
+// Built-in non-purchasable mini-accessories automatically granted starting at Lv.4
 const TIER_INNATE_ACCESSORIES = {
-  4:  { level: 4,  icon: "💥", name: "暴击橘电护腕星", tierName: "Lv.4 暴击兔",     desc: "Lv.4 自动附带：双颊侧跃动的赤金暴击火花与小能量星（不可购买，可随时取下）" },
-  5:  { level: 5,  icon: "⚡", name: "爆气金弧耳坠",   tierName: "Lv.5 超赛爆气兔", desc: "Lv.5 自动附带：双耳侧跃动的黄金超赛电弧与悬浮气珠（不可购买，可随时取下）" },
-  6:  { level: 6,  icon: "🔥", name: "暗炎魔纹耳扣",   tierName: "Lv.6 红魔兔",     desc: "Lv.6 自动附带：左耳赤金魔环耳扣与右下角浮游小冥火（不可购买，可随时取下）" },
-  7:  { level: 7,  icon: "⛓️", name: "冥渊紫金星环",   tierName: "Lv.7 狱火魔神兔", desc: "Lv.7 自动附带：身侧浮空的紫金冥渊符文环与微缩魔珠（不可购买，可随时取下）" },
-  8:  { level: 8,  icon: "🪐", name: "微缩土星浮游饰", tierName: "Lv.8 星渊霸王兔", desc: "Lv.8 自动附带：肩头自转的黄金微缩土星与星渊微光（不可购买，可随时取下）" },
-  9:  { level: 9,  icon: "🕊️", name: "创世圣羽金铃坠", tierName: "Lv.9 创世飞升兔", desc: "Lv.9 自动附带：双耳畔轻盈流转的鎏金圣羽铃与四芒星坠（不可购买，可随时取下）" },
-  10: { level: 10, icon: "💠", name: "维度双棱镜星芒", tierName: "EX 奇点终焉兔",   desc: "50B 自动附带：环绕头顶双侧的霓虹维度晶棱与星尘（不可购买，可随时取下）" },
+  4:  { level: 4,  icon: "💥", name: "暴击橘电护腕星", tierName: "Lv.4 暴击兔",     desc: "双颊侧跃动的赤金暴击火花与小能量星" },
+  5:  { level: 5,  icon: "⚡", name: "爆气金弧耳坠",   tierName: "Lv.5 超赛爆气兔", desc: "双耳侧跃动的黄金超赛电弧与悬浮气珠" },
+  6:  { level: 6,  icon: "🔥", name: "暗炎魔纹耳扣",   tierName: "Lv.6 红魔兔",     desc: "左耳赤金魔环耳扣与右下角浮游小冥火" },
+  7:  { level: 7,  icon: "⛓️", name: "冥渊紫金星环",   tierName: "Lv.7 狱火魔神兔", desc: "身侧浮空的紫金冥渊符文环与微缩魔珠" },
+  8:  { level: 8,  icon: "🪐", name: "微缩土星浮游饰", tierName: "Lv.8 星渊霸王兔", desc: "肩头自转的黄金微缩土星与星渊微光" },
+  9:  { level: 9,  icon: "🕊️", name: "创世圣羽金铃坠", tierName: "Lv.9 创世飞升兔", desc: "双耳畔轻盈流转的鎏金圣羽铃与四芒星坠" },
+  10: { level: 10, icon: "💠", name: "维度双棱镜星芒", tierName: "EX 奇点终焉兔",   desc: "环绕头顶双侧的霓虹维度晶棱与星尘" },
 };
 
 // Powered by external extensible registry (/ui/tootoo_catalog.js) — supports 100+ houses, 500+ items, leasing & live-ops events!
@@ -12207,12 +12256,12 @@ function renderCheckinUi() {
       b.textContent = ci.checkedIn ? "✓ 今日已签" : `🥕 签到 +${rw.total}`;
     }
     if (s) {
-      const bonusHint = rw.bonus > 0 ? `（含节日加赠 +${rw.bonus}）` : "";
+      const bonusHint = rw.bonus > 0 ? ` · 节日+${rw.bonus}` : "";
       s.textContent = ci.checkedIn
-        ? `今日已领 +${rw.total} 萝卜币${bonusHint} · 已连续签到 ${Math.max(1, ci.streak)} 天 ✨`
+        ? `今日已领 +${rw.total} 币${bonusHint} · 连签 ${Math.max(1, ci.streak)} 天`
         : (ci.streak > 0
-          ? `已连签 ${ci.streak} 天 · 今天签一下再领 +${rw.total} 萝卜币${bonusHint} 🥕`
-          : `每天签到稳稳领 ${rw.total} 枚萝卜币${bonusHint}，攒钱给 TooToo 租房盖新家 🥕`);
+          ? `连签 ${ci.streak} 天 · 今日可领 +${rw.total} 币${bonusHint}`
+          : `今日可领 +${rw.total} 枚萝卜币${bonusHint}`);
     }
   });
 }
@@ -14232,11 +14281,11 @@ function syncHomeZoneBtnDom() {
   btn.style.display = "inline-flex";
   const isOut = isHomeBunnyOutdoors(view.houseId, homeBunnyPos.x, homeBunnyPos.y);
   if (isOut) {
-    btn.textContent = homeBunnyClimate.condition ? "← 🏠 回屋喝热水" : "← 🏠 走回家";
-    btn.title = "点击让兔兔沿路走回屋里，镜头跟随移动";
+    btn.textContent = homeBunnyClimate.condition ? "🏠 喝热水" : "🏠 回家";
+    btn.title = "点击让兔兔走回屋里，镜头跟随移动";
   } else {
-    btn.textContent = "🚪 出门走走 →";
-    btn.title = "点击让兔兔推门走到室外露台/庭院，镜头跟随移动";
+    btn.textContent = "🚪 出门";
+    btn.title = "点击让兔兔走到室外露台/庭院，镜头跟随移动";
   }
 }
 
@@ -15186,37 +15235,38 @@ function renderHomeStage(freshDecorSlot = null, twirlBunny = false, forceRedraw 
 
   if (titleEl) {
     const isRentedLive = !view.isPreview && !hState.owned_houses.includes(house.id) && TOOTOO_REG.isHouseLeased(house.id, hState);
-    const leaseTag = isRentedLive ? ` · 🔑租${TOOTOO_REG.formatLeaseRemaining(TOOTOO_REG.getLeaseExpiresAt(house.id, hState))}` : "";
-    titleEl.textContent = `${house.icon} ${house.name}${house.secret ? " · 隐藏款" : ""}${leaseTag}`;
+    const leaseTag = isRentedLive ? ` · 🔑${TOOTOO_REG.formatLeaseRemaining(TOOTOO_REG.getLeaseExpiresAt(house.id, hState)).replace(/^剩\s*/, "")}` : "";
+    titleEl.textContent = `${house.icon} ${house.name}${leaseTag}`;
   }
   if (weatherPillEl) {
     if (hasWeather && weather) {
       weatherPillEl.style.display = "inline-flex";
-      const tempTxt = weather.temp_c != null ? ` ${weather.temp_c}°C` : "";
+      const tempTxt = weather.temp_c != null ? `${weather.temp_c}°C` : weather.label;
       const wIcon = (weather.kind === "sunny" && dayPhase.isNight) ? "🌙" : weather.icon;
       const wLabel = (weather.kind === "sunny" && dayPhase.isNight) ? "晴夜" : weather.label;
-      const mockTag = (weather.mocked || dayPhase.mocked) ? " [试]" : "";
-      weatherPillEl.textContent = `${wIcon} ${wLabel}${tempTxt} · ${dayPhase.hm}${mockTag}`;
-      weatherPillEl.title = `${weather.city ? weather.city + " " : ""}${dayPhase.hm} ${dayPhase.label}（06:00天亮 / 19:00天黑）· 天气：${wLabel}${tempTxt}（点击刷新）`;
+      const mockTag = (weather.mocked || dayPhase.mocked) ? "*" : "";
+      weatherPillEl.textContent = `${wIcon} ${tempTxt}${mockTag}`;
+      weatherPillEl.title = `${weather.city ? weather.city + " " : ""}${dayPhase.hm} ${dayPhase.label} · ${wLabel} ${tempTxt}（点击刷新）`;
     } else {
       weatherPillEl.style.display = "none";
     }
   }
   if (slotsEl) {
     const equippedCnt = house.slots.filter(s => view.decor[s]).length;
+    slotsEl.style.display = view.isPreview ? "none" : "inline-flex";
     slotsEl.textContent = house.slots.length > 0
       ? `装潢 ${equippedCnt}/${house.slots.length}`
-      : "租/买纸箱屋开启装潢";
+      : "无装潢槽";
   }
 
   const secretCount = countEquippedSecrets(house.id, view.decor, view.wear);
   if (secretPillEl) {
-    secretPillEl.style.display = secretCount > 0 ? "inline-flex" : "none";
-    secretPillEl.textContent = `✦ 隐藏臻品 ×${secretCount}`;
+    secretPillEl.style.display = (!view.isPreview && secretCount > 0) ? "inline-flex" : "none";
+    secretPillEl.textContent = `✦ ×${secretCount}`;
   }
   if (previewExitBtn) {
     previewExitBtn.style.display = view.isPreview ? "inline-flex" : "none";
-    if (view.isPreview) previewExitBtn.textContent = `👁 试看「${view.previewLabel}」· 退出`;
+    if (view.isPreview) previewExitBtn.textContent = `👁 退出试看`;
   }
   if (wrapEl) {
     wrapEl.classList.remove("tier-luxury", "tier-mythic", "tier-secret");
@@ -15464,8 +15514,8 @@ function renderDecorCardHtml(it, hState, cs, maxTier, activeEvents, isPreviewing
   const hintHtml = locked && it.unlockReq ? `<div class="hc-unlock-hint">🔓 解锁：${it.unlockReq.label}</div>` : "";
   return `<div class="home-card${gradeCls}${equipped ? " equipped" : ""}${locked ? " secret-locked" : ""}${prevOn ? " previewing" : ""}">
     <div>
-      <div class="hc-top"><span class="hc-name">${locked ? `❓ ${HOME_SLOT_META[it.slot].short}神秘隐藏款` : `${it.icon} ${it.name}`}</span>${tag}</div>
-      <div class="hc-desc" style="margin-top:3px">${locked ? "达成解锁条件后揭晓，附带传世级专属动态特效与全屏流光！" : it.desc}</div>
+      <div class="hc-top"><span class="hc-name">${locked ? `❓ ${HOME_SLOT_META[it.slot].short}隐藏款` : `${it.icon} ${it.name}`}</span>${tag}</div>
+      ${locked ? "" : `<div class="hc-desc" style="margin-top:3px">${it.desc}</div>`}
       ${hintHtml}
     </div>
     <div class="hc-act">
@@ -15504,8 +15554,8 @@ function renderWearCardHtml(it, hState, cs, maxTier, activeEvents, isPreviewing)
   const hintHtml = secretLocked && it.unlockReq ? `<div class="hc-unlock-hint">🔓 解锁：${it.unlockReq.label}</div>` : "";
   return `<div class="home-card${gradeCls}${equipped ? " equipped" : ""}${tierLocked ? " tier-locked" : ""}${secretLocked ? " secret-locked" : ""}${prevOn ? " previewing" : ""}">
     <div>
-      <div class="hc-top"><span class="hc-name">${secretLocked ? "❓ 神秘隐藏高定" : `${it.icon} ${it.name}`}</span>${tag}</div>
-      <div class="hc-desc" style="margin-top:3px">${secretLocked ? "达成解锁条件后显形，穿戴后主头像与小家同步闪耀！" : it.desc}</div>
+      <div class="hc-top"><span class="hc-name">${secretLocked ? "❓ 隐藏高定" : `${it.icon} ${it.name}`}</span>${tag}</div>
+      ${secretLocked ? "" : `<div class="hc-desc" style="margin-top:3px">${it.desc}</div>`}
       ${hintHtml}
     </div>
     <div class="hc-act">
@@ -15540,6 +15590,7 @@ function renderHomeShop() {
   const secCounterEl = document.getElementById("homeSecretCounter");
   if (secCounterEl) secCounterEl.textContent = `✦ 隐藏款 ${secStat.owned}/${secStat.total}`;
 
+  const subbarEl = document.getElementById("homeSubbar");
   const pillsEl = document.getElementById("homeSlotPills");
   const gridEl = document.getElementById("homeShopGrid");
   const wearToggle = document.getElementById("homeAvatarWearToggle");
@@ -15557,11 +15608,20 @@ function renderHomeShop() {
   const pv = homeUiState.preview;
   const isPreviewing = (kind, id) => !!(pv && pv.kind === kind && pv.id === id);
 
+  const syncFilterChipVisibility = (pool) => {
+    const hasEvent = pool.some(x => !!x.eventId);
+    const hasSecret = pool.some(x => !!x.secret);
+    document.querySelectorAll("#homeFilterChips button[data-hf]").forEach(b => {
+      if (b.dataset.hf === "event") b.style.display = hasEvent ? "inline-block" : "none";
+      if (b.dataset.hf === "secret") b.style.display = hasSecret ? "inline-block" : "none";
+    });
+  };
+
   const renderChunkedCards = (cardsHtmlArr, totalMatched) => {
     if (!gridEl) return;
     if (countTag) countTag.textContent = `${totalMatched} 件`;
     if (cardsHtmlArr.length === 0) {
-      gridEl.innerHTML = `<div class="home-notice">没有找到符合筛选条件的物品，试试清空搜索或切换筛选项～</div>`;
+      gridEl.innerHTML = `<div class="home-notice">没有找到匹配的物品</div>`;
       return;
     }
     const lim = homeUiState.pageLimit || 24;
@@ -15573,16 +15633,19 @@ function renderHomeShop() {
   };
 
   if (homeUiState.tab === "houses") {
-    // Dynamically show tier filter pills when there are many houses (>10) or show clean leasing tip
-    if (pillsEl) {
-      if (HOME_HOUSES.length > 10) {
+    // Only show subbar when >10 houses exist (tier pills); keep UI completely clean otherwise!
+    if (HOME_HOUSES.length > 10) {
+      if (subbarEl) subbarEl.style.display = "flex";
+      if (pillsEl) {
         const tiers = Array.from(new Set(HOME_HOUSES.map(x => x.tier || 1))).sort((a, b) => a - b);
         pillsEl.innerHTML = `<button class="home-slot-pill${homeUiState.houseTier === 0 ? " active" : ""}" data-htier="0">全部等级</button>`
           + tiers.map(t => `<button class="home-slot-pill${homeUiState.houseTier === t ? " active" : ""}" data-htier="${t}">T${t}</button>`).join("");
-      } else {
-        pillsEl.innerHTML = `<span class="dbg-tag" style="color:var(--muted)">🔑 除免费马路边外全部支持租房入住，已付房租 50% 自动抵扣买断价！</span>`;
       }
+    } else {
+      if (subbarEl) subbarEl.style.display = "none";
+      if (pillsEl) pillsEl.innerHTML = "";
     }
+    syncFilterChipVisibility(HOME_HOUSES);
     const filtered = HOME_HOUSES.filter(h => {
       if (homeUiState.houseTier > 0 && (h.tier || 1) !== homeUiState.houseTier) return false;
       const owned = hState.owned_houses.includes(h.id);
@@ -15615,11 +15678,11 @@ function renderHomeShop() {
           : (owned
             ? `<button class="hc-btn equip" data-act="move-house" data-id="${h.id}">搬入</button>`
             : (equipped && leased
-              ? `<button class="hc-btn buy${h.secret ? " secret-buy" : ""}" data-act="buy-house" data-id="${h.id}" ${canBuy ? "" : "disabled"} title="永久买断，不再交房租">${canBuy ? "永久买断" : "买断币不足"}</button>`
+              ? `<button class="hc-btn buy${h.secret ? " secret-buy" : ""}" data-act="buy-house" data-id="${h.id}" ${canBuy ? "" : "disabled"}>${canBuy ? "买断" : "币不足"}</button>`
               : (leased
-                ? `<button class="hc-btn equip" data-act="move-house" data-id="${h.id}">搬入租房</button>`
-                : `<button class="hc-btn buy${h.secret ? " secret-buy" : ""}" data-act="buy-house" data-id="${h.id}" ${canBuy ? "" : "disabled"}>${canBuy ? (h.secret ? "铸造买断" : "全款买房") : "币不足"}</button>`))));
-      // Leasing strip (every house except free street!)
+                ? `<button class="hc-btn equip" data-act="move-house" data-id="${h.id}">搬入</button>`
+                : `<button class="hc-btn buy${h.secret ? " secret-buy" : ""}" data-act="buy-house" data-id="${h.id}" ${canBuy ? "" : "disabled"}>${canBuy ? (h.secret ? "铸造" : "买房") : "币不足"}</button>`))));
+      // Ultra-clean minimal rent bar (no repeated rule walls!)
       let rentRowHtml = "";
       if (h.rentable && !owned && !locked) {
         const r7 = TOOTOO_REG.getHouseRentPrice(h, 7, activeEvents);
@@ -15627,18 +15690,18 @@ function renderHomeShop() {
         const canR7 = r7 && cs.balance >= r7.price;
         const canR30 = r30 && cs.balance >= r30.price;
         const eqTxt = buyInfo.equityCredit > 0
-          ? `租转买已抵扣 -${TOOTOO_REG.formatCoins(buyInfo.equityCredit)}币`
-          : (leased ? `租期${TOOTOO_REG.formatLeaseRemaining(leasedExp)}` : "租房体验 · 房租50%抵买断");
+          ? `已抵 -${TOOTOO_REG.formatCoins(buyInfo.equityCredit)}`
+          : (leased ? TOOTOO_REG.formatLeaseRemaining(leasedExp) : "租房");
         rentRowHtml = `<div class="hc-rent-row">
           <span class="hc-rent-info">🔑 ${eqTxt}</span>
           <span class="hc-btns">
-            <button class="hc-btn rent" data-act="rent-house-7" data-id="${h.id}" ${canR7 ? "" : "disabled"} title="租住 7 天（已租则顺延 7 天）">${leased ? "+7天" : "周租"} ${TOOTOO_REG.formatCoins(r7.price)}</button>
-            <button class="hc-btn rent" data-act="rent-house-30" data-id="${h.id}" ${canR30 ? "" : "disabled"} title="租住 30 天更划算（已租则顺延 30 天）">${leased ? "+30天" : "月租"} ${TOOTOO_REG.formatCoins(r30.price)}</button>
+            <button class="hc-btn rent" data-act="rent-house-7" data-id="${h.id}" ${canR7 ? "" : "disabled"}>${leased ? "+7天" : "周租"} ${TOOTOO_REG.formatCoins(r7.price)}</button>
+            <button class="hc-btn rent" data-act="rent-house-30" data-id="${h.id}" ${canR30 ? "" : "disabled"}>${leased ? "+30天" : "月租"} ${TOOTOO_REG.formatCoins(r30.price)}</button>
           </span>
         </div>`;
       }
       const gradeCls = ` grade-${h.grade || "basic"}`;
-      const hintHtml = locked && h.unlockReq ? `<div class="hc-unlock-hint">🔓 解锁：${h.unlockReq.label}</div>` : "";
+      const hintHtml = locked && h.unlockReq ? `<div class="hc-unlock-hint">🔓 ${h.unlockReq.label}</div>` : "";
       const tierBadge = h.tier ? `<span style="opacity:.55;font-family:var(--font-mono);font-size:8.5px;margin-right:3px">T${h.tier}</span>` : "";
       return `<div class="home-card${gradeCls}${equipped ? " equipped" : ""}${locked ? " secret-locked" : ""}${prevOn ? " previewing" : ""}">
         <div>
@@ -15646,7 +15709,7 @@ function renderHomeShop() {
             <span class="hc-name">${locked ? "❓ 神秘隐藏宅邸" : `${tierBadge}${h.icon} ${h.name}`}</span>
             ${tag}
           </div>
-          <div class="hc-desc" style="margin-top:3px">${locked ? "达成解锁条件后现身，拥有全套动态星穹特效与专属光晕！" : h.desc}</div>
+          ${locked ? "" : `<div class="hc-desc" style="margin-top:3px">${h.desc}</div>`}
           ${locked ? "" : `<div class="hc-desc" style="margin-top:2px;color:var(--ink-soft)">槽位：${slotTxt}</div>`}
           ${hintHtml}
         </div>
@@ -15661,6 +15724,7 @@ function renderHomeShop() {
     });
     renderChunkedCards(cards, filtered.length);
   } else if (homeUiState.tab === "decor") {
+    if (subbarEl) subbarEl.style.display = "flex";
     const allSlots = ["bed", "light", "floor", "garden", "pool"];
     if (pillsEl) {
       pillsEl.innerHTML = allSlots.map(s => {
@@ -15671,13 +15735,14 @@ function renderHomeShop() {
     if (gridEl) {
       if (house.slots.length === 0) {
         if (countTag) countTag.textContent = "";
-        gridEl.innerHTML = `<div class="home-notice">当前「${house.name}」还太简陋，无法装修哦～<br/>先去「🏠 置业租房」花 <strong>6 币周租</strong> 或 <strong>80 币买下</strong>「📦 工业纸箱屋」，即可开启装潢系统！</div>`;
+        gridEl.innerHTML = `<div class="home-notice">「${house.name}」暂无装潢槽位，租住或购入 <strong>📦 工业纸箱屋</strong> 即可解锁</div>`;
       } else if (!house.slots.includes(homeUiState.decorSlot)) {
         if (countTag) countTag.textContent = "";
         const needHouse = HOME_HOUSES.find(x => x.slots.includes(homeUiState.decorSlot));
-        gridEl.innerHTML = `<div class="home-notice">「${HOME_SLOT_META[homeUiState.decorSlot].label}」槽位需要租住或购入 <strong>${needHouse ? `${needHouse.icon} ${needHouse.name}` : "更高阶住宅"}</strong> 后解锁！</div>`;
+        gridEl.innerHTML = `<div class="home-notice">需入住 <strong>${needHouse ? `${needHouse.icon} ${needHouse.name}` : "更高阶住宅"}</strong> 解锁「${HOME_SLOT_META[homeUiState.decorSlot].short}」</div>`;
       } else {
         const slotItems = TOOTOO_REG.getDecorsBySlot(homeUiState.decorSlot);
+        syncFilterChipVisibility(slotItems);
         const filtered = slotItems.filter(it => {
           const owned = hState.owned_decor.includes(it.id);
           if (!TOOTOO_REG.isItemAvailable(it, activeEvents, owned)) return false;
@@ -15689,6 +15754,7 @@ function renderHomeShop() {
       }
     }
   } else if (homeUiState.tab === "wear") {
+    if (subbarEl) subbarEl.style.display = "flex";
     const wSlots = ["hat", "outfit", "acc", "innate"];
     if (pillsEl) {
       pillsEl.innerHTML = wSlots.map(s =>
@@ -15707,7 +15773,7 @@ function renderHomeShop() {
           const tag = !unlocked
             ? `<span class="hc-tag vip">${it.level === 10 ? "50B自带" : `Lv.${it.level}自带`}</span>`
             : (isCur
-              ? (visible ? `<span class="hc-tag eq">当前佩戴</span>` : `<span class="hc-tag">已取下</span>`)
+              ? (visible ? `<span class="hc-tag eq">佩戴中</span>` : `<span class="hc-tag">已取下</span>`)
               : (visible ? `<span class="hc-tag own">默认开启</span>` : `<span class="hc-tag">已取下</span>`));
           const btnHtml = !unlocked
             ? `<button class="hc-btn" disabled>🔒 升级解锁</button>`
@@ -15720,13 +15786,14 @@ function renderHomeShop() {
               <div class="hc-desc" style="margin-top:3px">${it.desc}</div>
             </div>
             <div class="hc-act">
-              <span class="hc-price" style="color:var(--teal)">🎁 ${it.tierName}自带 · 不可购买</span>
+              <span class="hc-price" style="color:var(--teal)">🎁 ${it.tierName}自带</span>
               <span class="hc-btns">${btnHtml}</span>
             </div>
           </div>`;
         }).join("");
       } else {
         const slotItems = TOOTOO_REG.getWearsBySlot(homeUiState.wearSlot);
+        syncFilterChipVisibility(slotItems);
         const filtered = slotItems.filter(it => {
           const owned = hState.owned_wear.includes(it.id);
           if (!TOOTOO_REG.isItemAvailable(it, activeEvents, owned)) return false;
@@ -15739,17 +15806,20 @@ function renderHomeShop() {
     }
   } else {
     // 4th Tab: 🎉 Live-Ops Seasonal Events Storefront & Festival Calendar
-    if (pillsEl) {
-      if (activeEvents.length > 0) {
+    if (activeEvents.length > 0) {
+      if (subbarEl) subbarEl.style.display = "flex";
+      if (pillsEl) {
         pillsEl.innerHTML = activeEvents.map(ev =>
           `<span class="home-slot-pill active">${ev.icon} ${ev.name}进行中</span>`
         ).join("");
-      } else {
-        pillsEl.innerHTML = `<span class="dbg-tag" style="color:var(--muted)">📅 节日限定会在对应节庆自动上架，已购限定永久保留在你的仓库！</span>`;
       }
+    } else {
+      if (subbarEl) subbarEl.style.display = "none";
+      if (pillsEl) pillsEl.innerHTML = "";
     }
     const eventDecors = HOME_DECORS.filter(it => it.eventId && TOOTOO_REG.isItemAvailable(it, activeEvents, hState.owned_decor.includes(it.id)));
     const eventWears = HOME_WEARABLES.filter(it => it.eventId && TOOTOO_REG.isItemAvailable(it, activeEvents, hState.owned_wear.includes(it.id)));
+    syncFilterChipVisibility([...eventDecors, ...eventWears]);
     const cards = [];
     eventDecors.forEach(it => {
       const owned = hState.owned_decor.includes(it.id);
@@ -15768,11 +15838,10 @@ function renderHomeShop() {
     if (cards.length > 0) {
       renderChunkedCards(cards, cards.length);
     } else if (gridEl) {
-      if (countTag) countTag.textContent = `${TOOTOO_REG.events.length} 个节庆`;
-      gridEl.innerHTML = `<div class="home-notice" style="text-align:left;line-height:1.65">
-        <strong>🎉 TooToo 年度节庆运营日历（自动按本机日期开启）：</strong><br/>
-        ${TOOTOO_REG.events.map(ev => `${ev.icon} <strong>${ev.name}</strong>（${ev.dateRanges.map(r => r.join(" ~ ")).join(" / ")}）${ev.shopDiscount < 1 ? `· 全场${Math.round(ev.shopDiscount * 10)}折` : ""}${ev.checkinBonus > 0 ? `· 签到+${ev.checkinBonus}币` : ""}`).join("<br/>")}
-        <br/><span style="color:var(--muted)">提示：打开右上角调试模式可在「🎉 模拟运营活动」立即预览体验全部节日限定！</span>
+      if (countTag) countTag.textContent = `${TOOTOO_REG.events.length} 节庆`;
+      gridEl.innerHTML = `<div class="home-notice" style="text-align:left;line-height:1.7">
+        <strong>🎉 年度节庆日历</strong><br/>
+        ${TOOTOO_REG.events.map(ev => `${ev.icon} <strong>${ev.name}</strong> · ${ev.dateRanges.map(r => r.join(" ~ ")).join(" / ")}${ev.shopDiscount < 1 ? ` · 全场${Math.round(ev.shopDiscount * 10)}折` : ""}${ev.checkinBonus > 0 ? ` · 签到+${ev.checkinBonus}` : ""}`).join("<br/>")}
       </div>`;
     }
   }
@@ -15801,6 +15870,7 @@ function openHomeModal() {
 function closeHomeModal() {
   stopHomeBunnyWalk();
   stopHomeSneezeTimer();
+  closeHomeConfirm();
   if (homeClockTimer) {
     clearInterval(homeClockTimer);
     homeClockTimer = null;
@@ -15871,6 +15941,8 @@ document.querySelectorAll("#homeTabs button").forEach(btn => {
     btn.classList.add("active");
     homeUiState.tab = btn.dataset.htab;
     homeUiState.preview = null;
+    homeUiState.pageLimit = 24;
+    closeHomeConfirm();
     if (homeUiState.tab === "decor") {
       const h = HOME_HOUSES.find(x => x.id === getActiveHomeState().house) || HOME_HOUSES[0];
       if (h.slots.length > 0 && !h.slots.includes(homeUiState.decorSlot)) {
@@ -15885,6 +15957,7 @@ document.getElementById("homeSlotPills").addEventListener("click", (e) => {
   const btn = e.target.closest("button");
   if (!btn) return;
   homeUiState.pageLimit = 24;
+  closeHomeConfirm();
   if (btn.dataset.dslot) {
     homeUiState.decorSlot = btn.dataset.dslot;
     homeUiState.preview = null;
@@ -15903,6 +15976,7 @@ document.getElementById("homeSlotPills").addEventListener("click", (e) => {
 document.getElementById("homeEventBannerBtn").addEventListener("click", () => {
   homeUiState.tab = "events";
   homeUiState.pageLimit = 24;
+  closeHomeConfirm();
   document.querySelectorAll("#homeTabs button").forEach(b => b.classList.toggle("active", b.dataset.htab === "events"));
   renderHomeShop();
   playSfx("token");
@@ -15932,6 +16006,39 @@ document.getElementById("homeAvatarWearToggle").addEventListener("click", () => 
   saveActiveHomeState(h, 0);
   renderHomeShop();
   playSfx("token");
+});
+
+let _pendingHomeConfirm = null;
+
+function openHomeConfirm({ title, priceHtml, note, okLabel, onConfirm }) {
+  const bar = document.getElementById("homeConfirmBar");
+  const tEl = document.getElementById("homeConfirmTitle");
+  const pEl = document.getElementById("homeConfirmPrice");
+  const nEl = document.getElementById("homeConfirmNote");
+  const okEl = document.getElementById("homeConfirmOkBtn");
+  if (!bar) { onConfirm(); return; }
+  _pendingHomeConfirm = onConfirm;
+  if (tEl) tEl.textContent = title;
+  if (pEl) pEl.innerHTML = priceHtml;
+  if (nEl) nEl.textContent = note;
+  if (okEl) okEl.textContent = okLabel || "确认";
+  bar.classList.add("open");
+  playSfx("token");
+}
+
+function closeHomeConfirm() {
+  _pendingHomeConfirm = null;
+  document.getElementById("homeConfirmBar")?.classList.remove("open");
+}
+
+document.getElementById("homeConfirmCancelBtn").addEventListener("click", () => {
+  closeHomeConfirm();
+  playSfx("token");
+});
+document.getElementById("homeConfirmOkBtn").addEventListener("click", () => {
+  const fn = _pendingHomeConfirm;
+  closeHomeConfirm();
+  if (typeof fn === "function") fn();
 });
 
 document.getElementById("homeShopGrid").addEventListener("click", (e) => {
@@ -15966,6 +16073,7 @@ document.getElementById("homeShopGrid").addEventListener("click", (e) => {
   }
 
   homeUiState.preview = null;
+  closeHomeConfirm();
 
   if (act === "rent-house-7" || act === "rent-house-30") {
     const house = TOOTOO_REG.getHouse(id);
@@ -15973,47 +16081,96 @@ document.getElementById("homeShopGrid").addEventListener("click", (e) => {
     const days = act === "rent-house-30" ? 30 : 7;
     const rentEff = TOOTOO_REG.getHouseRentPrice(house, days, activeEvents);
     if (!rentEff || cs.balance < rentEff.price) { playSfx("bomb"); return; }
-    const now = Date.now();
-    const curExp = Math.max(now, Number((h.leases && h.leases[house.id]) || 0));
-    h.leases[house.id] = curExp + days * 86400000;
-    h.rent_equity[house.id] = Number((h.rent_equity && h.rent_equity[house.id]) || 0) + rentEff.price;
-    h.house = house.id;
-    saveActiveHomeState(h, rentEff.price);
-    renderHomeModal();
-    playBuildHouseFx(house);
-    showStageBanner(`🔑 租住「${house.name}」+${days}天（房租50%已计入买断抵扣）`, false);
+    const leased = TOOTOO_REG.isHouseLeased(house.id, h);
+    openHomeConfirm({
+      title: `🔑 ${leased ? "续租" : "租住"}「${house.name}」· ${days} 天`,
+      priceHtml: renderPriceHtml(rentEff),
+      note: "已付房租的 50% 将自动抵扣未来买断价（最高抵 40%）；租期到期后会自动搬回已有房产，所有装潢安全保留在仓库。",
+      okLabel: leased ? `确认续租 +${days}天` : "确认租住",
+      onConfirm: () => {
+        const curH = cloneHomeState(getActiveHomeState());
+        const curCs = getGachaCoinState();
+        if (curCs.balance < rentEff.price) { playSfx("bomb"); return; }
+        const now = Date.now();
+        const curExp = Math.max(now, Number((curH.leases && curH.leases[house.id]) || 0));
+        curH.leases[house.id] = curExp + days * 86400000;
+        curH.rent_equity[house.id] = Number((curH.rent_equity && curH.rent_equity[house.id]) || 0) + rentEff.price;
+        curH.house = house.id;
+        saveActiveHomeState(curH, rentEff.price);
+        renderHomeModal();
+        playBuildHouseFx(house);
+        showStageBanner(`🔑 已${leased ? "续租" : "入住"}「${house.name}」+${days}天`, false);
+      },
+    });
   } else if (act === "buy-house" || act === "move-house") {
     const house = TOOTOO_REG.getHouse(id);
     if (!house) return;
     if (act === "buy-house") {
       const buyInfo = TOOTOO_REG.getHouseBuyoutInfo(house, h, activeEvents);
       if (cs.balance < buyInfo.price) { playSfx("bomb"); return; }
-      if (!h.owned_houses.includes(house.id)) h.owned_houses.push(house.id);
-      if (h.leases) delete h.leases[house.id];
-      h.house = house.id;
-      saveActiveHomeState(h, buyInfo.price);
+      const noteParts = ["买断后永久拥有，无需再交房租。"];
+      if (buyInfo.equityCredit > 0) noteParts.unshift(`已自动抵扣历史房租 -${TOOTOO_REG.formatCoins(buyInfo.equityCredit)} 币！`);
+      if (buyInfo.onSale) noteParts.push(`已享活动${buyInfo.discountLabel}优惠。`);
+      openHomeConfirm({
+        title: `🏠 永久买断「${house.name}」`,
+        priceHtml: renderPriceHtml(buyInfo),
+        note: noteParts.join(" "),
+        okLabel: "确认买断",
+        onConfirm: () => {
+          const curH = cloneHomeState(getActiveHomeState());
+          const curCs = getGachaCoinState();
+          if (curCs.balance < buyInfo.price) { playSfx("bomb"); return; }
+          if (!curH.owned_houses.includes(house.id)) curH.owned_houses.push(house.id);
+          if (curH.leases) delete curH.leases[house.id];
+          curH.house = house.id;
+          saveActiveHomeState(curH, buyInfo.price);
+          renderHomeModal();
+          playBuildHouseFx(house);
+        },
+      });
     } else {
       h.house = house.id;
       saveActiveHomeState(h, 0);
+      renderHomeModal();
+      playBuildHouseFx(house);
     }
-    renderHomeModal();
-    playBuildHouseFx(house);
   } else if (act === "buy-decor" || act === "equip-decor") {
     const item = TOOTOO_REG.getDecor(id);
     if (!item) return;
     if (act === "buy-decor") {
       const eff = TOOTOO_REG.getEffectivePrice(item, activeEvents);
       if (cs.balance < eff.price) { playSfx("bomb"); return; }
-      if (!h.owned_decor.includes(item.id)) h.owned_decor.push(item.id);
-      const curHouse = TOOTOO_REG.getHouse(h.house) || HOME_HOUSES[0];
-      if (curHouse.slots.includes(item.slot)) h.decor[item.slot] = item.id;
-      saveActiveHomeState(h, eff.price);
+      const execBuy = () => {
+        const curH = cloneHomeState(getActiveHomeState());
+        const curCs = getGachaCoinState();
+        if (curCs.balance < eff.price) { playSfx("bomb"); return; }
+        if (!curH.owned_decor.includes(item.id)) curH.owned_decor.push(item.id);
+        const curHouse = TOOTOO_REG.getHouse(curH.house) || HOME_HOUSES[0];
+        if (curHouse.slots.includes(item.slot)) curH.decor[item.slot] = item.id;
+        saveActiveHomeState(curH, eff.price);
+        renderHomeModal(item.slot, false);
+        playDecorFx(item.slot, item);
+      };
+      if (eff.price >= 300 || item.eventId || item.secret) {
+        const note = item.eventId
+          ? "节日限时限定装潢，购入后永久保留在你的仓库，活动结束后仍可随时摆放。"
+          : (eff.onSale ? `已享活动${eff.discountLabel}优惠，购入后所有支持该槽位的房型均可通用。` : "购入后永久拥有，所有支持该槽位的房型均可随时摆放。");
+        openHomeConfirm({
+          title: `${item.icon} 购入装潢「${item.name}」`,
+          priceHtml: renderPriceHtml(eff),
+          note,
+          okLabel: "确认购买",
+          onConfirm: execBuy,
+        });
+      } else {
+        execBuy();
+      }
     } else {
       h.decor[item.slot] = item.id;
       saveActiveHomeState(h, 0);
+      renderHomeModal(item.slot, false);
+      playDecorFx(item.slot, item);
     }
-    renderHomeModal(item.slot, false);
-    playDecorFx(item.slot, item);
   } else if (act === "unequip-decor" && slot) {
     h.decor[slot] = null;
     saveActiveHomeState(h, 0);
@@ -16025,15 +16182,36 @@ document.getElementById("homeShopGrid").addEventListener("click", (e) => {
     if (act === "buy-wear") {
       const eff = TOOTOO_REG.getEffectivePrice(item, activeEvents);
       if (cs.balance < eff.price) { playSfx("bomb"); return; }
-      if (!h.owned_wear.includes(item.id)) h.owned_wear.push(item.id);
-      h.wear[item.slot] = item.id;
-      saveActiveHomeState(h, eff.price);
+      const execBuy = () => {
+        const curH = cloneHomeState(getActiveHomeState());
+        const curCs = getGachaCoinState();
+        if (curCs.balance < eff.price) { playSfx("bomb"); return; }
+        if (!curH.owned_wear.includes(item.id)) curH.owned_wear.push(item.id);
+        curH.wear[item.slot] = item.id;
+        saveActiveHomeState(curH, eff.price);
+        renderHomeModal(null, true);
+        playDressFx(item);
+      };
+      if (eff.price >= 300 || item.eventId || item.secret) {
+        const note = item.eventId
+          ? "节日限时限定穿搭，购入后永久保留在你的衣橱，小家与主头像均可穿戴。"
+          : (eff.onSale ? `已享活动${eff.discountLabel}优惠，购入后永久保留在衣橱。` : "购入后永久拥有，小家与顶部主头像同步穿戴。");
+        openHomeConfirm({
+          title: `${item.icon} 购入穿搭「${item.name}」`,
+          priceHtml: renderPriceHtml(eff),
+          note,
+          okLabel: "确认购买",
+          onConfirm: execBuy,
+        });
+      } else {
+        execBuy();
+      }
     } else {
       h.wear[item.slot] = item.id;
       saveActiveHomeState(h, 0);
+      renderHomeModal(null, true);
+      playDressFx(item);
     }
-    renderHomeModal(null, true);
-    playDressFx(item);
   } else if (act === "unequip-wear" && slot) {
     h.wear[slot] = null;
     saveActiveHomeState(h, 0);
