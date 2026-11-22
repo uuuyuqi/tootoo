@@ -12784,24 +12784,47 @@ function renderHouseBackdropSvg(houseId) {
         <defs>
           <linearGradient id="hHeanjuSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#93c5fd"/><stop offset="55%" stop-color="#fde68a"/><stop offset="100%" stop-color="#fed7aa"/></linearGradient>
           <linearGradient id="hHeanjuWall" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#faf5eb"/><stop offset="100%" stop-color="#efe6d5"/></linearGradient>
+          <linearGradient id="hHeanjuBalc" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#cbd5e1"/><stop offset="100%" stop-color="#94a3b8"/></linearGradient>
         </defs>
-        <rect width="420" height="208" fill="url(#hHeanjuWall)"/>
+        <!-- Full golden-hour sky on right outdoor balcony & through sliding glass -->
+        <rect width="420" height="208" fill="url(#hHeanjuSky)"/>
+        <!-- Distant sunset city skyline visible beyond balcony -->
+        <rect x="248" y="80" width="32" height="68" fill="#d97757" opacity="0.72"/>
+        <rect x="292" y="56" width="48" height="92" fill="#c99563" opacity="0.82"/>
+        <rect x="348" y="74" width="38" height="74" fill="#b08460" opacity="0.76"/>
+        <rect x="392" y="90" width="24" height="58" fill="#a67c52" opacity="0.7"/>
+        <rect x="302" y="68" width="7" height="9" rx="1" fill="#fef9c3"/><rect x="320" y="68" width="7" height="9" rx="1" fill="#fef3c7"/>
+        <rect x="302" y="88" width="7" height="9" rx="1" fill="#fef3c7"/><rect x="320" y="88" width="7" height="9" rx="1" fill="#fde047"/>
+        <rect x="358" y="86" width="7" height="9" rx="1" fill="#fef9c3"/><rect x="372" y="96" width="7" height="9" rx="1" fill="#fde68a"/>
+        <!-- Outdoor open-air balcony safety glass & steel handrail (x=278..420) -->
+        <rect x="278" y="116" width="142" height="32" fill="#e0f2fe" opacity="0.22"/>
+        <line x1="278" y1="116" x2="420" y2="116" stroke="#475569" stroke-width="2.4"/>
+        <line x1="278" y1="118.2" x2="420" y2="118.2" stroke="#cbd5e1" stroke-width="0.9" opacity="0.7"/>
+        <line x1="348" y1="116" x2="348" y2="148" stroke="#64748b" stroke-width="1.6"/>
+        <line x1="412" y1="116" x2="412" y2="148" stroke="#64748b" stroke-width="1.6"/>
+        <!-- Indoor apartment wall & ceiling overhang (x=0..278) -->
+        <rect x="0" y="0" width="234" height="148" fill="url(#hHeanjuWall)"/>
+        <rect x="234" y="0" width="46" height="24" fill="#ebe1ce"/>
+        <line x1="234" y1="24" x2="280" y2="24" stroke="#94a3b8" stroke-width="2"/>
         <!-- Subtle wainscoting & baseboard -->
         <rect x="0" y="114" width="234" height="34" fill="#ebe1ce" opacity="0.55"/>
         <line x1="0" y1="114" x2="234" y2="114" stroke="#d6cbb8" stroke-width="1.5"/>
-        <rect x="0" y="144" width="420" height="5" fill="#d6cbb8"/>
-        <rect x="0" y="148" width="420" height="60" fill="#e5dac6"/>
-        <!-- Golden-hour balcony sliding glass door -->
-        <rect x="238" y="24" width="152" height="122" rx="4" fill="url(#hHeanjuSky)" stroke="#94a3b8" stroke-width="2.8"/>
-        <rect x="252" y="76" width="38" height="70" fill="#d97757" opacity="0.72"/>
-        <rect x="298" y="54" width="52" height="92" fill="#c99563" opacity="0.82"/>
-        <rect x="356" y="84" width="28" height="62" fill="#b08460" opacity="0.72"/>
-        <rect x="308" y="66" width="8" height="10" rx="1" fill="#fef9c3"/><rect x="328" y="66" width="8" height="10" rx="1" fill="#fef3c7"/>
-        <rect x="308" y="86" width="8" height="10" rx="1" fill="#fef3c7"/><rect x="328" y="86" width="8" height="10" rx="1" fill="#fde047"/>
-        <line x1="314" y1="24" x2="314" y2="146" stroke="#94a3b8" stroke-width="2.2"/>
-        <line x1="240" y1="122" x2="388" y2="122" stroke="#64748b" stroke-width="1.8"/>
-        <!-- Sheer linen curtain gently swaying -->
-        <path d="M238 24 L260 24 Q252 84 256 146 L238 146 Z" fill="#fffdf8" opacity="0.68" class="h-drift-slow"/>
+        <rect x="0" y="144" width="278" height="5" fill="#d6cbb8"/>
+        <!-- Left fixed sliding-glass door panel (x=234..278) + open doorway on right! -->
+        <rect x="234" y="24" width="44" height="124" fill="url(#hsGlassSheen)" stroke="#64748b" stroke-width="2.2"/>
+        <rect x="271" y="78" width="2.6" height="18" rx="1.2" fill="#475569"/>
+        <!-- Sheer linen curtain gently swaying at left edge of doorway -->
+        <path d="M234 24 L256 24 Q248 84 252 146 L234 146 Z" fill="#fffdf8" opacity="0.72" class="h-drift-slow"/>
+        <!-- Warm indoor hardwood floor (left) + Open-air slate-tiled outdoor balcony (right) -->
+        <polygon points="0,148 278,148 298,208 0,208" fill="#e5dac6"/>
+        <polygon points="278,148 420,148 420,208 298,208" fill="url(#hHeanjuBalc)"/>
+        <!-- Outdoor balcony tile perspective lines -->
+        <line x1="284" y1="166" x2="420" y2="166" stroke="#64748b" stroke-width="0.9" opacity="0.4"/>
+        <line x1="291" y1="186" x2="420" y2="186" stroke="#64748b" stroke-width="0.9" opacity="0.4"/>
+        <line x1="348" y1="148" x2="376" y2="208" stroke="#64748b" stroke-width="0.9" opacity="0.38"/>
+        <!-- Sleek recessed aluminum sliding-door floor track -->
+        <line x1="278" y1="148" x2="298" y2="208" stroke="#64748b" stroke-width="3.2"/>
+        <line x1="278" y1="148" x2="298" y2="208" stroke="#e2e8f0" stroke-width="1"/>
         <!-- AC indoor unit -->
         <rect x="40" y="30" width="82" height="22" rx="5" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.4"/>
         <line x1="48" y1="46" x2="114" y2="46" stroke="#94a3b8" stroke-width="1.4"/>
@@ -12821,40 +12844,58 @@ function renderHouseBackdropSvg(houseId) {
           <linearGradient id="hXixiWood" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stop-color="#5c2d0e"/><stop offset="100%" stop-color="#854d0e"/>
           </linearGradient>
+          <linearGradient id="hXixiDeck" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#b88352"/><stop offset="100%" stop-color="#8b5a2b"/>
+          </linearGradient>
         </defs>
-        <rect width="420" height="208" fill="#f8f4eb"/>
-        <!-- Walnut timber architectural ceiling with recessed warm cove glow -->
-        <rect x="0" y="0" width="420" height="21" fill="url(#hXixiWood)"/>
-        <rect x="0" y="20" width="420" height="2.6" fill="#fde68a" opacity="0.65"/>
-        <rect x="64" y="0" width="10" height="23" fill="#451a03"/><rect x="162" y="0" width="10" height="23" fill="#451a03"/>
-        <rect x="258" y="0" width="10" height="23" fill="#451a03"/><rect x="352" y="0" width="10" height="23" fill="#451a03"/>
-        <!-- Floor-to-ceiling low-iron villa glass curtain wall -->
-        <rect x="22" y="26" width="376" height="120" rx="3" fill="url(#hXixiSky)" stroke="#94a3b8" stroke-width="2"/>
+        <!-- Continuous Jiangnan Xixi Wetland sky & misty panorama -->
+        <rect width="420" height="208" fill="url(#hXixiSky)"/>
+        <ellipse cx="136" cy="48" rx="30" ry="8.5" fill="#fff" opacity="0.82" class="h-drift-slow"/>
+        <ellipse cx="348" cy="38" rx="26" ry="7.5" fill="#fff" opacity="0.76" class="h-drift"/>
         <!-- Misty Jiangnan ink-wash mountains -->
-        <path d="M22 108 Q96 68 184 98 Q268 62 346 94 Q374 84 398 98 L398 146 L22 146 Z" fill="#86efac" opacity="0.46"/>
-        <path d="M22 120 Q132 94 246 116 Q330 98 398 118 L398 146 L22 146 Z" fill="#34d399" opacity="0.52"/>
-        <!-- Jiangnan white-walled black-tile waterside pavilion -->
-        <g opacity="0.88">
-          <rect x="292" y="96" width="44" height="26" fill="#fffdf8" stroke="#cbd5e1" stroke-width="0.8"/>
-          <path d="M284 98 Q314 82 344 98 L338 99 Q314 88 290 99 Z" fill="#334155"/>
-          <rect x="307" y="106" width="14" height="14" rx="7" fill="#475569" opacity="0.65"/>
+        <path d="M0 108 Q96 68 184 98 Q268 62 346 94 Q382 82 420 96 L420 148 L0 148 Z" fill="#86efac" opacity="0.48"/>
+        <path d="M0 120 Q132 94 246 116 Q330 98 420 118 L420 148 L0 148 Z" fill="#34d399" opacity="0.54"/>
+        <!-- Jiangnan white-walled black-tile waterside pavilion beyond terrace -->
+        <g opacity="0.9">
+          <rect x="308" y="96" width="44" height="26" fill="#fffdf8" stroke="#cbd5e1" stroke-width="0.8"/>
+          <path d="M300 98 Q330 82 360 98 L354 99 Q330 88 306 99 Z" fill="#334155"/>
+          <rect x="323" y="106" width="14" height="14" rx="7" fill="#475569" opacity="0.65"/>
         </g>
-        <!-- Tranquil Xixi wetland reflection water outside -->
-        <rect x="22" y="124" width="376" height="22" fill="#7dd3fc" opacity="0.42"/>
+        <!-- Tranquil Xixi wetland reflection water -->
+        <rect x="0" y="124" width="420" height="24" fill="#7dd3fc" opacity="0.44"/>
         <line x1="60" y1="133" x2="132" y2="133" stroke="#fff" stroke-width="1" opacity="0.55" class="h-drift"/>
-        <line x1="274" y1="136" x2="352" y2="136" stroke="#fff" stroke-width="1" opacity="0.5" class="h-drift-slow"/>
+        <line x1="292" y1="136" x2="374" y2="136" stroke="#fff" stroke-width="1" opacity="0.52" class="h-drift-slow"/>
         <!-- Swaying weeping willow strands on left glass edge -->
         <g stroke="#15803d" stroke-width="1.3" fill="none" opacity="0.6" class="h-drift-slow">
           <path d="M44 26 Q38 64 46 98"/><path d="M56 26 Q52 60 58 88"/><path d="M68 26 Q64 52 70 76"/>
         </g>
-        <ellipse cx="136" cy="48" rx="30" ry="8.5" fill="#fff" opacity="0.82" class="h-drift-slow"/>
-        <!-- Slim bronze architectural mullions & glass sheen -->
-        <line x1="148" y1="26" x2="148" y2="146" stroke="#78716c" stroke-width="1.5" opacity="0.65"/>
-        <line x1="274" y1="26" x2="274" y2="146" stroke="#78716c" stroke-width="1.5" opacity="0.65"/>
-        <rect x="22" y="26" width="376" height="120" fill="url(#hsGlassSheen)"/>
-        <!-- Travertine luxury stone terrace -->
-        <rect x="0" y="148" width="420" height="60" fill="#e8e1d4"/>
-        <line x1="0" y1="148" x2="420" y2="148" stroke="#b8ab96" stroke-width="2"/>
+        <!-- Indoor villa left wall pillar + walnut architectural ceiling overhang (stops at x=280!) -->
+        <rect x="0" y="0" width="22" height="148" fill="#f8f4eb"/>
+        <rect x="0" y="0" width="282" height="21" fill="url(#hXixiWood)"/>
+        <rect x="0" y="20" width="280" height="2.6" fill="#fde68a" opacity="0.68"/>
+        <rect x="64" y="0" width="10" height="23" fill="#451a03"/>
+        <rect x="162" y="0" width="10" height="23" fill="#451a03"/>
+        <rect x="268" y="0" width="12" height="24" fill="#451a03"/>
+        <!-- Indoor low-iron glass curtain wall (x=22..276) with open sliding glass doorway at x=278 -->
+        <rect x="22" y="23" width="256" height="125" fill="url(#hsGlassSheen)" stroke="#78716c" stroke-width="1.8"/>
+        <line x1="148" y1="23" x2="148" y2="148" stroke="#78716c" stroke-width="1.5" opacity="0.72"/>
+        <!-- Sliding glass door bronze handle -->
+        <rect x="271" y="80" width="2.8" height="20" rx="1.2" fill="#78350f"/>
+        <!-- Low frameless lakeside glass edge along outdoor patio -->
+        <rect x="278" y="132" width="142" height="16" fill="#e0f2fe" opacity="0.22"/>
+        <line x1="278" y1="132" x2="420" y2="132" stroke="#94a3b8" stroke-width="1.5" opacity="0.82"/>
+        <!-- Indoor travertine stone floor (left) + Open-air Burmese teak lakeside courtyard deck (right) -->
+        <polygon points="0,148 278,148 298,208 0,208" fill="#e8e1d4"/>
+        <line x1="0" y1="148" x2="278" y2="148" stroke="#b8ab96" stroke-width="2"/>
+        <polygon points="278,148 420,148 420,208 298,208" fill="url(#hXixiDeck)"/>
+        <!-- Outdoor teak deck plank seams -->
+        <line x1="283" y1="162" x2="420" y2="162" stroke="#5c2d0e" stroke-width="0.9" opacity="0.45"/>
+        <line x1="288" y1="176" x2="420" y2="176" stroke="#5c2d0e" stroke-width="0.95" opacity="0.45"/>
+        <line x1="293" y1="192" x2="420" y2="192" stroke="#5c2d0e" stroke-width="1" opacity="0.45"/>
+        <line x1="278" y1="148" x2="420" y2="148" stroke="#5c2d0e" stroke-width="1.8"/>
+        <!-- Bronze sliding-door floor track -->
+        <line x1="278" y1="148" x2="298" y2="208" stroke="#57534e" stroke-width="3.2"/>
+        <line x1="278" y1="148" x2="298" y2="208" stroke="#fde68a" stroke-width="0.9" opacity="0.72"/>
       `;
     case "atlantis":
       return `
@@ -13115,9 +13156,10 @@ function renderHouseBackdropSvg(houseId) {
   }
 }
 
-function renderDecorLayerSvg(decor, allowedSlots, freshSlot = null) {
+function renderDecorLayerSvg(decor, allowedSlots, freshSlot = null, houseId = null) {
   let out = "";
   const pop = (s) => (freshSlot === s ? ` class="decor-pop"` : "");
+  const hasTerrace = houseId === "heanju" || houseId === "xixi";
 
   // 1. FLOOR (rendered underneath everything on floor, horizon y=148..208)
   if (allowedSlots.includes("floor") && decor.floor) {
@@ -13239,7 +13281,11 @@ function renderDecorLayerSvg(decor, allowedSlots, freshSlot = null) {
           <line x1="0" y1="150.5" x2="420" y2="150.5" stroke="url(#hsPrism)" stroke-width="1.1" opacity="0.85"/>
         </g>`;
     }
-    out += `<g${pop("floor")}>${fSvg}</g>`;
+    if (hasTerrace) {
+      out += `<defs><clipPath id="hsIndoorFloorClip"><polygon points="0,148 278,148 298,208 0,208"/></clipPath></defs><g clip-path="url(#hsIndoorFloorClip)"${pop("floor")}>${fSvg}</g><line x1="278" y1="148" x2="298" y2="208" stroke="#57534e" stroke-width="3.2"/><line x1="278" y1="148" x2="298" y2="208" stroke="${houseId === "xixi" ? "#fde68a" : "#e2e8f0"}" stroke-width="1" opacity="0.82"/>`;
+    } else {
+      out += `<g${pop("floor")}>${fSvg}</g>`;
+    }
   }
 
   // 2. LIGHT (ceiling / upper wall, y=0..68)
@@ -13948,6 +13994,10 @@ function walkHomeBunnyTo(targetX, targetY, rawClickY = targetY) {
     // Clicked inside the warm terracotta pot arch -> walk right into the cozy shelter!
     tx = Math.max(182, Math.min(214, tx));
     ty = 162;
+  } else if ((house.id === "heanju" || house.id === "xixi") && rawClickY >= 64 && rawClickY < 156 && targetX >= 286) {
+    // Clicked open-air balcony/patio view -> walk right out across the sliding door!
+    tx = Math.max(316, Math.min(374, targetX));
+    ty = 168;
   } else if (rawClickY >= 120 && rawClickY < 156 && tx <= 148 && house.slots.includes("bed") && view.decor.bed) {
     // Clicked directly on sofa/bed/throne cushion above the floor line
     ty = 156;
@@ -13957,6 +14007,7 @@ function walkHomeBunnyTo(targetX, targetY, rawClickY = targetY) {
 
   const sx = homeBunnyPos.x;
   const sy = homeBunnyPos.y;
+  const wasOutdoors = isHomeBunnyOutdoors(house.id, sx, sy);
   const dist = Math.hypot(tx - sx, ty - sy);
 
   // Clicked right on hot-water table when already standing beside it -> drink right away!
@@ -14028,9 +14079,24 @@ function walkHomeBunnyTo(targetX, targetY, rawClickY = targetY) {
       if (clickedHotTable) {
         triggerDrinkHotWater(hotTbl);
       } else {
+        const nowOutdoors = isHomeBunnyOutdoors(house.id, tx, ty);
         const gotExposed = syncHomeBunnyClimate(true);
         if (!gotExposed) {
-          triggerHomeSpotReaction(tx, ty, rawClickY);
+          if (wasOutdoors && !nowOutdoors && (house.id === "heanju" || house.id === "xixi" || house.id === "pot")) {
+            if (homeBunnyClimate.condition) {
+              showHomeStageBubble("🏠 回到屋里啦！快点小桌子喝口热水暖暖～");
+            } else {
+              showHomeStageBubble("🏠 回到温暖的小家啦～");
+            }
+          } else if (!wasOutdoors && nowOutdoors && (house.id === "heanju" || house.id === "xixi")) {
+            const w = getEffectiveWeather();
+            if (w.kind === "windy") showHomeStageBubble("🍃 露台风好大呀，兔耳朵被吹飞啦！");
+            else if (w.kind === "sunny") showHomeStageBubble("☀️ 出来露台晒晒太阳吹吹风好惬意～");
+            else if (w.kind === "cloudy" || w.kind === "overcast") showHomeStageBubble("⛅ 走出露台透透气，风景真不错～");
+            else triggerHomeSpotReaction(tx, ty, rawClickY);
+          } else {
+            triggerHomeSpotReaction(tx, ty, rawClickY);
+          }
         }
       }
     }
@@ -14071,6 +14137,11 @@ function isHomeBunnyOutdoors(houseId, x = homeBunnyPos.x, y = homeBunnyPos.y) {
   if (houseId === "pot") {
     // Inside the arched terracotta shelter: x in [168..252], y <= 170; meadow outside is exposed!
     return x < 168 || x > 252 || y > 170;
+  }
+  if (houseId === "heanju" || houseId === "xixi") {
+    // Right of the diagonal sliding-glass door track (278,148 -> 298,208) is the open-air balcony/courtyard!
+    const doorX = 278 + Math.max(0, (y - 148) / 60) * 20;
+    return x > doorX + 4;
   }
   return false;
 }
@@ -14402,164 +14473,207 @@ function renderWeatherLayerSvg(houseId, weather) {
   if (!HOME_WEATHER_HOUSES.has(houseId) || !weather) return { under: "", over: "" };
   const kind = weather.kind || "sunny";
   const isOutdoor = houseId === "street" || houseId === "pot";
+  const hasTerrace = houseId === "heanju" || houseId === "xixi";
 
-  // Exact window clip geometry for indoor terrestrial houses so rain/snow/wind appear authentically OUTSIDE the glass!
+  // Helper to generate weather particles/clouds for a given bounding box
+  const buildZoneFx = (b, opts = {}) => {
+    const w = b.x1 - b.x0;
+    const h = b.y1 - b.y0;
+    const { isSky = true, isFalling = true, puddles = null, sillSnow = false, railSnowY = null, darkOp = 0.24 } = opts;
+    let sky = "";
+    let fall = "";
+
+    if (kind === "sunny") {
+      if (isSky) {
+        sky = `
+          <polygon points="${b.x0 + w * 0.52},${b.y0} ${b.x0 + w * 0.84},${b.y0} ${b.x0 + w * 0.6},${b.y1} ${b.x0 + w * 0.28},${b.y1}" fill="url(#hsSunbeam)" opacity="0.42" class="h-pulse"/>
+          <circle cx="${(b.x0 + w * 0.64).toFixed(0)}" cy="${(b.y0 + h * 0.34).toFixed(0)}" r="1.8" fill="#fef08a" opacity="0.72" class="h-float"/>
+          <circle cx="${(b.x0 + w * 0.48).toFixed(0)}" cy="${(b.y0 + h * 0.54).toFixed(0)}" r="1.4" fill="#fffbeb" opacity="0.62" class="h-float-slow"/>`;
+      }
+    } else if (kind === "cloudy") {
+      if (isSky) {
+        const cy1 = b.y0 + Math.min(34, h * 0.28);
+        const cy2 = b.y0 + Math.min(48, h * 0.42);
+        const col = houseId === "street" ? "#94a3b8" : "#ffffff";
+        sky = `
+          <g class="h-cloud-pass" opacity="${houseId === "street" ? "0.42" : "0.84"}">
+            <ellipse cx="${(b.x0 + w * 0.28).toFixed(0)}" cy="${cy1.toFixed(0)}" rx="${Math.max(16, w * 0.16).toFixed(0)}" ry="10" fill="${col}"/>
+            <ellipse cx="${(b.x0 + w * 0.36).toFixed(0)}" cy="${(cy1 - 5).toFixed(0)}" rx="${Math.max(11, w * 0.1).toFixed(0)}" ry="8" fill="${col}"/>
+            <ellipse cx="${(b.x0 + w * 0.72).toFixed(0)}" cy="${cy2.toFixed(0)}" rx="${Math.max(18, w * 0.18).toFixed(0)}" ry="11" fill="${col}"/>
+            <ellipse cx="${(b.x0 + w * 0.64).toFixed(0)}" cy="${(cy2 - 5).toFixed(0)}" rx="${Math.max(12, w * 0.11).toFixed(0)}" ry="8.5" fill="${col}"/>
+          </g>`;
+      }
+    } else if (kind === "overcast") {
+      if (isSky) {
+        const cy = b.y0 + Math.min(26, h * 0.24);
+        sky = `
+          <rect x="${b.x0}" y="${b.y0}" width="${w}" height="${Math.min(h, 148)}" fill="#475569" opacity="${darkOp}"/>
+          <g class="h-cloud-pass" opacity="0.86">
+            <ellipse cx="${(b.x0 + w * 0.22).toFixed(0)}" cy="${cy.toFixed(0)}" rx="${Math.max(22, w * 0.24).toFixed(0)}" ry="14" fill="#94a3b8"/>
+            <ellipse cx="${(b.x0 + w * 0.54).toFixed(0)}" cy="${(cy + 4).toFixed(0)}" rx="${Math.max(26, w * 0.28).toFixed(0)}" ry="16" fill="#64748b"/>
+            <ellipse cx="${(b.x0 + w * 0.84).toFixed(0)}" cy="${(cy + 2).toFixed(0)}" rx="${Math.max(24, w * 0.24).toFixed(0)}" ry="15" fill="#94a3b8"/>
+          </g>`;
+      }
+    } else if (kind === "windy") {
+      if (isFalling) {
+        const gustCount = w > 220 ? 5 : 3;
+        let gusts = "";
+        for (let i = 0; i < gustCount; i++) {
+          const gx = b.x0 + (w / gustCount) * i;
+          const gy = b.y0 + h * (0.2 + (i % 3) * 0.24);
+          const dur = (1.7 + (i % 3) * 0.45).toFixed(2);
+          const del = (-i * 0.55).toFixed(2);
+          gusts += `<path d="M${gx.toFixed(0)} ${gy.toFixed(0)} Q${(gx + 34).toFixed(0)} ${(gy - 7).toFixed(0)} ${(gx + 68).toFixed(0)} ${gy.toFixed(0)} T${(gx + 104).toFixed(0)} ${(gy - 3).toFixed(0)}" fill="none" stroke="#e2e8f0" stroke-width="1.6" stroke-linecap="round" opacity="0.68" class="h-wind" style="--dur:${dur}s;--del:${del}s"/>`;
+        }
+        const leafCount = w > 220 ? 7 : 4;
+        let leaves = "";
+        const leafCols = ["#f97316", "#eab308", "#22c55e", "#d97706"];
+        for (let i = 0; i < leafCount; i++) {
+          const lx = b.x0 + (w * (0.08 + (i * 0.14) % 0.85));
+          const ly = b.y0 + (h * (0.14 + (i * 0.21) % 0.68));
+          const dur = (2.4 + (i % 4) * 0.45).toFixed(2);
+          const del = (-i * 0.65).toFixed(2);
+          leaves += `<ellipse cx="${lx.toFixed(0)}" cy="${ly.toFixed(0)}" rx="3.8" ry="1.9" fill="${leafCols[i % leafCols.length]}" class="h-wind-leaf" style="--dur:${dur}s;--del:${del}s"/>`;
+        }
+        fall = gusts + leaves;
+      }
+    } else if (kind === "rain") {
+      if (isSky) {
+        sky = `
+          <rect x="${b.x0}" y="${b.y0}" width="${w}" height="${h}" fill="#1e293b" opacity="${darkOp}"/>
+          <g opacity="0.82">
+            <ellipse cx="${(b.x0 + w * 0.26).toFixed(0)}" cy="${(b.y0 + 16).toFixed(0)}" rx="${Math.max(22, w * 0.26).toFixed(0)}" ry="14" fill="#64748b"/>
+            <ellipse cx="${(b.x0 + w * 0.78).toFixed(0)}" cy="${(b.y0 + 20).toFixed(0)}" rx="${Math.max(28, w * 0.3).toFixed(0)}" ry="16" fill="#475569"/>
+            <ellipse cx="${(b.x0 + w * 0.52).toFixed(0)}" cy="${(b.y0 + 12).toFixed(0)}" rx="${Math.max(22, w * 0.24).toFixed(0)}" ry="12" fill="#64748b"/>
+          </g>`;
+      }
+      if (isFalling) {
+        const dropCount = w > 240 ? 24 : (w > 110 ? 13 : 6);
+        for (let i = 0; i < dropCount; i++) {
+          const rx = b.x0 + ((i + 0.5) / dropCount) * w + ((i % 3) - 1) * 4;
+          const ry = b.y0 + (i % 4) * 14;
+          const len = 11 + (i % 3) * 4;
+          const dur = (0.72 + (i % 4) * 0.14).toFixed(2);
+          const del = (-(i * 0.19) % 1.2).toFixed(2);
+          fall += `<line x1="${rx.toFixed(1)}" y1="${ry.toFixed(1)}" x2="${(rx - 4.2).toFixed(1)}" y2="${(ry + len).toFixed(1)}" stroke="#bae6fd" stroke-width="${i % 3 === 0 ? "1.35" : "0.95"}" stroke-linecap="round" opacity="0.84" class="h-rain" style="--dur:${dur}s;--del:${del}s"/>`;
+        }
+        if (puddles) {
+          puddles.forEach(([px, py, idx]) => {
+            fall += `<ellipse cx="${px}" cy="${py}" rx="${idx % 2 === 0 ? 9 : 7.5}" ry="2.5" fill="none" stroke="#bae6fd" stroke-width="0.9" class="${idx % 2 === 0 ? "h-ripple" : "h-ripple-d1"}"/>`;
+          });
+        }
+      }
+    } else if (kind === "snow") {
+      if (isSky) {
+        sky = `<rect x="${b.x0}" y="${b.y0}" width="${w}" height="${h}" fill="#3b5278" opacity="0.22"/>`;
+        if (houseId === "pot") {
+          sky += `
+            <g opacity="0.82"><ellipse cx="344" cy="30" rx="64" ry="24" fill="#cbd5e1"/><ellipse cx="110" cy="22" rx="74" ry="18" fill="#e2e8f0"/></g>
+            <path d="M135 42 Q168 33 210 38 Q252 33 285 42 Q285 47 278 47 L142 47 Q135 47 135 42 Z" fill="#f8fafc" opacity="0.94"/>
+            <ellipse cx="92" cy="145" rx="11" ry="4" fill="#f8fafc" opacity="0.86"/>`;
+        }
+        if (railSnowY != null) {
+          sky += `<rect x="${b.x0}" y="${railSnowY - 2.5}" width="${w}" height="3.8" rx="1.8" fill="#f8fafc" opacity="0.86"/>`;
+          sky += `<polygon points="278,148 420,148 420,154 280,154" fill="#f8fafc" opacity="0.52"/>`;
+        }
+      }
+      if (isFalling) {
+        const flakeCount = w > 240 ? 28 : (w > 110 ? 14 : 7);
+        for (let i = 0; i < flakeCount; i++) {
+          const fxX = b.x0 + ((i + 0.5) / flakeCount) * w;
+          const fxY = b.y0 + (i % 5) * 12;
+          const r = (1.3 + (i % 3) * 0.75).toFixed(1);
+          const dur = (3.4 + (i % 4) * 0.75).toFixed(2);
+          const del = (-(i * 0.41) % 3.6).toFixed(2);
+          fall += `<circle cx="${fxX.toFixed(1)}" cy="${fxY.toFixed(1)}" r="${r}" fill="#ffffff" opacity="${i % 2 === 0 ? "0.94" : "0.76"}" class="h-snow" style="--dur:${dur}s;--del:${del}s"/>`;
+        }
+        if (sillSnow) {
+          fall += `<rect x="${b.x0}" y="${b.y1 - 4}" width="${w}" height="4" rx="2" fill="#f8fafc" opacity="0.72"/>`;
+        }
+      }
+    }
+    return { sky, fall };
+  };
+
+  // 1. Terrace hybrid houses (heanju & xixi): indoor glass window weather + open-air walkable outdoor balcony/patio!
+  if (hasTerrace) {
+    const winClip = houseId === "heanju"
+      ? `<rect x="235" y="25" width="42" height="122"/>`
+      : `<rect x="23" y="24" width="254" height="123"/>`;
+    const winBounds = houseId === "heanju"
+      ? { x0: 235, x1: 277, y0: 25, y1: 147 }
+      : { x0: 23,  x1: 277, y0: 24, y1: 147 };
+    const outBounds = { x0: 278, x1: 420, y0: 0, y1: 208 };
+
+    const defs = `<defs>
+      <clipPath id="hsWWin_${houseId}">${winClip}</clipPath>
+      <clipPath id="hsWOut_${houseId}"><polygon points="278,0 420,0 420,208 298,208 278,148"/></clipPath>
+    </defs>`;
+
+    const winFx = buildZoneFx(winBounds, { isSky: true, isFalling: true, sillSnow: true, darkOp: 0.24 });
+    const outFx = buildZoneFx(outBounds, {
+      isSky: true,
+      isFalling: true,
+      puddles: [[336, 178, 0], [386, 192, 1], [358, 162, 2]],
+      railSnowY: houseId === "heanju" ? 116 : 132,
+      darkOp: 0.2,
+    });
+    const indoorAmbient = (kind === "rain" || kind === "overcast" || kind === "snow")
+      ? `<polygon points="0,0 278,0 278,148 298,208 0,208" fill="${kind === "snow" ? "#93c5fd" : "#1e3a5f"}" opacity="${kind === "snow" ? "0.06" : "0.08"}" pointer-events="none"/>`
+      : "";
+
+    const under = defs
+      + `<g clip-path="url(#hsWWin_${houseId})" pointer-events="none">${winFx.sky}${winFx.fall}</g>`
+      + `<g clip-path="url(#hsWOut_${houseId})" pointer-events="none">${outFx.sky}</g>`
+      + indoorAmbient;
+    const over = `<g clip-path="url(#hsWOut_${houseId})" pointer-events="none">${outFx.fall}</g>`;
+    return { under, over };
+  }
+
+  // 2. Pure outdoor houses (street, pot) & window-only indoor houses (cardboard, treehole)
   const clipShapes = {
     cardboard: `<rect x="275" y="43" width="86" height="62" rx="3"/>`,
     treehole:  `<path d="M275 105 L275 66 A37 33 0 0 1 349 66 L349 105 Z"/>`,
-    heanju:    `<rect x="239" y="25" width="150" height="120" rx="3"/>`,
-    xixi:      `<rect x="23" y="27" width="374" height="118" rx="2"/>`,
   };
   const zoneBounds = {
     street:    { x0: 0,   x1: 420, y0: 0,  y1: 208 },
     pot:       { x0: 0,   x1: 420, y0: 0,  y1: 208 },
     cardboard: { x0: 274, x1: 362, y0: 42, y1: 106 },
     treehole:  { x0: 274, x1: 350, y0: 32, y1: 106 },
-    heanju:    { x0: 238, x1: 390, y0: 24, y1: 146 },
-    xixi:      { x0: 22,  x1: 398, y0: 26, y1: 146 },
   };
   const b = zoneBounds[houseId] || zoneBounds.street;
-  const w = b.x1 - b.x0;
-  const h = b.y1 - b.y0;
   const clipId = `hsWClip_${houseId}`;
   const potMaskDef = houseId === "pot"
     ? `<defs><mask id="hsPotOutdoorMask"><rect width="420" height="208" fill="#ffffff"/><path d="M168 164 L168 108 A42 42 0 0 1 252 108 L252 164 Z" fill="#000000"/></mask></defs>`
     : "";
   const clipDef = isOutdoor ? potMaskDef : `<defs><clipPath id="${clipId}">${clipShapes[houseId]}</clipPath></defs>`;
-  const wrapOpen = isOutdoor
-    ? `${clipDef}<g${houseId === "pot" ? ' mask="url(#hsPotOutdoorMask)"' : ""} pointer-events="none">`
-    : `${clipDef}<g clip-path="url(#${clipId})" pointer-events="none">`;
-  const wrapClose = `</g>`;
 
-  let fx = "";
-  let ambientTint = "";
-  let outdoorBg = "";
+  const zFx = buildZoneFx(b, {
+    isSky: true,
+    isFalling: true,
+    puddles: isOutdoor ? [[118, 178, 0], [298, 184, 1], [212, 192, 2]] : null,
+    sillSnow: !isOutdoor || houseId === "street",
+    darkOp: houseId === "street" ? 0.2 : 0.26,
+  });
 
-  if (kind === "sunny") {
-    // Gentle warm golden sun-rays & soft drifting sunlight motes
-    fx = `
-      <polygon points="${b.x0 + w * 0.56},${b.y0} ${b.x0 + w * 0.84},${b.y0} ${b.x0 + w * 0.62},${b.y1} ${b.x0 + w * 0.34},${b.y1}" fill="url(#hsSunbeam)" opacity="0.42" class="h-pulse"/>
-      <circle cx="${(b.x0 + w * 0.66).toFixed(0)}" cy="${(b.y0 + h * 0.34).toFixed(0)}" r="1.8" fill="#fef08a" opacity="0.72" class="h-float"/>
-      <circle cx="${(b.x0 + w * 0.52).toFixed(0)}" cy="${(b.y0 + h * 0.54).toFixed(0)}" r="1.4" fill="#fffbeb" opacity="0.62" class="h-float-slow"/>
-    `;
-  } else if (kind === "cloudy") {
-    // Multi-layered soft drifting cumulus clouds
-    const cy1 = b.y0 + Math.min(34, h * 0.28);
-    const cy2 = b.y0 + Math.min(48, h * 0.42);
-    const col = houseId === "street" ? "#94a3b8" : "#ffffff";
-    fx = `
-      <g class="h-cloud-pass" opacity="${houseId === "street" ? "0.42" : "0.84"}">
-        <ellipse cx="${(b.x0 + w * 0.28).toFixed(0)}" cy="${cy1.toFixed(0)}" rx="${Math.max(18, w * 0.14).toFixed(0)}" ry="10" fill="${col}"/>
-        <ellipse cx="${(b.x0 + w * 0.35).toFixed(0)}" cy="${(cy1 - 5).toFixed(0)}" rx="${Math.max(12, w * 0.09).toFixed(0)}" ry="8" fill="${col}"/>
-        <ellipse cx="${(b.x0 + w * 0.72).toFixed(0)}" cy="${cy2.toFixed(0)}" rx="${Math.max(20, w * 0.16).toFixed(0)}" ry="11" fill="${col}"/>
-        <ellipse cx="${(b.x0 + w * 0.65).toFixed(0)}" cy="${(cy2 - 5).toFixed(0)}" rx="${Math.max(13, w * 0.1).toFixed(0)}" ry="8.5" fill="${col}"/>
-      </g>`;
-  } else if (kind === "overcast") {
-    // Moody layered slate-silver overcast cloud bank + cool overcast veil
-    const cy = b.y0 + Math.min(26, h * 0.24);
-    const cloudSvg = `
-      <rect x="${b.x0}" y="${b.y0}" width="${w}" height="${isOutdoor ? 148 : h}" fill="#475569" opacity="${houseId === "street" ? "0.26" : "0.34"}"/>
-      <g class="h-cloud-pass" opacity="0.86">
-        <ellipse cx="${(b.x0 + w * 0.22).toFixed(0)}" cy="${cy.toFixed(0)}" rx="${Math.max(24, w * 0.22).toFixed(0)}" ry="14" fill="#94a3b8"/>
-        <ellipse cx="${(b.x0 + w * 0.54).toFixed(0)}" cy="${(cy + 4).toFixed(0)}" rx="${Math.max(28, w * 0.26).toFixed(0)}" ry="16" fill="#64748b"/>
-        <ellipse cx="${(b.x0 + w * 0.84).toFixed(0)}" cy="${(cy + 2).toFixed(0)}" rx="${Math.max(26, w * 0.24).toFixed(0)}" ry="15" fill="#94a3b8"/>
-      </g>`;
-    if (isOutdoor) {
-      outdoorBg = `<g${houseId === "pot" ? ' mask="url(#hsPotOutdoorMask)"' : ""} pointer-events="none">${cloudSvg}</g>`;
-    } else {
-      fx = cloudSvg;
-      ambientTint = `<rect width="420" height="208" fill="#334155" opacity="0.1" pointer-events="none"/>`;
-    }
-  } else if (kind === "windy") {
-    // Sweeping aerodynamic wind gusts + tumbling autumn leaves
-    const gustCount = w > 220 ? 5 : 3;
-    let gusts = "";
-    for (let i = 0; i < gustCount; i++) {
-      const gx = b.x0 + (w / gustCount) * i;
-      const gy = b.y0 + h * (0.2 + (i % 3) * 0.24);
-      const dur = (1.7 + (i % 3) * 0.45).toFixed(2);
-      const del = (-i * 0.55).toFixed(2);
-      gusts += `<path d="M${gx.toFixed(0)} ${gy.toFixed(0)} Q${(gx + 34).toFixed(0)} ${(gy - 7).toFixed(0)} ${(gx + 68).toFixed(0)} ${gy.toFixed(0)} T${(gx + 104).toFixed(0)} ${(gy - 3).toFixed(0)}" fill="none" stroke="#e2e8f0" stroke-width="1.6" stroke-linecap="round" opacity="0.68" class="h-wind" style="--dur:${dur}s;--del:${del}s"/>`;
-    }
-    const leafCount = w > 220 ? 7 : 4;
-    let leaves = "";
-    const leafCols = ["#f97316", "#eab308", "#22c55e", "#d97706"];
-    for (let i = 0; i < leafCount; i++) {
-      const lx = b.x0 + (w * (0.08 + (i * 0.14) % 0.85));
-      const ly = b.y0 + (h * (0.14 + (i * 0.21) % 0.68));
-      const dur = (2.4 + (i % 4) * 0.45).toFixed(2);
-      const del = (-i * 0.65).toFixed(2);
-      leaves += `<ellipse cx="${lx.toFixed(0)}" cy="${ly.toFixed(0)}" rx="3.8" ry="1.9" fill="${leafCols[i % leafCols.length]}" class="h-wind-leaf" style="--dur:${dur}s;--del:${del}s"/>`;
-    }
-    fx = gusts + leaves;
-  } else if (kind === "rain") {
-    // Cool rain-cloud atmosphere (behind bunny when outdoor so bunny stays crisp!) + slanted animated raindrops + puddle splashes
-    const dropCount = w > 220 ? 24 : 12;
-    const skyClouds = `
-      <rect x="${b.x0}" y="${b.y0}" width="${w}" height="${h}" fill="#1e293b" opacity="${houseId === "street" ? "0.2" : "0.26"}"/>
-      <g opacity="0.82">
-        <ellipse cx="${(b.x0 + w * 0.26).toFixed(0)}" cy="${(b.y0 + 16).toFixed(0)}" rx="${Math.max(24, w * 0.24).toFixed(0)}" ry="14" fill="#64748b"/>
-        <ellipse cx="${(b.x0 + w * 0.78).toFixed(0)}" cy="${(b.y0 + 22).toFixed(0)}" rx="${Math.max(32, w * 0.28).toFixed(0)}" ry="18" fill="#475569"/>
-        <ellipse cx="${(b.x0 + w * 0.52).toFixed(0)}" cy="${(b.y0 + 12).toFixed(0)}" rx="${Math.max(24, w * 0.22).toFixed(0)}" ry="12" fill="#64748b"/>
-      </g>`;
-    let drops = isOutdoor ? "" : skyClouds;
-    if (isOutdoor) {
-      outdoorBg = `<g${houseId === "pot" ? ' mask="url(#hsPotOutdoorMask)"' : ""} pointer-events="none">${skyClouds}</g>`;
-    }
-    for (let i = 0; i < dropCount; i++) {
-      const rx = b.x0 + ((i + 0.5) / dropCount) * w + ((i % 3) - 1) * 4;
-      const ry = b.y0 + (i % 4) * 14;
-      const len = 11 + (i % 3) * 4;
-      const dur = (0.72 + (i % 4) * 0.14).toFixed(2);
-      const del = (-(i * 0.19) % 1.2).toFixed(2);
-      drops += `<line x1="${rx.toFixed(1)}" y1="${ry.toFixed(1)}" x2="${(rx - 4.2).toFixed(1)}" y2="${(ry + len).toFixed(1)}" stroke="#bae6fd" stroke-width="${i % 3 === 0 ? "1.35" : "0.95"}" stroke-linecap="round" opacity="0.82" class="h-rain" style="--dur:${dur}s;--del:${del}s"/>`;
-    }
-    if (isOutdoor) {
-      // Road/meadow puddle splashes
-      drops += `
-        <ellipse cx="118" cy="178" rx="9" ry="2.6" fill="none" stroke="#bae6fd" stroke-width="0.9" class="h-ripple"/>
-        <ellipse cx="298" cy="184" rx="10" ry="2.8" fill="none" stroke="#7dd3fc" stroke-width="0.9" class="h-ripple-d1"/>
-        <ellipse cx="212" cy="192" rx="8" ry="2.2" fill="none" stroke="#bae6fd" stroke-width="0.85" class="h-ripple"/>
-      `;
-    }
-    fx = drops;
-    if (!isOutdoor) ambientTint = `<rect width="420" height="208" fill="#1e3a5f" opacity="0.11" pointer-events="none"/>`;
-  } else if (kind === "snow") {
-    // Serene drifting multi-size snowflakes + wintry sky veil (behind bunny!) + pot-roof / sill snow cap
-    const flakeCount = w > 220 ? 28 : 13;
-    const snowSky = `
-      <rect x="${b.x0}" y="${b.y0}" width="${w}" height="${h}" fill="#3b5278" opacity="0.22"/>
-      ${houseId === "pot"
-        ? `<g opacity="0.82"><ellipse cx="344" cy="30" rx="64" ry="24" fill="#cbd5e1"/><ellipse cx="110" cy="22" rx="74" ry="18" fill="#e2e8f0"/></g>
-           <path d="M135 42 Q168 33 210 38 Q252 33 285 42 Q285 47 278 47 L142 47 Q135 47 135 42 Z" fill="#f8fafc" opacity="0.94"/>
-           <ellipse cx="92" cy="145" rx="11" ry="4" fill="#f8fafc" opacity="0.86"/>`
-        : ""}`;
-    let flakes = isOutdoor ? "" : snowSky;
-    if (isOutdoor) {
-      outdoorBg = `<g${houseId === "pot" ? ' mask="url(#hsPotOutdoorMask)"' : ""} pointer-events="none">${snowSky}</g>`;
-    }
-    for (let i = 0; i < flakeCount; i++) {
-      const fxX = b.x0 + ((i + 0.5) / flakeCount) * w;
-      const fxY = b.y0 + (i % 5) * 12;
-      const r = (1.3 + (i % 3) * 0.75).toFixed(1);
-      const dur = (3.4 + (i % 4) * 0.75).toFixed(2);
-      const del = (-(i * 0.41) % 3.6).toFixed(2);
-      flakes += `<circle cx="${fxX.toFixed(1)}" cy="${fxY.toFixed(1)}" r="${r}" fill="#ffffff" opacity="${i % 2 === 0 ? "0.92" : "0.74"}" class="h-snow" style="--dur:${dur}s;--del:${del}s"/>`;
-    }
-    // Delicate snow dusting along window sill or street curb (not a straight bar across pot hills!)
-    if (!isOutdoor) {
-      flakes += `<rect x="${b.x0}" y="${b.y1 - 4}" width="${w}" height="4" rx="2" fill="#f8fafc" opacity="0.72"/>`;
-    } else if (houseId === "street") {
-      flakes += `<rect x="0" y="147" width="420" height="4" fill="#f8fafc" opacity="0.62"/>`;
-    }
-    fx = flakes;
-    if (!isOutdoor) ambientTint = `<rect width="420" height="208" fill="#93c5fd" opacity="0.08" pointer-events="none"/>`;
+  if (isOutdoor) {
+    const maskAttr = houseId === "pot" ? ' mask="url(#hsPotOutdoorMask)"' : "";
+    const streetCurbSnow = (houseId === "street" && kind === "snow")
+      ? `<rect x="0" y="147" width="420" height="4" fill="#f8fafc" opacity="0.62"/>`
+      : "";
+    return {
+      under: `${clipDef}<g${maskAttr} pointer-events="none">${zFx.sky}${streetCurbSnow}</g>`,
+      over: `<g${maskAttr} pointer-events="none">${zFx.fall}</g>`,
+    };
   }
 
-  const layer = `${wrapOpen}${fx}${wrapClose}`;
-  return isOutdoor
-    ? { under: clipDef + outdoorBg, over: `<g${houseId === "pot" ? ' mask="url(#hsPotOutdoorMask)"' : ""} pointer-events="none">${fx}</g>` }
-    : { under: layer + ambientTint, over: "" };
+  const ambientTint = (kind === "rain" || kind === "overcast" || kind === "snow")
+    ? `<rect width="420" height="208" fill="${kind === "snow" ? "#93c5fd" : "#1e3a5f"}" opacity="${kind === "snow" ? "0.08" : "0.1"}" pointer-events="none"/>`
+    : "";
+  return {
+    under: `${clipDef}<g clip-path="url(#${clipId})" pointer-events="none">${zFx.sky}${zFx.fall}</g>${ambientTint}`,
+    over: "",
+  };
 }
 
 function renderHomeStage(freshDecorSlot = null, twirlBunny = false) {
@@ -14632,7 +14746,7 @@ function renderHomeStage(freshDecorSlot = null, twirlBunny = false) {
   const defs = renderHomeStageDefs();
   const backdrop = renderHouseBackdropSvg(house.id);
   const wLayers = hasWeather ? renderWeatherLayerSvg(house.id, weather) : { under: "", over: "" };
-  const decorLayer = renderDecorLayerSvg(view.decor, house.slots, freshDecorSlot);
+  const decorLayer = renderDecorLayerSvg(view.decor, house.slots, freshDecorSlot, house.id);
 
   // Sync exposure before drawing bunny & hot-water table so wet/snow state is immediate on open/switch
   if (weather && (weather.kind === "rain" || weather.kind === "snow") && isHomeBunnyOutdoors(house.id, homeBunnyPos.x, homeBunnyPos.y)) {
