@@ -11530,24 +11530,38 @@ const DEFAULT_HOME_STATE = {
   claimed_house_gifts: [],
 };
 
+const RETIRED_HOUSE_FALLBACK = {
+  shuangyunli: "heanju",
+  fuding_jiayuan: "xixi_beiyuan",
+  feicuicheng: "xixi",
+};
+function normHouseId(id) {
+  if (typeof id !== "string" || !id) return "street";
+  return RETIRED_HOUSE_FALLBACK[id] || id;
+}
+
 function cloneHomeState(src) {
   const s = (src && typeof src === "object") ? src : DEFAULT_HOME_STATE;
-  const oh = Array.isArray(s.owned_houses) ? Array.from(new Set(["street", ...s.owned_houses])) : ["street"];
+  const oh = Array.isArray(s.owned_houses)
+    ? Array.from(new Set(["street", ...s.owned_houses.map(normHouseId)]))
+    : ["street"];
   const leases = {};
   if (s.leases && typeof s.leases === "object") {
     Object.entries(s.leases).forEach(([k, v]) => {
+      const nk = normHouseId(k);
       const n = Number(v);
-      if (k && Number.isFinite(n) && n > 0) leases[k] = Math.floor(n);
+      if (nk && Number.isFinite(n) && n > 0) leases[nk] = Math.max(leases[nk] || 0, Math.floor(n));
     });
   }
   const rent_equity = {};
   if (s.rent_equity && typeof s.rent_equity === "object") {
     Object.entries(s.rent_equity).forEach(([k, v]) => {
+      const nk = normHouseId(k);
       const n = Number(v);
-      if (k && Number.isFinite(n) && n > 0) rent_equity[k] = Math.floor(n);
+      if (nk && Number.isFinite(n) && n > 0) rent_equity[nk] = Math.max(rent_equity[nk] || 0, Math.floor(n));
     });
   }
-  const house = (typeof s.house === "string" && s.house) ? s.house : "street";
+  const house = normHouseId(s.house);
   if (!oh.includes(house) && !leases[house]) oh.push(house);
   const hta = Array.isArray(s.hidden_tier_acc)
     ? Array.from(new Set(s.hidden_tier_acc.map(Number).filter(n => Number.isInteger(n) && n >= 4 && n <= 10))).sort((a, b) => a - b)
