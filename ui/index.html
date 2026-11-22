@@ -3925,6 +3925,20 @@
     transform: translateX(2px);
     border-color: color-mix(in srgb, var(--border-strong) 40%, var(--border));
   }
+  .model-cost-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5px 5.5px;
+    border-radius: 4px;
+    background: rgba(217, 119, 6, 0.11);
+    border: 1px solid rgba(217, 119, 6, 0.24);
+    color: var(--amber);
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 700;
+    line-height: 1.35;
+    flex-shrink: 0;
+  }
 
   @keyframes panelFadeUp {
     0%   { opacity: 0; transform: translateY(6px); }
@@ -5762,6 +5776,7 @@
         <span class="home-stage-hud-left">
           <span class="home-stage-pill" id="homeStageTitle">🛣️ 露宿马路边</span>
           <button class="home-stage-pill weather-pill" id="homeStageWeatherPill" style="display:none" title="当前本地实时天气（点击刷新）"></button>
+          <button class="home-stage-pill weather-pill" id="homeStageZoneBtn" style="display:none" title="点击让兔兔走出家门或走回屋里，视角会跟随兔兔移动">🚪 出门 →</button>
         </span>
         <span class="home-stage-hud-right">
           <button class="home-stage-pill preview-pill" id="homePreviewExitBtn" style="display:none" title="点击退出试看预览，回到当前真实装扮">👁 预览中 · 退出</button>
@@ -8661,11 +8676,14 @@ function renderModelList(d) {
     const barWidth = Math.max(barPct > 0 ? 4 : 0, barPct);
     const rbCls = shouldAnimateCharts ? "race-bar sprint" : "race-bar";
     const rbDelay = Math.min(240, idx * 24);
+    const costBadge = key !== "cost"
+      ? `<span class="model-cost-pill" title="该模型估算费用">${fmtCost(m.cost)}</span>`
+      : "";
 
     return `<div class="model-row">
       <div style="min-width:0">
         <div class="model-name" title="${esc(m.model)}">${esc(m.model)}</div>
-        <div class="model-meta">${tags} <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${subLeft}</span></div>
+        <div class="model-meta">${tags} <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${subLeft}</span> ${costBadge}</div>
         <div class="pop-inline-bar">
           <div class="race-track" style="height:4.5px"><div class="${rbCls}" style="--d:${rbDelay}ms;width:${barWidth}%;background:${barCol}"></div></div>
         </div>
@@ -12877,6 +12895,7 @@ function renderHouseBackdropSvg(houseId, dayPhase = { phase: "day", isNight: fal
       `;
     }
     case "heanju": {
+      // Full 720x208 side-scrolling world: x=0..416 FULL indoor apartment, x=416..720 FULL open-air terrace!
       const hSky = isNight
         ? ["#0b1120", "#1e293b", "#312e81"]
         : (isDusk ? ["#6366f1", "#fb923c", "#fde68a"] : (isDawn ? ["#93c5fd", "#fbcfe8", "#fed7aa"] : ["#60a5fa", "#bae6fd", "#e0f2fe"]));
@@ -12885,73 +12904,120 @@ function renderHouseBackdropSvg(houseId, dayPhase = { phase: "day", isNight: fal
         : (isDusk ? ["#c26a4e", "#b57d50", "#9c6f4f", "#8c6345"] : (isDawn ? ["#94a3b8", "#8896ad", "#9aa7bd", "#a6b3c7"] : ["#94a3b8", "#8195ab", "#9fb0c4", "#b0bfcf"]));
       const litWin = isNight || isDusk;
       const wCol = litWin ? "#fde047" : "#e0f2fe";
-      const wOp = isNight ? "0.86" : (isDusk ? "0.72" : "0.58");
+      const wOp = isNight ? "0.88" : (isDusk ? "0.72" : "0.58");
       const balcStops = isNight ? ["#475569", "#334155"] : (isDusk ? ["#b6b0b8", "#898594"] : ["#cbd5e1", "#94a3b8"]);
       const wallStops = isNight ? ["#dfd5c5", "#d1c5b2"] : ["#faf5eb", "#efe6d5"];
       const celestial = isNight
-        ? `${moonPath(384, 30, 12)}
-           <circle cx="304" cy="22" r="1.2" fill="#fde68a" class="h-twinkle"/>
-           <circle cx="342" cy="18" r="1.1" fill="#ffffff" class="h-twinkle-d1"/>
-           <circle cx="256" cy="40" r="1.0" fill="#fde68a" class="h-twinkle-d2"/>`
-        : `<circle cx="378" cy="${isDusk || isDawn ? 44 : 30}" r="14" fill="${isDusk ? "#fb923c" : "#fde047"}" opacity="0.88" filter="url(#hsGlowSm)"/>`;
+        ? `${moonPath(264, 44, 10)}${moonPath(656, 36, 14)}
+           <circle cx="294" cy="36" r="1.1" fill="#fde68a" class="h-twinkle"/>
+           <circle cx="468" cy="24" r="1.3" fill="#fde68a" class="h-twinkle"/>
+           <circle cx="536" cy="18" r="1.1" fill="#ffffff" class="h-twinkle-d1"/>
+           <circle cx="596" cy="30" r="1.2" fill="#fde68a" class="h-twinkle-d2"/>
+           <circle cx="696" cy="24" r="1.0" fill="#cbd5e1" class="h-twinkle"/>`
+        : `<circle cx="268" cy="${isDusk || isDawn ? 52 : 42}" r="11" fill="${isDusk ? "#fb923c" : "#fde047"}" opacity="0.88" filter="url(#hsGlowSm)"/>
+           <circle cx="654" cy="${isDusk || isDawn ? 48 : 34}" r="16" fill="${isDusk ? "#fb923c" : "#fde047"}" opacity="0.9" filter="url(#hsGlowMd)"/>
+           <g class="h-drift-slow" opacity="0.82">
+             <ellipse cx="510" cy="34" rx="28" ry="9" fill="${isDusk ? "#fed7aa" : "#ffffff"}"/>
+             <ellipse cx="528" cy="30" rx="16" ry="7" fill="${isDusk ? "#fed7aa" : "#ffffff"}"/>
+           </g>`;
+      const stringLights = (isNight || isDusk)
+        ? `<path d="M418 22 Q510 46 604 28 Q664 42 718 24" fill="none" stroke="#475569" stroke-width="1"/>
+           <circle cx="456" cy="32" r="2.6" fill="#fef08a" filter="url(#hsGlowSm)" class="h-twinkle"/>
+           <circle cx="496" cy="37" r="2.6" fill="#fde047" filter="url(#hsGlowSm)" class="h-twinkle-d1"/>
+           <circle cx="538" cy="36" r="2.6" fill="#fef08a" filter="url(#hsGlowSm)" class="h-twinkle-d2"/>
+           <circle cx="580" cy="31" r="2.6" fill="#fde047" filter="url(#hsGlowSm)" class="h-twinkle"/>
+           <circle cx="628" cy="32" r="2.6" fill="#fef08a" filter="url(#hsGlowSm)" class="h-twinkle-d1"/>
+           <circle cx="676" cy="33" r="2.6" fill="#fde047" filter="url(#hsGlowSm)" class="h-twinkle-d2"/>`
+        : `<path d="M418 22 Q510 46 604 28 Q664 42 718 24" fill="none" stroke="#94a3b8" stroke-width="0.9" opacity="0.65"/>
+           <circle cx="456" cy="32" r="2" fill="#f8fafc" opacity="0.75"/>
+           <circle cx="538" cy="36" r="2" fill="#f8fafc" opacity="0.75"/>
+           <circle cx="628" cy="32" r="2" fill="#f8fafc" opacity="0.75"/>`;
       return `
         <defs>
           <linearGradient id="hHeanjuSky_${phase}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${hSky[0]}"/><stop offset="55%" stop-color="${hSky[1]}"/><stop offset="100%" stop-color="${hSky[2]}"/></linearGradient>
           <linearGradient id="hHeanjuWall_${phase}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${wallStops[0]}"/><stop offset="100%" stop-color="${wallStops[1]}"/></linearGradient>
           <linearGradient id="hHeanjuBalc_${phase}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${balcStops[0]}"/><stop offset="100%" stop-color="${balcStops[1]}"/></linearGradient>
         </defs>
-        <!-- Full local-time sky on right outdoor balcony & through sliding glass -->
-        <rect width="420" height="208" fill="url(#hHeanjuSky_${phase})"/>
+        <!-- Continuous sky across 720px world -->
+        <rect x="0" y="0" width="720" height="208" fill="url(#hHeanjuSky_${phase})"/>
         ${celestial}
-        <!-- Distant city skyline visible beyond balcony -->
-        <rect x="248" y="80" width="32" height="68" fill="${blds[0]}" opacity="0.86"/>
-        <rect x="292" y="56" width="48" height="92" fill="${blds[1]}" opacity="0.9"/>
-        <rect x="348" y="74" width="38" height="74" fill="${blds[2]}" opacity="0.86"/>
-        <rect x="392" y="90" width="24" height="58" fill="${blds[3]}" opacity="0.82"/>
-        <rect x="302" y="68" width="7" height="9" rx="1" fill="${wCol}" opacity="${wOp}"/><rect x="320" y="68" width="7" height="9" rx="1" fill="${wCol}" opacity="${wOp}"/>
-        <rect x="302" y="88" width="7" height="9" rx="1" fill="${wCol}" opacity="${isNight ? "0.9" : wOp}"/><rect x="320" y="88" width="7" height="9" rx="1" fill="${wCol}" opacity="${wOp}"/>
-        <rect x="358" y="86" width="7" height="9" rx="1" fill="${wCol}" opacity="${wOp}"/><rect x="372" y="96" width="7" height="9" rx="1" fill="${wCol}" opacity="${isNight ? "0.9" : wOp}"/>
-        <!-- Outdoor open-air balcony safety glass & steel handrail (x=278..420) -->
-        <rect x="278" y="116" width="142" height="32" fill="${isNight ? "#93c5fd" : "#e0f2fe"}" opacity="${isNight ? "0.14" : "0.22"}"/>
-        <line x1="278" y1="116" x2="420" y2="116" stroke="${isNight ? "#334155" : "#475569"}" stroke-width="2.4"/>
-        <line x1="278" y1="118.2" x2="420" y2="118.2" stroke="#cbd5e1" stroke-width="0.9" opacity="${isNight ? "0.35" : "0.7"}"/>
-        <line x1="348" y1="116" x2="348" y2="148" stroke="#64748b" stroke-width="1.6"/>
-        <line x1="412" y1="116" x2="412" y2="148" stroke="#64748b" stroke-width="1.6"/>
-        <!-- Indoor apartment wall & ceiling overhang (x=0..278) -->
-        <rect x="0" y="0" width="234" height="148" fill="url(#hHeanjuWall_${phase})"/>
-        <rect x="234" y="0" width="46" height="24" fill="${isNight ? "#cfc2ae" : "#ebe1ce"}"/>
-        <line x1="234" y1="24" x2="280" y2="24" stroke="#94a3b8" stroke-width="2"/>
-        <!-- Subtle wainscoting & baseboard -->
-        <rect x="0" y="114" width="234" height="34" fill="${isNight ? "#c8baa6" : "#ebe1ce"}" opacity="0.55"/>
-        <line x1="0" y1="114" x2="234" y2="114" stroke="#b8ab96" stroke-width="1.5"/>
-        <rect x="0" y="144" width="278" height="5" fill="#b8ab96"/>
-        <!-- Left fixed sliding-glass door panel (x=234..278) + open doorway on right! -->
-        <rect x="234" y="24" width="44" height="124" fill="url(#hsGlassSheen)" stroke="#64748b" stroke-width="2.2"/>
-        <rect x="271" y="78" width="2.6" height="18" rx="1.2" fill="#475569"/>
-        <!-- Sheer linen curtain gently swaying at left edge of doorway -->
-        <path d="M234 24 L256 24 Q248 84 252 146 L234 146 Z" fill="${isNight ? "#e5ddd0" : "#fffdf8"}" opacity="0.72" class="h-drift-slow"/>
-        <!-- Warm indoor hardwood floor (left) + Open-air slate-tiled outdoor balcony (right) -->
-        <polygon points="0,148 278,148 298,208 0,208" fill="${isNight ? "#c8bca8" : "#e5dac6"}"/>
-        <polygon points="278,148 420,148 420,208 298,208" fill="url(#hHeanjuBalc_${phase})"/>
-        <!-- Outdoor balcony tile perspective lines -->
-        <line x1="284" y1="166" x2="420" y2="166" stroke="${isNight ? "#1e293b" : "#64748b"}" stroke-width="0.9" opacity="0.42"/>
-        <line x1="291" y1="186" x2="420" y2="186" stroke="${isNight ? "#1e293b" : "#64748b"}" stroke-width="0.9" opacity="0.42"/>
-        <line x1="348" y1="148" x2="376" y2="208" stroke="${isNight ? "#1e293b" : "#64748b"}" stroke-width="0.9" opacity="0.38"/>
-        <!-- Sleek recessed aluminum sliding-door floor track -->
-        <line x1="278" y1="148" x2="298" y2="208" stroke="#64748b" stroke-width="3.2"/>
-        <line x1="278" y1="148" x2="298" y2="208" stroke="#e2e8f0" stroke-width="1"/>
-        <!-- AC indoor unit -->
+        <!-- Distant city skyline seen through indoor window AND across outdoor terrace -->
+        <rect x="246" y="78" width="34" height="70" fill="${blds[0]}" opacity="0.86"/>
+        <rect x="288" y="56" width="46" height="92" fill="${blds[1]}" opacity="0.9"/>
+        <rect x="340" y="74" width="32" height="74" fill="${blds[2]}" opacity="0.86"/>
+        <rect x="298" y="68" width="7" height="9" rx="1" fill="${wCol}" opacity="${wOp}"/><rect x="316" y="68" width="7" height="9" rx="1" fill="${wCol}" opacity="${wOp}"/>
+        <rect x="298" y="88" width="7" height="9" rx="1" fill="${wCol}" opacity="${wOp}"/><rect x="316" y="88" width="7" height="9" rx="1" fill="${wCol}" opacity="${wOp}"/>
+        <!-- Outdoor terrace panoramic skyline (x=420..720) -->
+        <rect x="434" y="72" width="46" height="76" fill="${blds[0]}" opacity="0.86"/>
+        <rect x="488" y="48" width="58" height="100" fill="${blds[1]}" opacity="0.92"/>
+        <rect x="554" y="66" width="48" height="82" fill="${blds[2]}" opacity="0.88"/>
+        <rect x="610" y="54" width="54" height="94" fill="${blds[3]}" opacity="0.9"/>
+        <rect x="672" y="78" width="40" height="70" fill="${blds[0]}" opacity="0.82"/>
+        <rect x="446" y="84" width="7" height="9" rx="1" fill="${wCol}" opacity="${wOp}"/><rect x="462" y="84" width="7" height="9" rx="1" fill="${wCol}" opacity="${wOp}"/>
+        <rect x="500" y="62" width="8" height="10" rx="1" fill="${wCol}" opacity="${wOp}"/><rect x="522" y="62" width="8" height="10" rx="1" fill="${wCol}" opacity="${wOp}"/>
+        <rect x="500" y="84" width="8" height="10" rx="1" fill="${wCol}" opacity="${wOp}"/><rect x="522" y="84" width="8" height="10" rx="1" fill="${wCol}" opacity="${wOp}"/>
+        <rect x="566" y="80" width="7" height="9" rx="1" fill="${wCol}" opacity="${wOp}"/><rect x="582" y="80" width="7" height="9" rx="1" fill="${wCol}" opacity="${wOp}"/>
+        <rect x="622" y="68" width="8" height="10" rx="1" fill="${wCol}" opacity="${wOp}"/><rect x="642" y="68" width="8" height="10" rx="1" fill="${wCol}" opacity="${wOp}"/>
+        <rect x="622" y="90" width="8" height="10" rx="1" fill="${wCol}" opacity="${wOp}"/><rect x="642" y="90" width="8" height="10" rx="1" fill="${wCol}" opacity="${wOp}"/>
+        <!-- FULL INDOOR APARTMENT WALL (x=0..416) with wide window cutout (x=232..374) & doorway (x=384..416) -->
+        <rect x="0" y="0" width="232" height="148" fill="url(#hHeanjuWall_${phase})"/>
+        <rect x="232" y="0" width="184" height="24" fill="${isNight ? "#cfc2ae" : "#ebe1ce"}"/>
+        <rect x="374" y="24" width="14" height="124" fill="url(#hHeanjuWall_${phase})"/>
+        <rect x="0" y="114" width="232" height="34" fill="${isNight ? "#c8baa6" : "#ebe1ce"}" opacity="0.55"/>
+        <line x1="0" y1="114" x2="232" y2="114" stroke="#b8ab96" stroke-width="1.5"/>
+        <rect x="0" y="144" width="416" height="5" fill="#b8ab96"/>
+        <!-- Full indoor balcony window (x=232..374) -->
+        <rect x="232" y="24" width="142" height="122" fill="url(#hsGlassSheen)" stroke="#64748b" stroke-width="2.4"/>
+        <line x1="303" y1="24" x2="303" y2="146" stroke="#64748b" stroke-width="1.8"/>
+        <line x1="234" y1="122" x2="372" y2="122" stroke="#64748b" stroke-width="1.5"/>
+        <path d="M232 24 L254 24 Q246 84 250 146 L232 146 Z" fill="${isNight ? "#e5ddd0" : "#fffdf8"}" opacity="0.72" class="h-drift-slow"/>
+        <!-- Open sliding glass doorway at far-right of indoor room (x=388..416) -->
+        <rect x="388" y="24" width="28" height="124" fill="none" stroke="#475569" stroke-width="2.2"/>
+        <rect x="388" y="24" width="12" height="124" fill="url(#hsGlassSheen)" stroke="#64748b" stroke-width="1.2"/>
+        <rect x="396" y="78" width="2.5" height="18" rx="1" fill="#475569"/>
+        <!-- AC indoor unit & framed poster -->
         <rect x="40" y="30" width="82" height="22" rx="5" fill="${isNight ? "#e5e7eb" : "#ffffff"}" stroke="#cbd5e1" stroke-width="1.4"/>
         <line x1="48" y1="46" x2="114" y2="46" stroke="#94a3b8" stroke-width="1.4"/>
         <circle cx="112" cy="37" r="1.6" fill="#22c55e" class="h-twinkle"/>
-        <!-- Framed editorial poster -->
         <rect x="146" y="44" width="58" height="46" rx="3" fill="${isNight ? "#e5e7eb" : "#ffffff"}" stroke="#a8a29e" stroke-width="2"/>
         <rect x="152" y="50" width="46" height="34" rx="1.5" fill="${isNight ? "#f5ebd6" : "#fff7ed"}"/>
         <circle cx="175" cy="67" r="11" fill="#fed7aa"/>
         <text x="175" y="71" font-size="11" text-anchor="middle">🥕</text>
+        <!-- FULL OUTDOOR TERRACE (x=416..720): safety glass handrail, festoon lights, lounge chair, planters -->
+        <rect x="416" y="114" width="304" height="34" fill="${isNight ? "#93c5fd" : "#e0f2fe"}" opacity="${isNight ? "0.14" : "0.22"}"/>
+        <line x1="416" y1="114" x2="720" y2="114" stroke="${isNight ? "#334155" : "#475569"}" stroke-width="2.6"/>
+        <line x1="416" y1="116.5" x2="720" y2="116.5" stroke="#cbd5e1" stroke-width="0.9" opacity="${isNight ? "0.35" : "0.72"}"/>
+        <line x1="490" y1="114" x2="490" y2="148" stroke="#64748b" stroke-width="1.6"/>
+        <line x1="572" y1="114" x2="572" y2="148" stroke="#64748b" stroke-width="1.6"/>
+        <line x1="654" y1="114" x2="654" y2="148" stroke="#64748b" stroke-width="1.6"/>
+        ${stringLights}
+        <!-- Indoor warm oak floor (0..416) + Outdoor stone-tiled terrace deck (416..720) -->
+        <rect x="0" y="148" width="416" height="60" fill="${isNight ? "#c8bca8" : "#e5dac6"}"/>
+        <rect x="416" y="148" width="304" height="60" fill="url(#hHeanjuBalc_${phase})"/>
+        <line x1="416" y1="168" x2="720" y2="168" stroke="${isNight ? "#1e293b" : "#64748b"}" stroke-width="0.9" opacity="0.38"/>
+        <line x1="416" y1="188" x2="720" y2="188" stroke="${isNight ? "#1e293b" : "#64748b"}" stroke-width="0.9" opacity="0.38"/>
+        <line x1="492" y1="148" x2="482" y2="208" stroke="${isNight ? "#1e293b" : "#64748b"}" stroke-width="0.9" opacity="0.34"/>
+        <line x1="568" y1="148" x2="568" y2="208" stroke="${isNight ? "#1e293b" : "#64748b"}" stroke-width="0.9" opacity="0.34"/>
+        <line x1="644" y1="148" x2="656" y2="208" stroke="${isNight ? "#1e293b" : "#64748b"}" stroke-width="0.9" opacity="0.34"/>
+        <!-- Doorway floor threshold track -->
+        <line x1="416" y1="148" x2="416" y2="208" stroke="#64748b" stroke-width="3.6"/>
+        <line x1="416" y1="148" x2="416" y2="208" stroke="#e2e8f0" stroke-width="1"/>
+        <!-- Outdoor terrace potted plant & cozy rattan lounge chair -->
+        <g transform="translate(466, 156)">
+          <path d="M-9 0 L-7 -15 L7 -15 L9 0 Z" fill="#c25934" stroke="#7c2d12" stroke-width="1"/>
+          <ellipse cx="0" cy="-19" rx="11" ry="8" fill="${isNight ? "#15803d" : "#22c55e"}"/>
+          <circle cx="-4" cy="-21" r="2.2" fill="#f472b6"/><circle cx="4" cy="-18" r="2.2" fill="#fde047"/>
+        </g>
+        <g transform="translate(636, 162)">
+          <ellipse cx="0" cy="4" rx="30" ry="5" fill="rgba(0,0,0,0.2)"/>
+          <path d="M-24 -2 L-16 -24 L18 -24 L26 -2 Z" fill="${isNight ? "#92400e" : "#d97706"}" stroke="#78350f" stroke-width="1.2"/>
+          <rect x="-24" y="-8" width="50" height="8" rx="4" fill="${isNight ? "#d6cbb8" : "#fffbeb"}" stroke="#a8a29e" stroke-width="0.9"/>
+          <line x1="-18" y1="0" x2="-20" y2="6" stroke="#78350f" stroke-width="2"/><line x1="18" y1="0" x2="20" y2="6" stroke="#78350f" stroke-width="2"/>
+        </g>
       `;
     }
     case "xixi": {
+      // Full 720x208 side-scrolling world: x=0..416 FULL luxury villa living room, x=416..720 FULL Xixi lakeside private garden boardwalk!
       const xSky = isNight
         ? ["#090f24", "#172554", "#1e3a5f", "#134e4a"]
         : (isDusk ? ["#4338ca", "#f97316", "#fde68a", "#fed7aa"] : (isDawn ? ["#93c5fd", "#fce7f3", "#fef3c7", "#d1fae5"] : ["#7dd3fc", "#e0f2fe", "#fef9c3", "#d1fae5"]));
@@ -12960,14 +13026,15 @@ function renderHouseBackdropSvg(houseId, dayPhase = { phase: "day", isNight: fal
       const waterCol = isNight ? "#1e3a5f" : (isDusk ? "#fb923c" : "#7dd3fc");
       const deckStops = isNight ? ["#69462a", "#4a2f1a"] : (isDusk ? ["#a87042", "#784922"] : ["#b88352", "#8b5a2b"]);
       const celestial = isNight
-        ? `${moonPath(378, 32, 13)}
+        ? `${moonPath(244, 44, 10)}${moonPath(646, 36, 14)}
            <circle cx="88" cy="38" r="1.2" fill="#fde68a" class="h-twinkle"/>
            <circle cx="192" cy="34" r="1.1" fill="#ffffff" class="h-twinkle-d1"/>
-           <circle cx="312" cy="26" r="1.3" fill="#fde68a" class="h-twinkle-d2"/>
-           <circle cx="248" cy="46" r="1.0" fill="#cbd5e1" class="h-twinkle"/>`
+           <circle cx="468" cy="26" r="1.3" fill="#fde68a" class="h-twinkle-d2"/>
+           <circle cx="546" cy="20" r="1.1" fill="#ffffff" class="h-twinkle"/>
+           <circle cx="598" cy="34" r="1.2" fill="#fde68a" class="h-twinkle-d1"/>`
         : `<ellipse cx="136" cy="48" rx="30" ry="8.5" fill="${isDusk ? "#fed7aa" : "#fff"}" opacity="0.82" class="h-drift-slow"/>
-           <ellipse cx="348" cy="38" rx="26" ry="7.5" fill="${isDusk ? "#fed7aa" : "#fff"}" opacity="0.76" class="h-drift"/>
-           ${isDusk || isDawn ? `<circle cx="374" cy="54" r="16" fill="${isDusk ? "#fb923c" : "#fde047"}" opacity="0.82" filter="url(#hsGlowMd)"/>` : ""}`;
+           <ellipse cx="520" cy="36" rx="34" ry="9" fill="${isDusk ? "#fed7aa" : "#fff"}" opacity="0.8" class="h-drift"/>
+           ${isDusk || isDawn ? `<circle cx="634" cy="52" r="18" fill="${isDusk ? "#fb923c" : "#fde047"}" opacity="0.86" filter="url(#hsGlowMd)"/>` : ""}`;
       return `
         <defs>
           <linearGradient id="hXixiSky_${phase}" x1="0" y1="0" x2="0" y2="1">
@@ -12980,53 +13047,76 @@ function renderHouseBackdropSvg(houseId, dayPhase = { phase: "day", isNight: fal
             <stop offset="0%" stop-color="${deckStops[0]}"/><stop offset="100%" stop-color="${deckStops[1]}"/>
           </linearGradient>
         </defs>
-        <!-- Continuous Jiangnan Xixi Wetland sky & misty panorama -->
-        <rect width="420" height="208" fill="url(#hXixiSky_${phase})"/>
+        <!-- Continuous 720px Jiangnan Xixi Wetland sky & misty mountain panorama -->
+        <rect x="0" y="0" width="720" height="208" fill="url(#hXixiSky_${phase})"/>
         ${celestial}
-        <!-- Misty Jiangnan ink-wash mountains -->
-        <path d="M0 108 Q96 68 184 98 Q268 62 346 94 Q382 82 420 96 L420 148 L0 148 Z" fill="${mtBack}" opacity="${isNight ? "0.78" : "0.48"}"/>
-        <path d="M0 120 Q132 94 246 116 Q330 98 420 118 L420 148 L0 148 Z" fill="${mtFront}" opacity="${isNight ? "0.86" : "0.54"}"/>
-        <!-- Jiangnan white-walled black-tile waterside pavilion beyond terrace (lantern glows at night!) -->
-        <g opacity="0.92">
-          <rect x="308" y="96" width="44" height="26" fill="${isNight ? "#475569" : "#fffdf8"}" stroke="${isNight ? "#1e293b" : "#cbd5e1"}" stroke-width="0.8"/>
-          <path d="M300 98 Q330 82 360 98 L354 99 Q330 88 306 99 Z" fill="${isNight ? "#0f172a" : "#334155"}"/>
-          <rect x="323" y="106" width="14" height="14" rx="7" fill="${isNight || isDusk ? "#fde047" : "#475569"}" opacity="${isNight ? "0.9" : "0.68"}" ${isNight ? 'filter="url(#hsGlowSm)"' : ""}/>
+        <path d="M0 108 Q96 68 184 98 Q268 62 360 94 Q454 64 556 96 Q642 66 720 92 L720 148 L0 148 Z" fill="${mtBack}" opacity="${isNight ? "0.78" : "0.48"}"/>
+        <path d="M0 120 Q132 94 246 116 Q364 96 488 118 Q604 94 720 116 L720 148 L0 148 Z" fill="${mtFront}" opacity="${isNight ? "0.86" : "0.54"}"/>
+        <!-- Distant pavilion seen from indoor window + close-up lakeside pavilion in outdoor garden -->
+        <g opacity="0.9">
+          <rect x="292" y="96" width="44" height="26" fill="${isNight ? "#475569" : "#fffdf8"}" stroke="${isNight ? "#1e293b" : "#cbd5e1"}" stroke-width="0.8"/>
+          <path d="M284 98 Q314 82 344 98 L338 99 Q314 88 290 99 Z" fill="${isNight ? "#0f172a" : "#334155"}"/>
+          <rect x="307" y="106" width="14" height="14" rx="7" fill="${isNight || isDusk ? "#fde047" : "#475569"}" opacity="${isNight ? "0.9" : "0.68"}" ${isNight ? 'filter="url(#hsGlowSm)"' : ""}/>
         </g>
-        <!-- Tranquil Xixi wetland reflection water -->
-        <rect x="0" y="124" width="420" height="24" fill="${waterCol}" opacity="${isNight ? "0.72" : "0.44"}"/>
-        <line x1="60" y1="133" x2="132" y2="133" stroke="${isNight ? "#fde68a" : "#fff"}" stroke-width="1" opacity="${isNight ? "0.45" : "0.55"}" class="h-drift"/>
-        <line x1="292" y1="136" x2="374" y2="136" stroke="${isNight ? "#fde68a" : "#fff"}" stroke-width="1" opacity="${isNight ? "0.52" : "0.52"}" class="h-drift-slow"/>
-        <!-- Swaying weeping willow strands on left glass edge -->
-        <g stroke="${isNight ? "#14532d" : "#15803d"}" stroke-width="1.3" fill="none" opacity="${isNight ? "0.75" : "0.6"}" class="h-drift-slow">
+        <g opacity="0.95">
+          <rect x="576" y="88" width="56" height="34" fill="${isNight ? "#475569" : "#fffdf8"}" stroke="${isNight ? "#1e293b" : "#cbd5e1"}" stroke-width="1"/>
+          <path d="M564 90 Q604 70 644 90 L636 92 Q604 78 572 92 Z" fill="${isNight ? "#0f172a" : "#334155"}"/>
+          <rect x="595" y="101" width="18" height="18" rx="9" fill="${isNight || isDusk ? "#fde047" : "#475569"}" opacity="${isNight ? "0.94" : "0.7"}" ${isNight ? 'filter="url(#hsGlowSm)"' : ""}/>
+        </g>
+        <!-- Tranquil Xixi wetland reflection water & lotus pads -->
+        <rect x="0" y="124" width="720" height="24" fill="${waterCol}" opacity="${isNight ? "0.74" : "0.46"}"/>
+        <line x1="60" y1="133" x2="132" y2="133" stroke="${isNight ? "#fde68a" : "#fff"}" stroke-width="1" opacity="0.5" class="h-drift"/>
+        <line x1="464" y1="135" x2="544" y2="135" stroke="${isNight ? "#fde68a" : "#fff"}" stroke-width="1.1" opacity="0.55" class="h-drift-slow"/>
+        <line x1="620" y1="138" x2="692" y2="138" stroke="${isNight ? "#fde68a" : "#fff"}" stroke-width="1" opacity="0.5" class="h-drift"/>
+        <ellipse cx="516" cy="136" rx="9" ry="3" fill="${isNight ? "#15803d" : "#22c55e"}" opacity="0.82"/>
+        <ellipse cx="534" cy="140" rx="7" ry="2.4" fill="${isNight ? "#166534" : "#4ade80"}" opacity="0.82"/>
+        <circle cx="524" cy="135" r="2.4" fill="#f9a8d4"/>
+        <!-- Swaying weeping willow on indoor left window + grand lakeside willow outside! -->
+        <g stroke="${isNight ? "#14532d" : "#15803d"}" stroke-width="1.3" fill="none" opacity="0.65" class="h-drift-slow">
           <path d="M44 26 Q38 64 46 98"/><path d="M56 26 Q52 60 58 88"/><path d="M68 26 Q64 52 70 76"/>
         </g>
-        <!-- Indoor villa left wall pillar + walnut architectural ceiling overhang (stops at x=280!) -->
+        <g transform="translate(476, 148)">
+          <path d="M0 0 Q-4 -42 6 -82" stroke="#5c2d0e" stroke-width="5.5" fill="none" stroke-linecap="round"/>
+          <ellipse cx="6" cy="-86" rx="34" ry="18" fill="${isNight ? "#14532d" : "#22c55e"}" opacity="0.9"/>
+          <g stroke="${isNight ? "#166534" : "#15803d"}" stroke-width="1.5" fill="none" opacity="0.78" class="h-drift-slow">
+            <path d="M-14 -78 Q-20 -44 -12 -18"/><path d="M-2 -74 Q-6 -40 0 -14"/><path d="M12 -74 Q16 -42 10 -16"/><path d="M24 -78 Q28 -48 22 -22"/>
+          </g>
+        </g>
+        <!-- FULL INDOOR VILLA ARCHITECTURE (x=0..416) -->
         <rect x="0" y="0" width="22" height="148" fill="${isNight ? "#d6cbb8" : "#f8f4eb"}"/>
-        <rect x="0" y="0" width="282" height="21" fill="url(#hXixiWood_${phase})"/>
-        <rect x="0" y="20" width="280" height="2.6" fill="#fde68a" opacity="${isNight ? "0.92" : "0.68"}"/>
+        <rect x="0" y="0" width="416" height="21" fill="url(#hXixiWood_${phase})"/>
+        <rect x="0" y="20" width="416" height="2.6" fill="#fde68a" opacity="${isNight ? "0.92" : "0.68"}"/>
         <rect x="64" y="0" width="10" height="23" fill="#451a03"/>
         <rect x="162" y="0" width="10" height="23" fill="#451a03"/>
-        <rect x="268" y="0" width="12" height="24" fill="#451a03"/>
-        <!-- Indoor low-iron glass curtain wall (x=22..276) with open sliding glass doorway at x=278 -->
-        <rect x="22" y="23" width="256" height="125" fill="url(#hsGlassSheen)" stroke="#78716c" stroke-width="1.8"/>
-        <line x1="148" y1="23" x2="148" y2="148" stroke="#78716c" stroke-width="1.5" opacity="0.72"/>
-        <!-- Sliding glass door bronze handle -->
-        <rect x="271" y="80" width="2.8" height="20" rx="1.2" fill="#78350f"/>
-        <!-- Low frameless lakeside glass edge along outdoor patio -->
-        <rect x="278" y="132" width="142" height="16" fill="${isNight ? "#93c5fd" : "#e0f2fe"}" opacity="${isNight ? "0.14" : "0.22"}"/>
-        <line x1="278" y1="132" x2="420" y2="132" stroke="#94a3b8" stroke-width="1.5" opacity="0.82"/>
-        <!-- Indoor travertine stone floor (left) + Open-air Burmese teak lakeside courtyard deck (right) -->
-        <polygon points="0,148 278,148 298,208 0,208" fill="${isNight ? "#c8bfb0" : "#e8e1d4"}"/>
-        <line x1="0" y1="148" x2="278" y2="148" stroke="#9e927f" stroke-width="2"/>
-        <polygon points="278,148 420,148 420,208 298,208" fill="url(#hXixiDeck_${phase})"/>
-        <!-- Outdoor teak deck plank seams -->
-        <line x1="283" y1="162" x2="420" y2="162" stroke="#3b1d08" stroke-width="0.9" opacity="0.48"/>
-        <line x1="288" y1="176" x2="420" y2="176" stroke="#3b1d08" stroke-width="0.95" opacity="0.48"/>
-        <line x1="293" y1="192" x2="420" y2="192" stroke="#3b1d08" stroke-width="1" opacity="0.48"/>
-        <line x1="278" y1="148" x2="420" y2="148" stroke="#3b1d08" stroke-width="1.8"/>
+        <rect x="268" y="0" width="10" height="23" fill="#451a03"/>
+        <rect x="382" y="0" width="12" height="23" fill="#451a03"/>
+        <!-- Full indoor panoramic glass curtain wall (x=22..386) + open bronze sliding doorway (x=386..416) -->
+        <rect x="22" y="23" width="364" height="125" fill="url(#hsGlassSheen)" stroke="#78716c" stroke-width="1.8"/>
+        <line x1="148" y1="23" x2="148" y2="148" stroke="#78716c" stroke-width="1.5" opacity="0.7"/>
+        <line x1="274" y1="23" x2="274" y2="148" stroke="#78716c" stroke-width="1.5" opacity="0.7"/>
+        <rect x="386" y="23" width="30" height="125" fill="none" stroke="#57534e" stroke-width="2"/>
+        <rect x="381" y="80" width="2.8" height="20" rx="1.2" fill="#78350f"/>
+        <!-- Outdoor lakeside garden low wooden handrail & glowing Jiangnan stone lantern -->
+        <line x1="416" y1="132" x2="720" y2="132" stroke="#78350f" stroke-width="2" opacity="0.82"/>
+        <line x1="490" y1="132" x2="490" y2="148" stroke="#78350f" stroke-width="2"/>
+        <line x1="576" y1="132" x2="576" y2="148" stroke="#78350f" stroke-width="2"/>
+        <line x1="664" y1="132" x2="664" y2="148" stroke="#78350f" stroke-width="2"/>
+        <g transform="translate(544, 152)">
+          <rect x="-5" y="-14" width="10" height="14" rx="1.5" fill="#94a3b8" stroke="#475569" stroke-width="0.9"/>
+          <rect x="-7" y="-24" width="14" height="10" rx="1.5" fill="${isNight || isDusk ? "#fef08a" : "#e2e8f0"}" stroke="#475569" stroke-width="0.9" ${isNight ? 'filter="url(#hsGlowSm)"' : ""}/>
+          <path d="M-11 -24 Q0 -33 11 -24 Z" fill="#64748b" stroke="#334155" stroke-width="0.9"/>
+        </g>
+        <!-- Full indoor travertine floor (0..416) + Full outdoor Burmese teak boardwalk (416..720) -->
+        <rect x="0" y="148" width="416" height="60" fill="${isNight ? "#c8bfb0" : "#e8e1d4"}"/>
+        <line x1="0" y1="148" x2="416" y2="148" stroke="#9e927f" stroke-width="2"/>
+        <rect x="416" y="148" width="304" height="60" fill="url(#hXixiDeck_${phase})"/>
+        <line x1="416" y1="162" x2="720" y2="162" stroke="#3b1d08" stroke-width="0.9" opacity="0.46"/>
+        <line x1="416" y1="176" x2="720" y2="176" stroke="#3b1d08" stroke-width="0.95" opacity="0.46"/>
+        <line x1="416" y1="192" x2="720" y2="192" stroke="#3b1d08" stroke-width="1" opacity="0.46"/>
+        <line x1="416" y1="148" x2="720" y2="148" stroke="#3b1d08" stroke-width="1.8"/>
         <!-- Bronze sliding-door floor track -->
-        <line x1="278" y1="148" x2="298" y2="208" stroke="#57534e" stroke-width="3.2"/>
-        <line x1="278" y1="148" x2="298" y2="208" stroke="#fde68a" stroke-width="0.9" opacity="0.72"/>
+        <line x1="416" y1="148" x2="416" y2="208" stroke="#57534e" stroke-width="3.6"/>
+        <line x1="416" y1="148" x2="416" y2="208" stroke="#fde68a" stroke-width="1" opacity="0.78"/>
       `;
     }
     case "atlantis":
@@ -13414,7 +13504,7 @@ function renderDecorLayerSvg(decor, allowedSlots, freshSlot = null, houseId = nu
         </g>`;
     }
     if (hasTerrace) {
-      out += `<defs><clipPath id="hsIndoorFloorClip"><polygon points="0,148 278,148 298,208 0,208"/></clipPath></defs><g clip-path="url(#hsIndoorFloorClip)"${pop("floor")}>${fSvg}</g><line x1="278" y1="148" x2="298" y2="208" stroke="#57534e" stroke-width="3.2"/><line x1="278" y1="148" x2="298" y2="208" stroke="${houseId === "xixi" ? "#fde68a" : "#e2e8f0"}" stroke-width="1" opacity="0.82"/>`;
+      out += `<defs><clipPath id="hsIndoorFloorClip"><rect x="0" y="148" width="416" height="60"/></clipPath></defs><g clip-path="url(#hsIndoorFloorClip)"${pop("floor")}>${fSvg}</g><line x1="416" y1="148" x2="416" y2="208" stroke="#57534e" stroke-width="3.6"/><line x1="416" y1="148" x2="416" y2="208" stroke="${houseId === "xixi" ? "#fde68a" : "#e2e8f0"}" stroke-width="1" opacity="0.82"/>`;
     } else {
       out += `<g${pop("floor")}>${fSvg}</g>`;
     }
@@ -13965,7 +14055,7 @@ function getEffectiveStageViewState() {
   return { houseId, decor, wear, isPreview: true, previewLabel };
 }
 
-// ---- Interactive Point-and-Walk Bunny State inside 420x208 Home Stage ----
+// ---- Interactive Point-and-Walk Bunny + Side-Scrolling Camera Follow ----
 const homeBunnyPos = {
   x: 210,
   y: 183,
@@ -13974,6 +14064,45 @@ const homeBunnyPos = {
   raf: null,
   lastHouseId: null,
 };
+const homeCamera = { x: 0 };
+
+function getHomeWorldWidth(houseId) {
+  return (houseId === "heanju" || houseId === "xixi") ? 720 : 420;
+}
+
+function getTargetCameraX(bunnyX, houseId) {
+  const maxCam = Math.max(0, getHomeWorldWidth(houseId) - 420);
+  if (maxCam <= 0) return 0;
+  return Math.max(0, Math.min(maxCam, bunnyX - 210));
+}
+
+function updateHomeCameraDom() {
+  const w = document.getElementById("homeStageWorld");
+  if (w) {
+    w.setAttribute("transform", `translate(${(-homeCamera.x).toFixed(2)}, 0)`);
+  }
+  syncHomeZoneBtnDom();
+}
+
+function syncHomeZoneBtnDom() {
+  const btn = document.getElementById("homeStageZoneBtn");
+  if (!btn) return;
+  const view = getEffectiveStageViewState();
+  const hasWorld = getHomeWorldWidth(view.houseId) > 420;
+  if (!hasWorld) {
+    btn.style.display = "none";
+    return;
+  }
+  btn.style.display = "inline-flex";
+  const isOut = isHomeBunnyOutdoors(view.houseId, homeBunnyPos.x, homeBunnyPos.y);
+  if (isOut) {
+    btn.textContent = homeBunnyClimate.condition ? "← 🏠 回屋喝热水" : "← 🏠 走回家";
+    btn.title = "点击让兔兔沿路走回屋里，镜头跟随移动";
+  } else {
+    btn.textContent = "🚪 出门走走 →";
+    btn.title = "点击让兔兔推门走到室外露台/庭院，镜头跟随移动";
+  }
+}
 
 function getHomeBunnyScale(fy) {
   const t = Math.max(0, Math.min(1, (fy - 152) / 46));
@@ -14010,9 +14139,11 @@ function stopHomeBunnyWalk() {
 function spawnStageWalkRing(svgX, svgY, isStarStep = false) {
   const wrap = document.getElementById("homeStageWrap");
   if (!wrap) return;
+  const vx = svgX - homeCamera.x;
+  if (vx < -20 || vx > 440) return;
   const el = document.createElement("span");
   el.className = "home-walk-ring" + (isStarStep ? " star-step" : "");
-  el.style.left = ((svgX / 420) * 100).toFixed(2) + "%";
+  el.style.left = ((vx / 420) * 100).toFixed(2) + "%";
   el.style.top = ((svgY / 208) * 100).toFixed(2) + "%";
   wrap.appendChild(el);
   setTimeout(() => el.remove(), 600);
@@ -14025,7 +14156,8 @@ function showHomeStageBubble(text, svgX = homeBunnyPos.x, svgY = homeBunnyPos.y 
   const b = document.createElement("div");
   b.className = "home-stage-bubble";
   b.textContent = text;
-  const leftPct = Math.max(18, Math.min(82, (svgX / 420) * 100));
+  const vx = svgX - homeCamera.x;
+  const leftPct = Math.max(18, Math.min(82, (vx / 420) * 100));
   const topPct = Math.max(18, Math.min(72, (svgY / 208) * 100));
   b.style.left = leftPct.toFixed(1) + "%";
   b.style.top = topPct.toFixed(1) + "%";
@@ -14038,11 +14170,29 @@ function triggerHomeSpotReaction(tx, ty, rawClickY) {
   const house = HOME_HOUSES.find(x => x.id === view.houseId) || HOME_HOUSES[0];
   const slots = house.slots || [];
   const d = view.decor || {};
-  const cxPct = (tx / 420) * 100;
+  const cxPct = Math.max(8, Math.min(92, ((tx - homeCamera.x) / 420) * 100));
   const cyPct = Math.max(22, ((ty - 44) / 208) * 100);
 
-  // 1. Clicked ceiling light zone
-  if (rawClickY < 74 && slots.includes("light") && d.light) {
+  // Outdoor landmarks for scrolling worlds (heanju & xixi)
+  if (tx >= 426 && house.id === "heanju") {
+    if (tx >= 596 && tx <= 686) {
+      spawnStageParticles(["✨", "🌇", "❤️"], cxPct, cyPct);
+      showHomeStageBubble("🪑 露台藤椅吹晚风太舒服啦～");
+      playSfx("token");
+      return;
+    }
+  }
+  if (tx >= 426 && house.id === "xixi") {
+    if (tx >= 518 && tx <= 646) {
+      spawnStageParticles(["🪷", "✨", "🌿"], cxPct, cyPct);
+      showHomeStageBubble("🏮 西溪临水栈道配石灯笼好有诗意～");
+      playSfx("token");
+      return;
+    }
+  }
+
+  // 1. Clicked ceiling light zone (indoors only)
+  if (tx < 416 && rawClickY < 74 && slots.includes("light") && d.light) {
     const lightMsgs = {
       fairy_bulb: "💡 暖黄小灯泡真温馨～",
       carrot_neon: "🥕 深夜霓虹灯牌氛围感拉满！",
@@ -14056,8 +14206,8 @@ function triggerHomeSpotReaction(tx, ty, rawClickY) {
     return;
   }
 
-  // 2. Clicked pool / water zone (foreground right)
-  if (tx >= 248 && ty >= 166 && slots.includes("pool") && d.pool) {
+  // 2. Clicked pool / water zone (foreground right indoors)
+  if (tx >= 248 && tx < 414 && ty >= 166 && slots.includes("pool") && d.pool) {
     const poolMsgs = {
       koi_pond: "🎏 来看锦鲤讨个好运气～",
       infinity_pool: "🏊 扑通！和小黄鸭一起泡泳池～",
@@ -14071,7 +14221,7 @@ function triggerHomeSpotReaction(tx, ty, rawClickY) {
     return;
   }
 
-  // 3. Clicked furniture / bed / throne zone (left-center)
+  // 3. Clicked furniture / bed / throne zone (left-center indoors)
   if (tx <= 154 && slots.includes("bed") && d.bed) {
     const bedMsgs = {
       straw_mat: "🌾 晒过太阳的干草窝好香～",
@@ -14088,8 +14238,8 @@ function triggerHomeSpotReaction(tx, ty, rawClickY) {
     return;
   }
 
-  // 4. Clicked garden / plant zone (right-back)
-  if (tx >= 312 && ty <= 174 && slots.includes("garden") && d.garden) {
+  // 4. Clicked garden / plant zone (right-back indoors)
+  if (tx >= 312 && tx < 414 && ty <= 174 && slots.includes("garden") && d.garden) {
     const gMsgs = {
       mini_carrot_pot: "🌱 看看小胡萝卜长大了没～",
       balcony_monstera: "🪴 龟背竹绿油油的好养眼！",
@@ -14103,39 +14253,45 @@ function triggerHomeSpotReaction(tx, ty, rawClickY) {
   }
 }
 
-function walkHomeBunnyTo(targetX, targetY, rawClickY = targetY) {
+function walkHomeBunnyTo(targetX, targetY, rawClickY = targetY, opts = {}) {
   const view = getEffectiveStageViewState();
   const house = HOME_HOUSES.find(x => x.id === view.houseId) || HOME_HOUSES[0];
+  const worldW = getHomeWorldWidth(house.id);
   const isStarFloor = house.slots.includes("floor") && (view.decor.floor === "starlight_floor" || view.decor.floor === "secret_prism_mirror");
   const hotTbl = getHomeHotTableInfo(house.id);
 
   // Check if user clicked the cozy hot-water table (from pot onward)
   const clickedHotTable = !!(
-    hotTbl &&
-    Math.abs(targetX - hotTbl.x) <= 25 &&
-    Math.abs(rawClickY - (hotTbl.y - 11)) <= 24
+    opts.drinkHotWater ||
+    (hotTbl &&
+      Math.abs(targetX - hotTbl.x) <= 25 &&
+      Math.abs(rawClickY - (hotTbl.y - 11)) <= 24)
   );
 
-  // Clamp to natural walkable room bounds
-  let tx = Math.max(46, Math.min(374, targetX));
+  // Clamp to natural walkable world bounds
+  let tx = Math.max(46, Math.min(worldW - 46, targetX));
   let ty = Math.max(154, Math.min(198, targetY));
-  if (clickedHotTable) {
+  if (clickedHotTable && hotTbl) {
     tx = hotTbl.standX;
     ty = hotTbl.standY;
   } else if (house.id === "pot" && rawClickY >= 88 && rawClickY < 166 && tx >= 170 && tx <= 250) {
     // Clicked inside the warm terracotta pot arch -> walk right into the cozy shelter!
     tx = Math.max(182, Math.min(214, tx));
     ty = 162;
-  } else if ((house.id === "heanju" || house.id === "xixi") && rawClickY >= 64 && rawClickY < 156 && targetX >= 286) {
-    // Clicked open-air balcony/patio view -> walk right out across the sliding door!
-    tx = Math.max(316, Math.min(374, targetX));
-    ty = 168;
+  } else if (worldW > 420 && homeCamera.x < 30 && targetX >= 378 && targetX <= 420 && !opts.exact) {
+    // Clicked right on the far-right glass doorway while indoors -> step right out onto the terrace!
+    tx = 478;
+    ty = 176;
+  } else if (worldW > 420 && homeCamera.x > 160 && (targetX - homeCamera.x) <= 52 && !opts.exact) {
+    // Clicked far-left return doorway edge while outdoors -> walk smoothly back inside!
+    tx = Math.max(220, targetX - 70);
+    ty = 178;
   } else if (rawClickY >= 120 && rawClickY < 156 && tx <= 148 && house.slots.includes("bed") && view.decor.bed) {
     // Clicked directly on sofa/bed/throne cushion above the floor line
     ty = 156;
   }
 
-  spawnStageWalkRing(clickedHotTable ? hotTbl.x : tx, clickedHotTable ? hotTbl.y : ty, isStarFloor);
+  spawnStageWalkRing(clickedHotTable && hotTbl ? hotTbl.x : tx, clickedHotTable && hotTbl ? hotTbl.y : ty, isStarFloor && tx < 416);
 
   const sx = homeBunnyPos.x;
   const sy = homeBunnyPos.y;
@@ -14143,12 +14299,14 @@ function walkHomeBunnyTo(targetX, targetY, rawClickY = targetY) {
   const dist = Math.hypot(tx - sx, ty - sy);
 
   // Clicked right on hot-water table when already standing beside it -> drink right away!
-  if (clickedHotTable && dist < 18) {
+  if (clickedHotTable && hotTbl && dist < 18) {
     stopHomeBunnyWalk();
     homeBunnyPos.x = tx;
     homeBunnyPos.y = ty;
     homeBunnyPos.facing = hotTbl.facing;
+    homeCamera.x = getTargetCameraX(tx, house.id);
     updateHomeBunnyTransformDom();
+    updateHomeCameraDom();
     triggerDrinkHotWater(hotTbl);
     return;
   }
@@ -14157,12 +14315,12 @@ function walkHomeBunnyTo(targetX, targetY, rawClickY = targetY) {
   if (!clickedHotTable && dist < 24 && Math.abs(rawClickY - (sy - 36)) < 46) {
     stopHomeBunnyWalk();
     renderHomeStage(null, true);
-    spawnStageParticles(["❤️", "✨", "🥕", "✦"], (sx / 420) * 100, ((sy - 42) / 208) * 100);
+    spawnStageParticles(["❤️", "✨", "🥕", "✦"], ((sx - homeCamera.x) / 420) * 100, ((sy - 42) / 208) * 100);
     const cond = homeBunnyClimate.condition;
     const petLines = cond
       ? (cond === "wet"
-        ? ["💧 身上湿漉漉的～快点小桌子带我喝热水！", "🤧 摸摸湿耳朵，好想喝口热水呀～"]
-        : ["❄️ 耳朵上顶着积雪凉冰冰的～去喝口热水吧！", "🤧 抖抖雪花，好想喝杯热水暖暖～"])
+        ? ["💧 身上湿漉漉的～快回屋点小桌子喝热水！", "🤧 摸摸湿耳朵，好想喝口热水呀～"]
+        : ["❄️ 耳朵上顶着积雪凉冰冰的～回屋喝口热水吧！", "🤧 抖抖雪花，好想喝杯热水暖暖～"])
       : ["❤️ 摸摸头好开心！", "🥕 今天也要一起冲算力！", "✨ 兔兔在新家超幸福～", "🐾 点哪里兔兔就跳去哪里哦！"];
     showHomeStageBubble(petLines[Math.floor(Math.random() * petLines.length)]);
     playSfx("token");
@@ -14175,24 +14333,36 @@ function walkHomeBunnyTo(targetX, targetY, rawClickY = targetY) {
   }
 
   const hops = Math.max(1, Math.round(dist / 36));
-  const dur = Math.min(1320, Math.max(260, dist * 4.1));
+  const dur = Math.min(2000, Math.max(260, dist * 3.8));
   const t0 = performance.now();
   let lastHopIdx = -1;
+  let midExposed = false;
 
   const step = (now) => {
     const p = Math.min(1, (now - t0) / dur);
-    // Smooth cubic ease-out along floor path
-    const ease = 1 - Math.pow(1 - p, 2.2);
+    const ease = 1 - Math.pow(1 - p, 2.0);
     homeBunnyPos.x = sx + (tx - sx) * ease;
     homeBunnyPos.y = sy + (ty - sy) * ease;
     const hopPhase = p * hops;
     const hopIdx = Math.floor(hopPhase);
     homeBunnyPos.hopY = Math.abs(Math.sin(hopPhase * Math.PI)) * (dist > 40 ? 9.5 : 6.5);
+
+    // Smooth cinematic side-scrolling camera follow!
+    if (worldW > 420) {
+      const wantCam = getTargetCameraX(homeBunnyPos.x, house.id);
+      homeCamera.x += (wantCam - homeCamera.x) * 0.2;
+      updateHomeCameraDom();
+    }
     updateHomeBunnyTransformDom();
+
+    // Immediately trigger rain/snow droplets the moment TooToo crosses outside mid-walk!
+    if (!midExposed && isHomeBunnyOutdoors(house.id, homeBunnyPos.x, homeBunnyPos.y)) {
+      if (syncHomeBunnyClimate(false)) midExposed = true;
+    }
 
     if (hopIdx > lastHopIdx && hopIdx < hops) {
       lastHopIdx = hopIdx;
-      if (isStarFloor) {
+      if (isStarFloor && homeBunnyPos.x < 416) {
         spawnStageWalkRing(homeBunnyPos.x, homeBunnyPos.y, true);
       }
       if (sfxEnabled) playTone(520 + (hopIdx % 3) * 65, 0.045, "triangle", 0.032);
@@ -14205,10 +14375,14 @@ function walkHomeBunnyTo(targetX, targetY, rawClickY = targetY) {
       homeBunnyPos.y = ty;
       homeBunnyPos.hopY = 0;
       homeBunnyPos.raf = null;
-      if (clickedHotTable) homeBunnyPos.facing = hotTbl.facing;
+      if (clickedHotTable && hotTbl) homeBunnyPos.facing = hotTbl.facing;
+      if (worldW > 420) {
+        homeCamera.x = getTargetCameraX(tx, house.id);
+        updateHomeCameraDom();
+      }
       updateHomeBunnyTransformDom();
-      if (isStarFloor) spawnStageWalkRing(tx, ty, true);
-      if (clickedHotTable) {
+      if (isStarFloor && tx < 416) spawnStageWalkRing(tx, ty, true);
+      if (clickedHotTable && hotTbl) {
         triggerDrinkHotWater(hotTbl);
       } else {
         const nowOutdoors = isHomeBunnyOutdoors(house.id, tx, ty);
@@ -14223,9 +14397,9 @@ function walkHomeBunnyTo(targetX, targetY, rawClickY = targetY) {
           } else if (!wasOutdoors && nowOutdoors && (house.id === "heanju" || house.id === "xixi")) {
             const w = getEffectiveWeather();
             const dp = getEffectiveHomeDayPhase();
-            if (w.kind === "windy") showHomeStageBubble("🍃 露台风好大呀，兔耳朵被吹飞啦！");
-            else if (w.kind === "sunny") showHomeStageBubble(dp.isNight ? "🌙 出来露台看月亮吹晚风好惬意～" : "☀️ 出来露台晒晒太阳吹吹风好惬意～");
-            else if (w.kind === "cloudy" || w.kind === "overcast") showHomeStageBubble(dp.isNight ? "🌙 走出露台吹吹夜风，夜景真美～" : "⛅ 走出露台透透气，风景真不错～");
+            if (w.kind === "windy") showHomeStageBubble("🍃 外面风好大呀，兔耳朵被吹飞啦！");
+            else if (w.kind === "sunny") showHomeStageBubble(dp.isNight ? "🌙 出来看月亮吹晚风好惬意～" : "☀️ 出来晒晒太阳吹吹风好惬意～");
+            else if (w.kind === "cloudy" || w.kind === "overcast") showHomeStageBubble(dp.isNight ? "🌙 出来吹吹夜风，夜景真美～" : "⛅ 走出来透透气，风景真不错～");
             else triggerHomeSpotReaction(tx, ty, rawClickY);
           } else {
             triggerHomeSpotReaction(tx, ty, rawClickY);
@@ -14272,9 +14446,8 @@ function isHomeBunnyOutdoors(houseId, x = homeBunnyPos.x, y = homeBunnyPos.y) {
     return x < 168 || x > 252 || y > 170;
   }
   if (houseId === "heanju" || houseId === "xixi") {
-    // Right of the diagonal sliding-glass door track (278,148 -> 298,208) is the open-air balcony/courtyard!
-    const doorX = 278 + Math.max(0, (y - 148) / 60) * 20;
-    return x > doorX + 4;
+    // Side-scrolling world: x >= 426 is past the sliding glass door in the full outdoor terrace/garden!
+    return x >= 426;
   }
   return false;
 }
@@ -14447,7 +14620,7 @@ function triggerHomeBunnySneeze() {
     animEl.classList.add("bunny-sneeze");
     setTimeout(() => animEl.classList.remove("bunny-sneeze"), 600);
   }
-  const cxPct = (homeBunnyPos.x / 420) * 100;
+  const cxPct = Math.max(8, Math.min(92, ((homeBunnyPos.x - homeCamera.x) / 420) * 100));
   const cyPct = Math.max(20, ((homeBunnyPos.y - 42) / 208) * 100);
   spawnStageParticles(cond === "wet" ? ["💨", "💧", "🤧"] : ["💨", "❄️", "🤧"], cxPct, cyPct);
   if (sfxEnabled) {
@@ -14544,7 +14717,7 @@ function triggerDrinkHotWater(tbl) {
     setTimeout(() => { homeBunnyClimate.isDrinking = false; }, 960);
   }
 
-  const cxPct = ((tbl ? tbl.x : homeBunnyPos.x) / 420) * 100;
+  const cxPct = Math.max(8, Math.min(92, (((tbl ? tbl.x : homeBunnyPos.x) - homeCamera.x) / 420) * 100));
   const cyPct = Math.max(20, (((tbl ? tbl.y : homeBunnyPos.y) - 24) / 208) * 100);
   spawnStageParticles(wasSick ? ["☕", "♨️", "❤️", "✨", "🌟", "☀️"] : ["☕", "♨️", "✨", "❤️"], cxPct, cyPct);
   playSfx("cache");
@@ -14742,7 +14915,7 @@ function renderWeatherLayerSvg(houseId, weather, dayPhase = { phase: "day", isNi
         }
         if (railSnowY != null) {
           sky += `<rect x="${b.x0}" y="${railSnowY - 2.5}" width="${w}" height="3.8" rx="1.8" fill="#f8fafc" opacity="0.86"/>`;
-          sky += `<polygon points="278,148 420,148 420,154 280,154" fill="#f8fafc" opacity="0.52"/>`;
+          sky += `<rect x="${b.x0}" y="148" width="${w}" height="6" fill="#f8fafc" opacity="0.5"/>`;
         }
       }
       if (isFalling) {
@@ -14763,31 +14936,31 @@ function renderWeatherLayerSvg(houseId, weather, dayPhase = { phase: "day", isNi
     return { sky, fall };
   };
 
-  // 1. Terrace hybrid houses (heanju & xixi): indoor glass window weather + open-air walkable outdoor balcony/patio!
+  // 1. Scrolling outdoor-world houses (heanju & xixi): full indoor window weather (0..416) + full outdoor world weather (416..720)!
   if (hasTerrace) {
     const winClip = houseId === "heanju"
-      ? `<rect x="235" y="25" width="42" height="122"/>`
-      : `<rect x="23" y="24" width="254" height="123"/>`;
+      ? `<rect x="233" y="25" width="140" height="120"/>`
+      : `<rect x="23" y="24" width="362" height="123"/>`;
     const winBounds = houseId === "heanju"
-      ? { x0: 235, x1: 277, y0: 25, y1: 147 }
-      : { x0: 23,  x1: 277, y0: 24, y1: 147 };
-    const outBounds = { x0: 278, x1: 420, y0: 0, y1: 208 };
+      ? { x0: 233, x1: 373, y0: 25, y1: 145 }
+      : { x0: 23,  x1: 385, y0: 24, y1: 147 };
+    const outBounds = { x0: 416, x1: 720, y0: 0, y1: 208 };
 
     const defs = `<defs>
       <clipPath id="hsWWin_${houseId}">${winClip}</clipPath>
-      <clipPath id="hsWOut_${houseId}"><polygon points="278,0 420,0 420,208 298,208 278,148"/></clipPath>
+      <clipPath id="hsWOut_${houseId}"><rect x="416" y="0" width="304" height="208"/></clipPath>
     </defs>`;
 
     const winFx = buildZoneFx(winBounds, { isSky: true, isFalling: true, sillSnow: true, darkOp: 0.24 });
     const outFx = buildZoneFx(outBounds, {
       isSky: true,
       isFalling: true,
-      puddles: [[336, 178, 0], [386, 192, 1], [358, 162, 2]],
-      railSnowY: houseId === "heanju" ? 116 : 132,
+      puddles: [[476, 178, 0], [548, 192, 1], [616, 174, 2], [678, 188, 3]],
+      railSnowY: houseId === "heanju" ? 114 : 132,
       darkOp: 0.2,
     });
     const indoorAmbient = (kind === "rain" || kind === "overcast" || kind === "snow")
-      ? `<polygon points="0,0 278,0 278,148 298,208 0,208" fill="${kind === "snow" ? "#93c5fd" : "#1e3a5f"}" opacity="${kind === "snow" ? "0.06" : "0.08"}" pointer-events="none"/>`
+      ? `<rect x="0" y="0" width="416" height="208" fill="${kind === "snow" ? "#93c5fd" : "#1e3a5f"}" opacity="${kind === "snow" ? "0.06" : "0.08"}" pointer-events="none"/>`
       : "";
 
     const under = defs
@@ -14860,8 +15033,10 @@ function renderHomeStage(freshDecorSlot = null, twirlBunny = false) {
     homeBunnyPos.x = 210;
     homeBunnyPos.y = 183;
     homeBunnyPos.facing = 1;
+    homeCamera.x = 0;
   }
   homeBunnyPos.lastHouseId = house.id;
+  homeCamera.x = getTargetCameraX(homeBunnyPos.x, house.id);
 
   const wrapEl = document.getElementById("homeStageWrap");
   const titleEl = document.getElementById("homeStageTitle");
@@ -14944,7 +15119,8 @@ function renderHomeStage(freshDecorSlot = null, twirlBunny = false) {
     </g>
   `;
 
-  svgEl.innerHTML = defs + backdrop + wLayers.under + decorLayer + hotTableLayer + bunnyGroup + wLayers.over;
+  svgEl.innerHTML = `${defs}<g id="homeStageWorld" transform="translate(${(-homeCamera.x).toFixed(2)}, 0)">${backdrop}${wLayers.under}${decorLayer}${hotTableLayer}${bunnyGroup}${wLayers.over}</g>`;
+  syncHomeZoneBtnDom();
 
   if (homeBunnyClimate.condition && !homeBunnyClimate.sneezeTimer && document.getElementById("homeModal")?.classList.contains("open")) {
     scheduleHomeSneeze(3200);
@@ -15318,6 +15494,22 @@ document.getElementById("homeStageWeatherPill").addEventListener("click", (e) =>
   fetchLocalWeather(true);
   playSfx("token");
 });
+document.getElementById("homeStageZoneBtn").addEventListener("click", (e) => {
+  e.stopPropagation();
+  const view = getEffectiveStageViewState();
+  if (getHomeWorldWidth(view.houseId) <= 420) return;
+  const isOut = isHomeBunnyOutdoors(view.houseId, homeBunnyPos.x, homeBunnyPos.y);
+  if (isOut) {
+    const tbl = getHomeHotTableInfo(view.houseId);
+    if (homeBunnyClimate.condition && tbl) {
+      walkHomeBunnyTo(tbl.x, tbl.y, tbl.y - 10, { exact: true, drinkHotWater: true });
+    } else {
+      walkHomeBunnyTo(210, 183, 183, { exact: true });
+    }
+  } else {
+    walkHomeBunnyTo(568, 178, 178, { exact: true });
+  }
+});
 document.getElementById("homeWalletBtn").addEventListener("click", () => {
   closeHomeModal();
   openGachaModal();
@@ -15333,7 +15525,7 @@ document.getElementById("homeStageSvg").addEventListener("click", (e) => {
   const svg = e.currentTarget;
   const r = svg.getBoundingClientRect();
   if (!r.width || !r.height) return;
-  const sx = ((e.clientX - r.left) / r.width) * 420;
+  const sx = ((e.clientX - r.left) / r.width) * 420 + homeCamera.x;
   const sy = ((e.clientY - r.top) / r.height) * 208;
   walkHomeBunnyTo(sx, sy, sy);
 });
