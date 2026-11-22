@@ -136,7 +136,7 @@ def _sanitize_home_state(raw: Any) -> dict[str, Any]:
     if isinstance(raw.get("owned_wear"), list):
         h["owned_wear"] = list(dict.fromkeys(str(x).strip() for x in raw["owned_wear"] if isinstance(x, str) and x.strip()))
     if isinstance(raw.get("hidden_tier_acc"), list):
-        h["hidden_tier_acc"] = sorted({int(x) for x in raw["hidden_tier_acc"] if isinstance(x, (int, float)) and 5 <= int(x) <= 10})
+        h["hidden_tier_acc"] = sorted({int(x) for x in raw["hidden_tier_acc"] if isinstance(x, (int, float)) and 4 <= int(x) <= 10})
     if isinstance(raw.get("show_on_avatar"), bool):
         h["show_on_avatar"] = raw["show_on_avatar"]
     return h

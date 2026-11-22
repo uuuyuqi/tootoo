@@ -167,7 +167,7 @@
     content: "";
     position: absolute;
     inset: 2px;
-    border-radius: calc(inherit - 2px);
+    border-radius: 10px;
     border: 1px solid rgba(254, 240, 138, 0.58);
     pointer-events: none;
     z-index: 0;
@@ -311,17 +311,39 @@
     88%  { opacity: 0.92; }
     100% { opacity: 0; transform: translate(calc(var(--sway, 34px) * -0.4), 230px) rotate(-16deg) scale(0.8); }
   }
-  .evo-skill-pill {
-    margin-top: 3px;
+  .bunny-tip {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 7px);
+    transform: translate(-50%, 4px) scale(0.94);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 40;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: var(--tip-bg);
+    color: var(--tip-fg);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
     font-family: var(--font-mono);
-    font-size: 8.2px;
+    font-size: 9px;
     font-weight: 700;
-    color: var(--ink-soft);
-    background: color-mix(in srgb, var(--accent) 8%, var(--surface));
-    border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--border));
-    border-radius: 999px;
-    padding: 1.5px 6px;
+    white-space: nowrap;
     line-height: 1.3;
+    transition: opacity 0.16s ease, transform 0.18s cubic-bezier(0.22, 1.25, 0.36, 1);
+  }
+  .bunny-tip::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 100%;
+    transform: translateX(-50%);
+    border: 4px solid transparent;
+    border-top-color: var(--tip-bg);
+  }
+  .bunny-wrap:hover .bunny-tip {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
   }
   .evo-innate-btn {
     margin-top: 3px;
@@ -344,21 +366,146 @@
     background: var(--surface-2);
     color: var(--muted);
   }
-  /* EX 50B 奇点终焉兔 — 3 限定皮肤舞台背景 */
-  .bunny-wrap.stage-secret-prism {
-    background: conic-gradient(from 130deg at 50% 50%, #e0e7ff, #fae8ff, #ccfbf1, #fef3c7, #e0e7ff);
-    border-color: #8b5cf6;
-    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.28), 0 0 16px rgba(56, 189, 248, 0.45);
-  }
-  .bunny-wrap.stage-secret-void {
-    background: radial-gradient(circle at 50% 45%, #2e1065 0%, #090514 68%, #020106 100%);
-    border-color: #f59e0b;
-    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.32), 0 0 18px rgba(139, 92, 246, 0.55);
-  }
+  /* EX 50B 奇点终焉兔 — 3 款神话级多层动态舞台背景 */
+  .bunny-wrap.stage-secret-prism,
+  .bunny-wrap.stage-secret-void,
   .bunny-wrap.stage-secret-cyber {
-    background: radial-gradient(circle at 50% 40%, #083344 0%, #041521 68%, #020810 100%);
+    isolation: isolate;
+  }
+
+  /* 1. 🌈 极光棱镜：高对比星穹虹晶殿 + 旋转棱镜折射光束 + 钻石双内框 */
+  .bunny-wrap.stage-secret-prism {
+    background:
+      radial-gradient(circle at 50% 38%, rgba(255, 255, 255, 0.96) 0%, rgba(196, 181, 253, 0.85) 32%, rgba(56, 189, 248, 0.78) 58%, rgba(236, 72, 153, 0.72) 80%, #2e1065 100%);
+    border-color: #a855f7;
+    box-shadow:
+      0 0 0 2px rgba(168, 85, 247, 0.42),
+      0 0 18px rgba(56, 189, 248, 0.52),
+      0 4px 24px rgba(236, 72, 153, 0.36);
+  }
+  .bunny-wrap.stage-secret-prism::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 0;
+    background: repeating-conic-gradient(
+      from 0deg at 50% 50%,
+      rgba(255, 255, 255, 0.48) 0deg 10deg,
+      rgba(56, 189, 248, 0.32) 10deg 20deg,
+      rgba(244, 114, 182, 0.28) 20deg 30deg,
+      rgba(253, 224, 71, 0.32) 30deg 40deg,
+      transparent 40deg 60deg
+    );
+    -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 12%, rgba(0, 0, 0, 0.7) 56%, transparent 72%);
+    mask-image: radial-gradient(circle at 50% 50%, #000 12%, rgba(0, 0, 0, 0.7) 56%, transparent 72%);
+    animation: ascendRaysSpin 11s linear infinite;
+  }
+  .bunny-wrap.stage-secret-prism::after {
+    content: "";
+    position: absolute;
+    inset: 2px;
+    border-radius: 10px;
+    border: 1.3px solid rgba(255, 255, 255, 0.78);
+    pointer-events: none;
+    z-index: 0;
+    box-shadow:
+      inset 0 0 10px rgba(56, 189, 248, 0.48),
+      inset 0 0 18px rgba(236, 72, 153, 0.35);
+  }
+
+  /* 2. 🕳️ 黑洞奇点：相对论吸积盘星渊 + 旋转紫金引力漩涡 + 星尘鎏金内框 */
+  .bunny-wrap.stage-secret-void {
+    background:
+      radial-gradient(circle at 22% 24%, #fef08a 0 1.2px, transparent 1.6px),
+      radial-gradient(circle at 78% 22%, #c084fc 0 1.3px, transparent 1.7px),
+      radial-gradient(circle at 82% 76%, #38bdf8 0 1.2px, transparent 1.6px),
+      radial-gradient(circle at 18% 78%, #fbbf24 0 1.1px, transparent 1.5px),
+      radial-gradient(circle at 50% 46%, rgba(251, 191, 36, 0.42) 0%, rgba(168, 85, 247, 0.56) 36%, rgba(46, 16, 101, 0.92) 66%, #05020d 100%);
+    border-color: #f59e0b;
+    box-shadow:
+      0 0 0 2px rgba(245, 158, 11, 0.48),
+      0 0 20px rgba(168, 85, 247, 0.62),
+      0 4px 24px rgba(245, 158, 11, 0.36);
+  }
+  .bunny-wrap.stage-secret-void::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 0;
+    background: conic-gradient(
+      from 0deg at 50% 50%,
+      rgba(253, 224, 71, 0.72) 0deg 38deg,
+      rgba(168, 85, 247, 0.55) 38deg 110deg,
+      transparent 110deg 175deg,
+      rgba(245, 158, 11, 0.68) 175deg 225deg,
+      rgba(192, 132, 252, 0.48) 225deg 295deg,
+      transparent 295deg 360deg
+    );
+    -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 18%, #000 36%, rgba(0, 0, 0, 0.72) 56%, transparent 72%);
+    mask-image: radial-gradient(circle at 50% 50%, transparent 18%, #000 36%, rgba(0, 0, 0, 0.72) 56%, transparent 72%);
+    animation: ascendRaysSpin 7.5s linear infinite;
+  }
+  .bunny-wrap.stage-secret-void::after {
+    content: "";
+    position: absolute;
+    inset: 2px;
+    border-radius: 10px;
+    border: 1.2px solid rgba(253, 224, 71, 0.68);
+    pointer-events: none;
+    z-index: 0;
+    box-shadow:
+      inset 0 0 12px rgba(168, 85, 247, 0.55),
+      inset 0 0 5px rgba(251, 191, 36, 0.48);
+  }
+
+  /* 3. ⚡ 赛博量子：全息量子矩阵网格 + 霓虹青粉双色核心 + 旋转量子雷达扫描 + HUD 发光内框 */
+  .bunny-wrap.stage-secret-cyber {
+    background:
+      linear-gradient(0deg, rgba(34, 211, 238, 0.16) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(34, 211, 238, 0.16) 1px, transparent 1px),
+      radial-gradient(circle at 22% 22%, rgba(34, 211, 238, 0.52) 0%, transparent 52%),
+      radial-gradient(circle at 80% 78%, rgba(236, 72, 153, 0.55) 0%, transparent 56%),
+      radial-gradient(circle at 50% 48%, #0e3d56 0%, #08182e 58%, #030712 100%);
+    background-size: 9px 9px, 9px 9px, 100% 100%, 100% 100%, 100% 100%;
     border-color: #22d3ee;
-    box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.3), 0 0 18px rgba(236, 72, 153, 0.42);
+    box-shadow:
+      0 0 0 2px rgba(34, 211, 238, 0.46),
+      0 0 18px rgba(34, 211, 238, 0.55),
+      0 4px 24px rgba(236, 72, 153, 0.46);
+  }
+  .bunny-wrap.stage-secret-cyber::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 0;
+    background: conic-gradient(
+      from 0deg at 50% 50%,
+      rgba(34, 211, 238, 0.68) 0deg 34deg,
+      transparent 34deg 178deg,
+      rgba(236, 72, 153, 0.65) 178deg 214deg,
+      transparent 214deg 360deg
+    );
+    -webkit-mask-image: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.35) 14%, #000 44%, rgba(0, 0, 0, 0.65) 58%, transparent 72%);
+    mask-image: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.35) 14%, #000 44%, rgba(0, 0, 0, 0.65) 58%, transparent 72%);
+    animation: ascendRaysSpin 5.4s linear infinite;
+  }
+  .bunny-wrap.stage-secret-cyber::after {
+    content: "";
+    position: absolute;
+    inset: 2px;
+    border-radius: 10px;
+    border: 1.3px solid rgba(34, 211, 238, 0.78);
+    pointer-events: none;
+    z-index: 0;
+    box-shadow:
+      inset 0 0 11px rgba(34, 211, 238, 0.48),
+      inset 0 0 16px rgba(236, 72, 153, 0.38);
   }
 
   .bunny-wrap:hover { transform: translateY(-1px); }
@@ -6171,7 +6318,7 @@ function triggerFullPanelLevelUpFx(tier, opts = {}) {
       bg: "radial-gradient(circle at 50% 45%, rgba(234,88,12,0.34), rgba(20,12,8,0.82) 72%)",
       accent: "#fb923c", glow: "rgba(234,88,12,0.72)",
       kicker: "LEVEL UP · LV.4 AWAKENED", title: `⚡ Lv.4 ${tier.name}`,
-      sub: "算力暴击突破 100M · 黄金电弧破界！",
+      sub: "算力暴击突破 100M · 解锁自带「💥 暴击橘电护腕星」！",
       rays: null,
     },
     5:  {
@@ -7159,13 +7306,14 @@ function renderEvoModal() {
       const innateMeta = (typeof TIER_INNATE_ACCESSORIES !== "undefined") ? TIER_INNATE_ACCESSORIES[10] : null;
       return `<div class="${cls}" style="--d:${delay}ms" data-locked="0" data-lv="${t.level}">
         <div class="evo-secret-left">
-          <div class="bunny-wrap ${vis.stage}" data-lv="${t.level}" data-skin="${activeSkin.id}" title="点击轮播 EX 奇点终焉兔（${activeSkin.label}）多重玩法动效">
+          <div class="bunny-wrap ${vis.stage}" data-lv="${t.level}" data-skin="${activeSkin.id}">
+            <span class="bunny-tip">${getTierInteractHint(10)}</span>
             <svg class="bunny-svg" viewBox="0 0 36 36" fill="none">${vis.svg}${innateSvg}</svg>
           </div>
           <div class="evo-secret-meta">
             <span class="evo-secret-badge">✦ EX 究极隐藏款 · ${t.range}</span>
             <div class="evo-name">${t.name} · ${activeSkin.label}</div>
-            <div class="evo-rng">已永久解锁 · ${getTierInteractHint(10)}</div>
+            <div class="evo-rng">已永久解锁 · 悬停头像查看互动玩法 · 下方切换限定皮肤</div>
             ${innateMeta ? `<button class="evo-innate-btn${innateOn ? "" : " off"}" data-toggle-innate="10" title="等级自带专属饰品（不可购买），点击可随时取下或戴上">${innateMeta.icon} 自带「${innateMeta.name}」: ${innateOn ? "佩戴中 · 点此取下" : "已取下 · 点此戴上"}</button>` : ""}
           </div>
         </div>
@@ -7189,18 +7337,18 @@ function renderEvoModal() {
         <div class="evo-rng">???</div>
       </div>`;
     }
-    const innateSvg = (t.level >= 5 && typeof getActiveTierInnateSvg === "function") ? getActiveTierInnateSvg(t.level, "ev" + t.level) : "";
-    const innateMeta = (t.level >= 5 && typeof TIER_INNATE_ACCESSORIES !== "undefined") ? TIER_INNATE_ACCESSORIES[t.level] : null;
-    const innateOn = (t.level >= 5 && typeof isTierInnateVisible === "function") ? isTierInnateVisible(t.level) : true;
+    const innateSvg = (t.level >= 4 && typeof getActiveTierInnateSvg === "function") ? getActiveTierInnateSvg(t.level, "ev" + t.level) : "";
+    const innateMeta = (t.level >= 4 && typeof TIER_INNATE_ACCESSORIES !== "undefined") ? TIER_INNATE_ACCESSORIES[t.level] : null;
+    const innateOn = (t.level >= 4 && typeof isTierInnateVisible === "function") ? isTierInnateVisible(t.level) : true;
     const skillHint = getTierInteractHint(t.level);
     return `<div class="${cls}" style="--d:${delay}ms" data-locked="0" data-lv="${t.level}">
-      <div class="bunny-wrap ${t.stage}" data-lv="${t.level}" title="点击触发 Lv.${t.level} ${t.name} 专属玩法动效">
+      <div class="bunny-wrap ${t.stage}" data-lv="${t.level}">
+        ${skillHint ? `<span class="bunny-tip">${skillHint}</span>` : ""}
         <svg class="bunny-svg" viewBox="0 0 36 36" fill="none">${t.svg}${innateSvg}</svg>
       </div>
       <div class="evo-name">Lv.${t.level} ${t.name}</div>
       <div class="evo-rng">${t.range}</div>
-      ${skillHint ? `<div class="evo-skill-pill">${skillHint}</div>` : ""}
-      ${innateMeta ? `<button class="evo-innate-btn${innateOn ? "" : " off"}" data-toggle-innate="${t.level}" title="Lv.${t.level} 等级自带小饰品（不可购买），点击可取下或戴上">${innateMeta.icon} ${innateOn ? "取下自带饰品" : "戴上自带饰品"}</button>` : ""}
+      ${innateMeta ? `<button class="evo-innate-btn${innateOn ? "" : " off"}" data-toggle-innate="${t.level}" title="Lv.${t.level} 等级自带「${innateMeta.name}」（不可购买），点击可取下或戴上">${innateMeta.icon} ${innateOn ? "取下自带饰品" : "戴上自带饰品"}</button>` : ""}
     </div>`;
   }).join("");
 
@@ -10719,7 +10867,7 @@ function cloneHomeState(src) {
   const house = (typeof s.house === "string" && s.house) ? s.house : "street";
   if (!oh.includes(house)) oh.push(house);
   const hta = Array.isArray(s.hidden_tier_acc)
-    ? Array.from(new Set(s.hidden_tier_acc.map(Number).filter(n => Number.isInteger(n) && n >= 5 && n <= 10))).sort((a, b) => a - b)
+    ? Array.from(new Set(s.hidden_tier_acc.map(Number).filter(n => Number.isInteger(n) && n >= 4 && n <= 10))).sort((a, b) => a - b)
     : [];
   return {
     house,
@@ -11388,8 +11536,9 @@ const WEAR_SLOT_META = {
   innate: { label: "✨ 等级自带" },
 };
 
-// Built-in non-purchasable mini-accessories automatically granted starting at Lv.5 (toggleable: 取下 / 戴上)
+// Built-in non-purchasable mini-accessories automatically granted starting at Lv.4 (toggleable: 取下 / 戴上)
 const TIER_INNATE_ACCESSORIES = {
+  4:  { level: 4,  icon: "💥", name: "暴击橘电护腕星", tierName: "Lv.4 暴击兔",     desc: "Lv.4 自动附带：双颊侧跃动的赤金暴击火花与小能量星（不可购买，可随时取下）" },
   5:  { level: 5,  icon: "⚡", name: "爆气金弧耳坠",   tierName: "Lv.5 超赛爆气兔", desc: "Lv.5 自动附带：双耳侧跃动的黄金超赛电弧与悬浮气珠（不可购买，可随时取下）" },
   6:  { level: 6,  icon: "🔥", name: "暗炎魔纹耳扣",   tierName: "Lv.6 红魔兔",     desc: "Lv.6 自动附带：左耳赤金魔环耳扣与右下角浮游小冥火（不可购买，可随时取下）" },
   7:  { level: 7,  icon: "⛓️", name: "冥渊紫金星环",   tierName: "Lv.7 狱火魔神兔", desc: "Lv.7 自动附带：身侧浮空的紫金冥渊符文环与微缩魔珠（不可购买，可随时取下）" },
@@ -11993,14 +12142,14 @@ function getWearableItemSvg(id, pfx = "av") {
 
 function isTierInnateVisible(level) {
   const lv = Number(level) || 0;
-  if (lv < 5 || !TIER_INNATE_ACCESSORIES[lv]) return false;
+  if (lv < 4 || !TIER_INNATE_ACCESSORIES[lv]) return false;
   const h = getActiveHomeState();
   return !(Array.isArray(h.hidden_tier_acc) && h.hidden_tier_acc.includes(lv));
 }
 
 function toggleTierInnateAcc(level) {
   const lv = Number(level) || 0;
-  if (lv < 5 || !TIER_INNATE_ACCESSORIES[lv]) return;
+  if (lv < 4 || !TIER_INNATE_ACCESSORIES[lv]) return;
   const h = cloneHomeState(getActiveHomeState());
   const set = new Set(h.hidden_tier_acc || []);
   const willHide = !set.has(lv);
@@ -12018,6 +12167,13 @@ function getTierInnateAccSvg(level, pfx = "av") {
   const lv = Number(level) || 0;
   const g = (k) => `${pfx}_in_${k}`;
   switch (lv) {
+    case 4: // 💥 暴击橘电护腕星
+      return `<g>
+        <path d="M3.8 18.6 L5.2 20.0 L6.8 20.4 L5.2 20.9 L3.8 22.4 L3.2 20.9 L1.6 20.4 L3.2 20.0 Z" fill="#F97316" stroke="#FEF08A" stroke-width="0.4" class="h-twinkle"/>
+        <path d="M32.2 18.6 L32.8 20.0 L34.4 20.4 L32.8 20.9 L32.2 22.4 L30.8 20.9 L29.2 20.4 L30.8 20.0 Z" fill="#F59E0B" stroke="#FEF08A" stroke-width="0.4" class="h-twinkle-d1"/>
+        <circle cx="5.2" cy="14.6" r="0.85" fill="#FACC15" class="h-float"/>
+        <circle cx="30.8" cy="14.6" r="0.85" fill="#FB923C" class="h-float-slow"/>
+      </g>`;
     case 5: // ⚡ 爆气金弧耳坠
       return `<g>
         <path d="M4.2 14.4 L6.4 16.2 L5.1 17.0 L7.0 19.2" fill="none" stroke="#FDE047" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round" class="h-twinkle"/>
@@ -12092,7 +12248,7 @@ function getWearOverlaySvgFor(wear, pfx = "st") {
 
 function getAvatarWearSig(level = 0) {
   const h = getActiveHomeState();
-  const inFlag = (level >= 5 && isTierInnateVisible(level)) ? `in${level}` : "in0";
+  const inFlag = (level >= 4 && isTierInnateVisible(level)) ? `in${level}` : "in0";
   if (!h.show_on_avatar) return `off|${inFlag}`;
   return `${h.wear.hat || ""}|${h.wear.outfit || ""}|${h.wear.acc || ""}|${inFlag}`;
 }
