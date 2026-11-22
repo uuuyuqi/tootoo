@@ -3742,15 +3742,95 @@
     font-weight: 700;
   }
   /* Living World Hotspots, Cosmic Animations, Bunny Magic Powers, Minimap & T10 Creator Bar */
+  /* Zero-waste battery guard: freeze ALL SVG CSS animations when Home modal is closed or tab/popover hidden */
+  #homeModal:not(.open) *, #homeModal:not(.open) *::before, #homeModal:not(.open) *::after,
+  body.page-hidden #homeModal *, body.page-hidden #homeModal *::before, body.page-hidden #homeModal *::after {
+    animation-play-state: paused !important;
+  }
   .h-hotspot { cursor: pointer; transition: filter 0.16s ease, opacity 0.16s ease; }
   .h-hotspot:hover { filter: drop-shadow(0 0 6px rgba(253, 224, 71, 0.88)) brightness(1.12); }
   .h-spin-fast { transform-box: fill-box; transform-origin: center; animation: hsSpin 2.6s linear infinite; }
+  .h-spin-rev-fast { transform-box: fill-box; transform-origin: center; animation: homePortalSpinRev 2.6s linear infinite; }
+  .h-sparkle-glint { transform-box: fill-box; transform-origin: center; animation: hsGlint 3.2s ease-in-out infinite; pointer-events: none; }
+  @keyframes hsGlint {
+    0%, 72%, 100% { opacity: 0.15; transform: scale(0.75) rotate(0deg); }
+    86%           { opacity: 0.96; transform: scale(1.22) rotate(45deg); }
+  }
   @keyframes hsMeteorFly {
     0%   { opacity: 0; transform: translate(-24px, -10px); }
     18%  { opacity: 1; }
     100% { opacity: 0; transform: translate(150px, 64px); }
   }
   .h-meteor-fly { animation: hsMeteorFly 1.35s cubic-bezier(.16,.84,.44,1) forwards; }
+  @keyframes hsWarpStreak {
+    0%   { opacity: 0; transform: translateX(0) scaleX(0.3); }
+    18%  { opacity: 1; transform: translateX(-80px) scaleX(1.3); }
+    100% { opacity: 0; transform: translateX(-520px) scaleX(2.4); }
+  }
+  .h-warp-streak { animation: hsWarpStreak 1.15s cubic-bezier(.12,.82,.25,1) forwards; }
+  @keyframes hsDroneFly {
+    0%   { opacity: 0; transform: translate(0, 0); }
+    14%  { opacity: 1; transform: translate(-40px, -42px); }
+    45%  { opacity: 1; transform: translate(-240px, -58px); }
+    78%  { opacity: 1; transform: translate(-480px, -36px); }
+    100% { opacity: 0; transform: translate(-640px, -50px); }
+  }
+  .h-drone-fly { animation: hsDroneFly 4.8s ease-in-out forwards; }
+  @keyframes hsRoverDrive {
+    0%   { opacity: 0; transform: translateX(-60px); }
+    12%  { opacity: 1; }
+    88%  { opacity: 1; }
+    100% { opacity: 0; transform: translateX(340px); }
+  }
+  .h-rover-drive { animation: hsRoverDrive 5.2s ease-in-out forwards; }
+  @keyframes hsSailGlide {
+    0%   { opacity: 0; transform: translate(0, 8px); }
+    14%  { opacity: 1; transform: translate(-110px, -6px); }
+    88%  { opacity: 0.96; transform: translate(-760px, -16px); }
+    100% { opacity: 0; transform: translate(-920px, -22px); }
+  }
+  .h-sail-glide { animation: hsSailGlide 5.8s ease-in-out forwards; }
+  @keyframes hsEgretFly {
+    0%   { opacity: 0; transform: translate(-30px, 6px); }
+    15%  { opacity: 0.96; }
+    50%  { transform: translate(180px, -12px); }
+    85%  { opacity: 0.96; }
+    100% { opacity: 0; transform: translate(390px, -4px); }
+  }
+  .h-egret-fly { animation: hsEgretFly 4.4s ease-in-out forwards; }
+  @keyframes hsButterDance {
+    0%   { opacity: 0; transform: translate(0, 10px) scale(0.7); }
+    18%  { opacity: 1; transform: translate(-40px, -26px) scale(1.05); }
+    55%  { opacity: 1; transform: translate(-150px, -44px) scale(1); }
+    100% { opacity: 0; transform: translate(-290px, -74px) scale(0.8); }
+  }
+  .h-butter-dance { animation: hsButterDance 3.8s ease-in-out forwards; }
+  @keyframes hsFireworkPop {
+    0%   { opacity: 0; transform: scale(0.2); }
+    24%  { opacity: 1; transform: scale(1.1); }
+    100% { opacity: 0; transform: scale(1.85); }
+  }
+  .h-firework-pop { transform-box: fill-box; transform-origin: center; animation: hsFireworkPop 1.45s cubic-bezier(.16,.84,.44,1) forwards; }
+  @keyframes hsGravWave {
+    0%   { opacity: 0.95; transform: scale(0.35); }
+    100% { opacity: 0; transform: scale(2.8); }
+  }
+  .h-grav-wave { transform-box: fill-box; transform-origin: center; animation: hsGravWave 1.9s cubic-bezier(.16,.84,.44,1) forwards; }
+  @keyframes hsBeamShoot {
+    0%   { opacity: 0; }
+    16%  { opacity: 0.96; }
+    76%  { opacity: 0.88; }
+    100% { opacity: 0; }
+  }
+  .h-beam-shoot { animation: hsBeamShoot 2.2s ease-out forwards; }
+  @keyframes hsKoiLeap {
+    0%   { opacity: 0; transform: translate(0, 8px) rotate(-25deg); }
+    22%  { opacity: 1; }
+    50%  { opacity: 1; transform: translate(26px, -22px) rotate(6deg); }
+    82%  { opacity: 1; }
+    100% { opacity: 0; transform: translate(52px, 8px) rotate(32deg); }
+  }
+  .h-koi-leap { transform-box: fill-box; transform-origin: center; animation: hsKoiLeap 1.35s ease-in-out forwards; }
   @keyframes hsVisitorFly {
     0%   { opacity: 0; transform: translateX(-40px); }
     12%  { opacity: 0.95; }
@@ -3767,10 +3847,10 @@
   }
   .h-dragon-fly { animation: hsDragonFly 6.6s ease-in-out forwards; }
   @keyframes hsSwimAcross {
-    0%   { opacity: 0; transform: translateX(260px); }
-    15%  { opacity: 0.86; }
-    85%  { opacity: 0.86; }
-    100% { opacity: 0; transform: translateX(920px); }
+    0%   { opacity: 0; transform: translateX(-60px); }
+    12%  { opacity: 0.9; }
+    88%  { opacity: 0.9; }
+    100% { opacity: 0; transform: translateX(1080px); }
   }
   .h-swim-across { animation: hsSwimAcross 7.4s linear forwards; }
   .bunny-invis { opacity: 0.28; filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.95)); }
@@ -7011,7 +7091,7 @@
 
     <div class="card" data-kpi="cost" title="双击触发金币雨彩蛋">
       <div class="card-head">
-        <span class="kicker k-blue">估算成本</span>
+        <span class="kicker k-blue">估算费用</span>
         <span class="pill" id="peakHourPill">高峰 —</span>
       </div>
       <div class="hero-val" id="kpiCost">—</div>
@@ -7076,7 +7156,7 @@
           <div class="sort-tabs" id="chartModeTabs">
             <button data-mode="tokens" class="active">用量</button>
             <button data-mode="tps">速度</button>
-            <button data-mode="cost">成本</button>
+            <button data-mode="cost">费用</button>
           </div>
         </div>
         <div class="chart-wrap">
@@ -7093,7 +7173,7 @@
             <button data-sort="tokens" class="active">用量</button>
             <button data-sort="tps">速度</button>
             <button data-sort="ttft_p50">首字</button>
-            <button data-sort="cost">成本</button>
+            <button data-sort="cost">费用</button>
           </div>
         </div>
         <div class="model-list" id="modelList"></div>
@@ -7231,7 +7311,7 @@
       <label>顶部菜单栏文字（可多选）</label>
       <div class="mb-cfg-chips" id="mbCfgChips">
         <button data-field="tokens" class="on">用量</button>
-        <button data-field="cost" class="on">花费</button>
+        <button data-field="cost" class="on">费用</button>
         <button data-field="tps">速度</button>
         <button data-field="ttft">首字</button>
         <button data-field="q_gem5h">Gemini 5h</button>
@@ -9785,7 +9865,7 @@ const BOOT_STEPS = [
   "兔兔正在统计本地 Token…",
   "正在扫描本地 AI 工具会话日志…",
   "正在计算输出速度与首字延迟…",
-  "正在校准实时模型成本…",
+  "正在校准实时模型费用…",
 ];
 let bootStepIdx = 0;
 const bootStepTimer = setInterval(() => {
@@ -10189,7 +10269,7 @@ function renderDailyChart(d) {
   const dayPrefix = d.range === "yesterday" ? "昨日" : "今日";
   if (kicker) {
     kicker.textContent = useHourly
-      ? (mode === "tokens" ? `${dayPrefix}分时用量 (00–23点)` : mode === "tps" ? `${dayPrefix}分时速度 (00–23点)` : `${dayPrefix}分时成本 (00–23点)`)
+      ? (mode === "tokens" ? `${dayPrefix}分时用量 (00–23点)` : mode === "tps" ? `${dayPrefix}分时速度 (00–23点)` : `${dayPrefix}分时费用 (00–23点)`)
       : "每日用量与速度趋势";
   }
 
@@ -10288,8 +10368,8 @@ function renderDailyChart(d) {
       const rect = svg.getBoundingClientRect();
       const box = el.getBoundingClientRect();
       tip.innerHTML = useHourly
-        ? `<strong>${dayPrefix} ${r.day}</strong><br>用量: ${fmtNum(r.tokens)} · 请求: ${r.requests} 次<br>速度: ${r.tps != null ? r.tps + " tok/s" : "—"} · 首字: ${r.ttft_p50 != null ? r.ttft_p50 + "s" : "—"} · 成本: ${fmtCost(r.cost)}`
-        : `<strong>${r.day}</strong><br>用量: ${fmtNum(r.tokens)} · 请求: ${r.requests} 次<br>速度: ${r.tps != null ? r.tps + " tok/s" : "—"} · 首字: ${r.ttft_p50 != null ? r.ttft_p50 + "s" : "—"} · 成本: ${fmtCost(r.cost)}`;
+        ? `<strong>${dayPrefix} ${r.day}</strong><br>用量: ${fmtNum(r.tokens)} · 请求: ${r.requests} 次<br>速度: ${r.tps != null ? r.tps + " tok/s" : "—"} · 首字: ${r.ttft_p50 != null ? r.ttft_p50 + "s" : "—"} · 费用: ${fmtCost(r.cost)}`
+        : `<strong>${r.day}</strong><br>用量: ${fmtNum(r.tokens)} · 请求: ${r.requests} 次<br>速度: ${r.tps != null ? r.tps + " tok/s" : "—"} · 首字: ${r.ttft_p50 != null ? r.ttft_p50 + "s" : "—"} · 费用: ${fmtCost(r.cost)}`;
       tip.style.left = Math.min(rect.width - 90, Math.max(90, box.left - rect.left + box.width / 2)) + "px";
       tip.style.top = (Math.max(46, e.clientY - rect.top)) + "px";
       tip.classList.add("show");
@@ -10357,7 +10437,7 @@ function renderModelList(d) {
       subRight = `速度 ${m.tps != null ? m.tps.toFixed(1) + "/s" : "—"}`;
     } else {
       primaryVal = fmtCost(m.cost);
-      primaryLbl = "估算成本";
+      primaryLbl = "估算费用";
       barPct = Math.round((m.cost / maxCost) * 100);
       barCol = "var(--amber)";
       subLeft = `用量 ${fmtNum(m.tokens)} · 缓存 ${m.cache_hit}%`;
@@ -10681,7 +10761,7 @@ function renderAgents(d) {
               <strong class="stat-val ${cacheTone}">${cacheHtml}</strong>
             </div>
             <div class="stat-cell ${costBox}">
-              <span class="stat-lbl"><i class="stat-dot" style="background:var(--amber)"></i>成本</span>
+              <span class="stat-lbl"><i class="stat-dot" style="background:var(--amber)"></i>费用</span>
               <strong class="stat-val ${costTone}">${costHtml}</strong>
             </div>
           </div>
@@ -14593,7 +14673,7 @@ function renderAlchemyStats() {
     <div class="alchemy-tile">
       <div class="al-k">☕ 算力折合冰美式</div>
       <div class="al-v">${coffees} <span style="font-size:11px;color:var(--muted)">杯</span></div>
-      <div class="al-sub">按估算成本 ${fmtCost(cost)} 换算</div>
+      <div class="al-sub">按估算费用 ${fmtCost(cost)} 换算</div>
     </div>
     <div class="alchemy-tile">
       <div class="al-k">⌨️ 替你省下手敲时长</div>
@@ -15935,7 +16015,7 @@ function getWearableItemSvg(id, pfx = "av") {
       return `<g>
         <line x1="31.7" y1="14.6" x2="31.7" y2="34.6" stroke="#F59E0B" stroke-width="1.45" stroke-linecap="round"/>
         <line x1="31.7" y1="17.0" x2="31.7" y2="20.0" stroke="#A78BFA" stroke-width="1.8"/>
-        <ellipse cx="31.7" cy="13.8" rx="4.2" ry="1.6" transform="rotate(-24 31.7 13.8)" fill="none" stroke="#C084FC" stroke-width="0.7" class="h-spin-slow"/>
+        <g class="h-spin-slow"><ellipse cx="31.7" cy="13.8" rx="4.2" ry="1.6" transform="rotate(-24 31.7 13.8)" fill="none" stroke="#C084FC" stroke-width="0.7"/></g>
         <path d="M31.7 10.0 L32.9 12.8 L35.5 13.8 L32.9 14.8 L31.7 17.6 L30.5 14.8 L27.9 13.8 L30.5 12.8 Z" fill="#FDE047" stroke="#B45309" stroke-width="0.6"/>
         <circle cx="31.7" cy="13.8" r="0.85" fill="#FFFFFF" class="h-twinkle"/>
       </g>`;
@@ -15966,10 +16046,12 @@ function getWearableItemSvg(id, pfx = "av") {
           <circle cx="0" cy="-4.4" r="0.7" fill="#E54826" stroke="#FEF08A" stroke-width="0.3"/>
         </g>
         <!-- Orbiting miniature crystal-carrot satellite on left -->
-        <g class="h-float-slow" transform="translate(4.8, 25.2)">
-          <ellipse cx="0" cy="0" rx="3.2" ry="1.1" transform="rotate(-22)" fill="none" stroke="#FDE047" stroke-width="0.5" opacity="0.8"/>
-          <path d="M-0.9 -1.5 L0.9 -1.5 L0 2.0 Z" fill="#F97316" stroke="#FEF08A" stroke-width="0.4"/>
-          <path d="M0 -1.6 L-0.7 -2.7 M0 -1.6 L0.7 -2.7" stroke="#34D399" stroke-width="0.55" stroke-linecap="round"/>
+        <g transform="translate(4.8, 25.2)">
+          <g class="h-float-slow">
+            <ellipse cx="0" cy="0" rx="3.2" ry="1.1" transform="rotate(-22)" fill="none" stroke="#FDE047" stroke-width="0.5" opacity="0.8"/>
+            <path d="M-0.9 -1.5 L0.9 -1.5 L0 2.0 Z" fill="#F97316" stroke="#FEF08A" stroke-width="0.4"/>
+            <path d="M0 -1.6 L-0.7 -2.7 M0 -1.6 L0.7 -2.7" stroke="#34D399" stroke-width="0.55" stroke-linecap="round"/>
+          </g>
         </g>
       </g>`;
     default:
@@ -16208,16 +16290,15 @@ function renderHomeStageDefs() {
 const _backdropSvgCache = new Map();
 function renderHouseBackdropSvg(houseId, dayPhase = { phase: "day", isNight: false }) {
   const phase = (dayPhase && dayPhase.phase) || "day";
-  const cacheKey = `${houseId}|${phase}`;
+  const dynKey = houseId === "street" && window.TooTooWorld ? `|${window.TooTooWorld.roomState.streetLampOn ? 1 : 0}` : "";
+  const cacheKey = `${houseId}|${phase}${dynKey}`;
   if (_backdropSvgCache.has(cacheKey)) return _backdropSvgCache.get(cacheKey);
-  const ext = (window.TooTooArtWonders && window.TooTooArtWonders.getExtensionSvg(houseId, dayPhase)) || "";
   const pluginBackdrop = TOOTOO_REG && TOOTOO_REG.getHouseArt(houseId, dayPhase);
   if (pluginBackdrop) {
-    const out = pluginBackdrop + ext;
-    _backdropSvgCache.set(cacheKey, out);
-    return out;
+    _backdropSvgCache.set(cacheKey, pluginBackdrop);
+    return pluginBackdrop;
   }
-  const svgOut = _buildHouseBackdropSvg(houseId, dayPhase) + ext;
+  const svgOut = _buildHouseBackdropSvg(houseId, dayPhase);
   _backdropSvgCache.set(cacheKey, svgOut);
   return svgOut;
 }
@@ -16302,15 +16383,18 @@ function _buildHouseBackdropSvg(houseId, dayPhase = { phase: "day", isNight: fal
              <ellipse cx="148" cy="34" rx="26" ry="9" fill="${isDusk ? "#fed7aa" : "#ffffff"}"/>
              <ellipse cx="166" cy="30" rx="15" ry="7" fill="${isDusk ? "#fed7aa" : "#ffffff"}"/>
            </g>`;
-      const lampLight = isNight
-        ? `<ellipse cx="98" cy="46" rx="9" ry="4" fill="#fef08a" filter="url(#hsGlowSm)"/>
-           <polygon points="88,48 108,48 162,162 34,162" fill="url(#hsLampCone)"/>
-           <circle cx="94" cy="78" r="1.2" fill="#fef08a" opacity="0.7" class="h-float"/>
-           <circle cx="106" cy="106" r="1.0" fill="#fde68a" opacity="0.6" class="h-float-slow"/>`
-        : (isDusk
-          ? `<ellipse cx="98" cy="46" rx="8.5" ry="3.8" fill="#fef08a" opacity="0.78" filter="url(#hsGlowSm)"/>
-             <polygon points="88,48 108,48 156,162 40,162" fill="url(#hsLampCone)" opacity="0.38"/>`
-          : `<ellipse cx="98" cy="46" rx="8.5" ry="3.5" fill="#e2e8f0" stroke="#94a3b8" stroke-width="0.9"/>`);
+      const streetLampOn = !window.TooTooWorld || window.TooTooWorld.roomState.streetLampOn;
+      const lampLight = !streetLampOn
+        ? `<ellipse cx="98" cy="46" rx="8.5" ry="3.5" fill="#64748b" stroke="#475569" stroke-width="0.9"/>`
+        : (isNight
+          ? `<ellipse cx="98" cy="46" rx="9" ry="4" fill="#fef08a"/>
+             <polygon points="88,48 108,48 162,162 34,162" fill="url(#hsLampCone)"/>
+             <circle cx="94" cy="78" r="1.2" fill="#fef08a" opacity="0.7" class="h-float"/>
+             <circle cx="106" cy="106" r="1.0" fill="#fde68a" opacity="0.6" class="h-float-slow"/>`
+          : (isDusk
+            ? `<ellipse cx="98" cy="46" rx="8.5" ry="3.8" fill="#fef08a" opacity="0.78"/>
+               <polygon points="88,48 108,48 156,162 40,162" fill="url(#hsLampCone)" opacity="0.38"/>`
+            : `<ellipse cx="98" cy="46" rx="8.5" ry="3.5" fill="#fef9c3" stroke="#d97706" stroke-width="0.9"/>`));
       return `
         <defs><linearGradient id="hSkySt_${phase}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${sky[0]}"/><stop offset="62%" stop-color="${sky[1]}"/><stop offset="100%" stop-color="${sky[2]}"/></linearGradient></defs>
         <rect width="420" height="208" fill="url(#hSkySt_${phase})"/>
@@ -16344,7 +16428,7 @@ function _buildHouseBackdropSvg(houseId, dayPhase = { phase: "day", isNight: fal
         <rect x="274" y="158" width="11" height="13" rx="2" fill="#faf8f3" stroke="#78716c" stroke-width="1"/>
         <rect x="273" y="156" width="13" height="3" rx="1" fill="#e54826"/>
         <path d="M279 154 Q277 148 280 144" stroke="#e2e8f0" stroke-width="1" fill="none" opacity="0.6" class="h-steam"/>
-        <ellipse cx="118" cy="172" rx="5.5" ry="2.6" fill="#d97706" transform="rotate(-18 118 172)" class="h-drift"/>
+        <g class="h-drift"><ellipse cx="118" cy="172" rx="5.5" ry="2.6" fill="#d97706" transform="rotate(-18 118 172)"/></g>
       `;
     }
     case "pot": {
@@ -17076,8 +17160,20 @@ function renderDecorLayerSvg(decor, allowedSlots, freshSlot = null, houseId = nu
         </g>`;
     }
     if (!fSvg && TOOTOO_REG) fSvg = TOOTOO_REG.getDecorArt(decor.floor, { slot: "floor", houseId });
+    const worldW = (hObj && hObj.worldWidth) || 420;
+    const ox = (hObj && hObj.mainOriginX) || 0;
+    const trimCol = (hObj && hObj.tier >= 6) ? "#fde68a" : "#e2e8f0";
     if (hasTerrace) {
-      out += `<defs><clipPath id="hsIndoorFloorClip"><rect x="0" y="148" width="416" height="60"/></clipPath></defs><g clip-path="url(#hsIndoorFloorClip)"${pop("floor")}>${fSvg}</g><line x1="416" y1="148" x2="416" y2="208" stroke="#57534e" stroke-width="3.6"/><line x1="416" y1="148" x2="416" y2="208" stroke="${(hObj && hObj.tier >= 6) ? "#fde68a" : "#e2e8f0"}" stroke-width="1" opacity="0.82"/>`;
+      const hasLeftOut = (hObj && hObj.outdoorRanges || []).some(([a, b]) => b <= ox + 12);
+      const hasRightOut = (hObj && hObj.outdoorRanges || []).some(([a, b]) => a >= ox + 400);
+      const leftTrack = hasLeftOut ? `<line x1="2" y1="148" x2="2" y2="208" stroke="#57534e" stroke-width="3.6"/><line x1="2" y1="148" x2="2" y2="208" stroke="${trimCol}" stroke-width="1" opacity="0.82"/>` : "";
+      const rightTrack = hasRightOut ? `<line x1="418" y1="148" x2="418" y2="208" stroke="#57534e" stroke-width="3.6"/><line x1="418" y1="148" x2="418" y2="208" stroke="${trimCol}" stroke-width="1" opacity="0.82"/>` : "";
+      out += `<defs><clipPath id="hsIndoorFloorClip"><rect x="0" y="148" width="420" height="60"/></clipPath></defs><g clip-path="url(#hsIndoorFloorClip)"${pop("floor")}>${fSvg}</g>${leftTrack}${rightTrack}`;
+    } else if (worldW > 420) {
+      // Wide grand halls (T7-T10): frame the decorated main sanctuary floor cleanly with subtle gilded inlay strips!
+      const lTrim = ox > 0 ? `<line x1="0" y1="148" x2="0" y2="208" stroke="${trimCol}" stroke-width="2" opacity="0.65"/>` : "";
+      const rTrim = ox + 420 < worldW ? `<line x1="420" y1="148" x2="420" y2="208" stroke="${trimCol}" stroke-width="2" opacity="0.65"/>` : "";
+      out += `<defs><clipPath id="hsMainFloorClip"><rect x="0" y="148" width="420" height="60"/></clipPath></defs><g clip-path="url(#hsMainFloorClip)"${pop("floor")}>${fSvg}</g>${lTrim}${rTrim}`;
     } else {
       out += `<g${pop("floor")}>${fSvg}</g>`;
     }
@@ -17575,7 +17671,7 @@ function renderDecorLayerSvg(decor, allowedSlots, freshSlot = null, houseId = nu
           <!-- Suspended radiant crystalline orb -->
           <g class="h-float" filter="url(#hsGlowSm)">
             <circle cx="318" cy="128" r="6.8" fill="#fde047" stroke="#fff" stroke-width="1.1"/>
-            <ellipse cx="318" cy="128" rx="14" ry="4" transform="rotate(-18 318 128)" fill="none" stroke="#22d3ee" stroke-width="1.1" class="h-spin"/>
+            <g class="h-spin"><ellipse cx="318" cy="128" rx="14" ry="4" transform="rotate(-18 318 128)" fill="none" stroke="#22d3ee" stroke-width="1.1"/></g>
           </g>
         </g>`;
     } else if (decor.pool === "secret_starlight_cascade") {
@@ -17608,7 +17704,8 @@ function renderDecorLayerSvg(decor, allowedSlots, freshSlot = null, houseId = nu
     out += `<g${pop("pool")}>${pSvg}</g>`;
   }
 
-  return out;
+  const mainOriginX = (hObj && hObj.mainOriginX) || 0;
+  return mainOriginX ? `<g transform="translate(${mainOriginX}, 0)">${out}</g>` : out;
 }
 
 function getEffectiveStageViewState() {
@@ -17800,18 +17897,19 @@ function triggerHomeSpotReaction(tx, ty, rawClickY) {
   const cxPct = Math.max(8, Math.min(92, ((tx - homeCamera.x) / 420) * 100));
   const cyPct = Math.max(22, ((ty - 44) / 208) * 100);
 
-  // Outdoor landmarks for all 720px scrolling Hangzhou apartments & estates (T5 + T6)
-  if (tx >= 426 && house.weatherMode === "terrace") {
-    if (tx >= 510 && tx <= 690) {
-      spawnStageParticles(house.tier >= 6 ? ["🥂", "✨", "🌿", "🌟"] : ["✨", "🌇", "❤️"], cxPct, cyPct);
-      showHomeStageBubble(house.outdoorNote || `✨ 在「${house.name}」的露台吹吹风好惬意～`);
-      playSfx("token");
-      return;
-    }
+  // Outdoor landmarks for all scrolling Hangzhou apartments & estates (T5 + T6, supporting Left/Right/Both wings!)
+  if (house.weatherMode === "terrace" && isHomeBunnyOutdoors(house.id, tx, ty)) {
+    spawnStageParticles(house.tier >= 6 ? ["🥂", "✨", "🌿", "🌟"] : ["✨", "🌇", "❤️"], cxPct, cyPct);
+    showHomeStageBubble(house.outdoorNote || `✨ 在「${house.name}」的露台吹吹风好惬意～`);
+    playSfx("token");
+    return;
   }
 
+  const mainOx = house.mainOriginX || 0;
+  const localTx = tx - mainOx;
+
   // 1. Clicked ceiling light zone (indoors only)
-  if (tx < 416 && rawClickY < 74 && slots.includes("light") && d.light) {
+  if (localTx >= 0 && localTx < 416 && rawClickY < 74 && slots.includes("light") && d.light) {
     const lightMsgs = {
       fairy_bulb: "💡 暖黄小灯泡真温馨～",
       carrot_neon: "🥕 深夜霓虹灯牌氛围感拉满！",
@@ -17827,7 +17925,7 @@ function triggerHomeSpotReaction(tx, ty, rawClickY) {
   }
 
   // 2. Clicked pool / water zone (foreground right indoors)
-  if (tx >= 248 && tx < 414 && ty >= 166 && slots.includes("pool") && d.pool) {
+  if (localTx >= 248 && localTx < 414 && ty >= 166 && slots.includes("pool") && d.pool) {
     const poolMsgs = {
       koi_pond: "🎏 来看锦鲤讨个好运气～",
       infinity_pool: "🏊 扑通！和小黄鸭一起泡泳池～",
@@ -17843,7 +17941,7 @@ function triggerHomeSpotReaction(tx, ty, rawClickY) {
   }
 
   // 3. Clicked furniture / bed / throne zone (left-center indoors)
-  if (tx <= 154 && slots.includes("bed") && d.bed) {
+  if (localTx >= 0 && localTx <= 154 && slots.includes("bed") && d.bed) {
     const bedMsgs = {
       straw_mat: "🌾 晒过太阳的干草窝好香～",
       cardboard_sofa: "📦 手搓纸箱沙发意外很舒服！",
@@ -17861,7 +17959,7 @@ function triggerHomeSpotReaction(tx, ty, rawClickY) {
   }
 
   // 4. Clicked garden / plant zone (right-back indoors)
-  if (tx >= 312 && tx < 414 && ty <= 174 && slots.includes("garden") && d.garden) {
+  if (localTx >= 312 && localTx < 414 && ty <= 174 && slots.includes("garden") && d.garden) {
     const gMsgs = {
       mini_carrot_pot: "🌱 看看小胡萝卜长大了没～",
       balcony_monstera: "🪴 龟背竹绿油油的好养眼！",
@@ -18097,7 +18195,8 @@ function walkHomeBunnyTo(targetX, targetY, rawClickY = targetY, opts = {}) {
 
     if (hopIdx > lastHopIdx && hopIdx < hops) {
       lastHopIdx = hopIdx;
-      if (isStarFloor && homeBunnyPos.x < 416) {
+      const mOx = house.mainOriginX || 0;
+      if (isStarFloor && homeBunnyPos.x >= mOx && homeBunnyPos.x < mOx + 416) {
         spawnStageWalkRing(homeBunnyPos.x, homeBunnyPos.y, true);
       }
       if (sfxEnabled) playTone(520 + (hopIdx % 3) * 65, 0.045, "triangle", 0.032);
@@ -18116,7 +18215,8 @@ function walkHomeBunnyTo(targetX, targetY, rawClickY = targetY, opts = {}) {
         updateHomeCameraDom();
       }
       updateHomeBunnyTransformDom();
-      if (isStarFloor && tx < 416) spawnStageWalkRing(tx, ty, true);
+      const mOx2 = house.mainOriginX || 0;
+      if (isStarFloor && tx >= mOx2 && tx < mOx2 + 416) spawnStageWalkRing(tx, ty, true);
       if (clickedHotTable && hotTbl) {
         triggerDrinkHotWater(hotTbl);
       } else {
@@ -18171,7 +18271,8 @@ function getHomeHotTableInfo(houseId) {
     secret_palace: "celestial",
   };
   const st = (h && h.hotTableStyle) || styleMap[houseId] || "wood";
-  return { x: 171, y: 157, standX: 199, standY: 164, facing: -1, style: st };
+  const ox = (h && h.mainOriginX) || 0;
+  return { x: ox + 171, y: 157, standX: ox + 199, standY: 164, facing: -1, style: st };
 }
 
 function isHomeBunnyOutdoors(houseId, x = homeBunnyPos.x, y = homeBunnyPos.y) {
@@ -18184,7 +18285,8 @@ function isHomeBunnyOutdoors(houseId, x = homeBunnyPos.x, y = homeBunnyPos.y) {
     return x < a.x0 || x > a.x1 || y > a.yMax;
   }
   if (mode === "terrace") {
-    return x >= 426;
+    const ranges = (h && h.outdoorRanges) || [[416, (h && h.worldWidth) || 760]];
+    return ranges.some(([a, b]) => x >= a + 8 && x <= b - 8);
   }
   return false;
 }
@@ -18702,9 +18804,11 @@ function renderWeatherLayerSvg(houseId, weather, dayPhase = { phase: "day", isNi
     const wFull = (hObj && hObj.worldWidth) || 1640;
     if (kind === "aurora_meteor") {
       const auroraRibbon = `
-        <g class="h-aurora" filter="url(#hsGlowMd)" pointer-events="none" opacity="0.78">
-          <path d="M0 36 Q280 4 560 40 Q860 72 1180 28 Q1440 58 1640 22" fill="none" stroke="url(#hsAuroraCyan)" stroke-width="22"/>
-          <path d="M60 62 Q420 22 820 56 Q1240 80 1600 34" fill="none" stroke="url(#hsAuroraGold)" stroke-width="14" opacity="0.72"/>
+        <g class="h-aurora" pointer-events="none">
+          <path d="M0 36 Q280 4 560 40 Q860 72 1180 28 Q1440 58 1640 22" fill="none" stroke="url(#hsAuroraCyan)" stroke-width="34" opacity="0.22"/>
+          <path d="M0 36 Q280 4 560 40 Q860 72 1180 28 Q1440 58 1640 22" fill="none" stroke="url(#hsAuroraCyan)" stroke-width="18" opacity="0.58"/>
+          <path d="M60 62 Q420 22 820 56 Q1240 80 1600 34" fill="none" stroke="url(#hsAuroraGold)" stroke-width="22" opacity="0.18"/>
+          <path d="M60 62 Q420 22 820 56 Q1240 80 1600 34" fill="none" stroke="url(#hsAuroraGold)" stroke-width="11" opacity="0.52"/>
         </g>`;
       return { under: auroraRibbon, over: "" };
     }
@@ -18712,49 +18816,64 @@ function renderWeatherLayerSvg(houseId, weather, dayPhase = { phase: "day", isNi
     return { under: `<g pointer-events="none">${cFx.sky}</g>`, over: `<g pointer-events="none">${cFx.fall}</g>` };
   }
 
-  // 1. Scrolling outdoor-world houses (T5 760px & T6 920px Hangzhou apartments/villas): indoor window + full outdoor world!
+  // 1. Scrolling outdoor-world houses (T5 760px & T6 920px): indoor window + ALL outdoor wings (Left, Right, or Both!)
   if (hasTerrace) {
     const worldW = (hObj && hObj.worldWidth) || 760;
-    const winBounds = (hObj && hObj.indoorWindow) || { x0: 233, x1: 373, y0: 25, y1: 145 };
+    const ox = (hObj && hObj.mainOriginX) || 0;
+    const winBounds = (hObj && hObj.indoorWindow) || { x0: ox + 186, x1: ox + 373, y0: 25, y1: 145 };
     const winClip = winBounds.shape === "twin_arch"
-      ? `<path d="M154 146 V58 A50 34 0 0 1 254 58 V146 Z"/><path d="M272 146 V58 A50 34 0 0 1 372 58 V146 Z"/>`
+      ? `<path d="M${winBounds.x0} 146 V58 A50 34 0 0 1 ${winBounds.x0 + 100} 58 V146 Z"/><path d="M${winBounds.x0 + 118} 146 V58 A50 34 0 0 1 ${winBounds.x1} 58 V146 Z"/>`
       : `<rect x="${winBounds.x0}" y="${winBounds.y0}" width="${winBounds.x1 - winBounds.x0}" height="${winBounds.y1 - winBounds.y0}"/>`;
-    const outBounds = { x0: 416, x1: worldW, y0: 0, y1: 208 };
+    const ranges = (hObj && hObj.outdoorRanges) || [[416, worldW]];
+    const railSnowY = (hObj && "terraceRailY" in hObj) ? hObj.terraceRailY : 116;
 
+    const outClipRects = ranges.map(([a, b]) => `<rect x="${a}" y="0" width="${b - a}" height="208"/>`).join("");
     const defs = `<defs>
       <clipPath id="hsWWin_${houseId}">${winClip}</clipPath>
-      <clipPath id="hsWOut_${houseId}"><rect x="416" y="0" width="${worldW - 416}" height="208"/></clipPath>
+      <clipPath id="hsWOut_${houseId}">${outClipRects}</clipPath>
     </defs>`;
 
     const winFx = buildZoneFx(winBounds, { isSky: true, isFalling: true, sillSnow: true, darkOp: 0.24 });
-    const railSnowY = (hObj && "terraceRailY" in hObj) ? hObj.terraceRailY : 116;
-    const outFx = buildZoneFx(outBounds, {
-      isSky: true,
-      isFalling: true,
-      puddles: [[476, 178, 0], [548, 192, 1], [616, 174, 2], [678, 188, 3]],
-      railSnowY,
-      darkOp: 0.2,
+    let outSkyAll = "";
+    let outFallAll = "";
+    ranges.forEach(([a, b], rIdx) => {
+      const rw = b - a;
+      const puddles = [
+        [Math.round(a + rw * 0.22), 178, rIdx * 2],
+        [Math.round(a + rw * 0.54), 190, rIdx * 2 + 1],
+        [Math.round(a + rw * 0.80), 176, rIdx * 2 + 2],
+      ];
+      const oFx = buildZoneFx({ x0: a, x1: b, y0: 0, y1: 208 }, {
+        isSky: true,
+        isFalling: true,
+        puddles,
+        railSnowY,
+        darkOp: 0.2,
+      });
+      outSkyAll += oFx.sky;
+      outFallAll += oFx.fall;
     });
     const indoorAmbient = (kind === "rain" || kind === "overcast" || kind === "snow")
-      ? `<rect x="0" y="0" width="416" height="208" fill="${kind === "snow" ? "#93c5fd" : "#1e3a5f"}" opacity="${kind === "snow" ? "0.06" : "0.08"}" pointer-events="none"/>`
+      ? `<rect x="${ox}" y="0" width="420" height="208" fill="${kind === "snow" ? "#93c5fd" : "#1e3a5f"}" opacity="${kind === "snow" ? "0.06" : "0.08"}" pointer-events="none"/>`
       : "";
 
     const under = defs
       + `<g clip-path="url(#hsWWin_${houseId})" pointer-events="none">${winFx.sky}${winFx.fall}</g>`
-      + `<g clip-path="url(#hsWOut_${houseId})" pointer-events="none">${outFx.sky}</g>`
+      + `<g clip-path="url(#hsWOut_${houseId})" pointer-events="none">${outSkyAll}</g>`
       + indoorAmbient;
-    const over = `<g clip-path="url(#hsWOut_${houseId})" pointer-events="none">${outFx.fall}</g>`;
+    const over = `<g clip-path="url(#hsWOut_${houseId})" pointer-events="none">${outFallAll}</g>`;
     return { under, over };
   }
 
   // 2. Pure outdoor houses (T1 street), T2 arch shelters, and T3/T4 window-only indoor houses
+  const worldW = (hObj && hObj.worldWidth) || 420;
   const winDef = (hObj && hObj.indoorWindow) || { x0: 274, x1: 360, y0: 42, y1: 105, shape: "rect" };
   const winW = winDef.x1 - winDef.x0;
   const winH = winDef.y1 - winDef.y0;
   const winShapeSvg = winDef.shape === "arch"
     ? `<path d="M${winDef.x0} ${winDef.y1} L${winDef.x0} ${winDef.y0 + 32} A${(winW / 2).toFixed(1)} 32 0 0 1 ${winDef.x1} ${winDef.y0 + 32} L${winDef.x1} ${winDef.y1} Z"/>`
     : `<rect x="${winDef.x0}" y="${winDef.y0}" width="${winW}" height="${winH}" rx="4"/>`;
-  const b = isOutdoor ? { x0: 0, x1: 420, y0: 0, y1: 208 } : winDef;
+  const b = isOutdoor ? { x0: 0, x1: worldW, y0: 0, y1: 208 } : winDef;
   const clipId = `hsWClip_${houseId}`;
   const arch = (hObj && hObj.shelterArch) || { x0: 168, x1: 252, yMax: 170 };
   const archRx = ((arch.x1 - arch.x0) / 2).toFixed(1);
@@ -18762,7 +18881,7 @@ function renderWeatherLayerSvg(houseId, weather, dayPhase = { phase: "day", isNi
     ? `<polygon points="134,164 134,96 274,106 274,164" fill="#000000"/>`
     : `<path d="M${arch.x0} 164 L${arch.x0} 108 A${archRx} 42 0 0 1 ${arch.x1} 108 L${arch.x1} 164 Z" fill="#000000"/>`;
   const shelterMaskDef = mode === "shelter"
-    ? `<defs><mask id="hsShelterMask_${houseId}"><rect width="420" height="208" fill="#ffffff"/>${shelterHoleSvg}</mask></defs>`
+    ? `<defs><mask id="hsShelterMask_${houseId}"><rect width="${worldW}" height="208" fill="#ffffff"/>${shelterHoleSvg}</mask></defs>`
     : "";
   const clipDef = isOutdoor ? shelterMaskDef : `<defs><clipPath id="${clipId}">${winShapeSvg}</clipPath></defs>`;
 
@@ -18785,8 +18904,9 @@ function renderWeatherLayerSvg(houseId, weather, dayPhase = { phase: "day", isNi
     };
   }
 
+  // Span full worldW so weather ambient tint NEVER draws a hard seam at x=420!
   const ambientTint = (kind === "rain" || kind === "overcast" || kind === "snow")
-    ? `<rect width="420" height="208" fill="${kind === "snow" ? "#93c5fd" : "#1e3a5f"}" opacity="${kind === "snow" ? "0.08" : "0.1"}" pointer-events="none"/>`
+    ? `<rect width="${worldW}" height="208" fill="${kind === "snow" ? "#93c5fd" : "#1e3a5f"}" opacity="${kind === "snow" ? "0.06" : "0.09"}" pointer-events="none"/>`
     : "";
   return {
     under: `${clipDef}<g clip-path="url(#${clipId})" pointer-events="none">${zFx.sky}${zFx.fall}</g>${ambientTint}`,
@@ -18809,12 +18929,12 @@ function renderHomeStage(freshDecorSlot = null, twirlBunny = false, forceRedraw 
   // Every house has real-time dawn/day/dusk/night lighting; only rain/snow/wind weather is gated on hasWeather!
   const dayPhase = getEffectiveHomeDayPhase();
 
-  if (homeBunnyPos.lastHouseId && homeBunnyPos.lastHouseId !== house.id) {
+  if (homeBunnyPos.lastHouseId !== house.id) {
     stopHomeBunnyWalk();
-    homeBunnyPos.x = 210;
+    homeBunnyPos.x = (house.mainOriginX || 0) + 210;
     homeBunnyPos.y = 183;
     homeBunnyPos.facing = 1;
-    homeCamera.x = 0;
+    homeCamera.x = getTargetCameraX(homeBunnyPos.x, house.id);
   }
   homeBunnyPos.lastHouseId = house.id;
   homeCamera.x = getTargetCameraX(homeBunnyPos.x, house.id);
@@ -19439,7 +19559,7 @@ function renderHomeShop() {
             <div class="hc-desc" style="margin-top:3px">${slotTxt}</div>
           </div>
           <div class="home-inv-foot">
-            <span class="home-inv-sub">${leased ? TOOTOO_REG.formatLeaseRemaining(leasedExp) : (h.worldWidth > 420 ? "含室内外双区" : "随时入住")}</span>
+            <span class="home-inv-sub">${leased ? TOOTOO_REG.formatLeaseRemaining(leasedExp) : (h.tier >= 9 ? "四区神殿大世界" : h.tier >= 7 ? "三翼奇观大世界" : h.tier === 6 ? "三区奢华大宅" : h.tier === 5 ? "室内外双区" : h.tier >= 3 ? "双室宽景" : "随时入住")}</span>
             <span class="hc-btns">${btn}</span>
           </div>
         </div>`;
@@ -19755,9 +19875,25 @@ function closeHomeModal() {
   homeUiState.preview = null;
   _lastHomeStageKey = "";
   const svgEl = document.getElementById("homeStageSvg");
-  if (svgEl) svgEl.innerHTML = ""; // Release animated SVG DOM when closed -> 0% idle GPU/CPU!
+  if (svgEl) {
+    try { if (svgEl.pauseAnimations) svgEl.pauseAnimations(); } catch {}
+    svgEl.innerHTML = ""; // Release animated SVG DOM when closed -> 0% idle GPU/CPU!
+  }
   document.getElementById("homeModal").classList.remove("open");
 }
+
+// Zero-waste battery guard: freeze CSS & SMIL SVG animations immediately whenever window/popover hides
+document.addEventListener("visibilitychange", () => {
+  const hidden = document.hidden;
+  document.body.classList.toggle("page-hidden", hidden);
+  const svgEl = document.getElementById("homeStageSvg");
+  if (svgEl) {
+    try {
+      if (hidden && svgEl.pauseAnimations) svgEl.pauseAnimations();
+      else if (!hidden && document.getElementById("homeModal")?.classList.contains("open") && svgEl.unpauseAnimations) svgEl.unpauseAnimations();
+    } catch {}
+  }
+});
 
 // ---- Home Event Wiring ----
 document.getElementById("homeBtn").addEventListener("click", openHomeModal);
@@ -19790,15 +19926,19 @@ document.getElementById("homeStageZoneBtn").addEventListener("click", (e) => {
   if (getHomeWorldWidth(view.houseId) <= 420) return;
   if (hObj && hObj.weatherMode === "terrace") {
     const isOut = isHomeBunnyOutdoors(view.houseId, homeBunnyPos.x, homeBunnyPos.y);
+    const ox = hObj.mainOriginX || 0;
     if (isOut) {
       const tbl = getHomeHotTableInfo(view.houseId);
       if (homeBunnyClimate.condition && tbl) {
         walkHomeBunnyTo(tbl.x, tbl.y, tbl.y - 10, { exact: true, drinkHotWater: true });
       } else {
-        walkHomeBunnyTo(210, 183, 183, { exact: true });
+        walkHomeBunnyTo(ox + 210, 183, 183, { exact: true });
       }
     } else {
-      walkHomeBunnyTo(568, 178, 178, { exact: true });
+      const ranges = hObj.outdoorRanges || [[416, hObj.worldWidth || 760]];
+      const targetRange = ranges[ranges.length - 1];
+      const outX = Math.round((targetRange[0] + targetRange[1]) * 0.5);
+      walkHomeBunnyTo(outX, 178, 178, { exact: true });
     }
     return;
   }

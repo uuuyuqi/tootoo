@@ -1,6 +1,6 @@
 # tootoo
 
-零外部依赖（纯 Python 3 标准库 + 原生 Swift macOS 菜单栏应用）的本地 AI 编程用量、输出速度（TPS / TTFT）与成本遥测控制台。
+零外部依赖（纯 Python 3 标准库 + 原生 Swift macOS 菜单栏应用）的本地 AI 编程用量、输出速度（TPS / TTFT）与费用遥测控制台。
 
 ## 特性
 - **纯本地只读扫描**：直接增量读取本地会话日志 / SQLite，无需安装代理或 Hook。

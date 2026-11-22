@@ -128,10 +128,8 @@
       <polygon points="134,86 286,98 286,107 134,96" fill="${wood}" stroke="#3d2410" stroke-width="1.4" stroke-linejoin="round"/>
       <line x1="138" y1="89" x2="284" y2="101" stroke="#fde68a" stroke-width="0.9" opacity="0.32"/>
       <polygon points="134,96 274,106 274,162 134,162" fill="${s.isNight ? "#26170e" : "#3d2517"}" opacity="0.78"/>
-      <!-- Warm hanging alley bulb inside shelter -->
-      <line x1="204" y1="100" x2="204" y2="110" stroke="#78350f" stroke-width="1.2"/>
-      <circle cx="204" cy="112" r="3.4" fill="#fef08a" filter="url(#hsGlowSm)"/>
-      <circle cx="204" cy="118" r="26" fill="#fbbf24" opacity="${s.isNight ? "0.3" : "0.14"}" filter="url(#hsGlowMd)"/>
+      <!-- Warm hanging alley bulb cord inside shelter (bulb rendered interactively by TooTooWorld) -->
+      <line x1="204" y1="100" x2="204" y2="108" stroke="#78350f" stroke-width="1.2"/>
       <!-- Flattened cardboard floor mat & folded red blanket -->
       <polygon points="146,162 158,150 258,150 266,162" fill="${s.isNight ? "#967652" : "#d6b286"}" stroke="#785028" stroke-width="1"/>
       <rect x="164" y="152" width="42" height="7" rx="2" fill="${s.isNight ? "#991b1b" : "#ef4444"}" opacity="0.86"/>
@@ -1102,11 +1100,11 @@
         <line x1="0" y1="-12" x2="0" y2="-4" stroke="#78350f" stroke-width="1.4"/>
         <line x1="22" y1="-8" x2="22" y2="0" stroke="#78350f" stroke-width="1.4"/>
       </g>
-      <g class="h-drift-slow" transform="translate(506, 132)">
+      <g transform="translate(506, 132)"><g class="h-drift-slow">
         <path d="M-16 0 Q0 6 18 0 L14 4 Q0 8 -14 4 Z" fill="#5c2d0e"/>
         <path d="M-6 0 Q2 -10 10 0 Z" fill="#d9a55b" stroke="#78350f" stroke-width="0.9"/>
         ${lit ? `<circle cx="-11" cy="-2" r="2" fill="#fde047" filter="url(#hsGlowSm)"/>` : ""}
-      </g>
+      </g></g>
       <ellipse cx="626" cy="134" rx="8" ry="2.6" fill="${treeL}" opacity="0.88"/>
       <ellipse cx="640" cy="138" rx="6.5" ry="2.2" fill="${treeM}" opacity="0.88"/>
       <circle cx="632" cy="133" r="2.4" fill="#f9a8d4"/>
@@ -1315,11 +1313,11 @@
         </g>
         <!-- Arched Canal Bridge & Painted Cruise Boat (大运河画舫游船) -->
         <path d="M558 126 Q596 108 634 126" fill="none" stroke="${lit ? "#fde047" : "#e2e8f0"}" stroke-width="2" ${lit ? 'filter="url(#hsGlowSm)"' : ""}/>
-        <g class="h-drift-slow" transform="translate(474, 134)">
+        <g transform="translate(474, 134)"><g class="h-drift-slow">
           <path d="M-18 0 H18 L13 4 H-13 Z" fill="#78350f" stroke="#fde047" stroke-width="0.7"/>
           <rect x="-11" y="-6" width="22" height="6" rx="1" fill="${lit ? "#fef08a" : "#fffdf8"}" opacity="0.92" ${lit ? 'filter="url(#hsGlowSm)"' : ""}/>
           <path d="M-14 -6 Q0 -11 14 -6 Z" fill="#1e293b"/>
-        </g>
+        </g></g>
         <g stroke="${lit ? "#fde68a" : "#ffffff"}" stroke-width="1.2" opacity="0.52" stroke-linecap="round">
           <line x1="210" y1="130" x2="256" y2="130" class="h-drift"/><line x1="490" y1="129" x2="546" y2="129" class="h-drift-slow"/>
           <line x1="566" y1="135" x2="634" y2="135" stroke="${lit ? "#38bdf8" : "#e0f2fe"}" class="h-drift"/><line x1="654" y1="130" x2="704" y2="130" class="h-drift-slow"/>
@@ -1744,13 +1742,13 @@
         : `<path d="M56 146 A154 118 0 0 1 364 146" fill="none" stroke="url(#hsPrism)" stroke-width="9" opacity="${s.isDusk ? "0.28" : "0.45"}" filter="url(#hsGlowSm)"/>
            <circle cx="336" cy="${s.isDusk || s.isDawn ? 48 : 38}" r="15" fill="${s.isDusk ? "#fb923c" : "#fef08a"}" opacity="0.92" filter="url(#hsGlowMd)"/>`}
       <!-- Distant floating castle island with spires -->
-      <g class="h-float-slow" transform="translate(210, 74)">
+      <g transform="translate(210, 74)"><g class="h-float-slow">
         <path d="M-38 14 L0 36 L38 14 Z" fill="${s.isNight ? "#475569" : "#94a3b8"}"/>
         <rect x="-26" y="-8" width="52" height="22" fill="${s.isNight ? "#cbd5e1" : "url(#hsIvory)"}" stroke="#94a3b8" stroke-width="0.9"/>
         <polygon points="-24,-8 -16,-24 -8,-8" fill="${s.isNight ? "#1d4ed8" : "#38bdf8"}"/><polygon points="8,-8 16,-24 24,-8" fill="${s.isNight ? "#1d4ed8" : "#38bdf8"}"/>
         <polygon points="-8,-8 0,-32 8,-8" fill="#fbbf24"/>
         ${s.isNight ? `<rect x="-18" y="-2" width="5" height="7" rx="2" fill="#fef08a" filter="url(#hsGlowSm)"/><rect x="-2.5" y="-3" width="5" height="8" rx="2" fill="#fde047" filter="url(#hsGlowSm)"/><rect x="13" y="-2" width="5" height="7" rx="2" fill="#fef08a" filter="url(#hsGlowSm)"/>` : ""}
-      </g>
+      </g></g>
       <!-- Volumetric cloud sea -->
       <g class="h-drift-slow" opacity="${s.isNight ? "0.8" : "0.94"}">
         <ellipse cx="64" cy="130" rx="58" ry="22" fill="${cl1}"/>
@@ -1900,12 +1898,12 @@
       <circle cx="96" cy="40" r="24" fill="#fffbeb" opacity="0.86" filter="url(#hsGlowLg)"/>
       <circle cx="96" cy="40" r="44" fill="#fde68a" opacity="0.22" filter="url(#hsGlowMd)"/>`}
       <!-- Luminous blue Earthrise with atmospheric halo & cloud swirls -->
-      <g transform="translate(274, 58)" class="h-float-slow">
+      <g transform="translate(274, 58)"><g class="h-float-slow">
         <circle cx="0" cy="0" r="35" fill="#38bdf8" opacity="0.24" filter="url(#hsGlowMd)"/>
         <circle cx="0" cy="0" r="28" fill="url(#${id}_earth)" stroke="#93c5fd" stroke-width="1.2"/>
         <path d="M-16 -10 Q-2 -20 10 -8 Q18 2 6 14 Q-8 18 -14 6 Z" fill="#22c55e" opacity="0.78"/>
         <path d="M-22 2 Q0 -7 22 4" fill="none" stroke="#ffffff" stroke-width="2.8" opacity="0.74" stroke-linecap="round"/>
-      </g>
+      </g></g>
       <!-- Shaded Sea of Tranquility craters -->
       <path d="M0 116 Q108 102 210 120 Q316 130 420 110 L420 148 L0 148 Z" fill="${surf}"/>
       <ellipse cx="94" cy="132" rx="26" ry="7" fill="${crat}" stroke="#94a3b8" stroke-width="0.9"/>
@@ -2120,14 +2118,14 @@
         <circle cx="0" cy="0" r="4.8" fill="#fef08a" stroke="#d97706" stroke-width="1" filter="url(#hsGlowSm)"/>
       </g>
       <!-- Flanking golden gears -->
-      <g transform="translate(84, 58)" class="h-spin-rev" opacity="${s.isNight ? "0.62" : "0.78"}">
+      <g transform="translate(84, 58)" opacity="${s.isNight ? "0.62" : "0.78"}"><g class="h-spin-rev">
         <circle cx="0" cy="0" r="24" fill="none" stroke="#d97706" stroke-width="4" stroke-dasharray="5 6"/>
         <circle cx="0" cy="0" r="14" fill="none" stroke="#f59e0b" stroke-width="1.4"/>
-      </g>
-      <g transform="translate(336, 58)" class="h-spin-rev" opacity="${s.isNight ? "0.62" : "0.78"}">
+      </g></g>
+      <g transform="translate(336, 58)" opacity="${s.isNight ? "0.62" : "0.78"}"><g class="h-spin-rev">
         <circle cx="0" cy="0" r="24" fill="none" stroke="#d97706" stroke-width="4" stroke-dasharray="5 6"/>
         <circle cx="0" cy="0" r="14" fill="none" stroke="#f59e0b" stroke-width="1.4"/>
-      </g>
+      </g></g>
       <rect x="0" y="148" width="420" height="60" fill="${flr}"/>
       ${floorPlanks(148, 0, 420, "#d97706", 0.24)}
       <line x1="0" y1="148" x2="420" y2="148" stroke="url(#hsGoldH)" stroke-width="2.4"/>
@@ -2154,10 +2152,10 @@
         </radialGradient>
       </defs>
       <rect width="420" height="208" fill="url(#${id}_bg)"/>
-      <g transform="translate(210, 78)" class="h-spin-slow" opacity="${s.isNight ? "0.74" : "0.62"}">
+      <g transform="translate(210, 78)" opacity="${s.isNight ? "0.74" : "0.62"}"><g class="h-spin-slow">
         <ellipse cx="0" cy="0" rx="146" ry="40" fill="none" stroke="url(#hsAuroraCyan)" stroke-width="11" filter="url(#hsGlowMd)"/>
         <ellipse cx="0" cy="0" rx="96" ry="26" transform="rotate(24)" fill="none" stroke="url(#hsAuroraGold)" stroke-width="8"/>
-      </g>
+      </g></g>
       <circle cx="210" cy="78" r="17" fill="#ffffff" opacity="0.92" filter="url(#hsGlowLg)" class="h-pulse"/>
       <!-- Upturned jade-and-gold celestial pavilion eaves -->
       <path d="M0 0 H420 V26 Q315 10 210 24 Q105 10 0 26 Z" fill="${eave}" stroke="url(#hsGoldH)" stroke-width="1.8"/>

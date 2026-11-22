@@ -296,7 +296,7 @@ class TelemetryWebViewController: NSViewController, WKScriptMessageHandler, WKNa
 // Configurable menu bar fields in display order
 let ALL_MENUBAR_FIELDS: [(key: String, label: String)] = [
     ("tokens",  "用量 (Tokens)"),
-    ("cost",    "花费 ($)"),
+    ("cost",    "费用 ($)"),
     ("tps",     "速度 (TPS)"),
     ("ttft",    "首字 (TTFT)"),
     ("q_gem5h", "Gemini 5h 剩余额度"),
@@ -522,9 +522,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         let modeMenu = NSMenu()
         // Quick presets
         let presets: [(String, [String])] = [
-            ("预设：用量 · 花费 (推荐)", ["tokens", "cost"]),
-            ("预设：用量 · 花费 · Gemini 5h", ["tokens", "cost", "q_gem5h"]),
-            ("预设：用量 · 花费 · Codex", ["tokens", "cost", "q_codex"]),
+            ("预设：用量 · 费用 (推荐)", ["tokens", "cost"]),
+            ("预设：用量 · 费用 · Gemini 5h", ["tokens", "cost", "q_gem5h"]),
+            ("预设：用量 · 费用 · Codex", ["tokens", "cost", "q_codex"]),
             ("预设：用量 · Gemini · Codex", ["tokens", "q_gem5h", "q_codex"]),
             ("预设：速度 · 用量", ["tps", "tokens"]),
             ("预设：仅小兔子图标", []),

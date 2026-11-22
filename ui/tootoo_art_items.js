@@ -640,7 +640,7 @@
         <circle cx="0" cy="0" r="28" fill="#0ea5e9" fill-opacity="0.22" stroke="#7dd3fc" stroke-width="1.8" filter="url(#hsGlowSm)"/>
         <path d="M-20 8 Q0 2 20 8 Q10 22 -10 22 Z" fill="#10b981" opacity="0.88"/>
         <circle cx="0" cy="-6" r="9" fill="#34d399" opacity="0.9"/>
-        <ellipse cx="0" cy="0" rx="34" ry="8" transform="rotate(-18)" fill="none" stroke="url(#hsGoldH)" stroke-width="1.2" class="h-spin-slow"/>
+        <g class="h-spin-slow"><ellipse cx="0" cy="0" rx="34" ry="8" transform="rotate(-18)" fill="none" stroke="url(#hsGoldH)" stroke-width="1.2"/></g>
       </g>
     </g>
   `);
@@ -871,24 +871,30 @@
   `);
 
   R.registerWearArt("floating_compute_cube", () => `
-    <g class="h-float" transform="translate(30.4, 21.8)">
-      <polygon points="0,-4.2 3.8,-2.0 3.8,2.2 0,4.4 -3.8,2.2 -3.8,-2.0" fill="#1e1b4b" stroke="#38bdf8" stroke-width="0.75"/>
-      <path d="M-3.8 -2.0 L0 0.2 L3.8 -2.0 M0 0.2 V4.4" fill="none" stroke="#c084fc" stroke-width="0.65"/>
-      <circle cx="0" cy="0.2" r="1.0" fill="#fef08a" class="h-twinkle"/>
+    <g transform="translate(30.4, 21.8)">
+      <g class="h-float">
+        <polygon points="0,-4.2 3.8,-2.0 3.8,2.2 0,4.4 -3.8,2.2 -3.8,-2.0" fill="#1e1b4b" stroke="#38bdf8" stroke-width="0.75"/>
+        <path d="M-3.8 -2.0 L0 0.2 L3.8 -2.0 M0 0.2 V4.4" fill="none" stroke="#c084fc" stroke-width="0.65"/>
+        <circle cx="0" cy="0.2" r="1.0" fill="#fef08a" class="h-twinkle"/>
+      </g>
     </g>
   `);
 
   R.registerWearArt("taichu_carrot_halo", () => `
     <g>
-      <g class="h-float" transform="translate(4.8, 22.0)">
-        <circle cx="0" cy="0" r="3.4" fill="#fde047" opacity="0.24"/>
-        <path d="M-1.2 -1.8 L1.2 -1.8 L0 2.6 Z" fill="#f97316" stroke="#fef08a" stroke-width="0.45"/>
-        <path d="M0 -1.9 L-0.8 -3.2 M0 -1.9 L0.8 -3.2" stroke="#34d399" stroke-width="0.55"/>
+      <g transform="translate(4.8, 22.0)">
+        <g class="h-float">
+          <circle cx="0" cy="0" r="3.4" fill="#fde047" opacity="0.24"/>
+          <path d="M-1.2 -1.8 L1.2 -1.8 L0 2.6 Z" fill="#f97316" stroke="#fef08a" stroke-width="0.45"/>
+          <path d="M0 -1.9 L-0.8 -3.2 M0 -1.9 L0.8 -3.2" stroke="#34d399" stroke-width="0.55"/>
+        </g>
       </g>
-      <g class="h-float-slow" transform="translate(31.2, 22.0)">
-        <circle cx="0" cy="0" r="3.4" fill="#38bdf8" opacity="0.24"/>
-        <path d="M-1.2 -1.8 L1.2 -1.8 L0 2.6 Z" fill="#f59e0b" stroke="#fffbeb" stroke-width="0.45"/>
-        <path d="M0 -1.9 L-0.8 -3.2 M0 -1.9 L0.8 -3.2" stroke="#34d399" stroke-width="0.55"/>
+      <g transform="translate(31.2, 22.0)">
+        <g class="h-float-slow">
+          <circle cx="0" cy="0" r="3.4" fill="#38bdf8" opacity="0.24"/>
+          <path d="M-1.2 -1.8 L1.2 -1.8 L0 2.6 Z" fill="#f59e0b" stroke="#fffbeb" stroke-width="0.45"/>
+          <path d="M0 -1.9 L-0.8 -3.2 M0 -1.9 L0.8 -3.2" stroke="#34d399" stroke-width="0.55"/>
+        </g>
       </g>
     </g>
   `);
