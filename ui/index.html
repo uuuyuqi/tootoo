@@ -1177,6 +1177,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     text-align: center;
     gap: 4px;
     user-select: none;
@@ -6277,7 +6278,7 @@
         <div class="carrot-mint-seg-done" id="carrotSegDone" style="width:0%"></div>
         <div class="carrot-mint-seg-ready" id="carrotSegReady" style="width:0%"></div>
       </div>
-      <div class="carrot-mint-foot" id="carrotMintFoot">距下一枚萝卜币还差 —</div>
+      <div class="carrot-mint-foot" id="carrotMintFoot">持久化钱包 · —</div>
     </div>
     <div class="gacha-box">
       <div class="gacha-machine" id="gachaMachine">🎰</div>
@@ -11923,7 +11924,6 @@ function renderGachaMeta() {
     if (cs.spent > 0) parts.push(`今日已扭 ${cs.spent}`);
     footEl.innerHTML = `
       <span>持久化钱包 · 余 ${cs.balance} 币（${parts.join(" · ")}）</span>
-      <span>距下枚差 ${fmtNum(cs.remainForNext)}</span>
     `;
   }
 
