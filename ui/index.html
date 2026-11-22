@@ -3628,6 +3628,180 @@
     cursor: pointer;
   }
   .home-event-banner button:hover { background: rgba(254, 240, 138, 0.3); }
+  .home-friday-banner {
+    display: none;
+    position: relative;
+    overflow: hidden;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 9px;
+    margin-bottom: 7px;
+    background: linear-gradient(135deg, rgba(180, 83, 9, 0.94) 0%, rgba(217, 119, 6, 0.92) 52%, rgba(190, 24, 93, 0.9) 100%);
+    color: #fffdf7;
+    font-family: var(--font-mono);
+    font-size: 9.8px;
+    font-weight: 700;
+    border: 1px solid rgba(254, 240, 138, 0.62);
+    box-shadow: 0 4px 14px rgba(217, 119, 6, 0.24);
+  }
+  .home-friday-banner.show { display: flex; }
+  .home-friday-banner::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    width: 38%;
+    background: linear-gradient(90deg, transparent, rgba(255, 251, 235, 0.28), transparent);
+    pointer-events: none;
+    animation: homeCardSheen 3.8s ease-in-out infinite;
+  }
+  .home-friday-banner.claimed {
+    background: linear-gradient(135deg, rgba(15, 118, 110, 0.9), rgba(30, 58, 138, 0.88));
+    border-color: rgba(167, 243, 208, 0.45);
+    box-shadow: 0 3px 10px rgba(15, 118, 110, 0.16);
+  }
+  .home-friday-banner button {
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+    border: 1px solid rgba(254, 240, 138, 0.85);
+    background: rgba(255, 251, 235, 0.22);
+    color: #fffbeb;
+    border-radius: 999px;
+    padding: 3.5px 10px;
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform 0.14s ease, background 0.14s ease;
+  }
+  .home-friday-banner button:hover:not(:disabled) {
+    background: rgba(254, 240, 138, 0.36);
+    transform: translateY(-0.5px);
+  }
+  .home-friday-banner button:disabled {
+    opacity: 0.72;
+    cursor: default;
+  }
+  .home-coupon-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2.5px 8px;
+    border-radius: 999px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 800;
+    background: color-mix(in srgb, #f59e0b 16%, var(--surface));
+    border: 1px solid color-mix(in srgb, #f59e0b 55%, var(--border));
+    color: #b45309;
+    white-space: nowrap;
+  }
+  [data-theme="dark"] .home-coupon-pill { color: #fde047; }
+  .home-coupon-pill.epic {
+    background: linear-gradient(135deg, rgba(225, 29, 72, 0.18), rgba(245, 158, 11, 0.22));
+    border-color: rgba(244, 63, 94, 0.6);
+    color: #be123c;
+    box-shadow: 0 0 10px rgba(244, 63, 94, 0.22);
+  }
+  [data-theme="dark"] .home-coupon-pill.epic { color: #fda4af; }
+  .hc-gift-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin-top: 3px;
+    padding: 1.5px 6px;
+    border-radius: 5px;
+    font-family: var(--font-mono);
+    font-size: 8.4px;
+    font-weight: 700;
+    background: color-mix(in srgb, #f59e0b 10%, var(--surface));
+    border: 1px solid color-mix(in srgb, #f59e0b 28%, var(--border));
+    color: #b45309;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  [data-theme="dark"] .hc-gift-row { color: #fcd34d; }
+  .hc-gift-row.owned-gift {
+    background: color-mix(in srgb, var(--teal) 9%, var(--surface));
+    border-color: color-mix(in srgb, var(--teal) 28%, var(--border));
+    color: var(--teal);
+  }
+  .home-confirm-coupon {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 8px;
+    border-radius: 6px;
+    background: color-mix(in srgb, #f59e0b 12%, var(--surface-2));
+    border: 1px dashed color-mix(in srgb, #f59e0b 52%, var(--border));
+    font-family: var(--font-mono);
+    font-size: 9.2px;
+    font-weight: 700;
+    color: var(--ink);
+    cursor: pointer;
+    user-select: none;
+  }
+  .home-confirm-coupon.show { display: flex; }
+  .home-confirm-coupon input { accent-color: #d97706; cursor: pointer; }
+  @keyframes homeFxRingExpand {
+    0%   { transform: translate(-50%, -50%) scale(0.2); opacity: 0.92; }
+    65%  { opacity: 0.55; }
+    100% { transform: translate(-50%, -50%) scale(2.85); opacity: 0; }
+  }
+  .home-fx-ring {
+    position: absolute;
+    width: 64px;
+    height: 64px;
+    border-radius: 999px;
+    border: 2.5px solid #fbbf24;
+    box-shadow: 0 0 18px rgba(251, 191, 36, 0.55), inset 0 0 12px rgba(254, 240, 138, 0.35);
+    pointer-events: none;
+    z-index: 6;
+    animation: homeFxRingExpand 0.82s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .home-fx-ring.prism {
+    border-color: #38bdf8;
+    box-shadow: 0 0 22px rgba(168, 85, 247, 0.65), inset 0 0 14px rgba(56, 189, 248, 0.45);
+  }
+  .home-fx-ring.epic {
+    border-color: #f43f5e;
+    box-shadow: 0 0 24px rgba(244, 63, 94, 0.65), inset 0 0 14px rgba(251, 191, 36, 0.45);
+  }
+  @keyframes homeGiftToastIn {
+    0%   { transform: translate(-50%, 10px) scale(0.88); opacity: 0; }
+    16%  { transform: translate(-50%, 0) scale(1.03); opacity: 1; }
+    82%  { transform: translate(-50%, -2px) scale(1); opacity: 1; }
+    100% { transform: translate(-50%, -12px) scale(0.96); opacity: 0; }
+  }
+  .home-gift-toast {
+    position: absolute;
+    left: 50%;
+    bottom: 12px;
+    z-index: 9;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, rgba(24, 20, 16, 0.94), rgba(120, 53, 15, 0.94));
+    border: 1.2px solid rgba(254, 240, 138, 0.78);
+    color: #fffbeb;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 800;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.34);
+    pointer-events: none;
+    white-space: nowrap;
+    animation: homeGiftToastIn 2.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  .home-gift-toast.refund {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.94), rgba(15, 118, 110, 0.92));
+    border-color: rgba(110, 231, 183, 0.72);
+  }
   .home-tabs button {
     border: none;
     background: transparent;
@@ -5948,6 +6122,11 @@
       <span id="homeEventBannerText"></span>
     </div>
 
+    <div class="home-friday-banner" id="homeFridayBanner">
+      <span id="homeFridayBannerText">🎉 辛苦一周！周五 14:00–18:00 限时领取下周租房折扣券（8折 / 欧气 3折神券）</span>
+      <button id="homeFridayClaimBtn">🎁 领取租房券</button>
+    </div>
+
     <div class="home-tabs" id="homeTabs">
       <button data-htab="houses" class="active">🏠 置业租房</button>
       <button data-htab="decor">🛋️ 室内装潢</button>
@@ -5956,7 +6135,10 @@
 
     <div class="home-subbar" id="homeSubbar">
       <div class="home-slot-pills" id="homeSlotPills"></div>
-      <button class="dbg-mini-btn" id="homeAvatarWearToggle" title="是否将已穿戴的衣服饰品同步显示在顶部主头像上">头像同步穿戴: 开</button>
+      <span style="display:flex;align-items:center;gap:5px">
+        <span class="home-coupon-pill" id="homeCouponPill" style="display:none"></span>
+        <button class="dbg-mini-btn" id="homeAvatarWearToggle" title="是否将已穿戴的衣服饰品同步显示在顶部主头像上">头像同步穿戴: 开</button>
+      </span>
     </div>
 
     <div class="home-confirm-bar" id="homeConfirmBar">
@@ -5965,6 +6147,10 @@
         <span class="hc-price" id="homeConfirmPrice"></span>
       </div>
       <div class="home-confirm-note" id="homeConfirmNote"></div>
+      <label class="home-confirm-coupon" id="homeConfirmCouponRow">
+        <input type="checkbox" id="homeConfirmCouponChk" checked>
+        <span id="homeConfirmCouponLbl"></span>
+      </label>
       <div class="home-confirm-acts">
         <button class="hc-btn unequip" id="homeConfirmCancelBtn">取消</button>
         <button class="hc-btn buy" id="homeConfirmOkBtn">确认</button>
@@ -5982,7 +6168,7 @@
         <button class="dbg-mini-btn" id="dbgHomeResetCheckinBtn">📅 重置签到</button>
       </div>
       <div class="dbg-inline-row" id="dbgWeatherChips" style="margin-top:4px">
-        <span class="dbg-tag">🌦 模拟天气(前6套房生效):</span>
+        <span class="dbg-tag">🌦 模拟天气(T1~T6陆地房):</span>
         <button class="dbg-mini-btn on" data-w="real">真实</button>
         <button class="dbg-mini-btn" data-w="sunny">☀️ 晴天</button>
         <button class="dbg-mini-btn" data-w="cloudy">⛅ 多云</button>
@@ -6007,6 +6193,8 @@
         <button class="dbg-mini-btn" data-ev="blackfriday">🏷️ 黑五8折</button>
         <button class="dbg-mini-btn" data-ev="christmas">🎄 圣诞季</button>
         <button class="dbg-mini-btn" data-ev="springfest">🧧 春节季</button>
+        <button class="dbg-mini-btn" id="dbgFridayToggleBtn">🏷️ 模拟周五领券: 关</button>
+        <button class="dbg-mini-btn" id="dbgFridayResetBtn">↺ 重置领券</button>
       </div>
     </div>
   </div>
@@ -6244,6 +6432,8 @@
 <div class="fx-layer" id="fxLayer"></div>
 
 <script src="/ui/tootoo_catalog.js"></script>
+<script src="/ui/tootoo_art_houses.js"></script>
+<script src="/ui/tootoo_art_items.js"></script>
 <script>
 const params = new URLSearchParams(window.location.search);
 const isPopover = params.get("mode") === "popover";
@@ -11335,6 +11525,9 @@ const DEFAULT_HOME_STATE = {
   owned_wear: [],
   hidden_tier_acc: [],
   show_on_avatar: true,
+  coupons: [],
+  friday_claim_week: "",
+  claimed_house_gifts: [],
 };
 
 function cloneHomeState(src) {
@@ -11359,6 +11552,16 @@ function cloneHomeState(src) {
   const hta = Array.isArray(s.hidden_tier_acc)
     ? Array.from(new Set(s.hidden_tier_acc.map(Number).filter(n => Number.isInteger(n) && n >= 4 && n <= 10))).sort((a, b) => a - b)
     : [];
+  const coupons = Array.isArray(s.coupons)
+    ? s.coupons.filter(c => c && c.id && Number(c.discount) > 0 && Number(c.discount) < 1 && Number(c.expires_at) > 0).map(c => ({
+        id: String(c.id),
+        discount: Number(c.discount),
+        label: String(c.label || `${Math.round(Number(c.discount) * 10)}折租房券`),
+        rarity: c.rarity === "epic" ? "epic" : "normal",
+        expires_at: Math.floor(Number(c.expires_at)),
+        source: String(c.source || "friday"),
+      }))
+    : [];
   return {
     house,
     owned_houses: oh,
@@ -11380,6 +11583,9 @@ function cloneHomeState(src) {
     owned_wear: Array.isArray(s.owned_wear) ? Array.from(new Set(s.owned_wear)) : [],
     hidden_tier_acc: hta,
     show_on_avatar: s.show_on_avatar !== false,
+    coupons,
+    friday_claim_week: typeof s.friday_claim_week === "string" ? s.friday_claim_week : "",
+    claimed_house_gifts: Array.isArray(s.claimed_house_gifts) ? Array.from(new Set(s.claimed_house_gifts)) : [],
   };
 }
 
@@ -12059,10 +12265,17 @@ const HOME_DECORS = TOOTOO_REG.decors;
 const HOME_WEARABLES = TOOTOO_REG.wearables;
 
 let debugEventMock = null; // null (auto calendar) | "none" | "prog1024" | "blackfriday" | "christmas" | "springfest"
+let debugFridayMock = false;
 
 function getActiveLiveEvents() {
   const mock = debugState.active ? debugEventMock : null;
   return TOOTOO_REG.getActiveEvents(mock);
+}
+
+function hasHouseWeather(houseId) {
+  const h = TOOTOO_REG && TOOTOO_REG.getHouse(houseId);
+  if (h && h.weatherMode) return h.weatherMode !== "none";
+  return HOME_WEATHER_HOUSES.has(houseId);
 }
 
 let homeUiState = {
@@ -12110,18 +12323,20 @@ function getActiveHomeState() {
   return getRealHomeState();
 }
 
-function saveActiveHomeState(nextHome, spentCost = 0) {
+function saveActiveHomeState(nextHome, spentCost = 0, bonusCoins = 0) {
   const clean = cloneHomeState(nextHome);
+  const netDelta = (Number(bonusCoins) || 0) - (Number(spentCost) || 0);
   if (debugState.active) {
     debugState.homeSandbox = clean;
     if (spentCost > 0) debugState.gachaSpent += spentCost;
+    if (bonusCoins > 0) debugState.gachaCoins += bonusCoins;
   } else {
     carrotDiskState.home = clean;
     try { localStorage.setItem("tootoo_home_state", JSON.stringify(clean)); } catch {}
     const patch = { home: clean };
-    if (spentCost > 0) {
+    if (netDelta !== 0) {
       const cs = getGachaCoinState();
-      const nextBal = Math.max(0, cs.realBalance - spentCost);
+      const nextBal = Math.max(0, cs.realBalance + netDelta);
       patch.balance = nextBal;
       try { localStorage.setItem("tootoo_carrot_balance", String(nextBal)); } catch {}
     }
@@ -13514,7 +13729,8 @@ function _buildHouseBackdropSvg(houseId, dayPhase = { phase: "day", isNight: fal
 function renderDecorLayerSvg(decor, allowedSlots, freshSlot = null, houseId = null) {
   let out = "";
   const pop = (s) => (freshSlot === s ? ` class="decor-pop"` : "");
-  const hasTerrace = houseId === "heanju" || houseId === "xixi";
+  const hObj = TOOTOO_REG && TOOTOO_REG.getHouse(houseId);
+  const hasTerrace = !!(hObj && hObj.weatherMode === "terrace") || houseId === "heanju" || houseId === "xixi";
 
   // 1. FLOOR (rendered underneath everything on floor, horizon y=148..208)
   if (allowedSlots.includes("floor") && decor.floor) {
@@ -13638,7 +13854,7 @@ function renderDecorLayerSvg(decor, allowedSlots, freshSlot = null, houseId = nu
     }
     if (!fSvg && TOOTOO_REG) fSvg = TOOTOO_REG.getDecorArt(decor.floor, { slot: "floor", houseId });
     if (hasTerrace) {
-      out += `<defs><clipPath id="hsIndoorFloorClip"><rect x="0" y="148" width="416" height="60"/></clipPath></defs><g clip-path="url(#hsIndoorFloorClip)"${pop("floor")}>${fSvg}</g><line x1="416" y1="148" x2="416" y2="208" stroke="#57534e" stroke-width="3.6"/><line x1="416" y1="148" x2="416" y2="208" stroke="${houseId === "xixi" ? "#fde68a" : "#e2e8f0"}" stroke-width="1" opacity="0.82"/>`;
+      out += `<defs><clipPath id="hsIndoorFloorClip"><rect x="0" y="148" width="416" height="60"/></clipPath></defs><g clip-path="url(#hsIndoorFloorClip)"${pop("floor")}>${fSvg}</g><line x1="416" y1="148" x2="416" y2="208" stroke="#57534e" stroke-width="3.6"/><line x1="416" y1="148" x2="416" y2="208" stroke="${(hObj && hObj.tier >= 6) ? "#fde68a" : "#e2e8f0"}" stroke-width="1" opacity="0.82"/>`;
     } else {
       out += `<g${pop("floor")}>${fSvg}</g>`;
     }
@@ -14205,6 +14421,8 @@ const homeBunnyPos = {
 const homeCamera = { x: 0 };
 
 function getHomeWorldWidth(houseId) {
+  const h = TOOTOO_REG && TOOTOO_REG.getHouse(houseId);
+  if (h && h.worldWidth) return h.worldWidth;
   return (houseId === "heanju" || houseId === "xixi") ? 720 : 420;
 }
 
@@ -14311,19 +14529,11 @@ function triggerHomeSpotReaction(tx, ty, rawClickY) {
   const cxPct = Math.max(8, Math.min(92, ((tx - homeCamera.x) / 420) * 100));
   const cyPct = Math.max(22, ((ty - 44) / 208) * 100);
 
-  // Outdoor landmarks for scrolling worlds (heanju & xixi)
-  if (tx >= 426 && house.id === "heanju") {
-    if (tx >= 596 && tx <= 686) {
-      spawnStageParticles(["✨", "🌇", "❤️"], cxPct, cyPct);
-      showHomeStageBubble("🪑 露台藤椅吹晚风太舒服啦～");
-      playSfx("token");
-      return;
-    }
-  }
-  if (tx >= 426 && house.id === "xixi") {
-    if (tx >= 518 && tx <= 646) {
-      spawnStageParticles(["🪷", "✨", "🌿"], cxPct, cyPct);
-      showHomeStageBubble("🏮 西溪临水栈道配石灯笼好有诗意～");
+  // Outdoor landmarks for all 720px scrolling Hangzhou apartments & estates (T5 + T6)
+  if (tx >= 426 && house.weatherMode === "terrace") {
+    if (tx >= 510 && tx <= 690) {
+      spawnStageParticles(house.tier >= 6 ? ["🥂", "✨", "🌿", "🌟"] : ["✨", "🌇", "❤️"], cxPct, cyPct);
+      showHomeStageBubble(house.outdoorNote || `✨ 在「${house.name}」的露台吹吹风好惬意～`);
       playSfx("token");
       return;
     }
@@ -14339,8 +14549,9 @@ function triggerHomeSpotReaction(tx, ty, rawClickY) {
       aurora_holo: "🌈 全息极光在头顶流动耶！",
       secret_astrolabe_dome: "🌟 仰望太初黄金星仪穹顶！",
     };
+    const lObj = TOOTOO_REG.getDecor(d.light);
     spawnStageParticles(["✨", "✦", "🌟", "💡"], cxPct, 28);
-    showHomeStageBubble(lightMsgs[d.light] || "✨ 好漂亮的灯！");
+    showHomeStageBubble(lightMsgs[d.light] || (lObj ? `${lObj.icon}「${lObj.name}」氛围感拉满～` : "✨ 好漂亮的灯！"));
     return;
   }
 
@@ -14353,8 +14564,9 @@ function triggerHomeSpotReaction(tx, ty, rawClickY) {
       portal_fountain: "🌀 感受反重力时空光瀑！",
       secret_starlight_cascade: "🌌 在银河浮空天池许个愿 ✨",
     };
+    const pObj = TOOTOO_REG.getDecor(d.pool);
     spawnStageParticles(["💧", "🫧", "✨", "🌊"], cxPct, cyPct);
-    showHomeStageBubble(poolMsgs[d.pool] || "💧 玩水真开心！");
+    showHomeStageBubble(poolMsgs[d.pool] || (pObj ? `${pObj.icon} 在「${pObj.name}」边听水声好治愈～` : "💧 玩水真开心！"));
     playSfx("cache");
     return;
   }
@@ -14370,8 +14582,9 @@ function triggerHomeSpotReaction(tx, ty, rawClickY) {
       quantum_throne: "👑 登基！奇点王座算力拉满！",
       secret_carrot_throne: "🥕 黄金萝卜圣座降临，尊贵拉满 ✦",
     };
+    const bObj = TOOTOO_REG.getDecor(d.bed);
     spawnStageParticles(d.bed.includes("throne") ? ["👑", "✨", "🌟", "✦"] : ["✨", "💤", "❤️"], cxPct, cyPct);
-    showHomeStageBubble(bedMsgs[d.bed] || "🛋️ 休息一下～");
+    showHomeStageBubble(bedMsgs[d.bed] || (bObj ? `${bObj.icon} 窝在「${bObj.name}」里歇一会儿～` : "🛋️ 休息一下～"));
     playSfx("token");
     return;
   }
@@ -14385,8 +14598,9 @@ function triggerHomeSpotReaction(tx, ty, rawClickY) {
       biolum_reef: "🪸 荧光星花好梦幻！",
       secret_golden_carrot_tree: "🌳 黄金萝卜神树结满光萝卜啦 ✦",
     };
+    const gObj = TOOTOO_REG.getDecor(d.garden);
     spawnStageParticles(["🌸", "🌿", "✨", "🥕"], cxPct, cyPct);
-    showHomeStageBubble(gMsgs[d.garden] || "🌿 闻闻花香～");
+    showHomeStageBubble(gMsgs[d.garden] || (gObj ? `${gObj.icon} 给「${gObj.name}」浇浇水～` : "🌿 闻闻花香～"));
     playSfx("token");
   }
 }
@@ -14412,8 +14626,8 @@ function walkHomeBunnyTo(targetX, targetY, rawClickY = targetY, opts = {}) {
   if (clickedHotTable && hotTbl) {
     tx = hotTbl.standX;
     ty = hotTbl.standY;
-  } else if (house.id === "pot" && rawClickY >= 88 && rawClickY < 166 && tx >= 170 && tx <= 250) {
-    // Clicked inside the warm terracotta pot arch -> walk right into the cozy shelter!
+  } else if (house.weatherMode === "shelter" && rawClickY >= 88 && rawClickY < 166 && tx >= 164 && tx <= 256) {
+    // Clicked inside any T2 shelter arch -> walk right into the dry cozy shelter!
     tx = Math.max(182, Math.min(214, tx));
     ty = 162;
   } else if (worldW > 420 && homeCamera.x < 30 && targetX >= 378 && targetX <= 420 && !opts.exact) {
@@ -14526,13 +14740,13 @@ function walkHomeBunnyTo(targetX, targetY, rawClickY = targetY, opts = {}) {
         const nowOutdoors = isHomeBunnyOutdoors(house.id, tx, ty);
         const gotExposed = syncHomeBunnyClimate(true);
         if (!gotExposed) {
-          if (wasOutdoors && !nowOutdoors && (house.id === "heanju" || house.id === "xixi" || house.id === "pot")) {
+          if (wasOutdoors && !nowOutdoors && (house.weatherMode === "terrace" || house.weatherMode === "shelter")) {
             if (homeBunnyClimate.condition) {
               showHomeStageBubble("🏠 回到屋里啦！快点小桌子喝口热水暖暖～");
             } else {
               showHomeStageBubble("🏠 回到温暖的小家啦～");
             }
-          } else if (!wasOutdoors && nowOutdoors && (house.id === "heanju" || house.id === "xixi")) {
+          } else if (!wasOutdoors && nowOutdoors && house.weatherMode === "terrace") {
             const w = getEffectiveWeather();
             const dp = getEffectiveHomeDayPhase();
             if (w.kind === "windy") showHomeStageBubble("🍃 外面风好大呀，兔耳朵被吹飞啦！");
@@ -14558,9 +14772,10 @@ const homeBunnyClimate = {
 
 function getHomeHotTableInfo(houseId) {
   if (!houseId || houseId === "street") return null;
-  if (houseId === "pot") {
-    // Cozy warm stump table tucked right inside the sheltered flowerpot arch
-    return { x: 234, y: 159, standX: 198, standY: 162, facing: 1, style: "stump" };
+  const h = TOOTOO_REG && TOOTOO_REG.getHouse(houseId);
+  if (h && h.weatherMode === "shelter") {
+    // Cozy warm stump/crate table tucked right inside any T2 shelter arch
+    return { x: 234, y: 159, standX: 198, standY: 162, facing: 1, style: h.hotTableStyle || "stump" };
   }
   const styleMap = {
     cardboard: "crate",
@@ -14572,19 +14787,20 @@ function getHomeHotTableInfo(houseId) {
     wormhole: "cyber",
     secret_palace: "celestial",
   };
-  // Cleanly positioned between left furniture (x<=144) and center bunny (x=210)
-  return { x: 171, y: 157, standX: 199, standY: 164, facing: -1, style: styleMap[houseId] || "wood" };
+  const st = (h && h.hotTableStyle) || styleMap[houseId] || "wood";
+  return { x: 171, y: 157, standX: 199, standY: 164, facing: -1, style: st };
 }
 
 function isHomeBunnyOutdoors(houseId, x = homeBunnyPos.x, y = homeBunnyPos.y) {
-  if (!HOME_WEATHER_HOUSES.has(houseId)) return false;
-  if (houseId === "street") return true;
-  if (houseId === "pot") {
-    // Inside the arched terracotta shelter: x in [168..252], y <= 170; meadow outside is exposed!
-    return x < 168 || x > 252 || y > 170;
+  if (!hasHouseWeather(houseId)) return false;
+  const h = TOOTOO_REG && TOOTOO_REG.getHouse(houseId);
+  const mode = h && h.weatherMode;
+  if (mode === "outdoor" || houseId === "street") return true;
+  if (mode === "shelter") {
+    const a = (h && h.shelterArch) || { x0: 168, x1: 252, yMax: 170 };
+    return x < a.x0 || x > a.x1 || y > a.yMax;
   }
-  if (houseId === "heanju" || houseId === "xixi") {
-    // Side-scrolling world: x >= 426 is past the sliding glass door in the full outdoor terrace/garden!
+  if (mode === "terrace") {
     return x >= 426;
   }
   return false;
@@ -14807,7 +15023,7 @@ function refreshHomeBunnyClimateDom() {
 function syncHomeBunnyClimate(triggerNotice = false) {
   const view = getEffectiveStageViewState();
   const houseId = view.houseId;
-  const hasWeather = HOME_WEATHER_HOUSES.has(houseId);
+  const hasWeather = hasHouseWeather(houseId);
   const weather = hasWeather ? getEffectiveWeather() : null;
   const outdoors = isHomeBunnyOutdoors(houseId, homeBunnyPos.x, homeBunnyPos.y);
 
@@ -14940,11 +15156,13 @@ function getEffectiveWeather() {
 }
 
 function renderWeatherLayerSvg(houseId, weather, dayPhase = { phase: "day", isNight: false }) {
-  if (!HOME_WEATHER_HOUSES.has(houseId) || !weather) return { under: "", over: "" };
+  if (!hasHouseWeather(houseId) || !weather) return { under: "", over: "" };
+  const hObj = TOOTOO_REG && TOOTOO_REG.getHouse(houseId);
+  const mode = (hObj && hObj.weatherMode) || (houseId === "street" ? "outdoor" : (houseId === "pot" ? "shelter" : (houseId === "heanju" || houseId === "xixi" ? "terrace" : "window")));
   const kind = weather.kind || "sunny";
   const isNight = !!(dayPhase && dayPhase.isNight);
-  const isOutdoor = houseId === "street" || houseId === "pot";
-  const hasTerrace = houseId === "heanju" || houseId === "xixi";
+  const isOutdoor = mode === "outdoor" || mode === "shelter";
+  const hasTerrace = mode === "terrace";
 
   // Helper to generate weather particles/clouds for a given bounding box
   const buildZoneFx = (b, opts = {}) => {
@@ -15074,14 +15292,10 @@ function renderWeatherLayerSvg(houseId, weather, dayPhase = { phase: "day", isNi
     return { sky, fall };
   };
 
-  // 1. Scrolling outdoor-world houses (heanju & xixi): full indoor window weather (0..416) + full outdoor world weather (416..720)!
+  // 1. Scrolling outdoor-world houses (T5 & T6 Hangzhou apartments/villas): indoor window + full outdoor world (416..720)!
   if (hasTerrace) {
-    const winClip = houseId === "heanju"
-      ? `<rect x="233" y="25" width="140" height="120"/>`
-      : `<rect x="23" y="24" width="362" height="123"/>`;
-    const winBounds = houseId === "heanju"
-      ? { x0: 233, x1: 373, y0: 25, y1: 145 }
-      : { x0: 23,  x1: 385, y0: 24, y1: 147 };
+    const winBounds = (hObj && hObj.indoorWindow) || { x0: 233, x1: 373, y0: 25, y1: 145 };
+    const winClip = `<rect x="${winBounds.x0}" y="${winBounds.y0}" width="${winBounds.x1 - winBounds.x0}" height="${winBounds.y1 - winBounds.y0}"/>`;
     const outBounds = { x0: 416, x1: 720, y0: 0, y1: 208 };
 
     const defs = `<defs>
@@ -15094,7 +15308,7 @@ function renderWeatherLayerSvg(houseId, weather, dayPhase = { phase: "day", isNi
       isSky: true,
       isFalling: true,
       puddles: [[476, 178, 0], [548, 192, 1], [616, 174, 2], [678, 188, 3]],
-      railSnowY: houseId === "heanju" ? 114 : 132,
+      railSnowY: (hObj && hObj.terraceRailY) || 116,
       darkOp: 0.2,
     });
     const indoorAmbient = (kind === "rain" || kind === "overcast" || kind === "snow")
@@ -15109,23 +15323,21 @@ function renderWeatherLayerSvg(houseId, weather, dayPhase = { phase: "day", isNi
     return { under, over };
   }
 
-  // 2. Pure outdoor houses (street, pot) & window-only indoor houses (cardboard, treehole)
-  const clipShapes = {
-    cardboard: `<rect x="275" y="43" width="86" height="62" rx="3"/>`,
-    treehole:  `<path d="M275 105 L275 66 A37 33 0 0 1 349 66 L349 105 Z"/>`,
-  };
-  const zoneBounds = {
-    street:    { x0: 0,   x1: 420, y0: 0,  y1: 208 },
-    pot:       { x0: 0,   x1: 420, y0: 0,  y1: 208 },
-    cardboard: { x0: 274, x1: 362, y0: 42, y1: 106 },
-    treehole:  { x0: 274, x1: 350, y0: 32, y1: 106 },
-  };
-  const b = zoneBounds[houseId] || zoneBounds.street;
+  // 2. Pure outdoor houses (T1 street), T2 arch shelters, and T3/T4 window-only indoor houses
+  const winDef = (hObj && hObj.indoorWindow) || { x0: 274, x1: 360, y0: 42, y1: 105, shape: "rect" };
+  const winW = winDef.x1 - winDef.x0;
+  const winH = winDef.y1 - winDef.y0;
+  const winShapeSvg = winDef.shape === "arch"
+    ? `<path d="M${winDef.x0} ${winDef.y1} L${winDef.x0} ${winDef.y0 + 32} A${(winW / 2).toFixed(1)} 32 0 0 1 ${winDef.x1} ${winDef.y0 + 32} L${winDef.x1} ${winDef.y1} Z"/>`
+    : `<rect x="${winDef.x0}" y="${winDef.y0}" width="${winW}" height="${winH}" rx="4"/>`;
+  const b = isOutdoor ? { x0: 0, x1: 420, y0: 0, y1: 208 } : winDef;
   const clipId = `hsWClip_${houseId}`;
-  const potMaskDef = houseId === "pot"
-    ? `<defs><mask id="hsPotOutdoorMask"><rect width="420" height="208" fill="#ffffff"/><path d="M168 164 L168 108 A42 42 0 0 1 252 108 L252 164 Z" fill="#000000"/></mask></defs>`
+  const arch = (hObj && hObj.shelterArch) || { x0: 168, x1: 252, yMax: 170 };
+  const archRx = ((arch.x1 - arch.x0) / 2).toFixed(1);
+  const shelterMaskDef = mode === "shelter"
+    ? `<defs><mask id="hsShelterMask_${houseId}"><rect width="420" height="208" fill="#ffffff"/><path d="M${arch.x0} 164 L${arch.x0} 108 A${archRx} 42 0 0 1 ${arch.x1} 108 L${arch.x1} 164 Z" fill="#000000"/></mask></defs>`
     : "";
-  const clipDef = isOutdoor ? potMaskDef : `<defs><clipPath id="${clipId}">${clipShapes[houseId]}</clipPath></defs>`;
+  const clipDef = isOutdoor ? shelterMaskDef : `<defs><clipPath id="${clipId}">${winShapeSvg}</clipPath></defs>`;
 
   const zFx = buildZoneFx(b, {
     isSky: true,
@@ -15136,7 +15348,7 @@ function renderWeatherLayerSvg(houseId, weather, dayPhase = { phase: "day", isNi
   });
 
   if (isOutdoor) {
-    const maskAttr = houseId === "pot" ? ' mask="url(#hsPotOutdoorMask)"' : "";
+    const maskAttr = mode === "shelter" ? ` mask="url(#hsShelterMask_${houseId})"` : "";
     const streetCurbSnow = (houseId === "street" && kind === "snow")
       ? `<rect x="0" y="147" width="420" height="4" fill="#f8fafc" opacity="0.62"/>`
       : "";
@@ -15165,7 +15377,7 @@ function renderHomeStage(freshDecorSlot = null, twirlBunny = false, forceRedraw 
   const vis = getTierVisual(tier);
   const innateSvg = getActiveTierInnateSvg(tier.level, "st");
   const wearSvg = getWearOverlaySvgFor(view.wear, "st");
-  const hasWeather = HOME_WEATHER_HOUSES.has(house.id);
+  const hasWeather = hasHouseWeather(house.id);
   const weather = hasWeather ? getEffectiveWeather() : null;
   const dayPhase = hasWeather ? getEffectiveHomeDayPhase() : { phase: "day", isNight: false, icon: "", label: "", hm: "", mocked: false };
 
@@ -15333,7 +15545,29 @@ function sweepStageShimmer(isSecret = false) {
   }
 }
 
-function playBuildHouseFx(house) {
+function spawnStageRing(cxPct = 50, cyPct = 56, variant = "gold") {
+  const wrap = document.getElementById("homeStageWrap");
+  if (!wrap) return;
+  const r = document.createElement("span");
+  r.className = "home-fx-ring" + (variant === "prism" ? " prism" : (variant === "epic" ? " epic" : ""));
+  r.style.left = cxPct + "%";
+  r.style.top = cyPct + "%";
+  wrap.appendChild(r);
+  setTimeout(() => r.remove(), 860);
+}
+
+function showStageGiftToast(text, isRefund = false) {
+  const wrap = document.getElementById("homeStageWrap");
+  if (!wrap) return;
+  wrap.querySelectorAll(".home-gift-toast").forEach(n => n.remove());
+  const el = document.createElement("div");
+  el.className = "home-gift-toast" + (isRefund ? " refund" : "");
+  el.textContent = text;
+  wrap.appendChild(el);
+  setTimeout(() => el.remove(), 2900);
+}
+
+function playBuildHouseFx(house, giftResult = null) {
   const wrap = document.getElementById("homeStageWrap");
   const svg = document.getElementById("homeStageSvg");
   if (wrap) {
@@ -15349,17 +15583,63 @@ function playBuildHouseFx(house) {
     setTimeout(() => svg.classList.remove("fx-house-rise"), 750);
   }
   const isSecret = !!house.secret;
+  const tier = house.tier || 1;
   const isGrand = isSecret || house.grade === "mythic" || house.grade === "luxury";
   sweepStageShimmer(isSecret);
-  const glyphs = isSecret
-    ? ["✦", "👑", "🏛️", "🌟", "💎", "🥕", "🎆", "✨", "✦", "🌟", "👑", "💎", "🎆", "✨", "🌟", "✦", "🥕", "💎", "✨", "🎆"]
-    : (isGrand
-      ? ["✨", "🎆", "🏛️", "🌟", "🎉", "💎", "✨", "🌟", "🎆", "✨", "🎉", "💎", "🌟", "✨", "🎆", "🎉"]
-      : ["🔨", "🪵", "🧱", "✨", "🏠", "🎉", "✨", "🔨", "🧱", "🌟", "✨", "🎉"]);
+  spawnStageRing(50, 56, isSecret || tier >= 8 ? "prism" : (tier >= 6 ? "epic" : "gold"));
+  let glyphs;
+  if (isSecret) {
+    glyphs = ["✦", "👑", "🏛️", "🌟", "💎", "🥕", "🎆", "✨", "✦", "🌟", "👑", "💎", "🎆", "✨", "🌟", "✦", "🥕", "💎", "✨", "🎆"];
+  } else if (tier >= 8) {
+    glyphs = ["🚀", "🪐", "🌌", "⚡", "✨", "💎", "🌟", "🎆", "✦", "✨", "🌟", "💎", "🌌", "✨", "🎆", "🚀"];
+  } else if (tier === 7) {
+    glyphs = ["🏛️", "✨", "💎", "🌟", "🎆", "✦", "🌊", "❄️", "✨", "🌟", "💎", "🎆", "✨", "🌟", "✦", "🎉"];
+  } else if (tier === 6) {
+    glyphs = ["🥂", "🏯", "✨", "💎", "🌟", "🌸", "🎆", "✨", "🎉", "🌟", "💎", "✨", "🥂", "🌟", "🎉", "✨"];
+  } else if (tier === 5) {
+    glyphs = ["🏙️", "✨", "🌇", "🎉", "🌟", "🏠", "✨", "🎉", "🌟", "✨", "🏙️", "🎉"];
+  } else if (tier === 4) {
+    glyphs = ["🌿", "🌸", "✨", "🏡", "🌟", "🎉", "🍃", "✨", "🌟", "🎉", "✨", "🏡"];
+  } else {
+    glyphs = ["🔨", "🪵", "🧱", "✨", "🏠", "🎉", "✨", "🔨", "🧱", "🌟", "✨", "🎉"];
+  }
   spawnStageParticles(glyphs, 50, 56);
   showStageBanner(isSecret ? `✦ 隐藏神居降临 · 入住「${house.name}」✦` : `🎉 乔迁新居！入住「${house.name}」`, isSecret);
-  if (isSecret && typeof activateStardust === "function") activateStardust(6500);
+  if (giftResult) {
+    setTimeout(() => {
+      spawnStageRing(50, 74, giftResult.refunded ? "gold" : "epic");
+      spawnStageParticles(giftResult.refunded ? ["💰", "🥕", "✨", "🌟"] : ["🎁", "✨", "🌟", giftResult.item.icon, "🎉", "✨"], 50, 76);
+      if (giftResult.refunded) {
+        showStageGiftToast(`💰 赠品「${giftResult.item.name}」已有 · 自动折现返还 +${TOOTOO_REG.formatCoins(giftResult.refundCoins)} 币`, true);
+      } else {
+        showStageGiftToast(`🎁 买房赠礼解锁 · ${giftResult.item.icon} ${giftResult.item.name}`, false);
+      }
+      playSfx("gold");
+    }, 360);
+  }
+  if ((isSecret || tier >= 8) && typeof activateStardust === "function") activateStardust(isSecret ? 6500 : 4200);
   playSfx(isSecret || house.grade === "mythic" ? "mythic" : (isGrand ? "ssr" : "levelUp"));
+}
+
+function playFridayCouponFx(coupon, originBtn) {
+  const isEpic = coupon && coupon.rarity === "epic";
+  if (originBtn) spawnConfettiBurst(originBtn, isEpic ? 36 : 20);
+  sweepStageShimmer(isEpic);
+  spawnStageRing(50, 52, isEpic ? "epic" : "gold");
+  spawnStageParticles(
+    isEpic
+      ? ["🔥", "🏷️", "💎", "✨", "🎉", "🌟", "👑", "🔥", "✨", "🎆", "🌟", "🏷️", "💎", "🎉"]
+      : ["🏷️", "✨", "🎉", "🥕", "🌟", "✨", "🎉", "🏷️", "🌟", "✨"],
+    50, 52
+  );
+  showStageBanner(
+    isEpic
+      ? "🔥 欧气爆发！喜提下周【3 折租房神券】！"
+      : "🏷️ 辛苦一周！已领下周【8 折租房券】",
+    isEpic
+  );
+  if (isEpic && typeof activateStardust === "function") activateStardust(4800);
+  playSfx(isEpic ? "mythic" : "gold");
 }
 
 function playDecorFx(slot, item) {
@@ -15374,6 +15654,7 @@ function playDecorFx(slot, item) {
     pool:   { x: 74, y: 84, g: ["💧", "🫧", "✨", "🌊", "💎", "🫧", "✨", "💧", "🌟", "✨"] },
   };
   const p = posMap[slot] || posMap.bed;
+  if (isHigh) spawnStageRing(p.x, p.y, isSecret ? "prism" : "gold");
   const glyphs = isSecret
     ? ["✦", "👑", "💎", "🌟", "✨", "🥕", "🎆", "✦", "🌟", "💎", "✨", "👑", "🌟", "✨", "✦", "💎", "🎆", "✨"]
     : (isHigh ? [...p.g, "💎", "🌟", "✦", "✨"] : p.g);
@@ -15385,7 +15666,9 @@ function playDecorFx(slot, item) {
 
 function playDressFx(item) {
   const isSecret = !!item.secret;
+  const isHigh = isSecret || item.grade === "mythic" || item.grade === "luxury";
   if (isSecret) sweepStageShimmer(true);
+  if (isHigh) spawnStageRing(50, 62, isSecret ? "prism" : "gold");
   const glyphs = isSecret
     ? ["✦", "👑", "💎", "🌟", "✨", "🎀", "🎆", "✦", "🌟", "💎", "✨", "👑", "🌟", "✨", "✦", "💎"]
     : ["✨", "🎀", "💎", "🌟", "✨", "✦", "🎀", "🌟", "✨", "💎"];
@@ -15514,6 +15797,47 @@ function renderHomeShop() {
     }
   }
 
+  // Friday 14:00-18:00 "辛苦一周" Weekly Rental Coupon Banner (strictly hidden outside window!)
+  const friInfo = TOOTOO_REG.getFridayWindowInfo(hState, debugState.active && debugFridayMock);
+  const friEl = document.getElementById("homeFridayBanner");
+  const friTxt = document.getElementById("homeFridayBannerText");
+  const friBtn = document.getElementById("homeFridayClaimBtn");
+  const bestCoupon = TOOTOO_REG.getBestRentCoupon(hState);
+  if (friEl && friTxt && friBtn) {
+    if (friInfo.isOpen) {
+      friEl.classList.add("show");
+      friEl.classList.toggle("claimed", friInfo.claimed);
+      if (friInfo.claimed) {
+        friTxt.textContent = bestCoupon
+          ? `✅ 本周五租房福利已领 · 当前可用「${bestCoupon.label}」（${TOOTOO_REG.formatLeaseRemaining(bestCoupon.expires_at)}）`
+          : "✅ 本周五辛苦奖励已领用，下周五 14:00 再来领券～";
+        friBtn.textContent = "✓ 本周已领";
+        friBtn.disabled = true;
+      } else {
+        const hrsLeft = Math.floor(friInfo.minsLeft / 60);
+        const remMin = friInfo.minsLeft % 60;
+        const leftStr = hrsLeft > 0 ? `${hrsLeft}h${remMin}m` : `${remMin}分钟`;
+        friTxt.textContent = `🎉 辛苦一周！周五限时领下周租房券（8折 / 欧气 3折神券 · 剩 ${leftStr}${friInfo.mocked ? " [模拟]" : ""}）`;
+        friBtn.textContent = "🎁 抽领租房券";
+        friBtn.disabled = false;
+      }
+    } else {
+      friEl.classList.remove("show");
+    }
+  }
+
+  const couponPillEl = document.getElementById("homeCouponPill");
+  if (couponPillEl) {
+    if (homeUiState.tab === "houses" && bestCoupon) {
+      couponPillEl.style.display = "inline-flex";
+      couponPillEl.className = "home-coupon-pill" + (bestCoupon.rarity === "epic" ? " epic" : "");
+      couponPillEl.textContent = `${bestCoupon.label} · ${TOOTOO_REG.formatLeaseRemaining(bestCoupon.expires_at)}`;
+      couponPillEl.title = "点击任意房型的周租/月租时可自动勾选抵扣！";
+    } else {
+      couponPillEl.style.display = "none";
+    }
+  }
+
   const secCounterEl = document.getElementById("homeSecretCounter");
   if (secCounterEl) secCounterEl.textContent = `✦ 隐藏款 ${secStat.owned}/${secStat.total}`;
 
@@ -15547,7 +15871,7 @@ function renderHomeShop() {
       if (subbarEl) subbarEl.style.display = "flex";
       if (pillsEl) {
         const tiers = Array.from(new Set(HOME_HOUSES.map(x => x.tier || 1))).sort((a, b) => a - b);
-        pillsEl.innerHTML = `<button class="home-slot-pill${homeUiState.houseTier === 0 ? " active" : ""}" data-htier="0">全部等级</button>`
+        pillsEl.innerHTML = `<button class="home-slot-pill${homeUiState.houseTier === 0 ? " active" : ""}" data-htier="0">全部</button>`
           + tiers.map(t => `<button class="home-slot-pill${homeUiState.houseTier === t ? " active" : ""}" data-htier="${t}">T${t}</button>`).join("");
       }
     } else {
@@ -15583,16 +15907,16 @@ function renderHomeShop() {
               : (leased
                 ? `<button class="hc-btn equip" data-act="move-house" data-id="${h.id}">搬入</button>`
                 : `<button class="hc-btn buy${h.secret ? " secret-buy" : ""}" data-act="buy-house" data-id="${h.id}" ${canBuy ? "" : "disabled"}>${canBuy ? (h.secret ? "铸造" : "买房") : "币不足"}</button>`))));
-      // Ultra-clean minimal rent bar (red price when unaffordable!)
+      // Ultra-clean minimal rent bar (coupon-aware + red price when unaffordable!)
       let rentRowHtml = "";
       if (h.rentable && !owned && !locked) {
-        const r7 = TOOTOO_REG.getHouseRentPrice(h, 7, activeEvents);
-        const r30 = TOOTOO_REG.getHouseRentPrice(h, 30, activeEvents);
+        const r7 = TOOTOO_REG.getHouseRentPrice(h, 7, activeEvents, bestCoupon);
+        const r30 = TOOTOO_REG.getHouseRentPrice(h, 30, activeEvents, bestCoupon);
         const canR7 = r7 && cs.balance >= r7.price;
         const canR30 = r30 && cs.balance >= r30.price;
         const eqTxt = buyInfo.equityCredit > 0
           ? `已抵 -${TOOTOO_REG.formatCoins(buyInfo.equityCredit)}`
-          : (leased ? TOOTOO_REG.formatLeaseRemaining(leasedExp) : "租房");
+          : (leased ? TOOTOO_REG.formatLeaseRemaining(leasedExp) : (bestCoupon ? `${Math.round(bestCoupon.discount * 10)}折券可用` : "租房"));
         rentRowHtml = `<div class="hc-rent-row">
           <span class="hc-rent-info">🔑 ${eqTxt}</span>
           <span class="hc-btns">
@@ -15600,6 +15924,19 @@ function renderHomeShop() {
             <button class="hc-btn rent${canR30 ? "" : " unaffordable"}" data-act="rent-house-30" data-id="${h.id}" ${canR30 ? "" : "disabled"}>${leased ? "+30天" : "月租"} ${TOOTOO_REG.formatCoins(r30.price)}</button>
           </span>
         </div>`;
+      }
+      // Purchase gift badge (harmonious single line on non-owned unlocked houses)
+      let giftRowHtml = "";
+      if (!locked && !owned) {
+        const gift = TOOTOO_REG.getHouseGift(h);
+        if (gift) {
+          const alreadyHasGift = gift.kind === "wear"
+            ? hState.owned_wear.includes(gift.item.id)
+            : hState.owned_decor.includes(gift.item.id);
+          giftRowHtml = alreadyHasGift
+            ? `<div class="hc-gift-row owned-gift" title="你已拥有该赠品，买断时将自动折现返还 50% 萝卜币">🎁 含赠礼(折现 +${TOOTOO_REG.formatCoins(gift.refundCoins)}币)</div>`
+            : `<div class="hc-gift-row" title="永久买断此房产即免费获赠该调性专属好礼！">🎁 买房赠：${gift.item.icon} ${gift.item.name}</div>`;
+        }
       }
       const gradeCls = ` grade-${h.grade || "basic"}`;
       const tierBadge = h.tier ? `<span style="opacity:.55;font-family:var(--font-mono);font-size:8.5px;margin-right:3px">T${h.tier}</span>` : "";
@@ -15611,6 +15948,7 @@ function renderHomeShop() {
           </div>
           ${locked ? "" : `<div class="hc-desc" style="margin-top:3px">${h.desc}</div>`}
           ${locked ? "" : `<div class="hc-desc" style="margin-top:2px;color:var(--ink-soft)">槽位：${slotTxt}</div>`}
+          ${giftRowHtml}
         </div>
         <div>
           <div class="hc-act">
@@ -15825,36 +16163,77 @@ document.getElementById("homeAvatarWearToggle").addEventListener("click", () => 
 });
 
 let _pendingHomeConfirm = null;
+let _pendingCouponToggle = null;
 
-function openHomeConfirm({ title, priceHtml, note, okLabel, onConfirm }) {
+function openHomeConfirm({ title, priceHtml, note, okLabel, couponOpt = null, onConfirm }) {
   const bar = document.getElementById("homeConfirmBar");
   const tEl = document.getElementById("homeConfirmTitle");
   const pEl = document.getElementById("homeConfirmPrice");
   const nEl = document.getElementById("homeConfirmNote");
   const okEl = document.getElementById("homeConfirmOkBtn");
-  if (!bar) { onConfirm(); return; }
+  const cRow = document.getElementById("homeConfirmCouponRow");
+  const cChk = document.getElementById("homeConfirmCouponChk");
+  const cLbl = document.getElementById("homeConfirmCouponLbl");
+  if (!bar) { onConfirm(!!(couponOpt && couponOpt.defaultChecked)); return; }
   _pendingHomeConfirm = onConfirm;
+  _pendingCouponToggle = couponOpt;
   if (tEl) tEl.textContent = title;
   if (pEl) pEl.innerHTML = priceHtml;
   if (nEl) nEl.textContent = note;
   if (okEl) okEl.textContent = okLabel || "确认";
+  if (cRow && cChk && cLbl) {
+    if (couponOpt) {
+      cRow.classList.add("show");
+      cChk.checked = couponOpt.defaultChecked !== false;
+      cLbl.textContent = couponOpt.label;
+      if (typeof couponOpt.onToggle === "function") {
+        couponOpt.onToggle(cChk.checked, pEl, okEl);
+      }
+    } else {
+      cRow.classList.remove("show");
+    }
+  }
   bar.classList.add("open");
   playSfx("token");
 }
 
 function closeHomeConfirm() {
   _pendingHomeConfirm = null;
+  _pendingCouponToggle = null;
   document.getElementById("homeConfirmBar")?.classList.remove("open");
+  document.getElementById("homeConfirmCouponRow")?.classList.remove("show");
 }
 
+document.getElementById("homeConfirmCouponChk")?.addEventListener("change", (e) => {
+  if (_pendingCouponToggle && typeof _pendingCouponToggle.onToggle === "function") {
+    _pendingCouponToggle.onToggle(
+      e.target.checked,
+      document.getElementById("homeConfirmPrice"),
+      document.getElementById("homeConfirmOkBtn")
+    );
+  }
+});
 document.getElementById("homeConfirmCancelBtn").addEventListener("click", () => {
   closeHomeConfirm();
   playSfx("token");
 });
 document.getElementById("homeConfirmOkBtn").addEventListener("click", () => {
   const fn = _pendingHomeConfirm;
+  const useCoupon = !!(document.getElementById("homeConfirmCouponRow")?.classList.contains("show") && document.getElementById("homeConfirmCouponChk")?.checked);
   closeHomeConfirm();
-  if (typeof fn === "function") fn();
+  if (typeof fn === "function") fn(useCoupon);
+});
+
+document.getElementById("homeFridayClaimBtn")?.addEventListener("click", (e) => {
+  const h = cloneHomeState(getActiveHomeState());
+  const friInfo = TOOTOO_REG.getFridayWindowInfo(h, debugState.active && debugFridayMock);
+  if (!friInfo.canClaim) return;
+  const coupon = TOOTOO_REG.rollFridayCoupon(false);
+  h.friday_claim_week = friInfo.weekKey;
+  h.coupons = [...TOOTOO_REG.getValidCoupons(h), coupon];
+  saveActiveHomeState(h, 0);
+  renderHomeModal();
+  playFridayCouponFx(coupon, e.currentTarget);
 });
 
 document.getElementById("homeShopGrid").addEventListener("click", (e) => {
@@ -15881,27 +16260,49 @@ document.getElementById("homeShopGrid").addEventListener("click", (e) => {
     const house = TOOTOO_REG.getHouse(id);
     if (!house || !house.rentable) return;
     const days = act === "rent-house-30" ? 30 : 7;
-    const rentEff = TOOTOO_REG.getHouseRentPrice(house, days, activeEvents);
-    if (!rentEff || cs.balance < rentEff.price) { playSfx("bomb"); return; }
+    const bestCoupon = TOOTOO_REG.getBestRentCoupon(h);
+    const rentNoCoupon = TOOTOO_REG.getHouseRentPrice(house, days, activeEvents, null);
+    const rentWithCoupon = bestCoupon ? TOOTOO_REG.getHouseRentPrice(house, days, activeEvents, bestCoupon) : rentNoCoupon;
+    if (!rentWithCoupon || cs.balance < rentWithCoupon.price) { playSfx("bomb"); return; }
     const leased = TOOTOO_REG.isHouseLeased(house.id, h);
+    const couponOpt = bestCoupon ? {
+      defaultChecked: true,
+      label: `使用「${bestCoupon.label}」立省 ${TOOTOO_REG.formatCoins(rentWithCoupon.savedByCoupon)} 币（${TOOTOO_REG.formatLeaseRemaining(bestCoupon.expires_at)}）`,
+      onToggle: (checked, priceEl, okBtnEl) => {
+        const effNow = checked ? rentWithCoupon : rentNoCoupon;
+        if (priceEl) priceEl.innerHTML = renderPriceHtml(effNow);
+        if (okBtnEl) okBtnEl.disabled = getGachaCoinState().balance < effNow.price;
+      },
+    } : null;
     openHomeConfirm({
       title: `🔑 ${leased ? "续租" : "租住"}「${house.name}」· ${days} 天`,
-      priceHtml: renderPriceHtml(rentEff),
+      priceHtml: renderPriceHtml(rentWithCoupon),
       note: "已付房租的 50% 将自动抵扣未来买断价（最高抵 40%）；租期到期后会自动搬回已有房产，所有装潢安全保留在仓库。",
       okLabel: leased ? `确认续租 +${days}天` : "确认租住",
-      onConfirm: () => {
+      couponOpt,
+      onConfirm: (useCoupon) => {
         const curH = cloneHomeState(getActiveHomeState());
         const curCs = getGachaCoinState();
-        if (curCs.balance < rentEff.price) { playSfx("bomb"); return; }
+        const activeCoupon = useCoupon ? TOOTOO_REG.getValidCoupons(curH).find(c => bestCoupon && c.id === bestCoupon.id) : null;
+        const finalRent = TOOTOO_REG.getHouseRentPrice(house, days, activeEvents, activeCoupon);
+        if (!finalRent || curCs.balance < finalRent.price) { playSfx("bomb"); return; }
         const now = Date.now();
         const curExp = Math.max(now, Number((curH.leases && curH.leases[house.id]) || 0));
         curH.leases[house.id] = curExp + days * 86400000;
-        curH.rent_equity[house.id] = Number((curH.rent_equity && curH.rent_equity[house.id]) || 0) + rentEff.price;
+        curH.rent_equity[house.id] = Number((curH.rent_equity && curH.rent_equity[house.id]) || 0) + finalRent.price;
+        if (activeCoupon) {
+          curH.coupons = (curH.coupons || []).filter(c => c.id !== activeCoupon.id);
+        }
         curH.house = house.id;
-        saveActiveHomeState(curH, rentEff.price);
+        saveActiveHomeState(curH, finalRent.price);
         renderHomeModal();
         playBuildHouseFx(house);
-        showStageBanner(`🔑 已${leased ? "续租" : "入住"}「${house.name}」+${days}天`, false);
+        showStageBanner(
+          activeCoupon
+            ? `🏷️ 已用${Math.round(activeCoupon.discount * 10)}折券${leased ? "续租" : "入住"}「${house.name}」+${days}天`
+            : `🔑 已${leased ? "续租" : "入住"}「${house.name}」+${days}天`,
+          !!(activeCoupon && activeCoupon.rarity === "epic")
+        );
       },
     });
   } else if (act === "buy-house" || act === "move-house") {
@@ -15910,7 +16311,17 @@ document.getElementById("homeShopGrid").addEventListener("click", (e) => {
     if (act === "buy-house") {
       const buyInfo = TOOTOO_REG.getHouseBuyoutInfo(house, h, activeEvents);
       if (cs.balance < buyInfo.price) { playSfx("bomb"); return; }
+      const gift = TOOTOO_REG.getHouseGift(house);
+      const giftAlreadyClaimed = (h.claimed_house_gifts || []).includes(house.id);
+      const giftOwnedBefore = gift && (gift.kind === "wear" ? h.owned_wear.includes(gift.item.id) : h.owned_decor.includes(gift.item.id));
       const noteParts = ["买断后永久拥有，无需再交房租。"];
+      if (gift && !giftAlreadyClaimed) {
+        if (giftOwnedBefore) {
+          noteParts.push(`🎁 已拥有赠品「${gift.item.name}」，买断后自动返还 50% 折现 +${TOOTOO_REG.formatCoins(gift.refundCoins)} 币！`);
+        } else {
+          noteParts.push(`🎁 买房免费获赠「${gift.item.icon} ${gift.item.name}」（直接存入仓库/衣橱）！`);
+        }
+      }
       if (buyInfo.equityCredit > 0) noteParts.unshift(`已自动抵扣历史房租 -${TOOTOO_REG.formatCoins(buyInfo.equityCredit)} 币！`);
       if (buyInfo.onSale) noteParts.push(`已享活动${buyInfo.discountLabel}优惠。`);
       openHomeConfirm({
@@ -15925,9 +16336,32 @@ document.getElementById("homeShopGrid").addEventListener("click", (e) => {
           if (!curH.owned_houses.includes(house.id)) curH.owned_houses.push(house.id);
           if (curH.leases) delete curH.leases[house.id];
           curH.house = house.id;
-          saveActiveHomeState(curH, buyInfo.price);
+          let bonusRefund = 0;
+          let giftResult = null;
+          if (gift && !(curH.claimed_house_gifts || []).includes(house.id)) {
+            curH.claimed_house_gifts = [...(curH.claimed_house_gifts || []), house.id];
+            const hasGift = gift.kind === "wear"
+              ? curH.owned_wear.includes(gift.item.id)
+              : curH.owned_decor.includes(gift.item.id);
+            if (hasGift) {
+              bonusRefund = gift.refundCoins;
+              giftResult = { item: gift.item, refunded: true, refundCoins: gift.refundCoins };
+            } else {
+              if (gift.kind === "wear") {
+                curH.owned_wear.push(gift.item.id);
+                if (!curH.wear[gift.item.slot]) curH.wear[gift.item.slot] = gift.item.id;
+              } else {
+                curH.owned_decor.push(gift.item.id);
+                if (house.slots.includes(gift.item.slot) && !curH.decor[gift.item.slot]) {
+                  curH.decor[gift.item.slot] = gift.item.id;
+                }
+              }
+              giftResult = { item: gift.item, refunded: false, refundCoins: 0 };
+            }
+          }
+          saveActiveHomeState(curH, buyInfo.price, bonusRefund);
           renderHomeModal();
-          playBuildHouseFx(house);
+          playBuildHouseFx(house, giftResult);
         },
       });
     } else {
@@ -16062,6 +16496,20 @@ document.querySelectorAll("#dbgEventChips button[data-ev]").forEach(btn => {
     renderHomeShop();
     playSfx("token");
   });
+});
+document.getElementById("dbgFridayToggleBtn")?.addEventListener("click", (e) => {
+  debugFridayMock = !debugFridayMock;
+  e.currentTarget.classList.toggle("on", debugFridayMock);
+  e.currentTarget.textContent = debugFridayMock ? "🏷️ 模拟周五领券: 开" : "🏷️ 模拟周五领券: 关";
+  renderHomeShop();
+  playSfx("token");
+});
+document.getElementById("dbgFridayResetBtn")?.addEventListener("click", () => {
+  const h = cloneHomeState(getActiveHomeState());
+  h.friday_claim_week = "";
+  saveActiveHomeState(h, 0);
+  renderHomeShop();
+  playSfx("token");
 });
 document.querySelectorAll("#dbgWeatherChips button[data-w]").forEach(btn => {
   btn.addEventListener("click", () => {

@@ -101,6 +101,9 @@ DEFAULT_HOME_STATE: dict[str, Any] = {
     "owned_wear": [],
     "hidden_tier_acc": [],
     "show_on_avatar": True,
+    "coupons": [],
+    "friday_claim_week": "",
+    "claimed_house_gifts": [],
 }
 
 
@@ -114,6 +117,9 @@ def _sanitize_home_state(raw: Any) -> dict[str, Any]:
     h["hidden_tier_acc"] = []
     h["leases"] = {}
     h["rent_equity"] = {}
+    h["coupons"] = []
+    h["friday_claim_week"] = ""
+    h["claimed_house_gifts"] = []
     if not isinstance(raw, dict):
         return h
     if isinstance(raw.get("house"), str) and raw["house"].strip():
@@ -153,6 +159,33 @@ def _sanitize_home_state(raw: Any) -> dict[str, Any]:
         h["hidden_tier_acc"] = sorted({int(x) for x in raw["hidden_tier_acc"] if isinstance(x, (int, float)) and 4 <= int(x) <= 10})
     if isinstance(raw.get("show_on_avatar"), bool):
         h["show_on_avatar"] = raw["show_on_avatar"]
+    if isinstance(raw.get("coupons"), list):
+        clean_coupons: list[dict[str, Any]] = []
+        seen_cids: set[str] = set()
+        for c in raw["coupons"][:20]:
+            if not isinstance(c, dict):
+                continue
+            cid = str(c.get("id") or "").strip()
+            disc = c.get("discount")
+            exp = c.get("expires_at")
+            if not cid or cid in seen_cids or not isinstance(disc, (int, float)) or not (0.1 <= float(disc) < 1.0):
+                continue
+            if not isinstance(exp, (int, float)) or exp <= 0:
+                continue
+            seen_cids.add(cid)
+            clean_coupons.append({
+                "id": cid,
+                "discount": round(float(disc), 2),
+                "label": str(c.get("label") or f"{int(round(float(disc) * 10))}折租房券")[:32],
+                "rarity": "epic" if str(c.get("rarity") or "") == "epic" else "normal",
+                "expires_at": int(exp),
+                "source": str(c.get("source") or "friday")[:24],
+            })
+        h["coupons"] = clean_coupons
+    if isinstance(raw.get("friday_claim_week"), str):
+        h["friday_claim_week"] = raw["friday_claim_week"].strip()[:16]
+    if isinstance(raw.get("claimed_house_gifts"), list):
+        h["claimed_house_gifts"] = list(dict.fromkeys(str(x).strip() for x in raw["claimed_house_gifts"] if isinstance(x, str) and x.strip()))
     return h
 
 

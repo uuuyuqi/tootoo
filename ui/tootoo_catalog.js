@@ -1,25 +1,24 @@
 /* ============================================================================
- * TooToo Raising Economy, Live-Ops Events & Extensible Content Registry
+ * TooToo Raising Economy, Live-Ops Events, Friday Rent Coupons & Content Registry
  * ----------------------------------------------------------------------------
- * Designed to scale to 300+ houses, decors, wearables, and seasonal events
- * (1024 Programmer's Day, Black Friday, Christmas, Spring Festival, etc.)
- * without editing ui/index.html.
- *
- * Daily Income Baselines (10M tokens = 1 萝卜币, Daily Check-In = +1 萝卜币):
- *   - Casual (30M/day):       4 币/day  (~120/mo)  -> Long-term home: 工业纸箱屋 (80)
- *   - Regular (100M/day):    11 币/day  (~330/mo)  -> Long-term home: 阳光树洞屋 (360)
- *   - Engineer (200M/day):   21 币/day  (~630/mo)  -> Long-term home: 和安居小区 (1,280)
- *   - Power AI (1B/day):    101 币/day  (~3030/mo) -> Dream mansion:  西溪壹号别墅 (6,800+)
+ * 42 Houses (T1..T10, 0.8/1.0/1.2/1.4/1.6 per tier) with Purchase Gifts
+ * ~100 Decors (5 slots) + 44 Wearables (3 slots) + Seasonal Festival Exclusives
+ * Friday 14:00-18:00 "辛苦一周" Weekly Rental Coupon (85% 8折 / 15% 3折神券)
  * ============================================================================ */
 (function (global) {
   "use strict";
 
   const ECONOMY = {
-    version: 3,
+    version: 4,
     mintUnitTokens: 10e6,
     baseCheckinCoins: 1,
     rentEquityRate: 0.5,      // 50% of paid rent accumulates toward buying out the house
     rentEquityCapRate: 0.4,   // Max 40% of house purchase price can be offset by rent equity
+    giftRefundRate: 0.5,      // Buying a house whose gift you already own refunds 50% of gift price
+    fridayStartHour: 14,      // Friday 14:00 - 18:00 local time
+    fridayEndHour: 18,
+    fridayEpicChance: 0.15,   // 15% chance for 3折神券, 85% chance for 8折租房券
+    fridayCouponDays: 7,
     gradeMeta: {
       basic:  { label: "",          cls: "basic",  order: 1 },
       craft:  { label: "精工",      cls: "craft",  order: 2 },
@@ -31,9 +30,9 @@
     houseTiers: [
       { tier: 1,  label: "T1 起点" },
       { tier: 2,  label: "T2 蜗居" },
-      { tier: 3,  label: "T3 纸箱" },
+      { tier: 3,  label: "T3 手作" },
       { tier: 4,  label: "T4 林间" },
-      { tier: 5,  label: "T5 公寓" },
+      { tier: 5,  label: "T5 杭州" },
       { tier: 6,  label: "T6 顶豪" },
       { tier: 7,  label: "T7 奇观" },
       { tier: 8,  label: "T8 星际" },
@@ -43,7 +42,6 @@
   };
 
   // ---- Seasonal & Live-Ops Festival Calendar ----
-  // dateRanges: [startMMDD, endMMDD] inclusive (supports year-wrap like 1225..0105)
   const EVENTS = [
     {
       id: "prog1024",
@@ -95,89 +93,386 @@
     },
   ];
 
-  // ---- Houses Catalog (10-Tier Real Estate Progression + Leasing from 和安居 Onward) ----
+  // ---- Houses Catalog: 42 Houses across T1..T10 (T2..T9 at strict 0.8/1.0/1.2/1.4/1.6 tiers) ----
+  // weatherMode: "outdoor" (T1 exposed) | "shelter" (T2 arch shelter + outdoor meadow) | "window" (T3/T4 indoor+window) | "terrace" (T5/T6 720px side-scrolling indoor+outdoor) | "none" (T7..T10 cosmic/wonder)
   const HOUSES = [
+    // ---- T1 起点 ----
     {
       id: "street", tier: 1, icon: "🛣️", name: "露宿马路边", price: 0, tierTag: "起点", grade: "basic",
       rentable: false, series: "初始起点", tags: ["起点", "户外", "街头"],
-      slots: [],
+      slots: [], weatherMode: "outdoor", worldWidth: 420, hotTableStyle: null,
       desc: "暖黄路灯与旧报纸铺地，捧着热咖啡从零起家",
+    },
+
+    // ---- T2 简陋落脚（基准 20：0.8 / 1.0 / 1.2 / 1.4 / 1.6）----
+    {
+      id: "wall_corner", tier: 2, icon: "🧱", name: "废弃墙角窝", price: 16, tierTag: "蜗居", grade: "basic",
+      rentable: true, rent7d: 1, rent30d: 5, series: "新手落脚", tags: ["墙角", "红砖", "可租房", "喝热水"],
+      slots: [], weatherMode: "shelter", worldWidth: 420, hotTableStyle: "crate",
+      shelterArch: { x0: 158, x1: 262, yMax: 170 },
+      gift: { kind: "wear", id: "paper_boat" },
+      desc: "背风红砖残墙配斜搭木板雨棚，遮风避雨并解锁棚内喝热水",
     },
     {
       id: "pot", tier: 2, icon: "🪴", name: "简陋花盆屋", price: 20, tierTag: "蜗居", grade: "basic",
-      rentable: true, rent7d: 2, rent30d: 6,
-      series: "新手落脚", tags: ["新手", "花盆", "可租房", "喝热水"],
-      slots: [],
+      rentable: true, rent7d: 2, rent30d: 6, series: "新手落脚", tags: ["新手", "花盆", "可租房", "喝热水"],
+      slots: [], weatherMode: "shelter", worldWidth: 420, hotTableStyle: "stump",
+      shelterArch: { x0: 168, x1: 252, yMax: 170 },
+      gift: { kind: "decor", id: "carrot_sprout" },
       desc: "青草蘑菇间的红陶拱门花盆屋，从此能遮风挡雨并解锁屋内小桌喝热水",
     },
     {
+      id: "hay_pile", tier: 2, icon: "🌿", name: "蓬松小草堆", price: 24, tierTag: "蜗居", grade: "basic",
+      rentable: true, rent7d: 2, rent30d: 7, series: "新手落脚", tags: ["草堆", "田野", "可租房", "喝热水"],
+      slots: [], weatherMode: "shelter", worldWidth: 420, hotTableStyle: "stump",
+      shelterArch: { x0: 162, x1: 258, yMax: 170 },
+      gift: { kind: "decor", id: "straw_mat" },
+      desc: "晒满阳光的田野干草垛小洞，窝进去满鼻稻草清香与暖意",
+    },
+    {
+      id: "moss_rocks", tier: 2, icon: "🪨", name: "苔藓石头堆", price: 28, tierTag: "蜗居", grade: "basic",
+      rentable: true, rent7d: 2, rent30d: 8, series: "新手落脚", tags: ["石头堆", "苔藓", "溪畔", "可租房"],
+      slots: [], weatherMode: "shelter", worldWidth: 420, hotTableStyle: "stump",
+      shelterArch: { x0: 164, x1: 256, yMax: 170 },
+      gift: { kind: "decor", id: "firefly_stone_lamp" },
+      desc: "溪畔青苔鹅卵石搭出的避风石穴，夏凉冬暖还有萤火微光",
+    },
+    {
+      id: "giant_mushroom", tier: 2, icon: "🍄", name: "野生大蘑菇棚", price: 32, tierTag: "蜗居", grade: "basic",
+      rentable: true, rent7d: 3, rent30d: 10, series: "新手落脚", tags: ["蘑菇", "森林", "童话", "可租房"],
+      slots: [], weatherMode: "shelter", worldWidth: 420, hotTableStyle: "stump",
+      shelterArch: { x0: 158, x1: 262, yMax: 170 },
+      gift: { kind: "wear", id: "mushroom_cap" },
+      desc: "雨后林地撑开巨伞的红白波点蘑菇屋檐，仿佛住进童话森林",
+    },
+
+    // ---- T3 手作蜗居（基准 80：0.8 / 1.0 / 1.2 / 1.4 / 1.6，解锁 bed + light）----
+    {
+      id: "bamboo_basket", tier: 3, icon: "🧺", name: "废旧竹编筐屋", price: 64, tierTag: "可装潢", grade: "craft",
+      rentable: true, rent7d: 4, rent30d: 13, series: "手作居所", tags: ["竹筐", "手作", "可租房"],
+      slots: ["bed", "light"], weatherMode: "window", worldWidth: 420, hotTableStyle: "stump",
+      indoorWindow: { x0: 274, x1: 356, y0: 44, y1: 104, shape: "rect" },
+      gift: { kind: "decor", id: "woven_pouf" },
+      desc: "倒扣大号老竹编筐开出透气小窗，正式开启家具与灯饰装潢！",
+    },
+    {
       id: "cardboard", tier: 3, icon: "📦", name: "工业纸箱屋", price: 80, tierTag: "可装潢", grade: "craft",
-      rentable: true, rent7d: 6, rent30d: 18,
-      series: "经典居所", tags: ["装潢入门", "纸箱", "可租房", "性价比"],
-      slots: ["bed", "light"],
+      rentable: true, rent7d: 6, rent30d: 18, series: "经典居所", tags: ["装潢入门", "纸箱", "可租房", "性价比"],
+      slots: ["bed", "light"], weatherMode: "window", worldWidth: 420, hotTableStyle: "crate",
+      indoorWindow: { x0: 275, x1: 361, y0: 43, y1: 105, shape: "rect" },
+      gift: { kind: "decor", id: "cardboard_sofa" },
       desc: "加厚双层瓦楞纸箱配手绘开窗，正式开启家具与灯饰装潢！",
     },
     {
+      id: "wood_crate", tier: 3, icon: "🪵", name: "工地木板箱屋", price: 96, tierTag: "可装潢", grade: "craft",
+      rentable: true, rent7d: 6, rent30d: 20, series: "手作居所", tags: ["木板箱", "工业风", "可租房"],
+      slots: ["bed", "light"], weatherMode: "window", worldWidth: 420, hotTableStyle: "crate",
+      indoorWindow: { x0: 274, x1: 360, y0: 42, y1: 104, shape: "rect" },
+      gift: { kind: "decor", id: "fairy_bulb" },
+      desc: "松木货运板条箱配铁艺合页与防潮铆钉，硬核复古工业风",
+    },
+    {
+      id: "canvas_tent", tier: 3, icon: "⛺", name: "露营帆布帐篷", price: 112, tierTag: "可装潢", grade: "craft",
+      rentable: true, rent7d: 7, rent30d: 22, series: "手作居所", tags: ["露营", "帐篷", "串灯", "可租房"],
+      slots: ["bed", "light"], weatherMode: "window", worldWidth: 420, hotTableStyle: "wood",
+      indoorWindow: { x0: 274, x1: 356, y0: 40, y1: 108, shape: "arch" },
+      gift: { kind: "decor", id: "camping_lantern" },
+      desc: "米白防泼水三角帆布帐配暖黄氛围串灯，随时逃离工位去野营",
+    },
+    {
+      id: "vintage_van", tier: 3, icon: "🚐", name: "复古露营面包车", price: 128, tierTag: "可装潢", grade: "craft",
+      rentable: true, rent7d: 8, rent30d: 26, series: "手作居所", tags: ["房车", "复古", "江边", "可租房"],
+      slots: ["bed", "light"], weatherMode: "window", worldWidth: 420, hotTableStyle: "wood",
+      indoorWindow: { x0: 244, x1: 374, y0: 40, y1: 104, shape: "rect" },
+      gift: { kind: "decor", id: "van_plaid_mat" },
+      desc: "停在江边草地的薄荷绿复古改装房车，宽景车窗直面日出江风",
+    },
+
+    // ---- T4 林间独栋（基准 360：0.8 / 1.0 / 1.2 / 1.4 / 1.6，解锁 bed + light + garden）----
+    {
+      id: "bamboo_pavilion", tier: 4, icon: "🎋", name: "溪畔竹林小筑", price: 288, tierTag: "林间", grade: "craft",
+      rentable: true, rent7d: 18, rent30d: 58, series: "山野雅居", tags: ["竹林", "溪畔", "新中式", "可租房"],
+      slots: ["bed", "light", "garden"], weatherMode: "window", worldWidth: 420, hotTableStyle: "tea",
+      indoorWindow: { x0: 266, x1: 356, y0: 34, y1: 108, shape: "arch" },
+      gift: { kind: "decor", id: "bamboo_tea_table" },
+      desc: "青翠毛竹高脚小屋，窗外风吹竹影沙沙响，自带隐士禅意",
+    },
+    {
       id: "treehole", tier: 4, icon: "🌳", name: "阳光树洞屋", price: 360, tierTag: "林间", grade: "craft",
-      rentable: true, rent7d: 24, rent30d: 75,
-      series: "经典居所", tags: ["树洞", "林间", "可租房", "花园"],
-      slots: ["bed", "light", "garden"],
+      rentable: true, rent7d: 24, rent30d: 75, series: "经典居所", tags: ["树洞", "林间", "可租房", "花园"],
+      slots: ["bed", "light", "garden"], weatherMode: "window", worldWidth: 420, hotTableStyle: "stump",
+      indoorWindow: { x0: 274, x1: 350, y0: 32, y1: 106, shape: "arch" },
+      gift: { kind: "decor", id: "balcony_monstera" },
       desc: "老橡树暖木树洞与圆拱阳光窗，温馨林间独栋并解锁绿植槽位",
     },
     {
+      id: "moganshan_cabin", tier: 4, icon: "🛖", name: "莫干山原木屋", price: 432, tierTag: "林间", grade: "craft",
+      rentable: true, rent7d: 26, rent30d: 86, series: "山野雅居", tags: ["莫干山", "木屋", "壁炉", "可租房"],
+      slots: ["bed", "light", "garden"], weatherMode: "window", worldWidth: 420, hotTableStyle: "wood",
+      indoorWindow: { x0: 256, x1: 368, y0: 34, y1: 106, shape: "rect" },
+      gift: { kind: "decor", id: "pinecone_sconce" },
+      desc: "红雪松斜顶山野木屋配暖融石壁炉，周末躲进莫干山写代码",
+    },
+    {
+      id: "sunflower_glasshouse", tier: 4, icon: "🌻", name: "向日葵玻璃花房", price: 504, tierTag: "林间", grade: "craft",
+      rentable: true, rent7d: 30, rent30d: 100, series: "山野雅居", tags: ["花房", "玻璃", "向日葵", "可租房"],
+      slots: ["bed", "light", "garden"], weatherMode: "window", worldWidth: 420, hotTableStyle: "wood",
+      indoorWindow: { x0: 238, x1: 382, y0: 24, y1: 120, shape: "rect" },
+      gift: { kind: "decor", id: "glass_succulent_wall" },
+      desc: "白框拱顶全采光阳光花房，推窗尽是金黄向日葵与花影",
+    },
+    {
+      id: "windmill_mill", tier: 4, icon: "🏡", name: "湖畔风车磨坊屋", price: 576, tierTag: "林间", grade: "craft",
+      rentable: true, rent7d: 35, rent30d: 115, series: "山野雅居", tags: ["风车", "湖畔", "欧式", "可租房"],
+      slots: ["bed", "light", "garden"], weatherMode: "window", worldWidth: 420, hotTableStyle: "wood",
+      indoorWindow: { x0: 262, x1: 364, y0: 30, y1: 110, shape: "arch" },
+      gift: { kind: "decor", id: "windmill_copper_lamp" },
+      desc: "自带缓缓转动巨型风车的欧式水岸磨坊楼，窗外湖光粼粼",
+    },
+
+    // ---- T5 杭州城市住宅（基准 1,280：丽晶国际 < 和安居 < 双云里 < 西溪北苑 < 福鼎家园，全员 720px 横卷可出门！）----
+    {
+      id: "regent_intl", tier: 5, icon: "🏙️", name: "丽晶国际", price: 1020, tierTag: "住宅", grade: "craft",
+      rentable: true, rent7d: 62, rent30d: 205, series: "杭州城市住宅", tags: ["丽晶国际", "钱江世纪城", "LOFT", "可出门", "可租房"],
+      slots: ["bed", "light", "floor", "garden"], weatherMode: "terrace", worldWidth: 720, hotTableStyle: "cyber",
+      indoorWindow: { x0: 224, x1: 376, y0: 24, y1: 145 }, terraceRailY: 114,
+      outdoorNote: "🌃 钱江世纪城霓虹夜景配江风，赛博打工人氛围感拉满！",
+      gift: { kind: "decor", id: "sunset_floor_lamp" },
+      desc: "钱江世纪城传奇“2万人网红大楼”挑高 LOFT，赛博霓虹落地窗与高空观景露台",
+    },
+    {
       id: "heanju", tier: 5, icon: "🏢", name: "和安居小区", price: 1280, tierTag: "住宅", grade: "craft",
-      rentable: true, rent7d: 78, rent30d: 260,
-      series: "城市住宅", tags: ["和安居", "可租房", "阳台", "可出门", "地面"],
-      slots: ["bed", "light", "floor", "garden"],
-      desc: "城市精装公寓配可步出大露台与夜景串灯，解锁地面铺装",
+      rentable: true, rent7d: 78, rent30d: 260, series: "杭州城市住宅", tags: ["和安居", "可租房", "阳台", "可出门", "地面"],
+      slots: ["bed", "light", "floor", "garden"], weatherMode: "terrace", worldWidth: 720, hotTableStyle: "wood",
+      indoorWindow: { x0: 233, x1: 373, y0: 25, y1: 145 }, terraceRailY: 114,
+      outdoorNote: "🪑 露台藤椅吹晚风太舒服啦～",
+      gift: { kind: "decor", id: "rattan_balcony_set" },
+      desc: "暖光大露台与烟火气精装公寓，可推门看街景吹晚风，解锁地面铺装",
+    },
+    {
+      id: "shuangyunli", tier: 5, icon: "🏘️", name: "双云里", price: 1540, tierTag: "住宅", grade: "craft",
+      rentable: true, rent7d: 92, rent30d: 310, series: "杭州城市住宅", tags: ["双云里", "城西", "洋房", "可出门", "可租房"],
+      slots: ["bed", "light", "floor", "garden"], weatherMode: "terrace", worldWidth: 720, hotTableStyle: "tea",
+      indoorWindow: { x0: 224, x1: 374, y0: 24, y1: 145 }, terraceRailY: 116,
+      outdoorNote: "🍁 双云里青瓦连廊下看枫叶竹影，静谧又治愈～",
+      gift: { kind: "decor", id: "celadon_pothos_rack" },
+      desc: "城西静谧新中式低密洋房，青瓦连廊与树影露台一步一景",
+    },
+    {
+      id: "xixi_beiyuan", tier: 5, icon: "🌳", name: "西溪北苑", price: 1790, tierTag: "住宅", grade: "craft",
+      rentable: true, rent7d: 108, rent30d: 360, series: "杭州城市住宅", tags: ["西溪北苑", "湿地", "改善", "可出门", "可租房"],
+      slots: ["bed", "light", "floor", "garden"], weatherMode: "terrace", worldWidth: 720, hotTableStyle: "wood",
+      indoorWindow: { x0: 220, x1: 376, y0: 24, y1: 145 }, terraceRailY: 116,
+      outdoorNote: "🦆 推窗见西溪湿地芦苇荡与白鹭，空气真清新！",
+      gift: { kind: "decor", id: "wood_floor" },
+      desc: "紧邻西溪湿地的宽景改善大宅，走出露台即可远眺湿地绿洲与白鹭",
+    },
+    {
+      id: "fuding_jiayuan", tier: 5, icon: "🏛️", name: "福鼎家园", price: 2050, tierTag: "住宅", grade: "craft",
+      rentable: true, rent7d: 124, rent30d: 410, series: "杭州城市住宅", tags: ["福鼎家园", "城西", "园林", "可出门", "可租房"],
+      slots: ["bed", "light", "floor", "garden"], weatherMode: "terrace", worldWidth: 720, hotTableStyle: "tea",
+      indoorWindow: { x0: 218, x1: 376, y0: 24, y1: 145 }, terraceRailY: 118,
+      outdoorNote: "🌼 福鼎家园满院桂花香，南向大露台晒太阳太惬意！",
+      gift: { kind: "decor", id: "walnut_tea_table" },
+      desc: "城西品质园林阔尺南向大宅，高绿化中庭桂树与宽境阳光露台",
+    },
+
+    // ---- T6 杭州顶豪名邸（基准 6,800：0.8 / 1.0 / 1.2 / 1.4 / 1.6，全 5 槽 + 720px 私家园林/天幕！）----
+    {
+      id: "feicuicheng", tier: 6, icon: "🌿", name: "翡翠城湿地排屋", price: 5440, tierTag: "顶豪", grade: "luxury",
+      rentable: true, rent7d: 320, rent30d: 1080, series: "杭州顶豪名邸", tags: ["翡翠城", "排屋", "湿地", "可出门", "泳池"],
+      slots: ["bed", "light", "floor", "garden", "pool"], weatherMode: "terrace", worldWidth: 720, hotTableStyle: "marble",
+      indoorWindow: { x0: 24, x1: 384, y0: 24, y1: 147 }, terraceRailY: 130,
+      outdoorNote: "🌿 翡翠城私家法式草坪庭院配铁艺凉亭，优雅拉满～",
+      gift: { kind: "decor", id: "french_iron_lamp" },
+      desc: "法式干挂石材联排院墅，推门直连私家草坪花园与铁艺凉亭，全 5 槽解锁！",
     },
     {
       id: "xixi", tier: 6, icon: "🏡", name: "西溪壹号别墅", price: 6800, tierTag: "顶豪", grade: "luxury",
-      rentable: true, rent7d: 390, rent30d: 1360,
-      series: "顶豪名邸", tags: ["西溪", "别墅", "可租房", "顶豪", "可出门", "泳池"],
-      slots: ["bed", "light", "floor", "garden", "pool"],
+      rentable: true, rent7d: 390, rent30d: 1360, series: "杭州顶豪名邸", tags: ["西溪", "别墅", "可租房", "顶豪", "可出门", "泳池"],
+      slots: ["bed", "light", "floor", "garden", "pool"], weatherMode: "terrace", worldWidth: 720, hotTableStyle: "tea",
+      indoorWindow: { x0: 23, x1: 385, y0: 24, y1: 147 }, terraceRailY: 132,
+      outdoorNote: "🏮 西溪临水栈道配石灯笼好有诗意～",
+      gift: { kind: "decor", id: "koi_pond" },
       desc: "胡桃木格栅与全景落地玻璃，步出即达江南水亭木栈园林，全 5 槽位解锁！",
     },
     {
+      id: "wulin_yihao", tier: 6, icon: "🌆", name: "武林壹号天幕平层", price: 8160, tierTag: "顶豪", grade: "luxury",
+      rentable: true, rent7d: 490, rent30d: 1630, series: "杭州顶豪名邸", tags: ["武林壹号", "大平层", "天幕", "可出门", "泳池"],
+      slots: ["bed", "light", "floor", "garden", "pool"], weatherMode: "terrace", worldWidth: 720, hotTableStyle: "marble",
+      indoorWindow: { x0: 22, x1: 386, y0: 22, y1: 147 }, terraceRailY: 116,
+      outdoorNote: "🥂 站在武林壹号云端露台俯瞰大运河与武林灯火，太震撼了！",
+      gift: { kind: "decor", id: "marble_tile" },
+      desc: "杭州中心地标顶豪大平层，270° 落地玻璃天幕俯瞰武林广场与运河灯火",
+    },
+    {
+      id: "yunqi_rose", tier: 6, icon: "🌹", name: "云栖玫瑰园法式庄园", price: 9520, tierTag: "顶豪", grade: "luxury",
+      rentable: true, rent7d: 570, rent30d: 1900, series: "杭州顶豪名邸", tags: ["云栖玫瑰园", "法式庄园", "玫瑰", "可出门", "泳池"],
+      slots: ["bed", "light", "floor", "garden", "pool"], weatherMode: "terrace", worldWidth: 720, hotTableStyle: "marble",
+      indoorWindow: { x0: 24, x1: 384, y0: 24, y1: 147 }, terraceRailY: 128,
+      outdoorNote: "🌹 五云山麓玫瑰花廊与法式喷泉前庭，仿佛置身南法庄园！",
+      gift: { kind: "decor", id: "versailles_rose_fountain" },
+      desc: "五云山麓绿城传世法式独栋庄园，雕花护墙板与玫瑰花廊喷泉前庭",
+    },
+    {
+      id: "jiangnanli", tier: 6, icon: "🏯", name: "江南里中式合院", price: 10880, tierTag: "顶豪", grade: "luxury",
+      rentable: true, rent7d: 650, rent30d: 2180, series: "杭州顶豪名邸", tags: ["江南里", "中式合院", "运河", "可出门", "泳池"],
+      slots: ["bed", "light", "floor", "garden", "pool"], weatherMode: "terrace", worldWidth: 720, hotTableStyle: "tea",
+      indoorWindow: { x0: 24, x1: 384, y0: 24, y1: 147 }, terraceRailY: 132,
+      outdoorNote: "🏯 推开江南里月洞门，粉墙黛瓦太湖石与锦鲤曲水尽收眼底！",
+      gift: { kind: "decor", id: "taihu_pine_bonsai" },
+      desc: "运河畔白墙黛瓦私家合院，假山曲水、月洞门与百年孤品名木",
+    },
+
+    // ---- T7 世界奇观殿堂（基准 18,800：0.8 / 1.0 / 1.2 / 1.4 / 1.6）----
+    {
+      id: "obsidian_fortress", tier: 7, icon: "🌋", name: "熔岩黑曜石堡", price: 15040, tierTag: "奇观", grade: "luxury",
+      rentable: true, rent7d: 900, rent30d: 3000, series: "奇观殿堂", tags: ["黑曜石", "熔岩", "城堡", "无天气"],
+      slots: ["bed", "light", "floor", "garden", "pool"], weatherMode: "none", worldWidth: 420, hotTableStyle: "cyber",
+      gift: { kind: "decor", id: "obsidian_brazier_lamp" },
+      desc: "玄武岩浮桥堡垒，琥珀岩浆瀑布与炙金符文柱映照宏伟石厅",
+    },
+    {
       id: "atlantis", tier: 7, icon: "🏛️", name: "海底水晶神殿", price: 18800, tierTag: "奇观", grade: "luxury",
-      rentable: true, rent7d: 1080, rent30d: 3680,
-      series: "奇观殿堂", tags: ["海底", "神殿", "可租房", "无天气"],
-      slots: ["bed", "light", "floor", "garden", "pool"],
+      rentable: true, rent7d: 1080, rent30d: 3680, series: "奇观殿堂", tags: ["海底", "神殿", "可租房", "无天气"],
+      slots: ["bed", "light", "floor", "garden", "pool"], weatherMode: "none", worldWidth: 420, hotTableStyle: "marble",
+      gift: { kind: "decor", id: "biolum_reef" },
       desc: "深海折射穹顶、镀金大理石神柱、水母与魔鬼鱼共游的永恒海底圣殿",
     },
     {
+      id: "sky_castle", tier: 7, icon: "☁️", name: "天空之城浮岛宫", price: 22560, tierTag: "奇观", grade: "luxury",
+      rentable: true, rent7d: 1350, rent30d: 4500, series: "奇观殿堂", tags: ["天空之城", "云海", "浮岛", "无天气"],
+      slots: ["bed", "light", "floor", "garden", "pool"], weatherMode: "none", worldWidth: 420, hotTableStyle: "celestial",
+      gift: { kind: "decor", id: "cloud_feather_chandelier" },
+      desc: "漂浮万米云海之上的白石羽翼宫殿，彩虹天桥贯通流云仙境",
+    },
+    {
+      id: "aurora_ice_palace", tier: 7, icon: "❄️", name: "极光冰晶宫殿", price: 26320, tierTag: "奇观", grade: "luxury",
+      rentable: true, rent7d: 1580, rent30d: 5260, series: "奇观殿堂", tags: ["极光", "冰晶", "北极", "无天气"],
+      slots: ["bed", "light", "floor", "garden", "pool"], weatherMode: "none", worldWidth: 420, hotTableStyle: "marble",
+      gift: { kind: "decor", id: "aurora_swan_pool" },
+      desc: "北极圈折射翡翠与紫罗兰极光的永恒蓝冰棱镜水晶圣殿",
+    },
+    {
+      id: "hanging_gardens", tier: 7, icon: "🏺", name: "空中花园黄金阁", price: 30080, tierTag: "奇观", grade: "luxury",
+      rentable: true, rent7d: 1800, rent30d: 6000, series: "奇观殿堂", tags: ["空中花园", "黄金", "古迹", "无天气"],
+      slots: ["bed", "light", "floor", "garden", "pool"], weatherMode: "none", worldWidth: 420, hotTableStyle: "celestial",
+      gift: { kind: "decor", id: "hanging_gold_vines" },
+      desc: "层叠悬垂绿瀑与白金巨柱交织的巴比伦传说神殿",
+    },
+
+    // ---- T8 星际宇航时代（基准 42,000：0.8 / 1.0 / 1.2 / 1.4 / 1.6）----
+    {
+      id: "lunar_base", tier: 8, icon: "🌕", name: "月球静海科研舱", price: 33600, tierTag: "星际", grade: "mythic",
+      rentable: true, rent7d: 2000, rent30d: 6720, series: "星际传世", tags: ["月球", "地出", "科研舱", "无天气"],
+      slots: ["bed", "light", "floor", "garden", "pool"], weatherMode: "none", worldWidth: 420, hotTableStyle: "cyber",
+      gift: { kind: "decor", id: "holo_earth_globe" },
+      desc: "月面静海环形山生态穹顶，抬头即可凝望蔚蓝地球缓缓升起",
+    },
+    {
       id: "rocket", tier: 8, icon: "🚀", name: "太空火箭舱", price: 42000, tierTag: "星际", grade: "mythic",
-      rentable: true, rent7d: 2400, rent30d: 8200,
-      series: "星际传世", tags: ["太空", "火箭", "可租房", "土星"],
-      slots: ["bed", "light", "floor", "garden", "pool"],
+      rentable: true, rent7d: 2400, rent30d: 8200, series: "星际传世", tags: ["太空", "火箭", "可租房", "土星"],
+      slots: ["bed", "light", "floor", "garden", "pool"], weatherMode: "none", worldWidth: 420, hotTableStyle: "cyber",
+      gift: { kind: "decor", id: "cyber_pod" },
       desc: "拉丝钛合金星际观景舱，窗外双环土星与深空银河星云相伴",
     },
     {
+      id: "mars_dome", tier: 8, icon: "🛰️", name: "火星红岩生态穹顶", price: 50400, tierTag: "星际", grade: "mythic",
+      rentable: true, rent7d: 3020, rent30d: 10080, series: "星际传世", tags: ["火星", "红岩", "穹顶", "无天气"],
+      slots: ["bed", "light", "floor", "garden", "pool"], weatherMode: "none", worldWidth: 420, hotTableStyle: "cyber",
+      gift: { kind: "decor", id: "mars_redrock_floor" },
+      desc: "水手峡谷赤红岩壁旁的玻璃生态基地，停机坪驻留着漫游车",
+    },
+    {
+      id: "saturn_ring_station", tier: 8, icon: "🪐", name: "土星冰环观景站", price: 58800, tierTag: "星际", grade: "mythic",
+      rentable: true, rent7d: 3520, rent30d: 11760, series: "星际传世", tags: ["土星", "冰环", "空间站", "无天气"],
+      slots: ["bed", "light", "floor", "garden", "pool"], weatherMode: "none", worldWidth: 420, hotTableStyle: "cyber",
+      gift: { kind: "decor", id: "saturn_stardust_pool" },
+      desc: "紧贴土星冰晶光环轨道航行的环幕白金空间站，碎冰星尘擦窗而过",
+    },
+    {
+      id: "dyson_sphere", tier: 8, icon: "☀️", name: "戴森球恒星殿", price: 67200, tierTag: "星际", grade: "mythic",
+      rentable: true, rent7d: 4030, rent30d: 13440, series: "星际传世", tags: ["戴森球", "恒星", "巨构", "无天气"],
+      slots: ["bed", "light", "floor", "garden", "pool"], weatherMode: "none", worldWidth: 420, hotTableStyle: "celestial",
+      gift: { kind: "decor", id: "stellar_ring_throne" },
+      desc: "包裹恒星汲取无穷算力的 24K 黄金蜂巢巨构中枢大殿",
+    },
+
+    // ---- T9 次元神域（基准 98,000：0.8 / 1.0 / 1.2 / 1.4 / 1.6）----
+    {
+      id: "quantum_mirror", tier: 9, icon: "🔮", name: "量子镜像浮殿", price: 78400, tierTag: "终极", grade: "mythic",
+      rentable: true, rent7d: 4700, rent30d: 15680, series: "次元神域", tags: ["量子", "镜像", "多维", "无天气"],
+      slots: ["bed", "light", "floor", "garden", "pool"], weatherMode: "none", worldWidth: 420, hotTableStyle: "cyber",
+      gift: { kind: "decor", id: "quantum_prism_array" },
+      desc: "折叠多维几何的晶面浮空神殿，青紫光影在无限回廊中折跃",
+    },
+    {
       id: "wormhole", tier: 9, icon: "🌌", name: "次元虫洞方舟", price: 98000, tierTag: "终极", grade: "mythic",
-      rentable: true, rent7d: 5600, rent30d: 18800,
-      series: "星际传世", tags: ["虫洞", "黑洞", "可租房", "量子"],
-      slots: ["bed", "light", "floor", "garden", "pool"],
+      rentable: true, rent7d: 5600, rent30d: 18800, series: "次元神域", tags: ["虫洞", "黑洞", "可租房", "量子"],
+      slots: ["bed", "light", "floor", "garden", "pool"], weatherMode: "none", worldWidth: 420, hotTableStyle: "cyber",
+      gift: { kind: "decor", id: "quantum_throne" },
       desc: "黑金相对论吸积盘虫洞、双浮空晶碑与透视黑曜石量子光桥甲板",
     },
     {
+      id: "time_clocktower", tier: 9, icon: "⏳", name: "时光裂隙钟楼", price: 117600, tierTag: "终极", grade: "mythic",
+      rentable: true, rent7d: 7050, rent30d: 23520, series: "次元神域", tags: ["时光", "钟楼", "齿轮", "无天气"],
+      slots: ["bed", "light", "floor", "garden", "pool"], weatherMode: "none", worldWidth: 420, hotTableStyle: "celestial",
+      gift: { kind: "decor", id: "hourglass_star_pool" },
+      desc: "悬于时间长河之上的巨型黄金星轨齿轮秘境，指针逆转星霜",
+    },
+    {
+      id: "galactic_core", tier: 9, icon: "🌠", name: "银河核心星云阁", price: 137200, tierTag: "终极", grade: "mythic",
+      rentable: true, rent7d: 8230, rent30d: 27440, series: "次元神域", tags: ["银心", "星云", "翡翠", "无天气"],
+      slots: ["bed", "light", "floor", "garden", "pool"], weatherMode: "none", worldWidth: 420, hotTableStyle: "celestial",
+      gift: { kind: "decor", id: "starlight_floor" },
+      desc: "悬浮在银心亿万星团中央的翡翠流光圣殿，星河在檐下旋舞",
+    },
+    {
+      id: "singularity_court", tier: 9, icon: "🌀", name: "奇点视界王庭", price: 156800, tierTag: "终极", grade: "mythic",
+      rentable: true, rent7d: 9400, rent30d: 31360, series: "次元神域", tags: ["奇点", "视界", "黑洞", "无天气"],
+      slots: ["bed", "light", "floor", "garden", "pool"], weatherMode: "none", worldWidth: 420, hotTableStyle: "celestial",
+      gift: { kind: "wear", id: "horizon_halo_cape" },
+      desc: "驯服黑洞事件视界的终极黑金神座行宫，引力光环环绕穹宇",
+    },
+
+    // ---- T10 隐藏终极 ----
+    {
       id: "secret_palace", tier: 10, icon: "🏰", name: "太初星穹御苑", price: 220000, tierTag: "隐藏款", grade: "secret", secret: true,
-      rentable: true, rent7d: 12000, rent30d: 39800,
-      series: "太初隐藏", tags: ["隐藏", "星穹", "可租房", "殿堂"],
-      slots: ["bed", "light", "floor", "garden", "pool"],
+      rentable: true, rent7d: 12000, rent30d: 39800, series: "太初隐藏", tags: ["隐藏", "星穹", "可租房", "殿堂"],
+      slots: ["bed", "light", "floor", "garden", "pool"], weatherMode: "none", worldWidth: 420, hotTableStyle: "celestial",
+      gift: { kind: "wear", id: "taichu_carrot_halo" },
       desc: "云海之上象牙大理石与24K金星仪殿堂，彩绘萝卜玫瑰窗与流动金星瀑布",
       unlockReq: { needHouse: "wormhole", orTier: 8, label: "拥有「次元虫洞方舟」或达到 Lv.8 星渊霸王兔" },
     },
   ];
 
-  // ---- Decor Catalog (Permanent + Festival Limited Editions) ----
+  // ---- Decor Catalog (~100 items, strictly ordered by tier & 0.8~1.6 ladder) ----
   const DECORS = [
-    // bed (家具/主位)
-    { id: "straw_mat",      slot: "bed", icon: "🌾", name: "干草暖软垫",     price: 30,    grade: "basic",  series: "质朴软装", tags: ["干草", "新手"], desc: "晒过太阳的软蓬蓬编织干草窝，兔兔打滚很香" },
-    { id: "cardboard_sofa", slot: "bed", icon: "📦", name: "纸箱手搓沙发",   price: 75,    grade: "basic",  series: "质朴软装", tags: ["纸箱", "沙发"], desc: "双层瓦楞纸手搓沙发配条纹软垫与萝卜抱枕" },
-    { id: "muji_desk",      slot: "bed", icon: "💻", name: "原木码农升降桌", price: 260,   grade: "craft",  series: "极客办公", tags: ["码农", "双屏", "原木"], desc: "胡桃实木桌配双屏算力监控、机械键盘与热咖啡" },
-    { id: "velvet_sofa",    slot: "bed", icon: "🛋️", name: "西溪云朵大沙发", price: 880,   grade: "luxury", series: "西溪轻奢", tags: ["沙发", "奶油", "轻奢"], desc: "意式奶油羊羔绒云朵沙发，黄铜细脚配羊绒搭毯" },
-    { id: "cyber_pod",      slot: "bed", icon: "🛸", name: "零重力电竞舱",   price: 4800,  grade: "mythic", series: "未来星际", tags: ["电竞", "悬浮", "赛博"], desc: "黑曜石反重力悬浮座舱，三联全息曲面屏+脉冲悬停环" },
-    { id: "quantum_throne", slot: "bed", icon: "👑", name: "奇点星环王座",   price: 9800,  grade: "mythic", series: "星渊传世", tags: ["王座", "黑洞", "黄金"], desc: "24K金浮雕黑曜丝绒王座，背悬实时旋转黑洞吸积盘与双星轨仪" },
+    // ========== 1. bed (家具/主位) ==========
+    { id: "straw_mat",             slot: "bed", icon: "🌾", name: "干草暖软垫",       price: 30,    grade: "basic",  series: "质朴软装", tags: ["干草", "新手"], desc: "晒过太阳的软蓬蓬编织干草窝，兔兔打滚很香" },
+    { id: "woven_pouf",            slot: "bed", icon: "🧺", name: "编织草垫坐墩",     price: 60,    grade: "basic",  series: "质朴软装", tags: ["蒲团", "编织"], desc: "手工蒲草密编圆墩，盘腿冥想或小憩都很舒服" },
+    { id: "cardboard_sofa",        slot: "bed", icon: "📦", name: "纸箱手搓沙发",     price: 75,    grade: "basic",  series: "质朴软装", tags: ["纸箱", "沙发"], desc: "双层瓦楞纸手搓沙发配条纹软垫与萝卜抱枕" },
+    { id: "canvas_lounger",        slot: "bed", icon: "🪑", name: "折叠帆布躺椅",     price: 90,    grade: "basic",  series: "质朴软装", tags: ["露营", "躺椅"], desc: "榉木支架米白厚帆布露营躺椅，阳光下秒睡" },
+    { id: "beanbag_chair",         slot: "bed", icon: "🫧", name: "宜家风懒人豆袋",   price: 105,   grade: "basic",  series: "质朴软装", tags: ["豆袋", "软绵"], desc: "陷进去就起不来的焦糖橘颗粒绒懒人豆袋沙发" },
+    { id: "vintage_iron_bed",      slot: "bed", icon: "🛏️", name: "复古铁艺单人床",   price: 120,   grade: "basic",  series: "质朴软装", tags: ["单人床", "铁艺"], desc: "奶油雕花铁艺床架配格纹棉被与软枕头" },
+
+    { id: "rattan_balcony_set",    slot: "bed", icon: "🪑", name: "阳台小藤椅茶几",   price: 210,   grade: "craft",  series: "城市精装", tags: ["藤椅", "茶几", "阳台"], desc: "手工编藤靠背椅配玻璃小圆几与两盏热茶" },
+    { id: "bamboo_tea_table",      slot: "bed", icon: "🍵", name: "竹影清茶案",       price: 240,   grade: "craft",  series: "山野雅居", tags: ["竹案", "清茶", "禅意"], desc: "老青竹矮茶案配粗陶茶壶与青蒲垫，煮茶听雨" },
+    { id: "muji_desk",             slot: "bed", icon: "💻", name: "原木码农升降桌",   price: 260,   grade: "craft",  series: "极客办公", tags: ["码农", "双屏", "原木"], desc: "胡桃实木桌配双屏算力监控、机械键盘与热咖啡" },
+    { id: "tatami_table",          slot: "bed", icon: "🍵", name: "日式榻榻米矮几",   price: 310,   grade: "craft",  series: "城市精装", tags: ["榻榻米", "暖桌"], desc: "蔺草编织榻榻米配暖炉矮几与橘子果盘" },
+    { id: "walnut_tea_table",      slot: "bed", icon: "🫖", name: "新中式胡桃木茶台", price: 365,   grade: "craft",  series: "杭州雅居", tags: ["胡桃木", "茶台", "新中式"], desc: "黑胡桃大板功夫茶台，紫砂壶青烟袅袅" },
+    { id: "french_velvet_chaise",  slot: "bed", icon: "🛋️", name: "法式中古丝绒躺椅", price: 415,   grade: "craft",  series: "城市精装", tags: ["中古", "丝绒", "贵妃榻"], desc: "孔雀绿丝绒拉扣贵妃榻，优雅弧线配胡桃木腿" },
+
+    { id: "italian_leather_sofa",  slot: "bed", icon: "🛋️", name: "意式真皮转角沙发", price: 700,   grade: "luxury", series: "顶豪轻奢", tags: ["意式", "真皮", "转角"], desc: "焦糖鞍革意式极简转角大沙发，低饱和高级感" },
+    { id: "velvet_sofa",           slot: "bed", icon: "🛋️", name: "西溪云朵大沙发",   price: 880,   grade: "luxury", series: "西溪轻奢", tags: ["沙发", "奶油", "轻奢"], desc: "意式奶油羊羔绒云朵沙发，黄铜细脚配羊绒搭毯" },
+    { id: "marble_coffee_bar",     slot: "bed", icon: "☕", name: "大理石岛台咖啡吧", price: 1060,  grade: "luxury", series: "顶豪轻奢", tags: ["岛台", "咖啡机", "大理石"], desc: "雪花白大理石中岛配意式拉杆咖啡机与高脚吧凳" },
+    { id: "massage_space_chair",   slot: "bed", icon: "💺", name: "全自动按摩太空椅", price: 1230,  grade: "luxury", series: "顶豪轻奢", tags: ["按摩椅", "放松", "顶豪"], desc: "香槟金零压头等舱按摩椅，写完代码全身舒缓" },
+    { id: "fireplace_bookcase",    slot: "bed", icon: "🔥", name: "整面落地藏书壁炉柜", price: 1410, grade: "luxury", series: "顶豪轻奢", tags: ["壁炉", "书柜", "法式"], desc: "挑高胡桃木整墙藏书阁嵌入跃动电子真火壁炉" },
+
+    { id: "holo_sleep_pod",        slot: "bed", icon: "🫧", name: "全息休眠玻璃舱",   price: 3840,  grade: "mythic", series: "未来星际", tags: ["休眠舱", "全息", "星际"], desc: "星舰级弧形玻璃恒温生态休眠舱，浮现柔和脉冲心率波" },
+    { id: "cyber_pod",             slot: "bed", icon: "🛸", name: "零重力电竞舱",     price: 4800,  grade: "mythic", series: "未来星际", tags: ["电竞", "悬浮", "赛博"], desc: "黑曜石反重力悬浮座舱，三联全息曲面屏+脉冲悬停环" },
+    { id: "stellar_ring_throne",   slot: "bed", icon: "☀️", name: "恒星能量环王座",   price: 7840,  grade: "mythic", series: "星渊传世", tags: ["戴森球", "恒星", "王座"], desc: "白金弧形王座背悬微型燃烧恒星与三层聚能金环" },
+    { id: "quantum_throne",        slot: "bed", icon: "👑", name: "奇点星环王座",     price: 9800,  grade: "mythic", series: "星渊传世", tags: ["王座", "黑洞", "黄金"], desc: "24K金浮雕黑曜丝绒王座，背悬实时旋转黑洞吸积盘与双星轨仪" },
     {
       id: "secret_carrot_throne", slot: "bed", icon: "🥕", name: "黄金萝卜浮空圣座", price: 28800, grade: "secret", secret: true,
       series: "太初隐藏", tags: ["隐藏", "王座", "萝卜"],
@@ -185,12 +480,30 @@
       unlockReq: { needDecor: "quantum_throne", orTier: 7, label: "拥有「奇点星环王座」或达到 Lv.7 狱火魔神兔" },
     },
 
-    // light (灯饰/墙面)
-    { id: "fairy_bulb",         slot: "light", icon: "💡", name: "暖黄钨丝小灯泡", price: 35,    grade: "basic",  series: "质朴软装", tags: ["暖光", "复古"], desc: "黄铜灯头复古爱迪生钨丝泡，把小屋照得暖融融" },
-    { id: "carrot_neon",        slot: "light", icon: "🥕", name: "霓虹胡萝卜灯牌", price: 160,   grade: "craft",  series: "极客办公", tags: ["霓虹", "胡萝卜"], desc: "熏黑亚克力双层玻璃霓虹灯管，深夜氛围感拉满" },
-    { id: "star_projector",     slot: "light", icon: "🌌", name: "卧室星空投影仪", price: 280,   grade: "craft",  series: "浪漫家居", tags: ["星空", "投影"], desc: "天幕投射浪漫星云流雾、黄金星宿连线与闪烁繁星" },
-    { id: "crystal_chandelier", slot: "light", icon: "✨", name: "轻奢水晶大吊灯", price: 1180,  grade: "luxury", series: "西溪轻奢", tags: ["水晶", "吊灯", "法式"], desc: "法式双层鎏金枝形水晶灯，切割琉璃垂坠折射暖芒" },
-    { id: "aurora_holo",        slot: "light", icon: "🌈", name: "全息极光天幕",   price: 4200,  grade: "mythic", series: "未来星际", tags: ["极光", "全息"], desc: "双角全息棱镜投射流动翡青紫金极光丝幕与垂落光帘" },
+    // ========== 2. light (灯饰/墙面) ==========
+    { id: "firefly_stone_lamp",    slot: "light", icon: "🪨", name: "萤火石小夜灯",     price: 28,    grade: "basic",  series: "质朴软装", tags: ["萤火", "夜灯"], desc: "溪畔萤光石与玻璃瓶挂成的森系小夜灯，微光点点" },
+    { id: "fairy_bulb",            slot: "light", icon: "💡", name: "暖黄钨丝小灯泡",   price: 35,    grade: "basic",  series: "质朴软装", tags: ["暖光", "复古"], desc: "黄铜灯头复古爱迪生钨丝泡，把小屋照得暖融融" },
+    { id: "paper_lantern_small",   slot: "light", icon: "🏮", name: "旧纸糊小灯笼",     price: 42,    grade: "basic",  series: "质朴软装", tags: ["纸灯笼", "暖光"], desc: "米白宣纸竹骨小灯笼，透出温柔暖橘微光" },
+    { id: "camping_lantern",       slot: "light", icon: "🪔", name: "复古露营马灯",     price: 50,    grade: "basic",  series: "质朴软装", tags: ["马灯", "露营"], desc: "复古墨绿搪瓷煤油风露营灯，灯芯暖火摇曳" },
+    { id: "industrial_cage_lamp",  slot: "light", icon: "🔦", name: "工业风铁网吊灯",   price: 56,    grade: "basic",  series: "质朴软装", tags: ["工业风", "铁网"], desc: "黑铁丝防爆网罩工地吊灯，粗犷又硬核" },
+
+    { id: "sunset_floor_lamp",     slot: "light", icon: "🌇", name: "落地霓虹日落灯",   price: 130,   grade: "craft",  series: "网红氛围", tags: ["日落灯", "霓虹", "丽晶"], desc: "投射巨幅橘粉日落光晕的网红氛围光束，随手出片" },
+    { id: "carrot_neon",           slot: "light", icon: "🥕", name: "霓虹胡萝卜灯牌",   price: 160,   grade: "craft",  series: "极客办公", tags: ["霓虹", "胡萝卜"], desc: "熏黑亚克力双层玻璃霓虹灯管，深夜氛围感拉满" },
+    { id: "pinecone_sconce",       slot: "light", icon: "🌲", name: "暖炉松果壁灯",     price: 190,   grade: "craft",  series: "山野雅居", tags: ["松果", "壁灯", "莫干山"], desc: "红雪松雕花松果形琥珀玻璃吊灯，林间暖炉气息" },
+    { id: "bauhaus_mushroom_lamp", slot: "light", icon: "🍄", name: "包豪斯蘑菇台灯",   price: 225,   grade: "craft",  series: "设计家居", tags: ["包豪斯", "中古", "蘑菇灯"], desc: "奶白蛋挞玻璃蘑菇灯罩配镀铬杆，中古设计经典" },
+    { id: "windmill_copper_lamp",  slot: "light", icon: "🔔", name: "复古铜铃风车灯",   price: 250,   grade: "craft",  series: "山野雅居", tags: ["风车", "铜铃", "复古"], desc: "古铜小风车转轮吊灯配星芒灯罩，轻盈旋转" },
+    { id: "star_projector",        slot: "light", icon: "🌌", name: "卧室星空投影仪",   price: 280,   grade: "craft",  series: "浪漫家居", tags: ["星空", "投影"], desc: "天幕投射浪漫星云流雾、黄金星宿连线与闪烁繁星" },
+
+    { id: "french_iron_lamp",      slot: "light", icon: "🕯️", name: "法式雕花铁艺灯",   price: 940,   grade: "luxury", series: "顶豪轻奢", tags: ["法式", "铁艺", "烛台"], desc: "黑金锻铁卷草枝形烛台吊灯，复古南法庄园格调" },
+    { id: "crystal_chandelier",    slot: "light", icon: "✨", name: "轻奢水晶大吊灯",   price: 1180,  grade: "luxury", series: "西溪轻奢", tags: ["水晶", "吊灯", "法式"], desc: "法式双层鎏金枝形水晶灯，切割琉璃垂坠折射暖芒" },
+    { id: "molecular_glass_lamp",  slot: "light", icon: "🫧", name: "意式分子玻璃吊灯", price: 1420,  grade: "luxury", series: "顶豪轻奢", tags: ["意式", "分子灯", "大平层"], desc: "黄铜几何骨架错落悬浮烟熏琥珀玻璃球，现代艺术感" },
+    { id: "gilded_palace_lantern", slot: "light", icon: "🏮", name: "新中式铜鎏金宫灯", price: 1650,  grade: "luxury", series: "江南名邸", tags: ["中式", "宫灯", "鎏金"], desc: "八角红木鎏金镂空雕花宫灯，玉石灯片温润如月" },
+    { id: "cloud_feather_chandelier", slot: "light", icon: "🪶", name: "云海白羽吊灯",  price: 1890,  grade: "luxury", series: "奇观殿堂", tags: ["白羽", "天空之城", "梦幻"], desc: "轻盈发光白羽环绕而成的悬浮云环吊灯，飘落圣羽星尘" },
+
+    { id: "obsidian_brazier_lamp", slot: "light", icon: "🔥", name: "黑曜熔金火盆灯",   price: 3360,  grade: "mythic", series: "奇观殿堂", tags: ["熔岩", "火盆", "黑曜石"], desc: "铁链悬吊的黑曜石巨型符文火盆，炽金焰浪翻涌" },
+    { id: "aurora_holo",           slot: "light", icon: "🌈", name: "全息极光天幕",     price: 4200,  grade: "mythic", series: "未来星际", tags: ["极光", "全息"], desc: "双角全息棱镜投射流动翡青紫金极光丝幕与垂落光帘" },
+    { id: "holo_earth_globe",      slot: "light", icon: "🌍", name: "全息悬浮地球仪",   price: 5040,  grade: "mythic", series: "未来星际", tags: ["地球", "全息", "月球"], desc: "自转蔚蓝全息地球与卫星轨道光环悬于穹顶中央" },
+    { id: "quantum_prism_array",   slot: "light", icon: "🔮", name: "多维折光水晶阵",   price: 5880,  grade: "mythic", series: "次元神域", tags: ["量子", "水晶", "折光"], desc: "五枚浮空几何折光棱镜实时交织多维全息光网" },
     {
       id: "secret_astrolabe_dome", slot: "light", icon: "🌟", name: "太初黄金星仪穹顶", price: 14800, grade: "secret", secret: true,
       series: "太初隐藏", tags: ["隐藏", "星仪", "黄金"],
@@ -209,11 +522,28 @@
       desc: "新春贺岁限时限定：鎏金流苏大红宫灯成双垂挂，暖红光晕把小家映得红红火火",
     },
 
-    // floor (地面/地毯)
-    { id: "plaid_rug",       slot: "floor", icon: "🧶", name: "暖格编织地毯",   price: 95,    grade: "basic",  series: "质朴软装", tags: ["地毯", "复古"], desc: "苏格兰朱红暖格手工羊毛毯，带金线锁边与流苏" },
-    { id: "wood_floor",      slot: "floor", icon: "🪵", name: "人字拼实木地板", price: 360,   grade: "craft",  series: "城市精装", tags: ["木地板", "人字拼"], desc: "温润胡桃木透视人字拼地板，窗影微光折射木纹" },
-    { id: "marble_tile",     slot: "floor", icon: "🏛️", name: "鱼肚白大理石砖", price: 1380,  grade: "luxury", series: "西溪轻奢", tags: ["大理石", "金脉"], desc: "抛光卡拉卡塔白石配24K金脉与黄铜嵌条，镜面光泽" },
-    { id: "starlight_floor", slot: "floor", icon: "🌠", name: "银河星轨光感地", price: 5600,  grade: "mythic", series: "未来星际", tags: ["星轨", "银河", "光感"], desc: "深空蓝晶玻璃地面，内嵌流动银河星云、双金轨与步步生辉光涟漪" },
+    // ========== 3. floor (地面/地毯) ==========
+    { id: "van_plaid_mat",         slot: "floor", icon: "🧺", name: "格纹车载小毯",     price: 76,    grade: "basic",  series: "质朴软装", tags: ["野餐毯", "复古"], desc: "薄荷与奶油格纹棉麻露营毯，房车与野餐必备" },
+    { id: "plaid_rug",             slot: "floor", icon: "🧶", name: "暖格编织地毯",     price: 95,    grade: "basic",  series: "质朴软装", tags: ["地毯", "复古"], desc: "苏格兰朱红暖格手工羊毛毯，带金线锁边与流苏" },
+    { id: "hemp_round_rug",        slot: "floor", icon: "⭕", name: "麻绳手编圆毯",     price: 115,   grade: "basic",  series: "质朴软装", tags: ["麻绳", "森系"], desc: "同心圆手工黄麻编织圆毯，自然质朴原木百搭" },
+    { id: "pebble_mat",            slot: "floor", icon: "🪨", name: "鹅卵石防滑垫",     price: 135,   grade: "basic",  series: "质朴软装", tags: ["鹅卵石", "庭院"], desc: "温润雨花鹅卵石拼接步道垫，脚感舒压又有趣" },
+    { id: "retro_pattern_tile",    slot: "floor", icon: "💠", name: "复古花砖拼接地",   price: 152,   grade: "basic",  series: "复古家居", tags: ["花砖", "南洋", "复古"], desc: "墨绿奶油几何手工水泥花砖，南洋咖啡馆同款" },
+
+    { id: "cream_microcement",     slot: "floor", icon: "⬜", name: "奶白微水泥地坪",   price: 290,   grade: "craft",  series: "城市精装", tags: ["微水泥", "极简", "侘寂"], desc: "一体无缝柔光奶白微水泥，高级侘寂极简底色" },
+    { id: "wood_floor",            slot: "floor", icon: "🪵", name: "人字拼实木地板",   price: 360,   grade: "craft",  series: "城市精装", tags: ["木地板", "人字拼"], desc: "温润胡桃木透视人字拼地板，窗影微光折射木纹" },
+    { id: "chevron_oak_floor",     slot: "floor", icon: "🍂", name: "法式鱼骨纹橡木地", price: 430,   grade: "craft",  series: "城市精装", tags: ["鱼骨拼", "法式", "橡木"], desc: "烟熏浅橡木对称鱼骨拼地板，法式浪漫质感拉满" },
+    { id: "terrazzo_floor",        slot: "floor", icon: "🎨", name: "水磨石彩点地板",   price: 505,   grade: "craft",  series: "设计家居", tags: ["水磨石", "艺术"], desc: "奶咖基底点缀琥珀蓝绿天然石子，清新艺术画廊感" },
+    { id: "suzhou_brick_floor",    slot: "floor", icon: "🏯", name: "苏式青砖海棠纹地", price: 575,   grade: "craft",  series: "江南雅居", tags: ["青砖", "海棠纹", "中式"], desc: "古法御窑金砖配铜嵌海棠花窗纹，江南风雅" },
+
+    { id: "persian_silk_rug",      slot: "floor", icon: "🪡", name: "波斯手工真丝地毯", price: 1100,  grade: "luxury", series: "顶豪轻奢", tags: ["波斯毯", "真丝", "藏品"], desc: "绯红藏蓝真丝手织繁复藤蔓纹古董地毯，流苏金线" },
+    { id: "marble_tile",           slot: "floor", icon: "🏛️", name: "鱼肚白大理石砖",   price: 1380,  grade: "luxury", series: "西溪轻奢", tags: ["大理石", "金脉"], desc: "抛光卡拉卡塔白石配24K金脉与黄铜嵌条，镜面光泽" },
+    { id: "blackgold_marble",      slot: "floor", icon: "🖤", name: "黑金花奢石拼花地", price: 1660,  grade: "luxury", series: "顶豪轻奢", tags: ["黑金花", "奢石", "大平层"], desc: "意大利黑金花天然奢石配菱格金线拼花，气场全开" },
+    { id: "sky_glass_walkway",     slot: "floor", icon: "☁️", name: "全景玻璃栈道地板", price: 1930,  grade: "luxury", series: "顶豪轻奢", tags: ["玻璃栈道", "云海", "高空"], desc: "高透钢化夹胶云端栈道，脚下云雾缓缓流淌" },
+    { id: "jade_gold_floor",       slot: "floor", icon: "💚", name: "翡翠玉石镶金地面", price: 2210,  grade: "luxury", series: "江南名邸", tags: ["翡翠", "玉石", "镶金"], desc: "帝王绿冰种透光玉石拼板镶24K云雷金线，温润流光" },
+
+    { id: "mars_redrock_floor",    slot: "floor", icon: "🪐", name: "火星赤岩玻璃地",   price: 4480,  grade: "mythic", series: "未来星际", tags: ["火星", "赤岩", "生态舱"], desc: "高强度舱底观察玻璃封存火星赤砂与能量导轨" },
+    { id: "starlight_floor",       slot: "floor", icon: "🌠", name: "银河星轨光感地",   price: 5600,  grade: "mythic", series: "未来星际", tags: ["星轨", "银河", "光感"], desc: "深空蓝晶玻璃地面，内嵌流动银河星云、双金轨与步步生辉光涟漪" },
+    { id: "antigrav_tile_matrix",  slot: "floor", icon: "⚡", name: "反重力浮砖矩阵地", price: 6720,  grade: "mythic", series: "次元神域", tags: ["反重力", "矩阵", "量子"], desc: "错落呼吸悬浮的六边形黑曜量子磁力砖，霓虹流光脉动" },
     {
       id: "secret_prism_mirror", slot: "floor", icon: "💎", name: "镜花水月星镜地", price: 16800, grade: "secret", secret: true,
       series: "太初隐藏", tags: ["隐藏", "镜面", "极光"],
@@ -227,11 +557,28 @@
       desc: "黑色星期五限时限定：曜黑丝绒织锦配24K烫金菱格几何纹与流苏金边",
     },
 
-    // garden (绿植/花园)
-    { id: "mini_carrot_pot",  slot: "garden", icon: "🌱", name: "窗台胡萝卜盆栽", price: 45,    grade: "basic",  series: "质朴软装", tags: ["盆栽", "胡萝卜"], desc: "红陶釉盆里冒头的饱满小胡萝卜，青翠羽叶生机满满" },
-    { id: "balcony_monstera", slot: "garden", icon: "🪴", name: "阳台龟背竹绿角", price: 180,   grade: "craft",  series: "城市精装", tags: ["龟背竹", "绿植"], desc: "竖纹白瓷高脚盆栽，开背龟背竹与垂藤绿意盎然" },
-    { id: "sakura_garden",    slot: "garden", icon: "🌸", name: "樱花庭院小花园", price: 980,   grade: "luxury", series: "西溪轻奢", tags: ["樱花", "庭院", "飘瓣"], desc: "苍劲古樱盆景配青苔石灯笼，粉白花瓣实时随风飘落" },
-    { id: "biolum_reef",      slot: "garden", icon: "🪸", name: "发光星花珊瑚园", price: 3600,  grade: "mythic", series: "奇观殿堂", tags: ["珊瑚", "荧光"], desc: "紫晶与海玻璃荧光珊瑚簇，绽放发光星莲与漂浮萤火孢子" },
+    // ========== 4. garden (绿植/花园) ==========
+    { id: "carrot_sprout",         slot: "garden", icon: "🌱", name: "窗台小萝卜苗",     price: 36,    grade: "basic",  series: "质朴软装", tags: ["萝卜苗", "新手"], desc: "小泥碗里刚刚破土的两片翠绿萝卜芽，萌化人心" },
+    { id: "mini_carrot_pot",       slot: "garden", icon: "🥕", name: "窗台胡萝卜盆栽",   price: 45,    grade: "basic",  series: "质朴软装", tags: ["盆栽", "胡萝卜"], desc: "红陶釉盆里冒头的饱满小胡萝卜，青翠羽叶生机满满" },
+    { id: "ceramic_succulent_trio", slot: "garden", icon: "🌵", name: "陶瓷多肉三件套",  price: 54,    grade: "basic",  series: "质朴软装", tags: ["多肉", "陶瓷"], desc: "奶白釉小盆里的玉露、熊童子与桃蛋，胖乎乎超治愈" },
+    { id: "hydro_coin_plant",      slot: "garden", icon: "🍀", name: "水培铜钱草小瓶",   price: 63,    grade: "basic",  series: "质朴软装", tags: ["铜钱草", "水培"], desc: "清透玻璃圆瓶水培满瓶圆润铜钱草，寓意财源滚滚" },
+    { id: "hanging_pothos_basket", slot: "garden", icon: "🌿", name: "悬挂绿萝藤篮",     price: 72,    grade: "basic",  series: "质朴软装", tags: ["绿萝", "藤篮"], desc: "编藤吊篮垂下层叠翡翠绿萝瀑布，空气清新剂" },
+
+    { id: "celadon_pothos_rack",   slot: "garden", icon: "🏺", name: "青瓷水培绿萝架",   price: 145,   grade: "craft",  series: "杭州雅居", tags: ["龙泉青瓷", "双云里"], desc: "龙泉粉青瓷瓶立于原木花几，枝叶清雅如画" },
+    { id: "balcony_monstera",      slot: "garden", icon: "🪴", name: "阳台龟背竹绿角",   price: 180,   grade: "craft",  series: "城市精装", tags: ["龟背竹", "绿植"], desc: "竖纹白瓷高脚盆栽，开背龟背竹与垂藤绿意盎然" },
+    { id: "fiddle_leaf_fig",       slot: "garden", icon: "🌳", name: "琴叶榕落地大盆",   price: 215,   grade: "craft",  series: "城市精装", tags: ["琴叶榕", "北欧"], desc: "挺拔大叶网红琴叶榕配编织海草篮，客厅颜值担当" },
+    { id: "glass_succulent_wall",  slot: "garden", icon: "🌻", name: "玻璃花架多肉墙",   price: 250,   grade: "craft",  series: "山野雅居", tags: ["花架", "花房", "多肉"], desc: "三层金框玻璃阶梯花架，错落满摆彩虹多肉与向日葵" },
+    { id: "bird_of_paradise",      slot: "garden", icon: "🦜", name: "南洋风天堂鸟绿景", price: 290,   grade: "craft",  series: "度假家居", tags: ["天堂鸟", "热带"], desc: "硕大芭蕉叶与橙蓝鹤望兰绽放，瞬间置身海岛度假" },
+
+    { id: "jiangnan_bamboo_rockery", slot: "garden", icon: "🎋", name: "江南翠竹假山景", price: 780,   grade: "luxury", series: "江南园林", tags: ["翠竹", "假山", "禅意"], desc: "青石叠山配潇湘翠竹与白砂枯山水，文人雅趣" },
+    { id: "sakura_garden",         slot: "garden", icon: "🌸", name: "樱花庭院小花园",   price: 980,   grade: "luxury", series: "西溪轻奢", tags: ["樱花", "庭院", "飘瓣"], desc: "苍劲古樱盆景配青苔石灯笼，粉白花瓣实时随风飘落" },
+    { id: "monet_hydrangea_arch",  slot: "garden", icon: "💐", name: "莫奈绣球花拱门",   price: 1180,  grade: "luxury", series: "顶豪轻奢", tags: ["绣球", "莫奈", "花拱"], desc: "蓝紫粉白无尽夏绣球簇拥的法式铁艺花拱，落英缤纷" },
+    { id: "taihu_pine_bonsai",     slot: "garden", icon: "🌲", name: "苏式太湖石迎客松", price: 1370,  grade: "luxury", series: "江南名邸", tags: ["太湖石", "迎客松", "江南里"], desc: "瘦皱漏透太湖奇石托起苍翠盘虬迎客松，大家气象" },
+    { id: "ancient_podocarpus",    slot: "garden", icon: "🏯", name: "百年罗汉松古盆景", price: 1570,  grade: "luxury", series: "江南名邸", tags: ["罗汉松", "古树", "镇宅"], desc: "价值连城的造型百年雀舌罗汉松，云片层叠镇宅纳福" },
+
+    { id: "hanging_gold_vines",    slot: "garden", icon: "🌿", name: "悬空黄金藤蔓廊",   price: 2880,  grade: "mythic", series: "奇观殿堂", tags: ["空中花园", "黄金藤"], desc: "白金浮柱垂落发光翠金藤蔓与露珠光球，仙气缭绕" },
+    { id: "biolum_reef",           slot: "garden", icon: "🪸", name: "发光星花珊瑚园",   price: 3600,  grade: "mythic", series: "奇观殿堂", tags: ["珊瑚", "荧光"], desc: "紫晶与海玻璃荧光珊瑚簇，绽放发光星莲与漂浮萤火孢子" },
+    { id: "zerog_crystal_biosphere", slot: "garden", icon: "🔮", name: "零重力水晶生态球", price: 4320, grade: "mythic", series: "未来星际", tags: ["生态球", "零重力", "星际"], desc: "悬浮自转的透明生态微缩星球，内含微缩星林与漂浮雨露" },
     {
       id: "secret_golden_carrot_tree", slot: "garden", icon: "🌳", name: "琉璃黄金萝卜神树", price: 12800, grade: "secret", secret: true,
       series: "太初隐藏", tags: ["隐藏", "神树", "萝卜"],
@@ -245,11 +592,22 @@
       desc: "圣诞奇遇季限时限定：挂满霓虹彩灯球与鎏金顶星的常青圣诞树，树下堆满红绿礼盒",
     },
 
-    // pool (泳池/水景)
-    { id: "koi_pond",        slot: "pool", icon: "🎏", name: "锦鲤荷花景观池", price: 520,   grade: "craft",  series: "江南园林", tags: ["锦鲤", "荷花"], desc: "鹅卵石禅意荷塘，清波荷花间红白锦鲤与金鲤悠游" },
-    { id: "infinity_pool",   slot: "pool", icon: "🏊", name: "恒温湛蓝无边泳池", price: 2200, grade: "luxury", series: "西溪轻奢", tags: ["泳池", "小黄鸭"], desc: "莱姆石边无边恒温池，水波焦散光纹+水下灯带+漂浮小黄鸭" },
-    { id: "hot_spring",      slot: "pool", icon: "♨️", name: "星空温泉泡泡汤池", price: 3800, grade: "mythic", series: "京都汤泉", tags: ["温泉", "柚子"], desc: "京都风玄武岩露天汤池，竹筒惊鹿注水、漂浮柚子与袅袅热气" },
-    { id: "portal_fountain", slot: "pool", icon: "🌀", name: "悬浮时空光瀑喷泉", price: 7800, grade: "mythic", series: "星渊传世", tags: ["时空", "喷泉"], desc: "黑金符文八角池配双浮空玉环，反重力螺旋光水倒流星核" },
+    // ========== 5. pool (泳池/水景) ==========
+    { id: "stone_water_bowl",      slot: "pool", icon: "🪨", name: "石头流水小钵池",   price: 415,   grade: "craft",  series: "江南园林", tags: ["石钵", "流水"], desc: "青石凿出的禅意莲花小水钵，清泉潺潺涟漪轻漾" },
+    { id: "koi_pond",              slot: "pool", icon: "🎏", name: "锦鲤荷花景观池",   price: 520,   grade: "craft",  series: "江南园林", tags: ["锦鲤", "荷花"], desc: "鹅卵石禅意荷塘，清波荷花间红白锦鲤与金鲤悠游" },
+    { id: "bamboo_drip_basin",     slot: "pool", icon: "🎋", name: "青砖竹筒滴水景",   price: 625,   grade: "craft",  series: "江南园林", tags: ["竹筒", "惊鹿", "青砖"], desc: "青砖围砌的小水景配青竹引泉，清脆水声解乏" },
+    { id: "jiangnan_brook_pool",   slot: "pool", icon: "🌊", name: "江南叠水小溪潭",   price: 730,   grade: "craft",  series: "江南园林", tags: ["叠水", "溪潭"], desc: "双层太湖石阶叠水小潭，清溪绕石落珠如玉" },
+
+    { id: "sunroom_jacuzzi",       slot: "pool", icon: "🛁", name: "玻璃阳光按摩浴缸", price: 1760,  grade: "luxury", series: "顶豪轻奢", tags: ["浴缸", "泡泡", "SPA"], desc: "恒温气泡水疗按摩池，满池绵密泡泡与玫瑰花瓣" },
+    { id: "infinity_pool",         slot: "pool", icon: "🏊", name: "恒温湛蓝无边泳池", price: 2200,  grade: "luxury", series: "西溪轻奢", tags: ["泳池", "小黄鸭"], desc: "莱姆石边无边恒温池，水波焦散光纹+水下灯带+漂浮小黄鸭" },
+    { id: "versailles_rose_fountain", slot: "pool", icon: "🌹", name: "凡尔赛玫瑰喷泉", price: 2640, grade: "luxury", series: "顶豪轻奢", tags: ["喷泉", "法式", "玫瑰园"], desc: "三层白大理石雕花法式喷泉，水柱跃动玫瑰花瓣飘浮" },
+    { id: "sky_cantilever_pool",   slot: "pool", icon: "🏙️", name: "高空透明悬挑泳池", price: 3080, grade: "luxury", series: "顶豪轻奢", tags: ["透明泳池", "悬挑", "武林"], desc: "全透明亚克力边云端悬挑无边泳池，波光倒映霓虹" },
+
+    { id: "hot_spring",            slot: "pool", icon: "♨️", name: "星空温泉泡泡汤池", price: 3800,  grade: "mythic", series: "京都汤泉", tags: ["温泉", "柚子"], desc: "京都风玄武岩露天汤池，竹筒惊鹿注水、漂浮柚子与袅袅热气" },
+    { id: "aurora_swan_pool",      slot: "pool", icon: "🦢", name: "极光冰雕天鹅池",   price: 4560,  grade: "mythic", series: "奇观殿堂", tags: ["冰雕", "天鹅", "极光"], desc: "晶莹冰雕双天鹅拱卫的翡翠极光冰泉，寒雾闪烁星芒" },
+    { id: "saturn_stardust_pool",  slot: "pool", icon: "🪐", name: "冰环星尘水幕池",   price: 6240,  grade: "mythic", series: "未来星际", tags: ["土星", "星尘", "水幕"], desc: "环形悬浮冰晶水幕池，流转淡紫土星光环与液态星尘" },
+    { id: "portal_fountain",       slot: "pool", icon: "🌀", name: "悬浮时空光瀑喷泉", price: 7800,  grade: "mythic", series: "星渊传世", tags: ["时空", "喷泉"], desc: "黑金符文八角池配双浮空玉环，反重力螺旋光水倒流星核" },
+    { id: "hourglass_star_pool",   slot: "pool", icon: "⏳", name: "逆流沙漏星池",     price: 9360,  grade: "mythic", series: "次元神域", tags: ["沙漏", "逆流", "时光"], desc: "24K金浮空时光沙漏矗立星池中央，金色时砂向上逆流" },
     {
       id: "secret_starlight_cascade", slot: "pool", icon: "🌌", name: "银河琉璃浮空天池", price: 21800, grade: "secret", secret: true,
       series: "太初隐藏", tags: ["隐藏", "天池", "银河"],
@@ -258,16 +616,21 @@
     },
   ];
 
-  // ---- Wearables Catalog (Permanent + Tier-Exclusive + Festival Limited) ----
+  // ---- Wearables Catalog (44 items: hats / outfits / accessories) ----
   const WEARABLES = [
-    // hat (头饰/帽子)
-    { id: "paper_boat",    slot: "hat", icon: "📰", name: "折纸报纸小船帽",   price: 18,    grade: "basic",  series: "街头日常", tags: ["报纸", "新手"], desc: "旧报纸手折的小船帽，质朴又呆萌" },
-    { id: "worn_cap",      slot: "hat", icon: "🪣", name: "破旧洗水渔夫帽",   price: 45,    grade: "basic",  series: "街头日常", tags: ["渔夫帽", "日常"], desc: "带缝线补丁的做旧水洗渔夫帽，街头松弛感" },
-    { id: "knit_beanie",   slot: "hat", icon: "🧶", name: "胡萝卜毛线帽",     price: 140,   grade: "craft",  series: "秋冬暖居", tags: ["毛线帽", "保暖"], desc: "暖橘绞花手织毛线帽+雪白毛球，软糯保暖" },
-    { id: "tier3_band",    slot: "hat", icon: "🔥", name: "疾风烈焰额带结",   price: 260,   grade: "craft",  minTier: 3, series: "战力限定", tags: ["Lv3", "烈焰"], desc: "认真兔专属限定：赤金烈焰飘带与火焰纹章" },
-    { id: "beret_art",     slot: "hat", icon: "🎨", name: "复古羊毛贝雷帽",   price: 320,   grade: "craft",  series: "文艺穿搭", tags: ["贝雷帽", "复古"], desc: "斜戴酒红羊毛画家贝雷帽配金针胸徽，文艺范儿" },
-    { id: "tier5_scouter", slot: "hat", icon: "📡", name: "赛亚战力探测镜",   price: 980,   grade: "luxury", minTier: 5, series: "战力限定", tags: ["Lv5", "探测镜"], desc: "超赛兔专属限定：翡翠全息HUD镜片实时扫描算力" },
-    { id: "cc_pearl_hat",  slot: "hat", icon: "👒", name: "CC 双环珍珠礼帽",  price: 1880,  grade: "luxury", series: "顶奢高定", tags: ["高定", "珍珠", "礼帽"], desc: "高定象牙宽檐礼帽，黑丝缎带配虹彩珍珠链与双金环" },
+    // ========== hat (头饰/帽子) ==========
+    { id: "paper_boat",     slot: "hat", icon: "📰", name: "折纸报纸小船帽",   price: 18,    grade: "basic",  series: "街头日常", tags: ["报纸", "新手"], desc: "旧报纸手折的小船帽，质朴又呆萌" },
+    { id: "mushroom_cap",   slot: "hat", icon: "🍄", name: "孢子蘑菇小伞帽",   price: 32,    grade: "basic",  series: "林野萌物", tags: ["蘑菇", "可爱"], desc: "红白波点圆润大蘑菇伞帽，林间避雨萌力翻倍" },
+    { id: "worn_cap",       slot: "hat", icon: "🪣", name: "破旧洗水渔夫帽",   price: 45,    grade: "basic",  series: "街头日常", tags: ["渔夫帽", "日常"], desc: "带缝线补丁的做旧水洗渔夫帽，街头松弛感" },
+    { id: "anc_headphones", slot: "hat", icon: "🎧", name: "头戴降噪耳机",     price: 110,   grade: "craft",  series: "极客办公", tags: ["耳机", "降噪", "码农"], desc: "哑光钛灰主动降噪大耳罩，戴上瞬间屏蔽一切打扰" },
+    { id: "knit_beanie",    slot: "hat", icon: "🧶", name: "胡萝卜毛线帽",     price: 140,   grade: "craft",  series: "秋冬暖居", tags: ["毛线帽", "保暖"], desc: "暖橘绞花手织毛线帽+雪白毛球，软糯保暖" },
+    { id: "newsboy_cap",    slot: "hat", icon: "🤠", name: "复古报童鸭舌帽",   price: 220,   grade: "craft",  series: "文艺穿搭", tags: ["报童帽", "英伦"], desc: "人字纹粗花呢复古八角报童帽，西湖漫步文艺范" },
+    { id: "tier3_band",     slot: "hat", icon: "🔥", name: "疾风烈焰额带结",   price: 260,   grade: "craft",  minTier: 3, series: "战力限定", tags: ["Lv3", "烈焰"], desc: "认真兔专属限定：赤金烈焰飘带与火焰纹章" },
+    { id: "beret_art",      slot: "hat", icon: "🎨", name: "复古羊毛贝雷帽",   price: 320,   grade: "craft",  series: "文艺穿搭", tags: ["贝雷帽", "复古"], desc: "斜戴酒红羊毛画家贝雷帽配金针胸徽，文艺范儿" },
+    { id: "phd_mortarboard", slot: "hat", icon: "🎓", name: "博士方帽流苏",    price: 520,   grade: "craft",  series: "学者风范", tags: ["博士帽", "学霸"], desc: "深墨绒面博士方帽配24K金穗流苏，学术顶会气场" },
+    { id: "tier5_scouter",  slot: "hat", icon: "📡", name: "赛亚战力探测镜",   price: 980,   grade: "luxury", minTier: 5, series: "战力限定", tags: ["Lv5", "探测镜"], desc: "超赛兔专属限定：翡翠全息HUD镜片实时扫描算力" },
+    { id: "cc_pearl_hat",   slot: "hat", icon: "👒", name: "CC 双环珍珠礼帽",  price: 1880,  grade: "luxury", series: "顶奢高定", tags: ["高定", "珍珠", "礼帽"], desc: "高定象牙宽檐礼帽，黑丝缎带配虹彩珍珠链与双金环" },
+    { id: "ice_crystal_tiara", slot: "hat", icon: "💎", name: "冰晶皇冠发箍",  price: 3200,  grade: "mythic", series: "极光高定", tags: ["冰晶", "皇冠", "发箍"], desc: "多面切割极光蓝钻白金冠冕发箍，折射星芒寒辉" },
     {
       id: "secret_celestial_crown", slot: "hat", icon: "👑", name: "星穹圣光金冠", price: 16800, grade: "secret", secret: true,
       series: "太初隐藏", tags: ["隐藏", "皇冠", "黄金"],
@@ -291,14 +654,19 @@
       desc: "新春贺岁限时限定：朱红鎏金国潮小醒狮头套配绒球与额头招财金纹",
     },
 
-    // outfit (服饰/披风)
-    { id: "waste_letter",  slot: "outfit", icon: "📄", name: "废弃信纸小披风", price: 22,    grade: "basic",  series: "街头日常", tags: ["信纸", "新手"], desc: "泛黄方格信纸配红色邮票系成的迷你披风" },
-    { id: "patch_scarf",   slot: "outfit", icon: "🧣", name: "补丁格子小围巾", price: 58,    grade: "basic",  series: "街头日常", tags: ["围巾", "保暖"], desc: "奶奶缝的红白拼布针织围巾，暖和又软萌" },
-    { id: "hoodie_dev",    slot: "outfit", icon: "🧥", name: "码农深灰连帽卫衣", price: 220, grade: "craft",  series: "极客办公", tags: ["码农", "卫衣"], desc: "极客标配连帽抽绳卫衣配胸前像素胡萝卜标" },
-    { id: "tier4_spark",   slot: "outfit", icon: "⚡", name: "雷电暴击金肩章", price: 480,   grade: "craft",  minTier: 4, series: "战力限定", tags: ["Lv4", "雷电"], desc: "暴击兔专属限定：双肩黄金战甲跃动高频暴击电弧" },
-    { id: "trench_bb",     slot: "outfit", icon: "🧥", name: "BBR 经典格纹风衣", price: 1280, grade: "luxury", series: "顶奢高定", tags: ["风衣", "英伦", "高定"], desc: "英伦驼色双排扣翻领风衣，格纹内衬与腰带扣" },
-    { id: "tier6_collar",  slot: "outfit", icon: "😈", name: "暗红魔纹尖刺领", price: 2680,  grade: "luxury", minTier: 6, series: "战力限定", tags: ["Lv6", "魔纹"], desc: "红魔兔专属限定：黑曜天鹅绒立领配血钻魔纹胸针" },
-    { id: "h_silk_cape",   slot: "outfit", icon: "🧣", name: "HM 橘橙真丝斗篷", price: 4800, grade: "mythic", series: "顶奢高定", tags: ["高定", "真丝", "斗篷"], desc: "爱马橘真丝缎面垂坠斗篷，鎏金马衔链扣与滚金边" },
+    // ========== outfit (服饰/披风) ==========
+    { id: "waste_letter",  slot: "outfit", icon: "📄", name: "废弃信纸小披风",   price: 22,    grade: "basic",  series: "街头日常", tags: ["信纸", "新手"], desc: "泛黄方格信纸配红色邮票系成的迷你披风" },
+    { id: "patch_scarf",   slot: "outfit", icon: "🧣", name: "补丁格子小围巾",   price: 58,    grade: "basic",  series: "街头日常", tags: ["围巾", "保暖"], desc: "奶奶缝的红白拼布针织围巾，暖和又软萌" },
+    { id: "plaid_dev_shirt", slot: "outfit", icon: "🎽", name: "格子码农衬衫",   price: 95,    grade: "basic",  series: "极客办公", tags: ["格子衫", "码农"], desc: "红蓝经典法兰绒格纹衬衫，写代码自带 20% 架构师Buff" },
+    { id: "hoodie_dev",    slot: "outfit", icon: "🧥", name: "码农深灰连帽卫衣", price: 220,   grade: "craft",  series: "极客办公", tags: ["码农", "卫衣"], desc: "极客标配连帽抽绳卫衣配胸前像素胡萝卜标" },
+    { id: "geek_tech_vest", slot: "outfit", icon: "🥼", name: "极客风工装马甲",  price: 360,   grade: "craft",  series: "极客办公", tags: ["工装", "机能", "马甲"], desc: "多口袋机能风军绿工装马甲配快拆卡扣与徽章" },
+    { id: "tier4_spark",   slot: "outfit", icon: "⚡", name: "雷电暴击金肩章",   price: 480,   grade: "craft",  minTier: 4, series: "战力限定", tags: ["Lv4", "雷电"], desc: "暴击兔专属限定：双肩黄金战甲跃动高频暴击电弧" },
+    { id: "jiangnan_brocade_jacket", slot: "outfit", icon: "👘", name: "江南织锦新中式马褂", price: 880, grade: "luxury", series: "江南风雅", tags: ["新中式", "盘扣", "织锦"], desc: "黛青宋锦立领斜襟盘扣马褂，暗绣金竹纹温润儒雅" },
+    { id: "trench_bb",     slot: "outfit", icon: "🧥", name: "BBR 经典格纹风衣", price: 1280,  grade: "luxury", series: "顶奢高定", tags: ["风衣", "英伦", "高定"], desc: "英伦驼色双排扣翻领风衣，格纹内衬与腰带扣" },
+    { id: "velvet_tuxedo", slot: "outfit", icon: "🤵", name: "高定黑丝绒礼服",   price: 2200,  grade: "luxury", series: "顶奢高定", tags: ["礼服", "丝绒", "领结"], desc: "曜黑丝绒戗驳领晚宴西装，配绯红丝缎领结与金袖扣" },
+    { id: "tier6_collar",  slot: "outfit", icon: "😈", name: "暗红魔纹尖刺领",   price: 2680,  grade: "luxury", minTier: 6, series: "战力限定", tags: ["Lv6", "魔纹"], desc: "红魔兔专属限定：黑曜天鹅绒立领配血钻魔纹胸针" },
+    { id: "h_silk_cape",   slot: "outfit", icon: "🧣", name: "HM 橘橙真丝斗篷",  price: 4800,  grade: "mythic", series: "顶奢高定", tags: ["高定", "真丝", "斗篷"], desc: "爱马橘真丝缎面垂坠斗篷，鎏金马衔链扣与滚金边" },
+    { id: "horizon_halo_cape", slot: "outfit", icon: "🌌", name: "视界光环圣披风", price: 8800, grade: "mythic", series: "次元神域", tags: ["奇点", "光环", "披风"], desc: "驯服黑洞视界的黑金引力光环披风，裙摆流淌炽金星弧" },
     {
       id: "secret_nebula_mantle", slot: "outfit", icon: "🌌", name: "极光星穹帝王袍", price: 24800, grade: "secret", secret: true,
       series: "太初隐藏", tags: ["隐藏", "帝王袍", "星云"],
@@ -306,14 +674,20 @@
       unlockReq: { needWear: "h_silk_cape", orTier: 9, label: "拥有「HM 橘橙真丝斗篷」或达到 Lv.9 创世飞升兔" },
     },
 
-    // acc (包包/配饰)
-    { id: "plastic_bag",   slot: "acc", icon: "🛍️", name: "透明菜篮小拎袋",   price: 28,    grade: "basic",  series: "街头日常", tags: ["菜篮", "新手"], desc: "拎着一根新鲜脆萝卜的接地气半透明买菜袋" },
-    { id: "canvas_tote",   slot: "acc", icon: "🎒", name: "复古帆布小书包",   price: 120,   grade: "craft",  series: "文艺穿搭", tags: ["帆布包", "日常"], desc: "百搭米白斜挎帆布包配焦糖皮扣，装满生产力" },
-    { id: "iv_bucket",     slot: "acc", icon: "👜", name: "IV 老花水桶包包",  price: 1480,  grade: "luxury", series: "顶奢高定", tags: ["包包", "老花", "高定"], desc: "栗棕老花暗纹抽绳水桶包，植鞣皮提手与鎏金铭牌" },
-    { id: "gci_shades",    slot: "acc", icon: "🕶️", name: "GCI 复古金边墨镜", price: 2180,  grade: "luxury", series: "顶奢高定", tags: ["墨镜", "高定"], desc: "琥珀渐变金丝双梁大牌墨镜，自带高光流闪" },
-    { id: "tier8_scepter", slot: "acc", icon: "👑", name: "星渊星辰维度权杖", price: 6400,  grade: "mythic", minTier: 8, series: "战力限定", tags: ["Lv8", "权杖"], desc: "星渊霸王兔专属限定：浮空黄金星环权杖与旋转星芒" },
-    { id: "rlx_watch",     slot: "acc", icon: "⌚", name: "RLX 绿水鬼机械表", price: 7800,  grade: "mythic", series: "顶奢高定", tags: ["机械表", "绿水鬼", "顶奢"], desc: "18K金狗牙圈翡翠太阳纹表盘，放大镜日历与金链光泽" },
-    { id: "tier10_orb",    slot: "acc", icon: "🛸", name: "量子浮游星能炮",   price: 12800, grade: "mythic", minTier: 10, series: "战力限定", tags: ["50B", "浮游炮"], desc: "50B 隐藏款专属限定：双翼棱镜浮游炮与量子光环" },
+    // ========== acc (包包/配饰) ==========
+    { id: "plastic_bag",   slot: "acc", icon: "🛍️", name: "透明菜篮小拎袋",     price: 28,    grade: "basic",  series: "街头日常", tags: ["菜篮", "新手"], desc: "拎着一根新鲜脆萝卜的接地气半透明买菜袋" },
+    { id: "iced_americano", slot: "acc", icon: "☕", name: "冰美式手拎杯",       price: 48,    grade: "basic",  series: "极客办公", tags: ["冰美式", "续命", "咖啡"], desc: "早C晚A续命冰美式配冰块与绿色吸管，精神抖擞" },
+    { id: "canvas_tote",   slot: "acc", icon: "🎒", name: "复古帆布小书包",     price: 120,   grade: "craft",  series: "文艺穿搭", tags: ["帆布包", "日常"], desc: "百搭米白斜挎帆布包配焦糖皮扣，装满生产力" },
+    { id: "mini_mech_kb",  slot: "acc", icon: "⌨️", name: "客制化迷你机械键盘", price: 260,   grade: "craft",  series: "极客办公", tags: ["机械键盘", "客制化", "RGB"], desc: "阳极铝 65% 客制化机械键盘，微光 RGB 轴体随行敲代码" },
+    { id: "rangefinder_camera", slot: "acc", icon: "📷", name: "复古旁轴胶片相机", price: 680, grade: "craft", series: "文艺穿搭", tags: ["胶片相机", "旁轴", "徕卡"], desc: "银黑黄铜旁轴胶片相机挂于胸侧，定格西湖光影" },
+    { id: "iv_bucket",     slot: "acc", icon: "👜", name: "IV 老花水桶包包",    price: 1480,  grade: "luxury", series: "顶奢高定", tags: ["包包", "老花", "高定"], desc: "栗棕老花暗纹抽绳水桶包，植鞣皮提手与鎏金铭牌" },
+    { id: "gci_shades",    slot: "acc", icon: "🕶️", name: "GCI 复古金边墨镜",   price: 2180,  grade: "luxury", series: "顶奢高定", tags: ["墨镜", "高定"], desc: "琥珀渐变金丝双梁大牌墨镜，自带高光流闪" },
+    { id: "croc_briefcase", slot: "acc", icon: "💼", name: "鳄鱼纹公文包",       price: 3400,  grade: "luxury", series: "顶奢高定", tags: ["公文包", "鳄鱼纹", "总裁"], desc: "深栗手工鳄鱼压纹真皮手提公文包，18K金锁扣" },
+    { id: "tier8_scepter", slot: "acc", icon: "👑", name: "星渊星辰维度权杖",   price: 6400,  grade: "mythic", minTier: 8, series: "战力限定", tags: ["Lv8", "权杖"], desc: "星渊霸王兔专属限定：浮空黄金星环权杖与旋转星芒" },
+    { id: "rlx_watch",     slot: "acc", icon: "⌚", name: "RLX 绿水鬼机械表",   price: 7800,  grade: "mythic", series: "顶奢高定", tags: ["机械表", "绿水鬼", "顶奢"], desc: "18K金狗牙圈翡翠太阳纹表盘，放大镜日历与金链光泽" },
+    { id: "floating_compute_cube", slot: "acc", icon: "🔮", name: "悬浮算力魔方", price: 9600, grade: "mythic", series: "未来星际", tags: ["魔方", "算力", "悬浮"], desc: "身侧自转的霓虹量子立方体，源源不断吞吐十亿级 Token" },
+    { id: "tier10_orb",    slot: "acc", icon: "🛸", name: "量子浮游星能炮",     price: 12800, grade: "mythic", minTier: 10, series: "战力限定", tags: ["50B", "浮游炮"], desc: "50B 隐藏款专属限定：双翼棱镜浮游炮与量子光环" },
+    { id: "taichu_carrot_halo", slot: "acc", icon: "✨", name: "太初圣光小萝卜光环", price: 18800, grade: "mythic", series: "太初臻礼", tags: ["太初", "光环", "小萝卜"], desc: "太初星穹御苑尊享赠礼：两枚发光黄金水晶小萝卜环绕兔兔流转圣辉" },
     {
       id: "secret_time_astrolabe", slot: "acc", icon: "⏳", name: "太初星轨怀表仪", price: 32000, grade: "secret", secret: true,
       series: "太初隐藏", tags: ["隐藏", "怀表", "星轨"],
@@ -328,7 +702,7 @@
     },
   ];
 
-  // ---- Extensible Plugin SVG Art Registry (for 300+ future decors/wearables/houses) ----
+  // ---- Extensible Plugin SVG Art Registry ----
   const decorArtMap = new Map();
   const wearArtMap = new Map();
   const houseArtMap = new Map();
@@ -379,28 +753,23 @@
     <g transform="translate(362, 160)">
       <ellipse cx="0" cy="4" rx="26" ry="5.5" fill="rgba(0,0,0,0.2)"/>
       <rect x="-5" y="-12" width="10" height="14" rx="1.5" fill="#78350f"/>
-      <!-- Wrapped Christmas gifts under tree -->
       <rect x="-24" y="-8" width="13" height="10" rx="1.5" fill="#ef4444" stroke="#991b1b" stroke-width="0.9"/>
       <line x1="-17.5" y1="-8" x2="-17.5" y2="2" stroke="#fde047" stroke-width="1.8"/>
       <rect x="11" y="-9" width="13" height="11" rx="1.5" fill="#2563eb" stroke="#1e3a8a" stroke-width="0.9"/>
       <line x1="17.5" y1="-9" x2="17.5" y2="2" stroke="#fde047" stroke-width="1.8"/>
-      <!-- Layered pine tree boughs -->
       <polygon points="0,-78 -26,-12 26,-12" fill="#15803d" stroke="#14532d" stroke-width="1.2"/>
       <polygon points="0,-84 -21,-32 21,-32" fill="#16a34a" stroke="#14532d" stroke-width="1.1"/>
       <polygon points="0,-90 -15,-52 15,-52" fill="#22c55e" stroke="#15803d" stroke-width="1"/>
-      <!-- Twinkling ornaments & gold garland -->
       <path d="M-11 -56 Q0 -48 11 -56 M-17 -36 Q0 -26 17 -36 M-22 -18 Q0 -10 22 -18" fill="none" stroke="#fde047" stroke-width="1.2" opacity="0.82"/>
       <circle cx="-8" cy="-42" r="2.4" fill="#ef4444" class="h-twinkle"/>
       <circle cx="9" cy="-46" r="2.2" fill="#38bdf8" class="h-twinkle-d1"/>
       <circle cx="0" cy="-30" r="2.5" fill="#fde047" class="h-twinkle-d2"/>
       <circle cx="-13" cy="-22" r="2.3" fill="#f472b6" class="h-twinkle"/>
       <circle cx="13" cy="-22" r="2.3" fill="#ef4444" class="h-twinkle-d1"/>
-      <!-- Glowing golden star topper -->
       <path d="M0 -98 L2.6 -92 L9 -91.2 L4.2 -86.8 L5.5 -80.5 L0 -83.8 L-5.5 -80.5 L-4.2 -86.8 L-9 -91.2 L-2.6 -92 Z" fill="#fde047" stroke="#f59e0b" stroke-width="0.7" filter="url(#hsGlowSm)" class="h-pulse"/>
     </g>
   `);
 
-  // Register handcrafted SVG art for the 4 flagship festival wearable items (36x36 bunny coordinates)
   wearArtMap.set("evt_1024_visor", () => `
     <g>
       <rect x="8.8" y="18.6" width="18.4" height="5.4" rx="2.4" fill="#064e3b" fill-opacity="0.78" stroke="#34d399" stroke-width="0.9"/>
@@ -446,7 +815,7 @@
     const cur = `${mm}-${dd}`;
     return ranges.some(([start, end]) => {
       if (start <= end) return cur >= start && cur <= end;
-      return cur >= start || cur <= end; // wraps across New Year
+      return cur >= start || cur <= end;
     });
   }
 
@@ -468,7 +837,6 @@
     if (!item || base === 0) {
       return { price: 0, originalPrice: 0, onSale: false, discountLabel: "" };
     }
-    // Secret items & limited event items keep their prestige price unless item explicitly defines salePrice
     if (typeof item.salePrice === "number" && item.salePrice < base) {
       return {
         price: Math.max(1, Math.round(item.salePrice)),
@@ -521,7 +889,7 @@
     return Number(n || 0).toLocaleString("en-US");
   }
 
-  // ---- O(1) Indexed Maps + Pre-computed Search Haystacks (Scales cleanly to 1000+ items!) ----
+  // ---- O(1) Indexed Maps ----
   const houseById = new Map();
   const decorById = new Map();
   const wearById = new Map();
@@ -564,6 +932,72 @@
   }
   rebuildIndexes();
 
+  // ---- House Purchase Gift Helpers ----
+  function getHouseGift(house) {
+    if (!house || !house.gift || !house.gift.id) return null;
+    const kind = house.gift.kind === "wear" ? "wear" : "decor";
+    const item = kind === "wear" ? wearById.get(house.gift.id) : decorById.get(house.gift.id);
+    if (!item) return null;
+    const refundCoins = Math.max(1, Math.round((Number(item.price) || 0) * ECONOMY.giftRefundRate));
+    return { kind, item, refundCoins };
+  }
+
+  // ---- Friday 14:00-18:00 "辛苦一周" Weekly Rental Coupon Engine ----
+  function getIsoWeekKey(now = new Date()) {
+    const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
+  }
+
+  function getFridayWindowInfo(homeState, mockActive = false, now = new Date()) {
+    const weekKey = getIsoWeekKey(now);
+    const day = now.getDay(); // 5 = Friday
+    const hr = now.getHours();
+    const min = now.getMinutes();
+    const inRealWindow = day === 5 && hr >= ECONOMY.fridayStartHour && hr < ECONOMY.fridayEndHour;
+    const isOpen = !!mockActive || inRealWindow;
+    const claimed = !!(homeState && homeState.friday_claim_week === weekKey);
+    const minsLeft = inRealWindow ? Math.max(1, (ECONOMY.fridayEndHour - hr) * 60 - min) : (mockActive ? 180 : 0);
+    return {
+      isOpen,
+      inRealWindow,
+      mocked: !!mockActive && !inRealWindow,
+      weekKey,
+      claimed,
+      canClaim: isOpen && !claimed,
+      minsLeft,
+    };
+  }
+
+  function getValidCoupons(homeState, nowMs = Date.now()) {
+    const list = (homeState && Array.isArray(homeState.coupons)) ? homeState.coupons : [];
+    return list
+      .filter(c => c && c.id && Number(c.expires_at) > nowMs && Number(c.discount) > 0 && Number(c.discount) < 1)
+      .sort((a, b) => a.discount - b.discount || a.expires_at - b.expires_at);
+  }
+
+  function getBestRentCoupon(homeState, nowMs = Date.now()) {
+    const valid = getValidCoupons(homeState, nowMs);
+    return valid.length ? valid[0] : null;
+  }
+
+  function rollFridayCoupon(forceEpic = false, nowMs = Date.now()) {
+    const isEpic = forceEpic || Math.random() < ECONOMY.fridayEpicChance;
+    const discount = isEpic ? 0.3 : 0.8;
+    const expiresAt = nowMs + ECONOMY.fridayCouponDays * 86400000;
+    return {
+      id: `fri_${nowMs}_${Math.random().toString(36).slice(2, 7)}`,
+      discount,
+      label: isEpic ? "🔥 3折租房神券" : "🏷️ 8折租房券",
+      rarity: isEpic ? "epic" : "normal",
+      expires_at: expiresAt,
+      source: "friday",
+    };
+  }
+
   // ---- Leasing & Rent-to-Own Equity Helpers ----
   function getLeaseExpiresAt(houseId, homeState) {
     const leases = (homeState && homeState.leases) || {};
@@ -585,12 +1019,26 @@
     return `剩 ${Math.max(1, hrs)}小时`;
   }
 
-  function getHouseRentPrice(house, days, activeEvents = []) {
+  function getHouseRentPrice(house, days, activeEvents = [], coupon = null) {
     if (!house || !house.rentable) return null;
     const base = days >= 30
       ? (house.rent30d || Math.max(10, Math.round(house.price * 0.2)))
       : (house.rent7d || Math.max(5, Math.round(house.price * 0.06)));
-    return getEffectivePrice({ ...house, price: base }, activeEvents);
+    const eff = getEffectivePrice({ ...house, price: base }, activeEvents);
+    if (coupon && Number(coupon.discount) > 0 && Number(coupon.discount) < 1) {
+      const discounted = Math.max(1, Math.round(eff.price * Number(coupon.discount)));
+      const dLabel = `${Math.round(Number(coupon.discount) * 10)}折券`;
+      return {
+        price: discounted,
+        originalPrice: eff.originalPrice || base,
+        basePriceBeforeCoupon: eff.price,
+        onSale: discounted < (eff.originalPrice || base),
+        discountLabel: eff.onSale ? `${eff.discountLabel}+${dLabel}` : dLabel,
+        couponApplied: coupon,
+        savedByCoupon: Math.max(0, eff.price - discounted),
+      };
+    }
+    return { ...eff, basePriceBeforeCoupon: eff.price, couponApplied: null, savedByCoupon: 0 };
   }
 
   function getHouseBuyoutInfo(house, homeState, activeEvents = []) {
@@ -617,12 +1065,18 @@
     decors: DECORS,
     wearables: WEARABLES,
 
-    // O(1) indexed getters
     getHouse: (id) => houseById.get(id) || null,
     getDecor: (id) => decorById.get(id) || null,
     getWearable: (id) => wearById.get(id) || null,
     getDecorsBySlot: (slot) => decorsBySlot.get(slot) || [],
     getWearsBySlot: (slot) => wearsBySlot.get(slot) || [],
+
+    getHouseGift,
+    getIsoWeekKey,
+    getFridayWindowInfo,
+    getValidCoupons,
+    getBestRentCoupon,
+    rollFridayCoupon,
 
     getActiveEvents,
     getEventById,
@@ -636,7 +1090,6 @@
     getHouseRentPrice,
     getHouseBuyoutInfo,
 
-    // Plugin registration API for adding 100s of items or new events dynamically
     registerEvent(ev) {
       if (!ev || !ev.id) return;
       const idx = EVENTS.findIndex(x => x.id === ev.id);
