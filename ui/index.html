@@ -5803,6 +5803,14 @@
         <button class="dbg-mini-btn" data-w="rain">🌧️ 下雨</button>
         <button class="dbg-mini-btn" data-w="snow">❄️ 下雪</button>
       </div>
+      <div class="dbg-inline-row" id="dbgTimeChips" style="margin-top:4px">
+        <span class="dbg-tag">🕒 模拟时段(06:00天亮/19:00天黑):</span>
+        <button class="dbg-mini-btn on" data-t="real">本机实时</button>
+        <button class="dbg-mini-btn" data-t="dawn">🌅 清晨</button>
+        <button class="dbg-mini-btn" data-t="day">☀️ 白天</button>
+        <button class="dbg-mini-btn" data-t="dusk">🌇 傍晚</button>
+        <button class="dbg-mini-btn" data-t="night">🌙 夜晚</button>
+      </div>
     </div>
   </div>
 </div>
@@ -12644,46 +12652,91 @@ function renderHomeStageDefs() {
   </defs>`;
 }
 
-// ---- Living 420x208 SVG Architectural Scene Renderer ----
-function renderHouseBackdropSvg(houseId) {
+// ---- Living 420x208 SVG Architectural Scene Renderer (Synced with Local Day/Night Clock) ----
+function renderHouseBackdropSvg(houseId, dayPhase = { phase: "day", isNight: false }) {
+  const phase = (dayPhase && dayPhase.phase) || "day";
+  const isNight = phase === "night";
+  const isDawn = phase === "dawn";
+  const isDusk = phase === "dusk";
+
+  // Shared sky palettes for real local time (06:00天亮 / 19:00天黑)
+  const skyPalettes = {
+    dawn:  ["#7aa7e8", "#f9c6d3", "#fde2b8"],
+    day:   ["#60a5fa", "#bae6fd", "#e0f2fe"],
+    dusk:  ["#4338ca", "#f97316", "#fde68a"],
+    night: ["#0b1124", "#1b2642", "#2d3b5e"],
+  };
+  const sky = skyPalettes[phase] || skyPalettes.day;
+
+  const nightStars = `
+    <circle cx="58" cy="30" r="1.3" fill="#fde68a" class="h-twinkle"/>
+    <circle cx="138" cy="22" r="1.1" fill="#ffffff" class="h-twinkle-d1"/>
+    <circle cx="240" cy="28" r="1.4" fill="#fde68a" class="h-twinkle-d2"/>
+    <circle cx="294" cy="20" r="1.0" fill="#cbd5e1" class="h-twinkle"/>
+    <circle cx="188" cy="40" r="0.9" fill="#e0f2fe" class="h-twinkle-d1"/>
+    <circle cx="390" cy="44" r="1.1" fill="#fde68a" class="h-twinkle-d2"/>`;
+
+  const moonPath = (cx, cy, r = 14) => {
+    // True vector crescent moon (zero cutout seam against any sky gradient!)
+    return `<g transform="translate(${cx}, ${cy}) scale(${(r / 14).toFixed(2)})">
+      <path d="M4 -13 A14 14 0 1 0 13 6 A10.8 10.8 0 1 1 4 -13 Z" fill="#fef3c7" opacity="0.96" filter="url(#hsGlowSm)"/>
+    </g>`;
+  };
+
   switch (houseId) {
-    case "street":
+    case "street": {
+      const b1 = isNight ? "#1f273b" : (isDusk ? "#5b4566" : (isDawn ? "#8a98b8" : "#94a3b8"));
+      const b2 = isNight ? "#1a2133" : (isDusk ? "#4c3957" : (isDawn ? "#7c8aa8" : "#7c8fa6"));
+      const b3 = isNight ? "#232b40" : (isDusk ? "#644d6e" : (isDawn ? "#94a3bf" : "#9fb0c4"));
+      const winLit = isNight || isDusk;
+      const winCol1 = winLit ? "#fbbf24" : "#e0f2fe";
+      const winCol2 = winLit ? "#fde68a" : "#f1f5f9";
+      const winOp = isNight ? "0.72" : (isDusk ? "0.55" : "0.62");
+      const curbCol = isNight ? "#64748b" : (isDusk ? "#a8a29e" : "#cbd5e1");
+      const roadCol = isNight ? "#1e2636" : (isDusk ? "#3f3d4a" : "#475569");
+      const celestial = isNight
+        ? `${moonPath(352, 40, 15)}${nightStars}`
+        : `<circle cx="${isDawn ? 344 : (isDusk ? 348 : 352)}" cy="${isDawn || isDusk ? 52 : 38}" r="${isDusk ? 19 : 17}" fill="${isDusk ? "#fb923c" : "#fde047"}" opacity="0.92" filter="url(#hsGlowMd)"/>
+           <g class="h-drift-slow" opacity="0.82">
+             <ellipse cx="148" cy="34" rx="26" ry="9" fill="${isDusk ? "#fed7aa" : "#ffffff"}"/>
+             <ellipse cx="166" cy="30" rx="15" ry="7" fill="${isDusk ? "#fed7aa" : "#ffffff"}"/>
+           </g>`;
+      const lampLight = isNight
+        ? `<ellipse cx="98" cy="46" rx="9" ry="4" fill="#fef08a" filter="url(#hsGlowSm)"/>
+           <polygon points="88,48 108,48 162,162 34,162" fill="url(#hsLampCone)"/>
+           <circle cx="94" cy="78" r="1.2" fill="#fef08a" opacity="0.7" class="h-float"/>
+           <circle cx="106" cy="106" r="1.0" fill="#fde68a" opacity="0.6" class="h-float-slow"/>`
+        : (isDusk
+          ? `<ellipse cx="98" cy="46" rx="8.5" ry="3.8" fill="#fef08a" opacity="0.78" filter="url(#hsGlowSm)"/>
+             <polygon points="88,48 108,48 156,162 40,162" fill="url(#hsLampCone)" opacity="0.38"/>`
+          : `<ellipse cx="98" cy="46" rx="8.5" ry="3.5" fill="#e2e8f0" stroke="#94a3b8" stroke-width="0.9"/>`);
       return `
-        <defs><linearGradient id="hSkySt" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#141928"/><stop offset="65%" stop-color="#283148"/><stop offset="100%" stop-color="#3f4a63"/></linearGradient></defs>
-        <rect width="420" height="208" fill="url(#hSkySt)"/>
-        <!-- Crescent moon & stars -->
-        <circle cx="352" cy="40" r="16" fill="#fef3c7" opacity="0.92" filter="url(#hsGlowSm)"/>
-        <circle cx="358" cy="36" r="14" fill="#1b2235"/>
-        <circle cx="58" cy="32" r="1.3" fill="#fde68a" class="h-twinkle"/>
-        <circle cx="138" cy="22" r="1.1" fill="#fff" class="h-twinkle-d1"/>
-        <circle cx="240" cy="30" r="1.4" fill="#fde68a" class="h-twinkle-d2"/>
-        <circle cx="294" cy="20" r="1.0" fill="#cbd5e1" class="h-twinkle"/>
-        <!-- City skyline silhouettes with warm apartment lights -->
-        <rect x="242" y="76" width="48" height="72" rx="2" fill="#1f273b"/>
-        <rect x="298" y="56" width="60" height="92" rx="2" fill="#1a2133"/>
-        <rect x="364" y="84" width="42" height="64" rx="2" fill="#232b40"/>
-        <rect x="252" y="88" width="7" height="9" rx="1" fill="#fbbf24" opacity="0.55"/>
-        <rect x="266" y="106" width="7" height="9" rx="1" fill="#fbbf24" opacity="0.4"/>
-        <rect x="310" y="70" width="8" height="10" rx="1" fill="#fde68a" opacity="0.72"/>
-        <rect x="328" y="70" width="8" height="10" rx="1" fill="#fbbf24" opacity="0.38"/>
-        <rect x="310" y="92" width="8" height="10" rx="1" fill="#fbbf24" opacity="0.5"/>
-        <rect x="336" y="92" width="8" height="10" rx="1" fill="#fde68a" opacity="0.65"/>
-        <!-- Street lamp with warm volumetric cone -->
-        <rect x="64" y="42" width="5" height="108" fill="#475569"/>
-        <rect x="61" y="140" width="11" height="10" rx="2" fill="#334155"/>
-        <path d="M66 44 Q82 30 98 44" stroke="#64748b" stroke-width="3.6" fill="none" stroke-linecap="round"/>
-        <ellipse cx="98" cy="46" rx="9" ry="4" fill="#fef08a" filter="url(#hsGlowSm)"/>
-        <polygon points="88,48 108,48 162,162 34,162" fill="url(#hsLampCone)"/>
-        <circle cx="94" cy="78" r="1.2" fill="#fef08a" opacity="0.7" class="h-float"/>
-        <circle cx="106" cy="106" r="1.0" fill="#fde68a" opacity="0.6" class="h-float-slow"/>
+        <defs><linearGradient id="hSkySt_${phase}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${sky[0]}"/><stop offset="62%" stop-color="${sky[1]}"/><stop offset="100%" stop-color="${sky[2]}"/></linearGradient></defs>
+        <rect width="420" height="208" fill="url(#hSkySt_${phase})"/>
+        ${celestial}
+        <!-- City skyline silhouettes -->
+        <rect x="242" y="76" width="48" height="72" rx="2" fill="${b1}"/>
+        <rect x="298" y="56" width="60" height="92" rx="2" fill="${b2}"/>
+        <rect x="364" y="84" width="42" height="64" rx="2" fill="${b3}"/>
+        <rect x="252" y="88" width="7" height="9" rx="1" fill="${winCol1}" opacity="${winOp}"/>
+        <rect x="266" y="106" width="7" height="9" rx="1" fill="${winCol1}" opacity="${isNight ? "0.45" : "0.52"}"/>
+        <rect x="310" y="70" width="8" height="10" rx="1" fill="${winCol2}" opacity="${winOp}"/>
+        <rect x="328" y="70" width="8" height="10" rx="1" fill="${winCol1}" opacity="${isNight ? "0.42" : "0.52"}"/>
+        <rect x="310" y="92" width="8" height="10" rx="1" fill="${winCol1}" opacity="${winOp}"/>
+        <rect x="336" y="92" width="8" height="10" rx="1" fill="${winCol2}" opacity="${winOp}"/>
+        <!-- Street lamp (lit at dusk/night, off in daytime) -->
+        <rect x="64" y="42" width="5" height="108" fill="${isNight ? "#475569" : "#64748b"}"/>
+        <rect x="61" y="140" width="11" height="10" rx="2" fill="${isNight ? "#334155" : "#475569"}"/>
+        <path d="M66 44 Q82 30 98 44" stroke="${isNight ? "#64748b" : "#94a3b8"}" stroke-width="3.6" fill="none" stroke-linecap="round"/>
+        ${lampLight}
         <!-- Curb & Asphalt road -->
-        <rect x="0" y="148" width="420" height="12" fill="#94a3b8"/>
-        <line x1="0" y1="148" x2="420" y2="148" stroke="#cbd5e1" stroke-width="1"/>
-        <rect x="0" y="160" width="420" height="48" fill="#2b3547"/>
-        <line x1="16" y1="184" x2="72" y2="184" stroke="#cbd5e1" stroke-width="2.8" stroke-dasharray="18 16" opacity="0.48"/>
-        <line x1="316" y1="184" x2="404" y2="184" stroke="#cbd5e1" stroke-width="2.8" stroke-dasharray="18 16" opacity="0.48"/>
+        <rect x="0" y="148" width="420" height="12" fill="${curbCol}"/>
+        <line x1="0" y1="148" x2="420" y2="148" stroke="#e2e8f0" stroke-width="1" opacity="${isNight ? "0.55" : "0.9"}"/>
+        <rect x="0" y="160" width="420" height="48" fill="${roadCol}"/>
+        <line x1="16" y1="184" x2="72" y2="184" stroke="#e2e8f0" stroke-width="2.8" stroke-dasharray="18 16" opacity="${isNight ? "0.45" : "0.65"}"/>
+        <line x1="316" y1="184" x2="404" y2="184" stroke="#e2e8f0" stroke-width="2.8" stroke-dasharray="18 16" opacity="${isNight ? "0.45" : "0.65"}"/>
         <!-- Newspaper mat & warm coffee cup -->
-        <rect x="160" y="156" width="100" height="24" rx="2.5" fill="#ebe5d5" stroke="#94a3b8" stroke-width="1"/>
+        <rect x="160" y="156" width="100" height="24" rx="2.5" fill="${isNight ? "#d6d0c0" : "#f5f0e3"}" stroke="#94a3b8" stroke-width="1"/>
         <text x="210" y="164" font-size="5.5" font-family="monospace" font-weight="900" fill="#57534e" text-anchor="middle">TOOTOO DAILY</text>
         <line x1="170" y1="169" x2="206" y2="169" stroke="#9ca3af" stroke-width="1.2"/>
         <line x1="170" y1="174" x2="248" y2="174" stroke="#9ca3af" stroke-width="1.0"/>
@@ -12692,85 +12745,128 @@ function renderHouseBackdropSvg(houseId) {
         <path d="M279 154 Q277 148 280 144" stroke="#e2e8f0" stroke-width="1" fill="none" opacity="0.6" class="h-steam"/>
         <ellipse cx="118" cy="172" rx="5.5" ry="2.6" fill="#d97706" transform="rotate(-18 118 172)" class="h-drift"/>
       `;
-    case "pot":
+    }
+    case "pot": {
+      const potSky = isNight
+        ? ["#0b132b", "#1c2541", "#2b3a67"]
+        : (isDusk ? ["#4c1d95", "#fb923c", "#fde68a"] : (isDawn ? ["#93c5fd", "#fbcfe8", "#fef3c7"] : ["#93c5fd", "#e0f2fe", "#fef9c3"]));
+      const hillBack = isNight ? "#166534" : (isDusk ? "#4d7c4f" : "#86efac");
+      const hillFront = isNight ? "#14532d" : (isDusk ? "#3f6a42" : "#4ade80");
+      const clayStops = isNight
+        ? ["#5c1d0c", "#8c3b1e", "#742e15", "#431407"]
+        : ["#9a3412", "#d96b43", "#c25934", "#7c2d12"];
+      const celestial = isNight
+        ? `${moonPath(348, 40, 15)}${nightStars}`
+        : `<circle cx="348" cy="${isDawn || isDusk ? 50 : 40}" r="20" fill="${isDusk ? "#fb923c" : "#fde047"}" opacity="0.92" filter="url(#hsGlowMd)"/>
+           <g class="h-drift-slow" opacity="0.86">
+             <ellipse cx="94" cy="38" rx="28" ry="10" fill="${isDusk ? "#fed7aa" : "#fff"}"/>
+             <ellipse cx="112" cy="34" rx="16" ry="8" fill="${isDusk ? "#fed7aa" : "#fff"}"/>
+           </g>`;
+      const fireflies = isNight
+        ? `<circle cx="72" cy="128" r="1.8" fill="#fef08a" filter="url(#hsGlowSm)" class="h-twinkle"/>
+           <circle cx="114" cy="112" r="1.5" fill="#fde047" class="h-twinkle-d1"/>
+           <circle cx="326" cy="124" r="1.8" fill="#fef08a" filter="url(#hsGlowSm)" class="h-twinkle-d2"/>
+           <circle cx="362" cy="138" r="1.4" fill="#fde047" class="h-twinkle"/>
+           <ellipse cx="210" cy="167" rx="54" ry="10" fill="#fde68a" opacity="0.22" filter="url(#hsGlowSm)"/>`
+        : "";
       return `
         <defs>
-          <linearGradient id="hSkyPot" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#bae6fd"/><stop offset="60%" stop-color="#fef9c3"/><stop offset="100%" stop-color="#fde68a"/></linearGradient>
-          <linearGradient id="hPotClay" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#9a3412"/><stop offset="30%" stop-color="#d96b43"/><stop offset="68%" stop-color="#c25934"/><stop offset="100%" stop-color="#7c2d12"/></linearGradient>
+          <linearGradient id="hSkyPot_${phase}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${potSky[0]}"/><stop offset="60%" stop-color="${potSky[1]}"/><stop offset="100%" stop-color="${potSky[2]}"/></linearGradient>
+          <linearGradient id="hPotClay_${phase}" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="${clayStops[0]}"/><stop offset="30%" stop-color="${clayStops[1]}"/><stop offset="68%" stop-color="${clayStops[2]}"/><stop offset="100%" stop-color="${clayStops[3]}"/></linearGradient>
         </defs>
-        <rect width="420" height="208" fill="url(#hSkyPot)"/>
-        <circle cx="348" cy="40" r="21" fill="#fde047" opacity="0.9" filter="url(#hsGlowMd)"/>
-        <g class="h-drift-slow" opacity="0.86">
-          <ellipse cx="94" cy="38" rx="28" ry="10" fill="#fff"/>
-          <ellipse cx="112" cy="34" rx="16" ry="8" fill="#fff"/>
-        </g>
+        <rect width="420" height="208" fill="url(#hSkyPot_${phase})"/>
+        ${celestial}
         <!-- Layered meadow hills -->
-        <path d="M0 146 Q116 124 236 144 Q332 154 420 134 L420 208 L0 208 Z" fill="#86efac"/>
-        <path d="M0 160 Q210 146 420 162 L420 208 L0 208 Z" fill="#4ade80" opacity="0.72"/>
+        <path d="M0 146 Q116 124 236 144 Q332 154 420 134 L420 208 L0 208 Z" fill="${hillBack}"/>
+        <path d="M0 160 Q210 146 420 162 L420 208 L0 208 Z" fill="${hillFront}" opacity="${isNight ? "0.85" : "0.72"}"/>
         <!-- Giant Cozy Upside-down Terracotta Flowerpot House -->
-        <ellipse cx="210" cy="167" rx="94" ry="12" fill="#15803d" opacity="0.22"/>
-        <path d="M122 164 L146 54 L274 54 L298 164 Z" fill="url(#hPotClay)" stroke="#7c2d12" stroke-width="2" stroke-linejoin="round"/>
-        <rect x="136" y="40" width="148" height="17" rx="6" fill="#d96b43" stroke="#7c2d12" stroke-width="1.9"/>
-        <line x1="146" y1="46" x2="274" y2="46" stroke="#fed7aa" stroke-width="1.4" opacity="0.45"/>
+        <ellipse cx="210" cy="167" rx="94" ry="12" fill="#052e16" opacity="${isNight ? "0.42" : "0.22"}"/>
+        <path d="M122 164 L146 54 L274 54 L298 164 Z" fill="url(#hPotClay_${phase})" stroke="${isNight ? "#431407" : "#7c2d12"}" stroke-width="2" stroke-linejoin="round"/>
+        <rect x="136" y="40" width="148" height="17" rx="6" fill="${clayStops[1]}" stroke="${isNight ? "#431407" : "#7c2d12"}" stroke-width="1.9"/>
+        <line x1="146" y1="46" x2="274" y2="46" stroke="#fed7aa" stroke-width="1.4" opacity="${isNight ? "0.22" : "0.45"}"/>
         <!-- Hanging ivy vine on pot rim -->
-        <path d="M150 56 Q142 74 152 88 Q146 100 154 112" stroke="#15803d" stroke-width="2" fill="none"/>
-        <circle cx="144" cy="70" r="4" fill="#22c55e"/><circle cx="154" cy="84" r="3.6" fill="#16a34a"/><circle cx="147" cy="98" r="3.5" fill="#4ade80"/>
-        <!-- Warm arched interior -->
+        <path d="M150 56 Q142 74 152 88 Q146 100 154 112" stroke="${isNight ? "#14532d" : "#15803d"}" stroke-width="2" fill="none"/>
+        <circle cx="144" cy="70" r="4" fill="${isNight ? "#15803d" : "#22c55e"}"/><circle cx="154" cy="84" r="3.6" fill="${isNight ? "#166534" : "#16a34a"}"/><circle cx="147" cy="98" r="3.5" fill="${isNight ? "#15803d" : "#4ade80"}"/>
+        <!-- Warm arched interior (glows extra cozy at night!) -->
         <path d="M162 164 L162 104 A48 48 0 0 1 258 104 L258 164 Z" fill="#5c280a"/>
-        <path d="M168 164 L168 108 A42 42 0 0 1 252 108 L252 164 Z" fill="#fef3c7"/>
+        <path d="M168 164 L168 108 A42 42 0 0 1 252 108 L252 164 Z" fill="${isNight ? "#fde68a" : "#fef3c7"}"/>
+        ${isNight ? `<circle cx="210" cy="96" r="24" fill="#fbbf24" opacity="0.28" filter="url(#hsGlowSm)"/>` : ""}
         <rect x="168" y="152" width="84" height="12" fill="#d6b286"/>
         <!-- Spotted mushroom & wildflowers -->
-        <rect x="88" y="152" width="8" height="13" rx="3" fill="#fef3c7" stroke="#78350f" stroke-width="1"/>
-        <path d="M79 154 A13 10 0 0 1 105 154 Z" fill="#ef4444" stroke="#7f1d1d" stroke-width="1.2"/>
+        <rect x="88" y="152" width="8" height="13" rx="3" fill="${isNight ? "#cbd5e1" : "#fef3c7"}" stroke="#78350f" stroke-width="1"/>
+        <path d="M79 154 A13 10 0 0 1 105 154 Z" fill="${isNight ? "#b91c1c" : "#ef4444"}" stroke="#7f1d1d" stroke-width="1.2"/>
         <circle cx="88" cy="148" r="1.8" fill="#fff"/><circle cx="96" cy="150" r="1.5" fill="#fff"/>
-        <path d="M312 164 Q316 144 322 164 M318 164 Q326 140 332 164 M336 164 Q340 148 346 164" stroke="#15803d" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M312 164 Q316 144 322 164 M318 164 Q326 140 332 164 M336 164 Q340 148 346 164" stroke="${isNight ? "#14532d" : "#15803d"}" stroke-width="2" fill="none" stroke-linecap="round"/>
         <circle cx="326" cy="145" r="2.6" fill="#fde047"/><circle cx="340" cy="152" r="2.2" fill="#f472b6"/>
+        ${fireflies}
       `;
-    case "cardboard":
+    }
+    case "cardboard": {
+      const winSky = isNight ? "#111b36" : (isDusk ? "#fb923c" : (isDawn ? "#fbcfe8" : "#bae6fd"));
+      const winHill = isNight ? "#14532d" : (isDusk ? "#4d7c4f" : "#86efac");
+      const winCel = isNight
+        ? `${moonPath(340, 58, 7.5)}
+           <circle cx="292" cy="54" r="1.1" fill="#fde68a" class="h-twinkle"/>
+           <circle cx="308" cy="64" r="0.9" fill="#ffffff" class="h-twinkle-d1"/>
+           <circle cx="326" cy="50" r="1.0" fill="#fde68a" class="h-twinkle-d2"/>`
+        : `<circle cx="340" cy="${isDusk || isDawn ? 66 : 60}" r="9.5" fill="${isDusk ? "#f97316" : "#fde047"}" filter="url(#hsGlowSm)"/>
+           <ellipse cx="300" cy="62" rx="14" ry="5" fill="${isDusk ? "#fed7aa" : "#fff"}" opacity="0.85" class="h-drift"/>`;
       return `
-        <defs><linearGradient id="hCardWall" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#cba372"/><stop offset="100%" stop-color="#deb98c"/></linearGradient></defs>
-        <rect width="420" height="208" fill="url(#hCardWall)"/>
+        <defs><linearGradient id="hCardWall_${phase}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${isNight ? "#96724b" : "#cba372"}"/><stop offset="100%" stop-color="${isNight ? "#ad875e" : "#deb98c"}"/></linearGradient></defs>
+        <rect width="420" height="208" fill="url(#hCardWall_${phase})"/>
         <!-- Corrugated ceiling flap & packing tape -->
-        <rect x="0" y="0" width="420" height="24" fill="#b48653"/>
-        <rect x="174" y="0" width="72" height="28" fill="#ebe0c7" opacity="0.86"/>
-        <line x1="178" y1="0" x2="178" y2="28" stroke="#fff" stroke-width="1.4" opacity="0.35"/>
+        <rect x="0" y="0" width="420" height="24" fill="${isNight ? "#825d37" : "#b48653"}"/>
+        <rect x="174" y="0" width="72" height="28" fill="${isNight ? "#c8bc9f" : "#ebe0c7"}" opacity="0.86"/>
+        <line x1="178" y1="0" x2="178" y2="28" stroke="#fff" stroke-width="1.4" opacity="0.3"/>
         <!-- Floor -->
-        <rect x="0" y="148" width="420" height="60" fill="#a87c4b"/>
-        <line x1="0" y1="148" x2="420" y2="148" stroke="#785028" stroke-width="2"/>
+        <rect x="0" y="148" width="420" height="60" fill="${isNight ? "#7d5933" : "#a87c4b"}"/>
+        <line x1="0" y1="148" x2="420" y2="148" stroke="#5c3b1c" stroke-width="2"/>
         <!-- Corrugated fold seams -->
-        <line x1="34" y1="24" x2="34" y2="148" stroke="#966a3c" stroke-width="1.5" stroke-dasharray="6 5"/>
-        <line x1="386" y1="24" x2="386" y2="148" stroke="#966a3c" stroke-width="1.5" stroke-dasharray="6 5"/>
-        <!-- Cut-out window with sunlit view -->
-        <rect x="274" y="42" width="88" height="64" rx="4" fill="#bae6fd" stroke="#785028" stroke-width="3.2"/>
-        <circle cx="340" cy="60" r="9.5" fill="#fde047" filter="url(#hsGlowSm)"/>
-        <ellipse cx="300" cy="62" rx="14" ry="5" fill="#fff" opacity="0.85" class="h-drift"/>
-        <path d="M274 96 Q315 82 362 96 L362 106 L274 106 Z" fill="#86efac"/>
+        <line x1="34" y1="24" x2="34" y2="148" stroke="#785028" stroke-width="1.5" stroke-dasharray="6 5" opacity="0.72"/>
+        <line x1="386" y1="24" x2="386" y2="148" stroke="#785028" stroke-width="1.5" stroke-dasharray="6 5" opacity="0.72"/>
+        <!-- Cut-out window synced to local day/night -->
+        <rect x="274" y="42" width="88" height="64" rx="4" fill="${winSky}" stroke="#785028" stroke-width="3.2"/>
+        ${winCel}
+        <path d="M274 96 Q315 82 362 96 L362 106 L274 106 Z" fill="${winHill}"/>
         <line x1="318" y1="42" x2="318" y2="106" stroke="#785028" stroke-width="2.2"/>
         <line x1="274" y1="74" x2="362" y2="74" stroke="#785028" stroke-width="2.2"/>
         <!-- Shipping stamp & doodle -->
-        <rect x="48" y="44" width="86" height="34" rx="3" fill="none" stroke="#785028" stroke-width="1.4" opacity="0.68"/>
-        <text x="91" y="59" font-size="9.5" font-family="monospace" font-weight="900" fill="#785028" text-anchor="middle" opacity="0.78">TOOTOO ↑↑</text>
-        <text x="91" y="71" font-size="6.8" font-family="monospace" font-weight="700" fill="#785028" text-anchor="middle" opacity="0.65">HANDLE WITH 🥕</text>
+        <rect x="48" y="44" width="86" height="34" rx="3" fill="none" stroke="${isNight ? "#5c3b1c" : "#785028"}" stroke-width="1.4" opacity="0.68"/>
+        <text x="91" y="59" font-size="9.5" font-family="monospace" font-weight="900" fill="${isNight ? "#5c3b1c" : "#785028"}" text-anchor="middle" opacity="0.82">TOOTOO ↑↑</text>
+        <text x="91" y="71" font-size="6.8" font-family="monospace" font-weight="700" fill="${isNight ? "#5c3b1c" : "#785028"}" text-anchor="middle" opacity="0.7">HANDLE WITH 🥕</text>
       `;
-    case "treehole":
+    }
+    case "treehole": {
+      const winSky = isNight ? "#111b36" : (isDusk ? "#fb923c" : (isDawn ? "#fbcfe8" : "#e0f2fe"));
+      const bush1 = isNight ? "#166534" : "#4ade80";
+      const bush2 = isNight ? "#14532d" : "#22c55e";
+      const winCel = isNight
+        ? `${moonPath(328, 58, 8)}
+           <circle cx="292" cy="54" r="1.2" fill="#fde68a" class="h-twinkle"/>
+           <circle cx="305" cy="64" r="1.0" fill="#ffffff" class="h-twinkle-d1"/>
+           <circle cx="340" cy="84" r="1.3" fill="#fef08a" class="h-twinkle-d2"/>`
+        : `<circle cx="328" cy="${isDusk || isDawn ? 64 : 58}" r="10" fill="${isDusk ? "#f97316" : "#fde047"}" filter="url(#hsGlowSm)"/>`;
+      const beam = isNight
+        ? `<polygon points="274,106 350,106 300,174 204,174" fill="#93c5fd" opacity="0.16"/>`
+        : `<polygon points="274,106 350,106 300,174 204,174" fill="url(#hsSunbeam)" opacity="${isDusk ? "0.42" : "0.55"}"/>`;
       return `
-        <defs><linearGradient id="hWood" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#8b5d33"/><stop offset="100%" stop-color="#c69663"/></linearGradient></defs>
-        <rect width="420" height="208" fill="url(#hWood)"/>
+        <defs><linearGradient id="hWood_${phase}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${isNight ? "#634022" : "#8b5d33"}"/><stop offset="100%" stop-color="${isNight ? "#8f6940" : "#c69663"}"/></linearGradient></defs>
+        <rect width="420" height="208" fill="url(#hWood_${phase})"/>
         <!-- Woodgrain wall lines -->
-        <path d="M88 22 Q94 84 84 148 M194 18 Q200 80 192 148 M258 20 Q252 86 260 148" stroke="#6b4423" stroke-width="1.2" opacity="0.32" fill="none"/>
+        <path d="M88 22 Q94 84 84 148 M194 18 Q200 80 192 148 M258 20 Q252 86 260 148" stroke="#4a2e16" stroke-width="1.2" opacity="0.34" fill="none"/>
         <!-- Organic curved oak bark framing -->
-        <path d="M0 0 L420 0 L420 208 L0 208 Z M34 18 Q210 4 386 18 Q402 104 388 150 L32 150 Q18 104 34 18 Z" fill="#5c381a" fill-rule="evenodd"/>
+        <path d="M0 0 L420 0 L420 208 L0 208 Z M34 18 Q210 4 386 18 Q402 104 388 150 L32 150 Q18 104 34 18 Z" fill="${isNight ? "#422712" : "#5c381a"}" fill-rule="evenodd"/>
         <!-- Warm plank floor -->
-        <rect x="0" y="148" width="420" height="60" fill="#85542d"/>
-        <line x1="0" y1="148" x2="420" y2="148" stroke="#472811" stroke-width="2"/>
-        <!-- Arched hobbit window + sunbeam -->
-        <path d="M274 106 L274 66 A38 34 0 0 1 350 66 L350 106 Z" fill="#e0f2fe" stroke="#4a2a12" stroke-width="3.2"/>
-        <circle cx="328" cy="58" r="10" fill="#fde047" filter="url(#hsGlowSm)"/>
-        <ellipse cx="292" cy="96" rx="18" ry="12" fill="#4ade80"/>
-        <ellipse cx="334" cy="98" rx="18" ry="11" fill="#22c55e"/>
+        <rect x="0" y="148" width="420" height="60" fill="${isNight ? "#633c1e" : "#85542d"}"/>
+        <line x1="0" y1="148" x2="420" y2="148" stroke="#3b1f0d" stroke-width="2"/>
+        <!-- Arched hobbit window + sunbeam/moonbeam -->
+        <path d="M274 106 L274 66 A38 34 0 0 1 350 66 L350 106 Z" fill="${winSky}" stroke="#4a2a12" stroke-width="3.2"/>
+        ${winCel}
+        <ellipse cx="292" cy="96" rx="18" ry="12" fill="${bush1}"/>
+        <ellipse cx="334" cy="98" rx="18" ry="11" fill="${bush2}"/>
         <line x1="312" y1="32" x2="312" y2="106" stroke="#4a2a12" stroke-width="2"/>
         <line x1="274" y1="76" x2="350" y2="76" stroke="#4a2a12" stroke-width="2"/>
-        <polygon points="274,106 350,106 300,174 204,174" fill="url(#hsSunbeam)" opacity="0.55"/>
+        ${beam}
         <!-- Wall shelf with carrot jar & tiny books -->
         <rect x="52" y="66" width="72" height="6" rx="2" fill="#4a2a12"/>
         <rect x="64" y="48" width="14" height="18" rx="4" fill="#fef3c7" stroke="#92400e" stroke-width="1"/>
@@ -12779,100 +12875,135 @@ function renderHouseBackdropSvg(houseId) {
         <rect x="94" y="53" width="6" height="13" rx="1" fill="#0d9488"/>
         <rect x="101" y="49" width="7" height="17" rx="1" fill="#d97706"/>
       `;
-    case "heanju":
+    }
+    case "heanju": {
+      const hSky = isNight
+        ? ["#0b1120", "#1e293b", "#312e81"]
+        : (isDusk ? ["#6366f1", "#fb923c", "#fde68a"] : (isDawn ? ["#93c5fd", "#fbcfe8", "#fed7aa"] : ["#60a5fa", "#bae6fd", "#e0f2fe"]));
+      const blds = isNight
+        ? ["#1e293b", "#172033", "#1e273d", "#151d2e"]
+        : (isDusk ? ["#c26a4e", "#b57d50", "#9c6f4f", "#8c6345"] : (isDawn ? ["#94a3b8", "#8896ad", "#9aa7bd", "#a6b3c7"] : ["#94a3b8", "#8195ab", "#9fb0c4", "#b0bfcf"]));
+      const litWin = isNight || isDusk;
+      const wCol = litWin ? "#fde047" : "#e0f2fe";
+      const wOp = isNight ? "0.86" : (isDusk ? "0.72" : "0.58");
+      const balcStops = isNight ? ["#475569", "#334155"] : (isDusk ? ["#b6b0b8", "#898594"] : ["#cbd5e1", "#94a3b8"]);
+      const wallStops = isNight ? ["#dfd5c5", "#d1c5b2"] : ["#faf5eb", "#efe6d5"];
+      const celestial = isNight
+        ? `${moonPath(384, 30, 12)}
+           <circle cx="304" cy="22" r="1.2" fill="#fde68a" class="h-twinkle"/>
+           <circle cx="342" cy="18" r="1.1" fill="#ffffff" class="h-twinkle-d1"/>
+           <circle cx="256" cy="40" r="1.0" fill="#fde68a" class="h-twinkle-d2"/>`
+        : `<circle cx="378" cy="${isDusk || isDawn ? 44 : 30}" r="14" fill="${isDusk ? "#fb923c" : "#fde047"}" opacity="0.88" filter="url(#hsGlowSm)"/>`;
       return `
         <defs>
-          <linearGradient id="hHeanjuSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#93c5fd"/><stop offset="55%" stop-color="#fde68a"/><stop offset="100%" stop-color="#fed7aa"/></linearGradient>
-          <linearGradient id="hHeanjuWall" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#faf5eb"/><stop offset="100%" stop-color="#efe6d5"/></linearGradient>
-          <linearGradient id="hHeanjuBalc" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#cbd5e1"/><stop offset="100%" stop-color="#94a3b8"/></linearGradient>
+          <linearGradient id="hHeanjuSky_${phase}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${hSky[0]}"/><stop offset="55%" stop-color="${hSky[1]}"/><stop offset="100%" stop-color="${hSky[2]}"/></linearGradient>
+          <linearGradient id="hHeanjuWall_${phase}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${wallStops[0]}"/><stop offset="100%" stop-color="${wallStops[1]}"/></linearGradient>
+          <linearGradient id="hHeanjuBalc_${phase}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${balcStops[0]}"/><stop offset="100%" stop-color="${balcStops[1]}"/></linearGradient>
         </defs>
-        <!-- Full golden-hour sky on right outdoor balcony & through sliding glass -->
-        <rect width="420" height="208" fill="url(#hHeanjuSky)"/>
-        <!-- Distant sunset city skyline visible beyond balcony -->
-        <rect x="248" y="80" width="32" height="68" fill="#d97757" opacity="0.72"/>
-        <rect x="292" y="56" width="48" height="92" fill="#c99563" opacity="0.82"/>
-        <rect x="348" y="74" width="38" height="74" fill="#b08460" opacity="0.76"/>
-        <rect x="392" y="90" width="24" height="58" fill="#a67c52" opacity="0.7"/>
-        <rect x="302" y="68" width="7" height="9" rx="1" fill="#fef9c3"/><rect x="320" y="68" width="7" height="9" rx="1" fill="#fef3c7"/>
-        <rect x="302" y="88" width="7" height="9" rx="1" fill="#fef3c7"/><rect x="320" y="88" width="7" height="9" rx="1" fill="#fde047"/>
-        <rect x="358" y="86" width="7" height="9" rx="1" fill="#fef9c3"/><rect x="372" y="96" width="7" height="9" rx="1" fill="#fde68a"/>
+        <!-- Full local-time sky on right outdoor balcony & through sliding glass -->
+        <rect width="420" height="208" fill="url(#hHeanjuSky_${phase})"/>
+        ${celestial}
+        <!-- Distant city skyline visible beyond balcony -->
+        <rect x="248" y="80" width="32" height="68" fill="${blds[0]}" opacity="0.86"/>
+        <rect x="292" y="56" width="48" height="92" fill="${blds[1]}" opacity="0.9"/>
+        <rect x="348" y="74" width="38" height="74" fill="${blds[2]}" opacity="0.86"/>
+        <rect x="392" y="90" width="24" height="58" fill="${blds[3]}" opacity="0.82"/>
+        <rect x="302" y="68" width="7" height="9" rx="1" fill="${wCol}" opacity="${wOp}"/><rect x="320" y="68" width="7" height="9" rx="1" fill="${wCol}" opacity="${wOp}"/>
+        <rect x="302" y="88" width="7" height="9" rx="1" fill="${wCol}" opacity="${isNight ? "0.9" : wOp}"/><rect x="320" y="88" width="7" height="9" rx="1" fill="${wCol}" opacity="${wOp}"/>
+        <rect x="358" y="86" width="7" height="9" rx="1" fill="${wCol}" opacity="${wOp}"/><rect x="372" y="96" width="7" height="9" rx="1" fill="${wCol}" opacity="${isNight ? "0.9" : wOp}"/>
         <!-- Outdoor open-air balcony safety glass & steel handrail (x=278..420) -->
-        <rect x="278" y="116" width="142" height="32" fill="#e0f2fe" opacity="0.22"/>
-        <line x1="278" y1="116" x2="420" y2="116" stroke="#475569" stroke-width="2.4"/>
-        <line x1="278" y1="118.2" x2="420" y2="118.2" stroke="#cbd5e1" stroke-width="0.9" opacity="0.7"/>
+        <rect x="278" y="116" width="142" height="32" fill="${isNight ? "#93c5fd" : "#e0f2fe"}" opacity="${isNight ? "0.14" : "0.22"}"/>
+        <line x1="278" y1="116" x2="420" y2="116" stroke="${isNight ? "#334155" : "#475569"}" stroke-width="2.4"/>
+        <line x1="278" y1="118.2" x2="420" y2="118.2" stroke="#cbd5e1" stroke-width="0.9" opacity="${isNight ? "0.35" : "0.7"}"/>
         <line x1="348" y1="116" x2="348" y2="148" stroke="#64748b" stroke-width="1.6"/>
         <line x1="412" y1="116" x2="412" y2="148" stroke="#64748b" stroke-width="1.6"/>
         <!-- Indoor apartment wall & ceiling overhang (x=0..278) -->
-        <rect x="0" y="0" width="234" height="148" fill="url(#hHeanjuWall)"/>
-        <rect x="234" y="0" width="46" height="24" fill="#ebe1ce"/>
+        <rect x="0" y="0" width="234" height="148" fill="url(#hHeanjuWall_${phase})"/>
+        <rect x="234" y="0" width="46" height="24" fill="${isNight ? "#cfc2ae" : "#ebe1ce"}"/>
         <line x1="234" y1="24" x2="280" y2="24" stroke="#94a3b8" stroke-width="2"/>
         <!-- Subtle wainscoting & baseboard -->
-        <rect x="0" y="114" width="234" height="34" fill="#ebe1ce" opacity="0.55"/>
-        <line x1="0" y1="114" x2="234" y2="114" stroke="#d6cbb8" stroke-width="1.5"/>
-        <rect x="0" y="144" width="278" height="5" fill="#d6cbb8"/>
+        <rect x="0" y="114" width="234" height="34" fill="${isNight ? "#c8baa6" : "#ebe1ce"}" opacity="0.55"/>
+        <line x1="0" y1="114" x2="234" y2="114" stroke="#b8ab96" stroke-width="1.5"/>
+        <rect x="0" y="144" width="278" height="5" fill="#b8ab96"/>
         <!-- Left fixed sliding-glass door panel (x=234..278) + open doorway on right! -->
         <rect x="234" y="24" width="44" height="124" fill="url(#hsGlassSheen)" stroke="#64748b" stroke-width="2.2"/>
         <rect x="271" y="78" width="2.6" height="18" rx="1.2" fill="#475569"/>
         <!-- Sheer linen curtain gently swaying at left edge of doorway -->
-        <path d="M234 24 L256 24 Q248 84 252 146 L234 146 Z" fill="#fffdf8" opacity="0.72" class="h-drift-slow"/>
+        <path d="M234 24 L256 24 Q248 84 252 146 L234 146 Z" fill="${isNight ? "#e5ddd0" : "#fffdf8"}" opacity="0.72" class="h-drift-slow"/>
         <!-- Warm indoor hardwood floor (left) + Open-air slate-tiled outdoor balcony (right) -->
-        <polygon points="0,148 278,148 298,208 0,208" fill="#e5dac6"/>
-        <polygon points="278,148 420,148 420,208 298,208" fill="url(#hHeanjuBalc)"/>
+        <polygon points="0,148 278,148 298,208 0,208" fill="${isNight ? "#c8bca8" : "#e5dac6"}"/>
+        <polygon points="278,148 420,148 420,208 298,208" fill="url(#hHeanjuBalc_${phase})"/>
         <!-- Outdoor balcony tile perspective lines -->
-        <line x1="284" y1="166" x2="420" y2="166" stroke="#64748b" stroke-width="0.9" opacity="0.4"/>
-        <line x1="291" y1="186" x2="420" y2="186" stroke="#64748b" stroke-width="0.9" opacity="0.4"/>
-        <line x1="348" y1="148" x2="376" y2="208" stroke="#64748b" stroke-width="0.9" opacity="0.38"/>
+        <line x1="284" y1="166" x2="420" y2="166" stroke="${isNight ? "#1e293b" : "#64748b"}" stroke-width="0.9" opacity="0.42"/>
+        <line x1="291" y1="186" x2="420" y2="186" stroke="${isNight ? "#1e293b" : "#64748b"}" stroke-width="0.9" opacity="0.42"/>
+        <line x1="348" y1="148" x2="376" y2="208" stroke="${isNight ? "#1e293b" : "#64748b"}" stroke-width="0.9" opacity="0.38"/>
         <!-- Sleek recessed aluminum sliding-door floor track -->
         <line x1="278" y1="148" x2="298" y2="208" stroke="#64748b" stroke-width="3.2"/>
         <line x1="278" y1="148" x2="298" y2="208" stroke="#e2e8f0" stroke-width="1"/>
         <!-- AC indoor unit -->
-        <rect x="40" y="30" width="82" height="22" rx="5" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.4"/>
+        <rect x="40" y="30" width="82" height="22" rx="5" fill="${isNight ? "#e5e7eb" : "#ffffff"}" stroke="#cbd5e1" stroke-width="1.4"/>
         <line x1="48" y1="46" x2="114" y2="46" stroke="#94a3b8" stroke-width="1.4"/>
         <circle cx="112" cy="37" r="1.6" fill="#22c55e" class="h-twinkle"/>
         <!-- Framed editorial poster -->
-        <rect x="146" y="44" width="58" height="46" rx="3" fill="#ffffff" stroke="#a8a29e" stroke-width="2"/>
-        <rect x="152" y="50" width="46" height="34" rx="1.5" fill="#fff7ed"/>
+        <rect x="146" y="44" width="58" height="46" rx="3" fill="${isNight ? "#e5e7eb" : "#ffffff"}" stroke="#a8a29e" stroke-width="2"/>
+        <rect x="152" y="50" width="46" height="34" rx="1.5" fill="${isNight ? "#f5ebd6" : "#fff7ed"}"/>
         <circle cx="175" cy="67" r="11" fill="#fed7aa"/>
         <text x="175" y="71" font-size="11" text-anchor="middle">🥕</text>
       `;
-    case "xixi":
+    }
+    case "xixi": {
+      const xSky = isNight
+        ? ["#090f24", "#172554", "#1e3a5f", "#134e4a"]
+        : (isDusk ? ["#4338ca", "#f97316", "#fde68a", "#fed7aa"] : (isDawn ? ["#93c5fd", "#fce7f3", "#fef3c7", "#d1fae5"] : ["#7dd3fc", "#e0f2fe", "#fef9c3", "#d1fae5"]));
+      const mtBack = isNight ? "#134e4a" : (isDusk ? "#4c5c68" : "#86efac");
+      const mtFront = isNight ? "#0f3d3e" : (isDusk ? "#355c52" : "#34d399");
+      const waterCol = isNight ? "#1e3a5f" : (isDusk ? "#fb923c" : "#7dd3fc");
+      const deckStops = isNight ? ["#69462a", "#4a2f1a"] : (isDusk ? ["#a87042", "#784922"] : ["#b88352", "#8b5a2b"]);
+      const celestial = isNight
+        ? `${moonPath(378, 32, 13)}
+           <circle cx="88" cy="38" r="1.2" fill="#fde68a" class="h-twinkle"/>
+           <circle cx="192" cy="34" r="1.1" fill="#ffffff" class="h-twinkle-d1"/>
+           <circle cx="312" cy="26" r="1.3" fill="#fde68a" class="h-twinkle-d2"/>
+           <circle cx="248" cy="46" r="1.0" fill="#cbd5e1" class="h-twinkle"/>`
+        : `<ellipse cx="136" cy="48" rx="30" ry="8.5" fill="${isDusk ? "#fed7aa" : "#fff"}" opacity="0.82" class="h-drift-slow"/>
+           <ellipse cx="348" cy="38" rx="26" ry="7.5" fill="${isDusk ? "#fed7aa" : "#fff"}" opacity="0.76" class="h-drift"/>
+           ${isDusk || isDawn ? `<circle cx="374" cy="54" r="16" fill="${isDusk ? "#fb923c" : "#fde047"}" opacity="0.82" filter="url(#hsGlowMd)"/>` : ""}`;
       return `
         <defs>
-          <linearGradient id="hXixiSky" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#93c5fd"/><stop offset="48%" stop-color="#e0f2fe"/><stop offset="82%" stop-color="#fef3c7"/><stop offset="100%" stop-color="#d1fae5"/>
+          <linearGradient id="hXixiSky_${phase}" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="${xSky[0]}"/><stop offset="48%" stop-color="${xSky[1]}"/><stop offset="82%" stop-color="${xSky[2]}"/><stop offset="100%" stop-color="${xSky[3]}"/>
           </linearGradient>
-          <linearGradient id="hXixiWood" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id="hXixiWood_${phase}" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stop-color="#5c2d0e"/><stop offset="100%" stop-color="#854d0e"/>
           </linearGradient>
-          <linearGradient id="hXixiDeck" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#b88352"/><stop offset="100%" stop-color="#8b5a2b"/>
+          <linearGradient id="hXixiDeck_${phase}" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="${deckStops[0]}"/><stop offset="100%" stop-color="${deckStops[1]}"/>
           </linearGradient>
         </defs>
         <!-- Continuous Jiangnan Xixi Wetland sky & misty panorama -->
-        <rect width="420" height="208" fill="url(#hXixiSky)"/>
-        <ellipse cx="136" cy="48" rx="30" ry="8.5" fill="#fff" opacity="0.82" class="h-drift-slow"/>
-        <ellipse cx="348" cy="38" rx="26" ry="7.5" fill="#fff" opacity="0.76" class="h-drift"/>
+        <rect width="420" height="208" fill="url(#hXixiSky_${phase})"/>
+        ${celestial}
         <!-- Misty Jiangnan ink-wash mountains -->
-        <path d="M0 108 Q96 68 184 98 Q268 62 346 94 Q382 82 420 96 L420 148 L0 148 Z" fill="#86efac" opacity="0.48"/>
-        <path d="M0 120 Q132 94 246 116 Q330 98 420 118 L420 148 L0 148 Z" fill="#34d399" opacity="0.54"/>
-        <!-- Jiangnan white-walled black-tile waterside pavilion beyond terrace -->
-        <g opacity="0.9">
-          <rect x="308" y="96" width="44" height="26" fill="#fffdf8" stroke="#cbd5e1" stroke-width="0.8"/>
-          <path d="M300 98 Q330 82 360 98 L354 99 Q330 88 306 99 Z" fill="#334155"/>
-          <rect x="323" y="106" width="14" height="14" rx="7" fill="#475569" opacity="0.65"/>
+        <path d="M0 108 Q96 68 184 98 Q268 62 346 94 Q382 82 420 96 L420 148 L0 148 Z" fill="${mtBack}" opacity="${isNight ? "0.78" : "0.48"}"/>
+        <path d="M0 120 Q132 94 246 116 Q330 98 420 118 L420 148 L0 148 Z" fill="${mtFront}" opacity="${isNight ? "0.86" : "0.54"}"/>
+        <!-- Jiangnan white-walled black-tile waterside pavilion beyond terrace (lantern glows at night!) -->
+        <g opacity="0.92">
+          <rect x="308" y="96" width="44" height="26" fill="${isNight ? "#475569" : "#fffdf8"}" stroke="${isNight ? "#1e293b" : "#cbd5e1"}" stroke-width="0.8"/>
+          <path d="M300 98 Q330 82 360 98 L354 99 Q330 88 306 99 Z" fill="${isNight ? "#0f172a" : "#334155"}"/>
+          <rect x="323" y="106" width="14" height="14" rx="7" fill="${isNight || isDusk ? "#fde047" : "#475569"}" opacity="${isNight ? "0.9" : "0.68"}" ${isNight ? 'filter="url(#hsGlowSm)"' : ""}/>
         </g>
         <!-- Tranquil Xixi wetland reflection water -->
-        <rect x="0" y="124" width="420" height="24" fill="#7dd3fc" opacity="0.44"/>
-        <line x1="60" y1="133" x2="132" y2="133" stroke="#fff" stroke-width="1" opacity="0.55" class="h-drift"/>
-        <line x1="292" y1="136" x2="374" y2="136" stroke="#fff" stroke-width="1" opacity="0.52" class="h-drift-slow"/>
+        <rect x="0" y="124" width="420" height="24" fill="${waterCol}" opacity="${isNight ? "0.72" : "0.44"}"/>
+        <line x1="60" y1="133" x2="132" y2="133" stroke="${isNight ? "#fde68a" : "#fff"}" stroke-width="1" opacity="${isNight ? "0.45" : "0.55"}" class="h-drift"/>
+        <line x1="292" y1="136" x2="374" y2="136" stroke="${isNight ? "#fde68a" : "#fff"}" stroke-width="1" opacity="${isNight ? "0.52" : "0.52"}" class="h-drift-slow"/>
         <!-- Swaying weeping willow strands on left glass edge -->
-        <g stroke="#15803d" stroke-width="1.3" fill="none" opacity="0.6" class="h-drift-slow">
+        <g stroke="${isNight ? "#14532d" : "#15803d"}" stroke-width="1.3" fill="none" opacity="${isNight ? "0.75" : "0.6"}" class="h-drift-slow">
           <path d="M44 26 Q38 64 46 98"/><path d="M56 26 Q52 60 58 88"/><path d="M68 26 Q64 52 70 76"/>
         </g>
         <!-- Indoor villa left wall pillar + walnut architectural ceiling overhang (stops at x=280!) -->
-        <rect x="0" y="0" width="22" height="148" fill="#f8f4eb"/>
-        <rect x="0" y="0" width="282" height="21" fill="url(#hXixiWood)"/>
-        <rect x="0" y="20" width="280" height="2.6" fill="#fde68a" opacity="0.68"/>
+        <rect x="0" y="0" width="22" height="148" fill="${isNight ? "#d6cbb8" : "#f8f4eb"}"/>
+        <rect x="0" y="0" width="282" height="21" fill="url(#hXixiWood_${phase})"/>
+        <rect x="0" y="20" width="280" height="2.6" fill="#fde68a" opacity="${isNight ? "0.92" : "0.68"}"/>
         <rect x="64" y="0" width="10" height="23" fill="#451a03"/>
         <rect x="162" y="0" width="10" height="23" fill="#451a03"/>
         <rect x="268" y="0" width="12" height="24" fill="#451a03"/>
@@ -12882,21 +13013,22 @@ function renderHouseBackdropSvg(houseId) {
         <!-- Sliding glass door bronze handle -->
         <rect x="271" y="80" width="2.8" height="20" rx="1.2" fill="#78350f"/>
         <!-- Low frameless lakeside glass edge along outdoor patio -->
-        <rect x="278" y="132" width="142" height="16" fill="#e0f2fe" opacity="0.22"/>
+        <rect x="278" y="132" width="142" height="16" fill="${isNight ? "#93c5fd" : "#e0f2fe"}" opacity="${isNight ? "0.14" : "0.22"}"/>
         <line x1="278" y1="132" x2="420" y2="132" stroke="#94a3b8" stroke-width="1.5" opacity="0.82"/>
         <!-- Indoor travertine stone floor (left) + Open-air Burmese teak lakeside courtyard deck (right) -->
-        <polygon points="0,148 278,148 298,208 0,208" fill="#e8e1d4"/>
-        <line x1="0" y1="148" x2="278" y2="148" stroke="#b8ab96" stroke-width="2"/>
-        <polygon points="278,148 420,148 420,208 298,208" fill="url(#hXixiDeck)"/>
+        <polygon points="0,148 278,148 298,208 0,208" fill="${isNight ? "#c8bfb0" : "#e8e1d4"}"/>
+        <line x1="0" y1="148" x2="278" y2="148" stroke="#9e927f" stroke-width="2"/>
+        <polygon points="278,148 420,148 420,208 298,208" fill="url(#hXixiDeck_${phase})"/>
         <!-- Outdoor teak deck plank seams -->
-        <line x1="283" y1="162" x2="420" y2="162" stroke="#5c2d0e" stroke-width="0.9" opacity="0.45"/>
-        <line x1="288" y1="176" x2="420" y2="176" stroke="#5c2d0e" stroke-width="0.95" opacity="0.45"/>
-        <line x1="293" y1="192" x2="420" y2="192" stroke="#5c2d0e" stroke-width="1" opacity="0.45"/>
-        <line x1="278" y1="148" x2="420" y2="148" stroke="#5c2d0e" stroke-width="1.8"/>
+        <line x1="283" y1="162" x2="420" y2="162" stroke="#3b1d08" stroke-width="0.9" opacity="0.48"/>
+        <line x1="288" y1="176" x2="420" y2="176" stroke="#3b1d08" stroke-width="0.95" opacity="0.48"/>
+        <line x1="293" y1="192" x2="420" y2="192" stroke="#3b1d08" stroke-width="1" opacity="0.48"/>
+        <line x1="278" y1="148" x2="420" y2="148" stroke="#3b1d08" stroke-width="1.8"/>
         <!-- Bronze sliding-door floor track -->
         <line x1="278" y1="148" x2="298" y2="208" stroke="#57534e" stroke-width="3.2"/>
         <line x1="278" y1="148" x2="298" y2="208" stroke="#fde68a" stroke-width="0.9" opacity="0.72"/>
       `;
+    }
     case "atlantis":
       return `
         <defs>
@@ -14090,9 +14222,10 @@ function walkHomeBunnyTo(targetX, targetY, rawClickY = targetY) {
             }
           } else if (!wasOutdoors && nowOutdoors && (house.id === "heanju" || house.id === "xixi")) {
             const w = getEffectiveWeather();
+            const dp = getEffectiveHomeDayPhase();
             if (w.kind === "windy") showHomeStageBubble("🍃 露台风好大呀，兔耳朵被吹飞啦！");
-            else if (w.kind === "sunny") showHomeStageBubble("☀️ 出来露台晒晒太阳吹吹风好惬意～");
-            else if (w.kind === "cloudy" || w.kind === "overcast") showHomeStageBubble("⛅ 走出露台透透气，风景真不错～");
+            else if (w.kind === "sunny") showHomeStageBubble(dp.isNight ? "🌙 出来露台看月亮吹晚风好惬意～" : "☀️ 出来露台晒晒太阳吹吹风好惬意～");
+            else if (w.kind === "cloudy" || w.kind === "overcast") showHomeStageBubble(dp.isNight ? "🌙 走出露台吹吹夜风，夜景真美～" : "⛅ 走出露台透透气，风景真不错～");
             else triggerHomeSpotReaction(tx, ty, rawClickY);
           } else {
             triggerHomeSpotReaction(tx, ty, rawClickY);
@@ -14444,6 +14577,32 @@ const HOME_WEATHER_META = {
 };
 let localWeatherState = { ok: false, kind: "sunny", icon: "☀️", label: "晴天", temp_c: null, city: "" };
 let debugWeatherMock = null; // null | "sunny" | "cloudy" | "overcast" | "windy" | "rain" | "snow"
+let debugTimePhaseMock = null; // null | "dawn" | "day" | "dusk" | "night"
+let homeClockTimer = null;
+
+// Synced strictly with local machine clock: 19:00 天黑 (night), 06:00 天亮 (dawn -> day -> dusk)
+function getEffectiveHomeDayPhase() {
+  const now = new Date();
+  const hh = now.getHours();
+  const mm = now.getMinutes();
+  const realHm = `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+
+  const metaMap = {
+    dawn:  { phase: "dawn",  isNight: false, icon: "🌅", label: "清晨", mockHm: "06:30" },
+    day:   { phase: "day",   isNight: false, icon: "☀️", label: "白天", mockHm: "14:00" },
+    dusk:  { phase: "dusk",  isNight: false, icon: "🌇", label: "傍晚", mockHm: "18:15" },
+    night: { phase: "night", isNight: true,  icon: "🌙", label: "夜晚", mockHm: "21:00" },
+  };
+  if (debugState.active && debugTimePhaseMock && metaMap[debugTimePhaseMock]) {
+    const m = metaMap[debugTimePhaseMock];
+    return { ...m, hm: m.mockHm, mocked: true };
+  }
+  let phase = "day";
+  if (hh >= 19 || hh < 6) phase = "night";
+  else if (hh < 8) phase = "dawn";
+  else if (hh > 17 || (hh === 17 && mm >= 30)) phase = "dusk";
+  return { ...metaMap[phase], hm: realHm, mocked: false };
+}
 
 async function fetchLocalWeather(force = false) {
   try {
@@ -14469,9 +14628,10 @@ function getEffectiveWeather() {
   return { kind, icon: m.icon, label: m.label, temp_c: localWeatherState.temp_c, city: localWeatherState.city, mocked: false };
 }
 
-function renderWeatherLayerSvg(houseId, weather) {
+function renderWeatherLayerSvg(houseId, weather, dayPhase = { phase: "day", isNight: false }) {
   if (!HOME_WEATHER_HOUSES.has(houseId) || !weather) return { under: "", over: "" };
   const kind = weather.kind || "sunny";
+  const isNight = !!(dayPhase && dayPhase.isNight);
   const isOutdoor = houseId === "street" || houseId === "pot";
   const hasTerrace = houseId === "heanju" || houseId === "xixi";
 
@@ -14485,18 +14645,26 @@ function renderWeatherLayerSvg(houseId, weather) {
 
     if (kind === "sunny") {
       if (isSky) {
-        sky = `
-          <polygon points="${b.x0 + w * 0.52},${b.y0} ${b.x0 + w * 0.84},${b.y0} ${b.x0 + w * 0.6},${b.y1} ${b.x0 + w * 0.28},${b.y1}" fill="url(#hsSunbeam)" opacity="0.42" class="h-pulse"/>
-          <circle cx="${(b.x0 + w * 0.64).toFixed(0)}" cy="${(b.y0 + h * 0.34).toFixed(0)}" r="1.8" fill="#fef08a" opacity="0.72" class="h-float"/>
-          <circle cx="${(b.x0 + w * 0.48).toFixed(0)}" cy="${(b.y0 + h * 0.54).toFixed(0)}" r="1.4" fill="#fffbeb" opacity="0.62" class="h-float-slow"/>`;
+        if (isNight) {
+          // Serene clear night: soft twinkling starlight motes (no harsh beam!)
+          sky = `
+            <circle cx="${(b.x0 + w * 0.64).toFixed(0)}" cy="${(b.y0 + h * 0.24).toFixed(0)}" r="1.4" fill="#fef08a" opacity="0.88" class="h-twinkle"/>
+            <circle cx="${(b.x0 + w * 0.34).toFixed(0)}" cy="${(b.y0 + h * 0.32).toFixed(0)}" r="1.1" fill="#e0f2fe" opacity="0.78" class="h-twinkle-d1"/>
+            <circle cx="${(b.x0 + w * 0.78).toFixed(0)}" cy="${(b.y0 + h * 0.38).toFixed(0)}" r="1.0" fill="#fde68a" opacity="0.72" class="h-twinkle-d2"/>`;
+        } else {
+          sky = `
+            <polygon points="${b.x0 + w * 0.52},${b.y0} ${b.x0 + w * 0.84},${b.y0} ${b.x0 + w * 0.6},${b.y1} ${b.x0 + w * 0.28},${b.y1}" fill="url(#hsSunbeam)" opacity="0.42" class="h-pulse"/>
+            <circle cx="${(b.x0 + w * 0.64).toFixed(0)}" cy="${(b.y0 + h * 0.34).toFixed(0)}" r="1.8" fill="#fef08a" opacity="0.72" class="h-float"/>
+            <circle cx="${(b.x0 + w * 0.48).toFixed(0)}" cy="${(b.y0 + h * 0.54).toFixed(0)}" r="1.4" fill="#fffbeb" opacity="0.62" class="h-float-slow"/>`;
+        }
       }
     } else if (kind === "cloudy") {
       if (isSky) {
         const cy1 = b.y0 + Math.min(34, h * 0.28);
         const cy2 = b.y0 + Math.min(48, h * 0.42);
-        const col = houseId === "street" ? "#94a3b8" : "#ffffff";
+        const col = isNight ? "#64748b" : "#ffffff";
         sky = `
-          <g class="h-cloud-pass" opacity="${houseId === "street" ? "0.42" : "0.84"}">
+          <g class="h-cloud-pass" opacity="${isNight ? "0.48" : "0.84"}">
             <ellipse cx="${(b.x0 + w * 0.28).toFixed(0)}" cy="${cy1.toFixed(0)}" rx="${Math.max(16, w * 0.16).toFixed(0)}" ry="10" fill="${col}"/>
             <ellipse cx="${(b.x0 + w * 0.36).toFixed(0)}" cy="${(cy1 - 5).toFixed(0)}" rx="${Math.max(11, w * 0.1).toFixed(0)}" ry="8" fill="${col}"/>
             <ellipse cx="${(b.x0 + w * 0.72).toFixed(0)}" cy="${cy2.toFixed(0)}" rx="${Math.max(18, w * 0.18).toFixed(0)}" ry="11" fill="${col}"/>
@@ -14685,6 +14853,7 @@ function renderHomeStage(freshDecorSlot = null, twirlBunny = false) {
   const wearSvg = getWearOverlaySvgFor(view.wear, "st");
   const hasWeather = HOME_WEATHER_HOUSES.has(house.id);
   const weather = hasWeather ? getEffectiveWeather() : null;
+  const dayPhase = hasWeather ? getEffectiveHomeDayPhase() : { phase: "day", isNight: false, icon: "", label: "", hm: "", mocked: false };
 
   if (homeBunnyPos.lastHouseId && homeBunnyPos.lastHouseId !== house.id) {
     stopHomeBunnyWalk();
@@ -14708,11 +14877,11 @@ function renderHomeStage(freshDecorSlot = null, twirlBunny = false) {
     if (hasWeather && weather) {
       weatherPillEl.style.display = "inline-flex";
       const tempTxt = weather.temp_c != null ? ` ${weather.temp_c}°C` : "";
-      const mockTag = weather.mocked ? " [试]" : "";
-      weatherPillEl.textContent = `${weather.icon} ${weather.label}${tempTxt}${mockTag}`;
-      weatherPillEl.title = weather.city
-        ? `${weather.city} 本地实时天气：${weather.label}${tempTxt}（点击刷新）`
-        : `本地实时天气：${weather.label}${tempTxt}（点击刷新）`;
+      const wIcon = (weather.kind === "sunny" && dayPhase.isNight) ? "🌙" : weather.icon;
+      const wLabel = (weather.kind === "sunny" && dayPhase.isNight) ? "晴夜" : weather.label;
+      const mockTag = (weather.mocked || dayPhase.mocked) ? " [试]" : "";
+      weatherPillEl.textContent = `${wIcon} ${wLabel}${tempTxt} · ${dayPhase.hm}${mockTag}`;
+      weatherPillEl.title = `${weather.city ? weather.city + " " : ""}${dayPhase.hm} ${dayPhase.label}（06:00天亮 / 19:00天黑）· 天气：${wLabel}${tempTxt}（点击刷新）`;
     } else {
       weatherPillEl.style.display = "none";
     }
@@ -14744,8 +14913,8 @@ function renderHomeStage(freshDecorSlot = null, twirlBunny = false) {
   if (!svgEl) return;
 
   const defs = renderHomeStageDefs();
-  const backdrop = renderHouseBackdropSvg(house.id);
-  const wLayers = hasWeather ? renderWeatherLayerSvg(house.id, weather) : { under: "", over: "" };
+  const backdrop = renderHouseBackdropSvg(house.id, dayPhase);
+  const wLayers = hasWeather ? renderWeatherLayerSvg(house.id, weather, dayPhase) : { under: "", over: "" };
   const decorLayer = renderDecorLayerSvg(view.decor, house.slots, freshDecorSlot, house.id);
 
   // Sync exposure before drawing bunny & hot-water table so wet/snow state is immediate on open/switch
@@ -15115,10 +15284,19 @@ function openHomeModal() {
   renderGachaMeta();
   renderHomeModal();
   fetchLocalWeather(false);
+  if (homeClockTimer) clearInterval(homeClockTimer);
+  homeClockTimer = setInterval(() => {
+    if (!document.getElementById("homeModal")?.classList.contains("open")) return;
+    if (!homeBunnyPos.raf) renderHomeStage();
+  }, 30000);
 }
 function closeHomeModal() {
   stopHomeBunnyWalk();
   stopHomeSneezeTimer();
+  if (homeClockTimer) {
+    clearInterval(homeClockTimer);
+    homeClockTimer = null;
+  }
   homeUiState.preview = null;
   document.getElementById("homeModal").classList.remove("open");
 }
@@ -15313,6 +15491,15 @@ document.querySelectorAll("#dbgWeatherChips button[data-w]").forEach(btn => {
     const w = btn.dataset.w;
     debugWeatherMock = w === "real" ? null : w;
     document.querySelectorAll("#dbgWeatherChips button[data-w]").forEach(b => b.classList.toggle("on", b === btn));
+    renderHomeStage();
+    playSfx("token");
+  });
+});
+document.querySelectorAll("#dbgTimeChips button[data-t]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const t = btn.dataset.t;
+    debugTimePhaseMock = t === "real" ? null : t;
+    document.querySelectorAll("#dbgTimeChips button[data-t]").forEach(b => b.classList.toggle("on", b === btn));
     renderHomeStage();
     playSfx("token");
   });
