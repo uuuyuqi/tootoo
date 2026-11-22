@@ -3693,6 +3693,191 @@
     box-shadow: 0 3px 12px rgba(0, 0, 0, 0.16);
   }
   .home-event-banner.show { display: flex; }
+  /* ---- Home (Inventory) vs Shop (Store) Dual-View Chrome ---- */
+  .home-head-left {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+  .home-go-shop-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: none;
+    background: linear-gradient(135deg, #ea580c, #d97706);
+    color: #fff;
+    font-family: var(--font-sans);
+    font-size: 10.5px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(234, 88, 12, 0.28);
+    transition: transform 0.14s ease, filter 0.14s ease, box-shadow 0.14s ease;
+  }
+  .home-go-shop-btn:hover {
+    filter: brightness(1.06);
+    transform: translateY(-0.5px);
+    box-shadow: 0 4px 12px rgba(234, 88, 12, 0.36);
+  }
+  .home-go-shop-btn:active { transform: scale(0.97); }
+  .home-go-shop-btn .shop-dot {
+    display: none;
+    position: absolute;
+    top: -2px;
+    right: -1px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #fde047;
+    border: 1.5px solid var(--surface);
+    box-shadow: 0 0 6px rgba(250, 204, 21, 0.9);
+  }
+  .home-go-shop-btn.has-alert .shop-dot { display: block; }
+  .home-back-btn {
+    display: none;
+    align-items: center;
+    gap: 3px;
+    padding: 3.5px 9px;
+    border-radius: 6px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface-2);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.14s ease, border-color 0.14s ease;
+  }
+  .home-back-btn:hover {
+    background: var(--active-bg);
+    border-color: var(--active-border);
+    color: var(--active-fg);
+  }
+  #homeModal.is-shop .home-back-btn { display: inline-flex; }
+  #homeModal.is-shop .home-go-shop-btn { display: none; }
+  #homeModal:not(.is-shop) #homeSecretCounter { display: none; }
+  #homeModal.is-shop #homeCheckinStrip { display: none !important; }
+  #homeModal.is-shop:not(.has-preview) #homeStageWrap { display: none; }
+  .home-preview-bar {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin: -4px 0 8px;
+    padding: 5.5px 10px;
+    border-radius: 7px;
+    background: color-mix(in srgb, var(--accent) 10%, var(--surface-2));
+    border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border));
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  #homeModal.is-shop.has-preview .home-preview-bar { display: flex; }
+  .home-preview-close {
+    padding: 2.5px 8px;
+    border-radius: 5px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--ink-soft);
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .home-preview-close:hover { color: var(--ink); border-color: var(--active-border); }
+  .home-inv-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8.5px 9.5px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 6px;
+    transition: border-color 0.15s ease, transform 0.14s ease, box-shadow 0.15s ease;
+  }
+  .home-inv-card:hover {
+    border-color: color-mix(in srgb, var(--border-strong) 65%, var(--border));
+  }
+  .home-inv-card.equipped {
+    border-color: var(--active-border);
+    background: color-mix(in srgb, var(--active-bg) 42%, var(--surface));
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 16%, transparent);
+  }
+  .home-inv-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding-top: 4px;
+    border-top: 1px dashed color-mix(in srgb, var(--border) 80%, transparent);
+  }
+  .home-inv-sub {
+    font-family: var(--font-mono);
+    font-size: 9.2px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .home-more-shop-cta {
+    grid-column: 1 / -1;
+    margin-top: 2px;
+    padding: 8px 11px;
+    border-radius: 8px;
+    border: 1px dashed color-mix(in srgb, var(--active-border) 75%, var(--border));
+    background: color-mix(in srgb, var(--surface-2) 78%, var(--active-bg));
+    color: var(--active-fg);
+    font-family: var(--font-sans);
+    font-size: 10.5px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .home-more-shop-cta:hover {
+    background: var(--active-bg);
+    border-color: var(--active-border);
+  }
+  .home-empty-inv {
+    grid-column: 1 / -1;
+    padding: 18px 14px;
+    border-radius: 9px;
+    border: 1px dashed var(--border);
+    background: var(--surface-2);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .home-empty-inv p {
+    margin: 0;
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  .hc-btn.preview {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--ink-soft);
+    padding: 3px 6.5px;
+  }
+  .hc-btn.preview:hover {
+    border-color: var(--active-border);
+    color: var(--active-fg);
+    background: var(--active-bg);
+  }
+  .hc-btn.preview.on {
+    border-color: var(--accent);
+    background: var(--active-bg);
+    color: var(--active-fg);
+  }
   .home-event-banner button {
     flex-shrink: 0;
     border: 1px solid rgba(254, 240, 138, 0.72);
@@ -6180,12 +6365,16 @@
   </div>
 </div>
 
-<!-- CORE: TOOTOO COZY HOME STUDIO MODAL (HOUSES + DECOR + WARDROBE + DAILY CHECK-IN) -->
+<!-- CORE: TOOTOO COZY HOME STUDIO MODAL (HOME INVENTORY + DEDICATED SHOP) -->
 <div class="evo-backdrop" id="homeModal">
   <div class="home-dialog">
     <div class="evo-head" style="margin-bottom:9px">
-      <span class="kicker" style="font-size:11px;color:var(--ink)">🏠 TooToo 小家 · 置业与装潢</span>
+      <span class="home-head-left">
+        <button class="home-back-btn" id="homeBackBtn" title="返回我的小家">← 回小家</button>
+        <span class="kicker" id="homeModalTitle" style="font-size:11px;color:var(--ink)">🏠 TooToo 小家</span>
+      </span>
       <span style="display:flex;gap:5px;align-items:center">
+        <button class="home-go-shop-btn" id="homeViewToggleBtn" title="前往兔兔商城选购新房、装潢与穿搭">🛒 逛商店<span class="shop-dot" id="homeShopDot"></span></button>
         <span class="home-secret-counter" id="homeSecretCounter" title="全品类隐藏臻品收集进度（房/5装潢/3衣橱，各含1款隐藏款）">✦ 隐藏款 0/9</span>
         <button class="carrot-wallet-pill" id="homeWalletBtn" title="当前萝卜币余额（点击去兑换 / 扭蛋）">🥕 <span id="homeHeaderCoins">0</span> 萝卜币</button>
         <button class="btn" id="homeCloseBtn" style="padding:3px 8px;font-size:10.5px">✕</button>
@@ -6215,6 +6404,11 @@
       <svg class="home-stage-svg" id="homeStageSvg" viewBox="0 0 420 208" preserveAspectRatio="xMidYMid meet" title="点击家里任意位置，兔兔就会蹦跳走过去；点兔兔可以摸摸头"></svg>
     </div>
 
+    <div class="home-preview-bar" id="homePreviewBar">
+      <span id="homePreviewLabel">👁 正在试看预览</span>
+      <button class="home-preview-close" id="homePreviewCloseBtn">收起预览</button>
+    </div>
+
     <div class="home-event-banner" id="homeEventBanner">
       <span id="homeEventBannerText"></span>
     </div>
@@ -6225,15 +6419,16 @@
     </div>
 
     <div class="home-tabs" id="homeTabs">
-      <button data-htab="houses" class="active">🏠 置业租房</button>
-      <button data-htab="decor">🛋️ 室内装潢</button>
-      <button data-htab="wear">👗 兔兔衣橱</button>
+      <button data-htab="houses" class="active">🏠 我的房产</button>
+      <button data-htab="decor">🛋️ 我的装潢</button>
+      <button data-htab="wear">👗 我的衣橱</button>
     </div>
 
     <div class="home-subbar" id="homeSubbar">
       <div class="home-slot-pills" id="homeSlotPills"></div>
       <span style="display:flex;align-items:center;gap:5px">
         <span class="home-coupon-pill" id="homeCouponPill" style="display:none"></span>
+        <button class="dbg-mini-btn" id="homeShopUnownedBtn" style="display:none" title="筛选仅显示尚未拥有的商品">✓ 仅看未拥有</button>
         <button class="dbg-mini-btn" id="homeAvatarWearToggle" title="是否将已穿戴的衣服饰品同步显示在顶部主头像上">头像同步穿戴: 开</button>
       </span>
     </div>
@@ -12388,12 +12583,16 @@ function hasHouseWeather(houseId) {
 }
 
 let homeUiState = {
-  tab: "houses",   // houses | decor | wear | events
+  view: "home",    // "home" (my owned inventory) | "shop" (dedicated store)
+  tab: "houses",   // houses | decor | wear
   decorSlot: "bed",
   wearSlot: "hat",
-  houseTier: 0,    // 0 = all tiers, or 1..10
+  invDecorSlot: "all", // all | bed | light | floor | garden | pool
+  invWearSlot: "all",  // all | hat | outfit | acc | innate
+  houseTier: 0,    // 0 = all tiers, or 1..10 (shop only)
+  shopUnownedOnly: true,
   search: "",
-  filter: "all",   // all | affordable | owned | event | secret
+  filter: "all",
   pageLimit: 24,   // incremental DOM window for 100+ items performance
   preview: null,   // null | { kind: "house"|"decor"|"wear", id, slot? }
 };
@@ -12521,6 +12720,10 @@ function renderCheckinUi() {
     homeBtn.title = ci.checkedIn
       ? `TooToo 小家 · 当前「${h.name}」（今日已签到）`
       : `TooToo 小家 · 当前「${h.name}」（今日可签到领 +${rw.total} 萝卜币！）`;
+  }
+  const homeStrip = document.getElementById("homeCheckinStrip");
+  if (homeStrip) {
+    homeStrip.style.display = (!ci.checkedIn && homeUiState.view === "home") ? "flex" : "none";
   }
   [
     { btn: "homeCheckinBtn", sub: "homeCheckinSub" },
@@ -14501,19 +14704,27 @@ function getEffectiveStageViewState() {
   const real = getActiveHomeState();
   const pv = homeUiState.preview;
   if (!pv) return { houseId: real.house, decor: real.decor, wear: real.wear, isPreview: false, previewLabel: "" };
-  const houseId = pv.kind === "house" ? pv.id : real.house;
+  let houseId = pv.kind === "house" ? pv.id : real.house;
   const decor = { ...real.decor };
   const wear = { ...real.wear };
   let previewLabel = "";
   if (pv.kind === "house") {
     const h = HOME_HOUSES.find(x => x.id === pv.id);
-    previewLabel = h ? h.name : "";
+    previewLabel = h ? `${h.icon} ${h.name}` : "";
   } else if (pv.kind === "decor") {
     const d = HOME_DECORS.find(x => x.id === pv.id);
-    if (d) { decor[d.slot] = d.id; previewLabel = d.name; }
+    if (d) {
+      decor[d.slot] = d.id;
+      previewLabel = `${d.icon} ${d.name}`;
+      const curH = TOOTOO_REG.getHouse(houseId);
+      if (!curH || !curH.slots.includes(d.slot)) {
+        const sampleH = HOME_HOUSES.find(x => x.slots && x.slots.includes(d.slot));
+        if (sampleH) houseId = sampleH.id;
+      }
+    }
   } else if (pv.kind === "wear") {
     const w = HOME_WEARABLES.find(x => x.id === pv.id);
-    if (w) { wear[w.slot] = w.id; previewLabel = w.name; }
+    if (w) { wear[w.slot] = w.id; previewLabel = `${w.icon} ${w.name}`; }
   }
   return { houseId, decor, wear, isPreview: true, previewLabel };
 }
@@ -15830,6 +16041,10 @@ function renderDecorCardHtml(it, hState, cs, maxTier, activeEvents) {
   const tag = renderGradeBadgeHtml(it, equipped, owned, 0, 0);
   const curHouse = TOOTOO_REG.getHouse(hState.house) || HOME_HOUSES[0];
   const slotUnlocked = curHouse.slots.includes(it.slot);
+  const isPv = !!(homeUiState.preview && homeUiState.preview.kind === "decor" && homeUiState.preview.id === it.id);
+  const pvBtn = !locked && !owned
+    ? `<button class="hc-btn preview${isPv ? " on" : ""}" data-act="preview-decor" data-id="${it.id}" title="在顶部临时展开舞台预览效果">${isPv ? "收起" : "👁 试摆"}</button>`
+    : "";
   const btnHtml = locked
     ? `<button class="hc-btn" disabled>🔒 待解锁</button>`
     : (equipped
@@ -15838,7 +16053,7 @@ function renderDecorCardHtml(it, hState, cs, maxTier, activeEvents) {
         ? (slotUnlocked
           ? `<button class="hc-btn equip" data-act="equip-decor" data-id="${it.id}">摆出来</button>`
           : `<button class="hc-btn" disabled title="当前房型未解锁该槽位">仓库已藏</button>`)
-        : `<button class="hc-btn buy${it.secret ? " secret-buy" : ""}" data-act="buy-decor" data-id="${it.id}" ${canAfford ? "" : "disabled"}>${canAfford ? (it.secret ? "购入隐藏" : "购买") : "币不足"}</button>`));
+        : `${pvBtn}<button class="hc-btn buy${it.secret ? " secret-buy" : ""}" data-act="buy-decor" data-id="${it.id}" ${canAfford ? "" : "disabled"}>${canAfford ? (it.secret ? "购入隐藏" : "购买") : "币不足"}</button>`));
   const gradeCls = ` grade-${it.grade || "basic"}`;
   return `<div class="home-card${gradeCls}${equipped ? " equipped" : ""}${locked ? " secret-locked" : ""}">
     <div>
@@ -15863,13 +16078,17 @@ function renderWearCardHtml(it, hState, cs, maxTier, activeEvents) {
   const canAfford = cs.balance >= eff.price;
   const priceCls = eff.price === 0 ? " free" : (!owned && !canAfford ? " unaffordable" : "");
   const tag = renderGradeBadgeHtml(it, equipped, owned, reqTier, 0, tierLocked);
+  const isPv = !!(homeUiState.preview && homeUiState.preview.kind === "wear" && homeUiState.preview.id === it.id);
+  const pvBtn = !locked && !owned
+    ? `<button class="hc-btn preview${isPv ? " on" : ""}" data-act="preview-wear" data-id="${it.id}" title="在顶部临时展开舞台试穿预览">${isPv ? "收起" : "👁 试穿"}</button>`
+    : "";
   const btnHtml = locked
     ? `<button class="hc-btn" disabled>🔒 待解锁</button>`
     : (equipped
       ? `<button class="hc-btn unequip" data-act="unequip-wear" data-slot="${it.slot}">脱下</button>`
       : (owned
         ? `<button class="hc-btn equip" data-act="equip-wear" data-id="${it.id}">穿戴</button>`
-        : `<button class="hc-btn buy${it.secret ? " secret-buy" : ""}" data-act="buy-wear" data-id="${it.id}" ${canAfford ? "" : "disabled"}>${canAfford ? (it.secret ? "购入隐藏" : "购买") : "币不足"}</button>`));
+        : `${pvBtn}<button class="hc-btn buy${it.secret ? " secret-buy" : ""}" data-act="buy-wear" data-id="${it.id}" ${canAfford ? "" : "disabled"}>${canAfford ? (it.secret ? "购入隐藏" : "购买") : "币不足"}</button>`));
   const gradeCls = ` grade-${it.grade || "basic"}`;
   const titleTxt = secretLocked ? "❓ 隐藏高定" : (tierLocked ? "❓ 神秘段位限定" : `${it.icon} ${it.name}`);
   return `<div class="home-card${gradeCls}${equipped ? " equipped" : ""}${tierLocked ? " tier-locked" : ""}${secretLocked ? " secret-locked" : ""}">
@@ -15891,12 +16110,41 @@ function renderHomeShop() {
   const maxTier = debugState.unlockAll ? 10 : getMaxUnlockedLevel();
   const secStat = countOwnedSecrets(hState);
   const activeEvents = getActiveLiveEvents();
+  const isShop = homeUiState.view === "shop";
+  const modalEl = document.getElementById("homeModal");
+  if (modalEl) {
+    modalEl.classList.toggle("is-shop", isShop);
+    modalEl.classList.toggle("has-preview", isShop && !!homeUiState.preview);
+  }
+  const titleEl = document.getElementById("homeModalTitle");
+  if (titleEl) {
+    titleEl.textContent = isShop ? "🛒 兔兔商城" : "🏠 TooToo 小家";
+  }
+  const pvBarLbl = document.getElementById("homePreviewLabel");
+  if (pvBarLbl && homeUiState.preview) {
+    const viewInfo = getEffectiveStageViewState();
+    pvBarLbl.textContent = `👁 正在试看预览：${viewInfo.previewLabel || ""}`;
+  }
 
-  // Live Event Banner
+  // Friday 14:00-18:00 "辛苦一周" Weekly Rental Coupon info
+  const friInfo = TOOTOO_REG.getFridayWindowInfo(hState, debugState.active && debugFridayMock);
+  const bestCoupon = TOOTOO_REG.getBestRentCoupon(hState);
+
+  // Subtle dot alert on "🛒 逛商店" button when Friday coupon can be claimed or event is live
+  const goShopBtn = document.getElementById("homeViewToggleBtn");
+  if (goShopBtn) {
+    const hasAlert = !!(friInfo.canClaim || activeEvents.length > 0);
+    goShopBtn.classList.toggle("has-alert", hasAlert);
+    goShopBtn.title = friInfo.canClaim
+      ? "周五限时领租房折扣券！点击去商城领取"
+      : (activeEvents.length > 0 ? "商城有限时活动优惠，点击逛逛" : "前往兔兔商城选购新房、装潢与穿搭");
+  }
+
+  // Live Event Banner (shown ONLY in shop view)
   const bannerEl = document.getElementById("homeEventBanner");
   const bannerTxt = document.getElementById("homeEventBannerText");
   if (bannerEl && bannerTxt) {
-    if (activeEvents.length > 0) {
+    if (isShop && activeEvents.length > 0) {
       const ev = activeEvents[0];
       bannerEl.classList.add("show");
       bannerEl.style.background = ev.bannerBg || "";
@@ -15906,14 +16154,12 @@ function renderHomeShop() {
     }
   }
 
-  // Friday 14:00-18:00 "辛苦一周" Weekly Rental Coupon Banner (strictly hidden outside window!)
-  const friInfo = TOOTOO_REG.getFridayWindowInfo(hState, debugState.active && debugFridayMock);
+  // Friday Coupon Banner (shown ONLY in shop view)
   const friEl = document.getElementById("homeFridayBanner");
   const friTxt = document.getElementById("homeFridayBannerText");
   const friBtn = document.getElementById("homeFridayClaimBtn");
-  const bestCoupon = TOOTOO_REG.getBestRentCoupon(hState);
   if (friEl && friTxt && friBtn) {
-    if (friInfo.isOpen) {
+    if (isShop && friInfo.isOpen) {
       friEl.classList.add("show");
       friEl.classList.toggle("claimed", friInfo.claimed);
       if (friInfo.claimed) {
@@ -15935,9 +16181,31 @@ function renderHomeShop() {
     }
   }
 
+  // Compute owned inventory counts for clean Home tabs
+  const myHouses = HOME_HOUSES.filter(h =>
+    hState.owned_houses.includes(h.id) || TOOTOO_REG.isHouseLeased(h.id, hState)
+  );
+  const myDecors = HOME_DECORS.filter(it => hState.owned_decor.includes(it.id));
+  const myWears = HOME_WEARABLES.filter(it => hState.owned_wear.includes(it.id));
+  const unlockedInnates = Object.values(TIER_INNATE_ACCESSORIES).filter(it => debugState.unlockAll || maxTier >= it.level);
+
+  // Sync Tab labels & active states between Home Inventory vs Dedicated Shop
+  const tabBtns = document.querySelectorAll("#homeTabs button");
+  tabBtns.forEach(b => {
+    const t = b.dataset.htab;
+    b.classList.toggle("active", t === homeUiState.tab);
+    if (isShop) {
+      b.textContent = t === "houses" ? "🏠 售楼处" : (t === "decor" ? "🛋️ 家具城" : "👗 精品衣橱");
+    } else {
+      if (t === "houses") b.textContent = `🏠 我的房产 (${myHouses.length})`;
+      else if (t === "decor") b.textContent = `🛋️ 我的装潢 (${myDecors.length})`;
+      else b.textContent = `👗 我的衣橱 (${myWears.length + unlockedInnates.length})`;
+    }
+  });
+
   const couponPillEl = document.getElementById("homeCouponPill");
   if (couponPillEl) {
-    if (homeUiState.tab === "houses" && bestCoupon) {
+    if (isShop && homeUiState.tab === "houses" && bestCoupon) {
       couponPillEl.style.display = "inline-flex";
       couponPillEl.className = "home-coupon-pill" + (bestCoupon.rarity === "epic" ? " epic" : "");
       couponPillEl.textContent = `${bestCoupon.label} · ${TOOTOO_REG.formatLeaseRemaining(bestCoupon.expires_at)}`;
@@ -15945,6 +16213,13 @@ function renderHomeShop() {
     } else {
       couponPillEl.style.display = "none";
     }
+  }
+
+  const unownedBtn = document.getElementById("homeShopUnownedBtn");
+  if (unownedBtn) {
+    unownedBtn.style.display = isShop ? "inline-flex" : "none";
+    unownedBtn.textContent = homeUiState.shopUnownedOnly ? "✓ 仅看未拥有" : "显示全部";
+    unownedBtn.classList.toggle("on", homeUiState.shopUnownedOnly);
   }
 
   const secCounterEl = document.getElementById("homeSecretCounter");
@@ -15955,15 +16230,15 @@ function renderHomeShop() {
   const gridEl = document.getElementById("homeShopGrid");
   const wearToggle = document.getElementById("homeAvatarWearToggle");
   if (wearToggle) {
-    wearToggle.style.display = homeUiState.tab === "wear" ? "inline-flex" : "none";
+    wearToggle.style.display = (!isShop && homeUiState.tab === "wear") ? "inline-flex" : "none";
     wearToggle.textContent = hState.show_on_avatar ? "头像同步穿戴: 开" : "头像同步穿戴: 关";
     wearToggle.classList.toggle("on", hState.show_on_avatar);
   }
 
-  const renderChunkedCards = (cardsHtmlArr) => {
+  const renderChunkedCards = (cardsHtmlArr, footerHtml = "", emptyHtml = "") => {
     if (!gridEl) return;
     if (cardsHtmlArr.length === 0) {
-      gridEl.innerHTML = `<div class="home-notice">暂无可展示物品</div>`;
+      gridEl.innerHTML = emptyHtml || `<div class="home-notice">暂无可展示物品</div>`;
       return;
     }
     const lim = homeUiState.pageLimit || 24;
@@ -15971,26 +16246,198 @@ function renderHomeShop() {
     const more = cardsHtmlArr.length > lim
       ? `<button class="home-load-more" data-act="load-more">展开更多（剩余 ${cardsHtmlArr.length - lim} 件）↓</button>`
       : "";
-    gridEl.innerHTML = sliced.join("") + more;
+    gridEl.innerHTML = sliced.join("") + more + footerHtml;
   };
 
-  if (homeUiState.tab === "houses") {
-    // Only show subbar when >10 houses exist (tier pills); keep UI completely clean otherwise!
-    if (HOME_HOUSES.length > 10) {
-      if (subbarEl) subbarEl.style.display = "flex";
-      if (pillsEl) {
-        const tiers = Array.from(new Set(HOME_HOUSES.map(x => x.tier || 1))).sort((a, b) => a - b);
-        pillsEl.innerHTML = `<button class="home-slot-pill${homeUiState.houseTier === 0 ? " active" : ""}" data-htier="0">全部</button>`
-          + tiers.map(t => `<button class="home-slot-pill${homeUiState.houseTier === t ? " active" : ""}" data-htier="${t}">T${t}</button>`).join("");
-      }
-    } else {
+  // ==================== VIEW 1: MY HOME (OWNED INVENTORY ONLY) ====================
+  if (!isShop) {
+    if (homeUiState.tab === "houses") {
       if (subbarEl) subbarEl.style.display = "none";
       if (pillsEl) pillsEl.innerHTML = "";
+      // Sort: current house first, then active leased, then higher tier first
+      const sorted = [...myHouses].sort((a, b) => {
+        if (a.id === hState.house) return -1;
+        if (b.id === hState.house) return 1;
+        return (b.tier || 1) - (a.tier || 1) || (b.price || 0) - (a.price || 0);
+      });
+      const cards = sorted.map(h => {
+        const owned = hState.owned_houses.includes(h.id);
+        const leasedExp = TOOTOO_REG.getLeaseExpiresAt(h.id, hState);
+        const leased = leasedExp > 0 && !owned;
+        const equipped = hState.house === h.id;
+        const slotTxt = h.slots.length > 0 ? `${h.slots.length} 槽位 (${h.slots.map(s => HOME_SLOT_META[s].short).join("/")})` : "无装潢槽";
+        const badge = equipped
+          ? `<span class="hc-tag eq">${leased ? "🔑 租住中" : "居住中"}</span>`
+          : (leased
+            ? `<span class="hc-tag lease">🔑 ${TOOTOO_REG.formatLeaseRemaining(leasedExp)}</span>`
+            : `<span class="hc-tag own">${h.price === 0 ? "初始" : "永久"}</span>`);
+        const btn = equipped
+          ? `<button class="hc-btn unequip" disabled>当前</button>`
+          : `<button class="hc-btn equip" data-act="move-house" data-id="${h.id}">搬入</button>`;
+        const tierBadge = h.tier ? `<span style="opacity:.55;font-family:var(--font-mono);font-size:8.5px;margin-right:3px">T${h.tier}</span>` : "";
+        return `<div class="home-inv-card${equipped ? " equipped" : ""}">
+          <div>
+            <div class="hc-top"><span class="hc-name">${tierBadge}${h.icon} ${h.name}</span>${badge}</div>
+            <div class="hc-desc" style="margin-top:3px">${slotTxt}</div>
+          </div>
+          <div class="home-inv-foot">
+            <span class="home-inv-sub">${leased ? TOOTOO_REG.formatLeaseRemaining(leasedExp) : (h.worldWidth > 420 ? "含室内外双区" : "随时入住")}</span>
+            <span class="hc-btns">${btn}</span>
+          </div>
+        </div>`;
+      });
+      const footer = `<button class="home-more-shop-cta" data-act="go-shop" data-tab="houses">
+        <span>想要换更大的房子或体验顶豪？</span>
+        <span>去售楼处逛逛 →</span>
+      </button>`;
+      renderChunkedCards(cards, footer);
+      return;
+    }
+
+    if (homeUiState.tab === "decor") {
+      if (myDecors.length > 0) {
+        if (subbarEl) subbarEl.style.display = "flex";
+        const allSlots = ["bed", "light", "floor", "garden", "pool"];
+        if (pillsEl) {
+          pillsEl.innerHTML = `<button class="home-slot-pill${homeUiState.invDecorSlot === "all" ? " active" : ""}" data-inv-dslot="all">全部 (${myDecors.length})</button>`
+            + allSlots.map(s => {
+              const cnt = myDecors.filter(x => x.slot === s).length;
+              if (cnt === 0) return "";
+              const unlocked = house.slots.includes(s);
+              return `<button class="home-slot-pill${homeUiState.invDecorSlot === s ? " active" : ""}${unlocked ? "" : " locked"}" data-inv-dslot="${s}">${HOME_SLOT_META[s].short} (${cnt})</button>`;
+            }).join("");
+        }
+      } else {
+        if (subbarEl) subbarEl.style.display = "none";
+        if (pillsEl) pillsEl.innerHTML = "";
+      }
+      const list = myDecors
+        .filter(it => homeUiState.invDecorSlot === "all" || it.slot === homeUiState.invDecorSlot)
+        .sort((a, b) => {
+          const ea = hState.decor[a.slot] === a.id ? 1 : 0;
+          const eb = hState.decor[b.slot] === b.id ? 1 : 0;
+          return eb - ea;
+        });
+      const cards = list.map(it => {
+        const equipped = hState.decor[it.slot] === it.id;
+        const slotUnlocked = house.slots.includes(it.slot);
+        const badge = equipped
+          ? `<span class="hc-tag eq">已摆放</span>`
+          : (slotUnlocked ? `<span class="hc-tag own">库存</span>` : `<span class="hc-tag">未解锁槽位</span>`);
+        const btn = equipped
+          ? `<button class="hc-btn unequip" data-act="unequip-decor" data-slot="${it.slot}">收起</button>`
+          : (slotUnlocked
+            ? `<button class="hc-btn equip" data-act="equip-decor" data-id="${it.id}">摆出来</button>`
+            : `<button class="hc-btn" disabled title="当前房子「${house.name}」不支持${HOME_SLOT_META[it.slot].short}槽位">暂不可摆</button>`);
+        return `<div class="home-inv-card${equipped ? " equipped" : ""}">
+          <div>
+            <div class="hc-top"><span class="hc-name">${it.icon} ${it.name}</span>${badge}</div>
+            <div class="hc-desc" style="margin-top:3px">${HOME_SLOT_META[it.slot].label}</div>
+          </div>
+          <div class="home-inv-foot">
+            <span class="home-inv-sub">${slotUnlocked ? "当前房型可摆放" : "换大房后可摆放"}</span>
+            <span class="hc-btns">${btn}</span>
+          </div>
+        </div>`;
+      });
+      const emptyHtml = `<div class="home-empty-inv">
+        <p>仓库里还没有装潢家具${house.slots.length === 0 ? `<br/>（当前「${house.name}」暂无装潢槽，买/租 <strong>📦 工业纸箱屋</strong> 以上房型即可摆放）` : ""}</p>
+        <button class="home-go-shop-btn" data-act="go-shop" data-tab="decor">🛋️ 去家具城挑挑看 →</button>
+      </div>`;
+      const footer = `<button class="home-more-shop-cta" data-act="go-shop" data-tab="decor">
+        <span>想添置新家具、灯具或景观？</span>
+        <span>去家具城逛逛 →</span>
+      </button>`;
+      renderChunkedCards(cards, footer, emptyHtml);
+      return;
+    }
+
+    // homeUiState.tab === "wear" (My Wardrobe Inventory)
+    if (subbarEl) subbarEl.style.display = "flex";
+    const wFilters = [
+      { k: "all", lbl: `全部 (${myWears.length + unlockedInnates.length})` },
+      { k: "hat", lbl: `🎩 帽子 (${myWears.filter(x => x.slot === "hat").length})` },
+      { k: "outfit", lbl: `👔 衣服 (${myWears.filter(x => x.slot === "outfit").length})` },
+      { k: "acc", lbl: `👜 配饰 (${myWears.filter(x => x.slot === "acc").length})` },
+      { k: "innate", lbl: `✨ 自带 (${unlockedInnates.length})` },
+    ];
+    if (pillsEl) {
+      pillsEl.innerHTML = wFilters.map(f =>
+        `<button class="home-slot-pill${homeUiState.invWearSlot === f.k ? " active" : ""}" data-inv-wslot="${f.k}">${f.lbl}</button>`
+      ).join("");
+    }
+    const cards = [];
+    if (homeUiState.invWearSlot !== "innate") {
+      const wearList = myWears
+        .filter(it => homeUiState.invWearSlot === "all" || it.slot === homeUiState.invWearSlot)
+        .sort((a, b) => (hState.wear[b.slot] === b.id ? 1 : 0) - (hState.wear[a.slot] === a.id ? 1 : 0));
+      wearList.forEach(it => {
+        const equipped = hState.wear[it.slot] === it.id;
+        const badge = equipped ? `<span class="hc-tag eq">穿戴中</span>` : `<span class="hc-tag own">衣橱</span>`;
+        const btn = equipped
+          ? `<button class="hc-btn unequip" data-act="unequip-wear" data-slot="${it.slot}">脱下</button>`
+          : `<button class="hc-btn equip" data-act="equip-wear" data-id="${it.id}">穿戴</button>`;
+        cards.push(`<div class="home-inv-card${equipped ? " equipped" : ""}">
+          <div>
+            <div class="hc-top"><span class="hc-name">${it.icon} ${it.name}</span>${badge}</div>
+            <div class="hc-desc" style="margin-top:3px">${WEAR_SLOT_META[it.slot].label}</div>
+          </div>
+          <div class="home-inv-foot">
+            <span class="home-inv-sub">${hState.show_on_avatar ? "同步至顶部头像" : "仅小家展示"}</span>
+            <span class="hc-btns">${btn}</span>
+          </div>
+        </div>`);
+      });
+    }
+    if (homeUiState.invWearSlot === "all" || homeUiState.invWearSlot === "innate") {
+      const curTier = getBunnyTier(getEffectiveTodayTokens());
+      unlockedInnates.forEach(it => {
+        const isCur = curTier.level === it.level;
+        const visible = isTierInnateVisible(it.level);
+        const badge = isCur
+          ? (visible ? `<span class="hc-tag eq">佩戴中</span>` : `<span class="hc-tag">已取下</span>`)
+          : (visible ? `<span class="hc-tag own">段位自带</span>` : `<span class="hc-tag">已取下</span>`);
+        const btn = visible
+          ? `<button class="hc-btn unequip" data-act="toggle-innate" data-id="${it.level}">取下</button>`
+          : `<button class="hc-btn equip" data-act="toggle-innate" data-id="${it.level}">戴上</button>`;
+        cards.push(`<div class="home-inv-card${isCur && visible ? " equipped" : ""}">
+          <div>
+            <div class="hc-top"><span class="hc-name">${it.icon} ${it.name}</span>${badge}</div>
+            <div class="hc-desc" style="margin-top:3px">${it.tierName}伴生饰品</div>
+          </div>
+          <div class="home-inv-foot">
+            <span class="home-inv-sub">升级免费解锁</span>
+            <span class="hc-btns">${btn}</span>
+          </div>
+        </div>`);
+      });
+    }
+    const emptyHtml = `<div class="home-empty-inv">
+      <p>衣橱里还没有这个分类的服饰哦～</p>
+      <button class="home-go-shop-btn" data-act="go-shop" data-tab="wear">👗 去精品衣橱挑新装 →</button>
+    </div>`;
+    const footer = `<button class="home-more-shop-cta" data-act="go-shop" data-tab="wear">
+      <span>想给兔兔买新帽子、外套或包包？</span>
+      <span>去精品衣橱逛逛 →</span>
+    </button>`;
+    renderChunkedCards(cards, footer, emptyHtml);
+    return;
+  }
+
+  // ==================== VIEW 2: DEDICATED SHOP (STORE CATALOG) ====================
+  if (homeUiState.tab === "houses") {
+    if (subbarEl) subbarEl.style.display = "flex";
+    if (pillsEl) {
+      const tiers = Array.from(new Set(HOME_HOUSES.filter(x => (x.tier || 1) >= 2).map(x => x.tier || 1))).sort((a, b) => a - b);
+      pillsEl.innerHTML = `<button class="home-slot-pill${homeUiState.houseTier === 0 ? " active" : ""}" data-htier="0">全部</button>`
+        + tiers.map(t => `<button class="home-slot-pill${homeUiState.houseTier === t ? " active" : ""}" data-htier="${t}">T${t}</button>`).join("");
     }
     const filtered = HOME_HOUSES.filter(h => {
+      if ((h.tier || 1) === 1) return false; // Free starter street is already in inventory
       if (homeUiState.houseTier > 0 && (h.tier || 1) !== homeUiState.houseTier) return false;
       const owned = hState.owned_houses.includes(h.id);
       const leased = TOOTOO_REG.isHouseLeased(h.id, hState);
+      if (homeUiState.shopUnownedOnly && owned) return false;
       return TOOTOO_REG.isItemAvailable(h, activeEvents, owned || leased);
     });
     const cards = filtered.map(h => {
@@ -16005,18 +16452,17 @@ function renderHomeShop() {
       const priceCls = buyInfo.price === 0 ? " free" : (!owned && !canBuy ? " unaffordable" : "");
       const slotTxt = h.slots.length > 0 ? h.slots.map(s => HOME_SLOT_META[s].short).join("/") : "无装潢槽";
       const tag = renderGradeBadgeHtml(h, equipped, owned, 0, leasedExp);
+      const isPv = !!(homeUiState.preview && homeUiState.preview.kind === "house" && homeUiState.preview.id === h.id);
+      const pvBtn = !locked
+        ? `<button class="hc-btn preview${isPv ? " on" : ""}" data-act="preview-house" data-id="${h.id}" title="在顶部临时展开舞台预览房型">${isPv ? "收起" : "👁 试看"}</button>`
+        : "";
       const btnHtml = locked
         ? `<button class="hc-btn" disabled>🔒 待解锁</button>`
-        : (equipped && owned
-          ? `<button class="hc-btn unequip" disabled>居住中</button>`
-          : (owned
-            ? `<button class="hc-btn equip" data-act="move-house" data-id="${h.id}">搬入</button>`
-            : (equipped && leased
-              ? `<button class="hc-btn buy${h.secret ? " secret-buy" : ""}" data-act="buy-house" data-id="${h.id}" ${canBuy ? "" : "disabled"}>${canBuy ? "买断" : "币不足"}</button>`
-              : (leased
-                ? `<button class="hc-btn equip" data-act="move-house" data-id="${h.id}">搬入</button>`
-                : `<button class="hc-btn buy${h.secret ? " secret-buy" : ""}" data-act="buy-house" data-id="${h.id}" ${canBuy ? "" : "disabled"}>${canBuy ? (h.secret ? "铸造" : "买房") : "币不足"}</button>`))));
-      // Ultra-clean minimal rent bar (coupon-aware + red price when unaffordable!)
+        : (owned
+          ? (equipped
+            ? `<button class="hc-btn unequip" disabled>居住中</button>`
+            : `<button class="hc-btn equip" data-act="move-house" data-id="${h.id}">搬入</button>`)
+          : `${pvBtn}<button class="hc-btn buy${h.secret ? " secret-buy" : ""}" data-act="buy-house" data-id="${h.id}" ${canBuy ? "" : "disabled"}>${canBuy ? (leased ? "买断" : (h.secret ? "铸造" : "买房")) : "币不足"}</button>`);
       let rentRowHtml = "";
       if (h.rentable && !owned && !locked) {
         const r7 = TOOTOO_REG.getHouseRentPrice(h, 7, activeEvents, bestCoupon);
@@ -16034,7 +16480,6 @@ function renderHomeShop() {
           </span>
         </div>`;
       }
-      // Purchase gift badge (harmonious single line on non-owned unlocked houses)
       let giftRowHtml = "";
       if (!locked && !owned) {
         const gift = TOOTOO_REG.getHouseGift(h);
@@ -16068,79 +16513,42 @@ function renderHomeShop() {
         </div>
       </div>`;
     });
-    renderChunkedCards(cards);
+    const emptyHtml = `<div class="home-notice">这一档房产你已经全部收入囊中啦！可点右上角「显示全部」查看已购房产 🎉</div>`;
+    renderChunkedCards(cards, "", emptyHtml);
   } else if (homeUiState.tab === "decor") {
     if (subbarEl) subbarEl.style.display = "flex";
     const allSlots = ["bed", "light", "floor", "garden", "pool"];
     if (pillsEl) {
-      pillsEl.innerHTML = allSlots.map(s => {
-        const unlocked = house.slots.includes(s);
-        return `<button class="home-slot-pill${homeUiState.decorSlot === s ? " active" : ""}${unlocked ? "" : " locked"}" data-dslot="${s}">${unlocked ? "" : "🔒 "}${HOME_SLOT_META[s].label}</button>`;
-      }).join("");
+      pillsEl.innerHTML = allSlots.map(s =>
+        `<button class="home-slot-pill${homeUiState.decorSlot === s ? " active" : ""}" data-dslot="${s}">${HOME_SLOT_META[s].label}</button>`
+      ).join("");
     }
-    if (gridEl) {
-      if (house.slots.length === 0) {
-        gridEl.innerHTML = `<div class="home-notice">「${house.name}」暂无装潢槽位，租住或购入 <strong>📦 工业纸箱屋</strong> 即可解锁</div>`;
-      } else if (!house.slots.includes(homeUiState.decorSlot)) {
-        const needHouse = HOME_HOUSES.find(x => x.slots.includes(homeUiState.decorSlot));
-        gridEl.innerHTML = `<div class="home-notice">需入住 <strong>${needHouse ? `${needHouse.icon} ${needHouse.name}` : "更高阶住宅"}</strong> 解锁「${HOME_SLOT_META[homeUiState.decorSlot].short}」</div>`;
-      } else {
-        const slotItems = TOOTOO_REG.getDecorsBySlot(homeUiState.decorSlot);
-        const filtered = slotItems.filter(it => {
-          const owned = hState.owned_decor.includes(it.id);
-          return TOOTOO_REG.isItemAvailable(it, activeEvents, owned);
-        });
-        const cards = filtered.map(it => renderDecorCardHtml(it, hState, cs, maxTier, activeEvents));
-        renderChunkedCards(cards);
-      }
-    }
+    const slotItems = TOOTOO_REG.getDecorsBySlot(homeUiState.decorSlot);
+    const filtered = slotItems.filter(it => {
+      const owned = hState.owned_decor.includes(it.id);
+      if (homeUiState.shopUnownedOnly && owned) return false;
+      return TOOTOO_REG.isItemAvailable(it, activeEvents, owned);
+    });
+    const cards = filtered.map(it => renderDecorCardHtml(it, hState, cs, maxTier, activeEvents));
+    const emptyHtml = `<div class="home-notice">该槽位装潢已全部集齐！可切换其他槽位或点「显示全部」查看 🎉</div>`;
+    renderChunkedCards(cards, "", emptyHtml);
   } else if (homeUiState.tab === "wear") {
     if (subbarEl) subbarEl.style.display = "flex";
-    const wSlots = ["hat", "outfit", "acc", "innate"];
+    const wSlots = ["hat", "outfit", "acc"];
     if (pillsEl) {
       pillsEl.innerHTML = wSlots.map(s =>
         `<button class="home-slot-pill${homeUiState.wearSlot === s ? " active" : ""}" data-wslot="${s}">${WEAR_SLOT_META[s].label}</button>`
       ).join("");
     }
-    if (gridEl) {
-      if (homeUiState.wearSlot === "innate") {
-        const curTier = getBunnyTier(getEffectiveTodayTokens());
-        const list = Object.values(TIER_INNATE_ACCESSORIES);
-        gridEl.innerHTML = list.map(it => {
-          const unlocked = debugState.unlockAll || maxTier >= it.level;
-          const isCur = curTier.level === it.level;
-          const visible = isTierInnateVisible(it.level);
-          const tag = !unlocked
-            ? `<span class="hc-tag vip">🔒 段位自带</span>`
-            : (isCur
-              ? (visible ? `<span class="hc-tag eq">佩戴中</span>` : `<span class="hc-tag">已取下</span>`)
-              : (visible ? `<span class="hc-tag own">默认开启</span>` : `<span class="hc-tag">已取下</span>`));
-          const btnHtml = !unlocked
-            ? `<button class="hc-btn" disabled>🔒 待解锁</button>`
-            : (visible
-              ? `<button class="hc-btn unequip" data-act="toggle-innate" data-id="${it.level}">取下</button>`
-              : `<button class="hc-btn equip" data-act="toggle-innate" data-id="${it.level}">戴上</button>`);
-          return `<div class="home-card grade-${it.level >= 9 ? "mythic" : "luxury"}${isCur && visible ? " equipped" : ""}${!unlocked ? " tier-locked" : ""}">
-            <div>
-              <div class="hc-top"><span class="hc-name">${unlocked ? `${it.icon} ${it.name}` : "❓ 神秘段位伴生饰品"}</span>${tag}</div>
-              ${unlocked ? `<div class="hc-desc" style="margin-top:3px">${it.desc}</div>` : ""}
-            </div>
-            <div class="hc-act">
-              <span class="hc-price free">${unlocked ? `🎁 ${it.tierName}自带` : "🎁 升级自动获得"}</span>
-              <span class="hc-btns">${btnHtml}</span>
-            </div>
-          </div>`;
-        }).join("");
-      } else {
-        const slotItems = TOOTOO_REG.getWearsBySlot(homeUiState.wearSlot);
-        const filtered = slotItems.filter(it => {
-          const owned = hState.owned_wear.includes(it.id);
-          return TOOTOO_REG.isItemAvailable(it, activeEvents, owned);
-        });
-        const cards = filtered.map(it => renderWearCardHtml(it, hState, cs, maxTier, activeEvents));
-        renderChunkedCards(cards);
-      }
-    }
+    const slotItems = TOOTOO_REG.getWearsBySlot(homeUiState.wearSlot);
+    const filtered = slotItems.filter(it => {
+      const owned = hState.owned_wear.includes(it.id);
+      if (homeUiState.shopUnownedOnly && owned) return false;
+      return TOOTOO_REG.isItemAvailable(it, activeEvents, owned);
+    });
+    const cards = filtered.map(it => renderWearCardHtml(it, hState, cs, maxTier, activeEvents));
+    const emptyHtml = `<div class="home-notice">该类穿搭已全部集齐！可切换其他品类或点「显示全部」查看 🎉</div>`;
+    renderChunkedCards(cards, "", emptyHtml);
   }
 }
 
@@ -16151,6 +16559,7 @@ function renderHomeModal(freshDecorSlot = null, twirlBunny = false) {
 }
 
 function openHomeModal() {
+  homeUiState.view = "home";
   homeUiState.preview = null;
   homeUiState.pageLimit = 24;
   _lastHomeStageKey = "";
@@ -16161,8 +16570,20 @@ function openHomeModal() {
   if (homeClockTimer) clearInterval(homeClockTimer);
   homeClockTimer = setInterval(() => {
     if (!document.getElementById("homeModal")?.classList.contains("open")) return;
-    if (!homeBunnyPos.raf) renderHomeStage();
+    if (!homeBunnyPos.raf && (homeUiState.view === "home" || homeUiState.preview)) renderHomeStage();
   }, 30000);
+}
+function switchHomeView(view, targetTab = null) {
+  homeUiState.view = view === "shop" ? "shop" : "home";
+  if (targetTab) homeUiState.tab = targetTab;
+  homeUiState.preview = null;
+  homeUiState.pageLimit = 24;
+  closeHomeConfirm();
+  _lastHomeStageKey = "";
+  renderHomeModal();
+  const dlg = document.querySelector("#homeModal .home-dialog");
+  if (dlg) dlg.scrollTop = 0;
+  playSfx("token");
 }
 function closeHomeModal() {
   stopHomeBunnyWalk();
@@ -16182,6 +16603,19 @@ function closeHomeModal() {
 // ---- Home Event Wiring ----
 document.getElementById("homeBtn").addEventListener("click", openHomeModal);
 document.getElementById("homeCloseBtn").addEventListener("click", closeHomeModal);
+document.getElementById("homeViewToggleBtn").addEventListener("click", () => switchHomeView("shop", homeUiState.tab));
+document.getElementById("homeBackBtn").addEventListener("click", () => switchHomeView("home"));
+document.getElementById("homePreviewCloseBtn").addEventListener("click", () => {
+  homeUiState.preview = null;
+  renderHomeModal();
+  playSfx("token");
+});
+document.getElementById("homeShopUnownedBtn").addEventListener("click", () => {
+  homeUiState.shopUnownedOnly = !homeUiState.shopUnownedOnly;
+  homeUiState.pageLimit = 24;
+  renderHomeShop();
+  playSfx("token");
+});
 document.getElementById("homeModal").addEventListener("click", (e) => {
   if (e.target === e.currentTarget) closeHomeModal();
 });
@@ -16245,7 +16679,13 @@ document.getElementById("homeSlotPills").addEventListener("click", (e) => {
   if (!btn) return;
   homeUiState.pageLimit = 24;
   closeHomeConfirm();
-  if (btn.dataset.dslot) {
+  if (btn.dataset.invDslot) {
+    homeUiState.invDecorSlot = btn.dataset.invDslot;
+    renderHomeShop();
+  } else if (btn.dataset.invWslot) {
+    homeUiState.invWearSlot = btn.dataset.invWslot;
+    renderHomeShop();
+  } else if (btn.dataset.dslot) {
     homeUiState.decorSlot = btn.dataset.dslot;
     homeUiState.preview = null;
     renderHomeModal();
@@ -16299,6 +16739,7 @@ function openHomeConfirm({ title, priceHtml, note, okLabel, couponOpt = null, on
     }
   }
   bar.classList.add("open");
+  bar.scrollIntoView({ behavior: "smooth", block: "nearest" });
   playSfx("token");
 }
 
@@ -16353,6 +16794,23 @@ document.getElementById("homeShopGrid").addEventListener("click", (e) => {
     renderHomeShop();
     return;
   }
+  if (act === "go-shop") {
+    switchHomeView("shop", btn.dataset.tab || homeUiState.tab);
+    return;
+  }
+  if (act === "preview-house" || act === "preview-decor" || act === "preview-wear") {
+    const kind = act === "preview-house" ? "house" : (act === "preview-decor" ? "decor" : "wear");
+    const same = homeUiState.preview && homeUiState.preview.kind === kind && homeUiState.preview.id === id;
+    homeUiState.preview = same ? null : { kind, id };
+    _lastHomeStageKey = "";
+    renderHomeModal();
+    if (!same) {
+      const dlg = document.querySelector("#homeModal .home-dialog");
+      if (dlg) dlg.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    playSfx("token");
+    return;
+  }
 
   const h = cloneHomeState(getActiveHomeState());
   const cs = getGachaCoinState();
@@ -16400,6 +16858,9 @@ document.getElementById("homeShopGrid").addEventListener("click", (e) => {
         }
         curH.house = house.id;
         saveActiveHomeState(curH, finalRent.price);
+        homeUiState.view = "home";
+        homeUiState.preview = null;
+        _lastHomeStageKey = "";
         renderHomeModal();
         playBuildHouseFx(house);
         showStageBanner(
@@ -16465,6 +16926,9 @@ document.getElementById("homeShopGrid").addEventListener("click", (e) => {
             }
           }
           saveActiveHomeState(curH, buyInfo.price, bonusRefund);
+          homeUiState.view = "home";
+          homeUiState.preview = null;
+          _lastHomeStageKey = "";
           renderHomeModal();
           playBuildHouseFx(house, giftResult);
         },
@@ -16472,6 +16936,9 @@ document.getElementById("homeShopGrid").addEventListener("click", (e) => {
     } else {
       h.house = house.id;
       saveActiveHomeState(h, 0);
+      homeUiState.view = "home";
+      homeUiState.preview = null;
+      _lastHomeStageKey = "";
       renderHomeModal();
       playBuildHouseFx(house);
     }
@@ -16489,6 +16956,9 @@ document.getElementById("homeShopGrid").addEventListener("click", (e) => {
         const curHouse = TOOTOO_REG.getHouse(curH.house) || HOME_HOUSES[0];
         if (curHouse.slots.includes(item.slot)) curH.decor[item.slot] = item.id;
         saveActiveHomeState(curH, eff.price);
+        homeUiState.view = "home";
+        homeUiState.preview = null;
+        _lastHomeStageKey = "";
         renderHomeModal(item.slot, false);
         playDecorFx(item.slot, item);
       };
@@ -16530,6 +17000,9 @@ document.getElementById("homeShopGrid").addEventListener("click", (e) => {
         if (!curH.owned_wear.includes(item.id)) curH.owned_wear.push(item.id);
         curH.wear[item.slot] = item.id;
         saveActiveHomeState(curH, eff.price);
+        homeUiState.view = "home";
+        homeUiState.preview = null;
+        _lastHomeStageKey = "";
         renderHomeModal(null, true);
         playDressFx(item);
       };
