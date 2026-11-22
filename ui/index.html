@@ -2027,7 +2027,7 @@
     font-weight: 800;
     color: var(--accent);
     text-shadow: 0 1px 6px color-mix(in srgb, var(--surface) 90%, transparent);
-    z-index: 999;
+    z-index: 50;
     animation: kpiDeltaRise 1.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
   @keyframes kpiDeltaRise {
@@ -2942,64 +2942,313 @@
     overflow: hidden;
   }
   .gacha-machine {
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 68px;
-    height: 68px;
+    width: 112px;
+    height: 112px;
+    padding: 0;
     border-radius: 50%;
-    background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--accent) 26%, var(--surface)), var(--surface));
-    border: 2px solid color-mix(in srgb, var(--accent) 45%, var(--border));
-    font-size: 30px;
-    margin-bottom: 8px;
-    box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 18%, transparent);
-    transition: transform 0.2s ease;
+    background: radial-gradient(circle at 38% 28%, rgba(255, 247, 237, 0.96), color-mix(in srgb, var(--accent) 14%, var(--surface)) 72%, color-mix(in srgb, var(--accent) 24%, var(--surface)));
+    border: 2px solid color-mix(in srgb, var(--accent) 38%, var(--border));
+    margin: 4px auto 10px;
+    cursor: pointer;
+    box-shadow: 0 8px 22px color-mix(in srgb, var(--accent) 18%, transparent), inset 0 2px 6px rgba(255,255,255,0.65);
+    transition: transform 0.24s cubic-bezier(0.22, 1.4, 0.36, 1), box-shadow 0.24s ease, border-color 0.24s ease;
+    animation: gachaIdleFloat 3.2s ease-in-out infinite;
+    outline: none;
   }
+  .gacha-machine::before {
+    content: "";
+    position: absolute;
+    inset: -7px;
+    border-radius: 50%;
+    border: 1.5px dashed color-mix(in srgb, var(--accent) 32%, transparent);
+    opacity: 0.45;
+    transition: opacity 0.22s ease, transform 0.3s ease;
+    pointer-events: none;
+    animation: gachaHaloSpin 16s linear infinite;
+  }
+  .gacha-machine::after {
+    content: "✨ 投币扭一颗!";
+    position: absolute;
+    top: -12px;
+    right: -32px;
+    padding: 2.5px 7.5px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #f97316, #ef4444);
+    color: #fff;
+    font-family: var(--font-sans);
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.34);
+    opacity: 0;
+    transform: translateY(5px) scale(0.86) rotate(-5deg);
+    transition: opacity 0.2s ease, transform 0.24s cubic-bezier(0.22, 1.4, 0.36, 1);
+    pointer-events: none;
+    z-index: 3;
+  }
+  .gacha-machine:hover {
+    animation-play-state: paused;
+    transform: translateY(-4px) scale(1.07);
+    border-color: #f97316;
+    box-shadow:
+      0 12px 30px rgba(249, 115, 22, 0.32),
+      0 0 0 4px rgba(251, 146, 60, 0.16),
+      inset 0 2px 10px rgba(255, 255, 255, 0.8);
+  }
+  .gacha-machine:hover::before {
+    opacity: 0.95;
+    border-color: #f59e0b;
+    animation-duration: 5s;
+  }
+  .gacha-machine:hover::after {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(-3deg);
+  }
+  .gacha-machine:active {
+    transform: translateY(-1px) scale(0.96);
+  }
+  .gacha-machine svg {
+    width: 98px;
+    height: 98px;
+    overflow: visible;
+    filter: drop-shadow(0 4px 6px rgba(120, 53, 15, 0.16));
+  }
+  .gacha-machine .gm-ear-l { transform-origin: 41px 26px; transition: transform 0.25s ease; }
+  .gacha-machine .gm-ear-r { transform-origin: 71px 26px; transition: transform 0.25s ease; }
+  .gacha-machine .gm-crank { transform-origin: 56px 76px; transition: transform 0.35s cubic-bezier(0.22, 1.35, 0.36, 1); }
+  .gacha-machine .gm-spark { opacity: 0.55; transition: opacity 0.2s ease; }
+  .gacha-machine:hover .gm-ear-l { animation: gmEarWiggleL 0.65s ease-in-out infinite; }
+  .gacha-machine:hover .gm-ear-r { animation: gmEarWiggleR 0.65s ease-in-out infinite 0.08s; }
+  .gacha-machine:hover .gm-crank { transform: rotate(72deg); }
+  .gacha-machine:hover .gm-cap-1 { animation: gmCapBounce 0.55s ease-in-out infinite; }
+  .gacha-machine:hover .gm-cap-2 { animation: gmCapBounce 0.62s ease-in-out infinite 0.12s; }
+  .gacha-machine:hover .gm-cap-3 { animation: gmCapBounce 0.52s ease-in-out infinite 0.22s; }
+  .gacha-machine:hover .gm-spark { opacity: 1; animation: gmSparkPop 0.9s ease-in-out infinite; }
   .gacha-machine.shaking {
-    animation: gachaShake 0.58s ease-in-out;
+    animation: gachaShake 0.58s ease-in-out !important;
+  }
+  .gacha-machine.shaking .gm-crank {
+    animation: gmCrankSpin 0.56s cubic-bezier(0.3, 0.8, 0.4, 1);
+  }
+  .gacha-machine.shaking .gm-cap-1,
+  .gacha-machine.shaking .gm-cap-2,
+  .gacha-machine.shaking .gm-cap-3 {
+    animation: gmCapTumble 0.28s ease-in-out infinite;
+  }
+  .gacha-machine.res-R   { border-color: #38bdf8; box-shadow: 0 8px 24px rgba(56, 189, 248, 0.34); }
+  .gacha-machine.res-SR  { border-color: #a855f7; box-shadow: 0 8px 26px rgba(168, 85, 247, 0.4); }
+  .gacha-machine.res-SSR { border-color: #f59e0b; box-shadow: 0 0 32px rgba(245, 158, 11, 0.55), 0 0 12px rgba(251, 191, 36, 0.45); }
+  @keyframes gachaIdleFloat {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-3px); }
+  }
+  @keyframes gachaHaloSpin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+  @keyframes gmEarWiggleL {
+    0%, 100% { transform: rotate(0deg); }
+    50%      { transform: rotate(-11deg); }
+  }
+  @keyframes gmEarWiggleR {
+    0%, 100% { transform: rotate(0deg); }
+    50%      { transform: rotate(11deg); }
+  }
+  @keyframes gmCapBounce {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-3.5px); }
+  }
+  @keyframes gmCapTumble {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    50%      { transform: translate(1.5px, -5px) rotate(14deg); }
+  }
+  @keyframes gmCrankSpin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+  @keyframes gmSparkPop {
+    0%, 100% { transform: scale(0.85); opacity: 0.7; }
+    50%      { transform: scale(1.25); opacity: 1; }
   }
   @keyframes gachaShake {
     0%, 100% { transform: rotate(0deg) scale(1); }
-    15%      { transform: rotate(-16deg) scale(1.08); }
-    32%      { transform: rotate(15deg) scale(1.1); }
-    50%      { transform: rotate(-14deg) scale(1.12); }
-    68%      { transform: rotate(12deg) scale(1.06); }
-    85%      { transform: rotate(-6deg) scale(1.02); }
+    15%      { transform: rotate(-14deg) scale(1.08); }
+    32%      { transform: rotate(13deg) scale(1.1); }
+    50%      { transform: rotate(-12deg) scale(1.12); }
+    68%      { transform: rotate(10deg) scale(1.06); }
+    85%      { transform: rotate(-5deg) scale(1.02); }
   }
+
+  /* ---- 4-Tier Rarity Gacha Result Cards (N / R / SR / SSR) ---- */
   .gacha-result {
+    position: relative;
+    overflow: hidden;
     margin-top: 10px;
-    padding: 10px 12px;
-    border-radius: 8px;
+    padding: 12px 14px;
+    border-radius: 10px;
     background: var(--surface);
     border: 1.5px solid var(--border);
-    min-height: 62px;
+    min-height: 68px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 4px;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    gap: 5px;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
   }
+  .gacha-result > * { position: relative; z-index: 2; }
   .gacha-result.pop { animation: modalPopIn 0.34s cubic-bezier(0.22, 1.35, 0.36, 1); }
-  .gacha-result.tier-SSR {
-    border-color: #F59E0B;
-    box-shadow: 0 0 18px rgba(245, 158, 11, 0.28);
+
+  /* N (普通): Clean calm warm stationery card */
+  .gacha-result.tier-N {
+    background: linear-gradient(180deg, var(--surface), color-mix(in srgb, var(--surface-2) 60%, var(--surface)));
+    border: 1.5px dashed color-mix(in srgb, var(--border) 90%, var(--muted));
+    box-shadow: none;
   }
+
+  /* R (稀有): Crisp sky-blue crystal sheen + diagonal glass sweep */
+  .gacha-result.tier-R {
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.13), rgba(59, 130, 246, 0.05) 52%, rgba(14, 165, 233, 0.14));
+    border-color: #38bdf8;
+    box-shadow: 0 4px 16px rgba(56, 189, 248, 0.2), inset 0 0 14px rgba(125, 211, 252, 0.14);
+  }
+  .gacha-result.tier-R::before {
+    content: "";
+    position: absolute;
+    inset: -30% -60%;
+    background: linear-gradient(115deg, transparent 38%, rgba(186, 230, 253, 0.38) 50%, transparent 62%);
+    animation: gachaFoilSweep 3.8s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* SR (超稀有): Luminous amethyst-magenta holographic foil aura + floating sparkles */
   .gacha-result.tier-SR {
-    border-color: var(--accent);
-    box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 22%, transparent);
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.18), rgba(236, 72, 153, 0.12) 48%, rgba(124, 58, 237, 0.2));
+    border-color: #a855f7;
+    box-shadow:
+      0 6px 22px rgba(168, 85, 247, 0.32),
+      0 0 0 2px rgba(192, 132, 252, 0.14),
+      inset 0 0 20px rgba(216, 180, 254, 0.2);
   }
+  .gacha-result.tier-SR::before {
+    content: "";
+    position: absolute;
+    inset: -40% -70%;
+    background: linear-gradient(115deg, transparent 32%, rgba(233, 213, 255, 0.48) 48%, rgba(244, 114, 182, 0.32) 54%, transparent 66%);
+    animation: gachaFoilSweep 2.6s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .gacha-result.tier-SR::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 14% 24%, rgba(216, 180, 254, 0.34), transparent 36%),
+      radial-gradient(circle at 88% 76%, rgba(244, 114, 182, 0.28), transparent 38%);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* SSR (传世神话): Radiant 24K gold + prismatic sunburst aura + rapid foil sweep */
+  .gacha-result.tier-SSR {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.28), rgba(249, 115, 22, 0.14) 36%, rgba(236, 72, 153, 0.12) 66%, rgba(250, 204, 21, 0.3));
+    border-color: #f59e0b;
+    box-shadow:
+      0 8px 28px rgba(245, 158, 11, 0.44),
+      0 0 0 2.5px rgba(251, 191, 36, 0.28),
+      inset 0 0 26px rgba(254, 240, 138, 0.32);
+    animation: modalPopIn 0.36s cubic-bezier(0.22, 1.35, 0.36, 1), gachaSsrPulse 2.2s ease-in-out infinite 0.36s;
+  }
+  .gacha-result.tier-SSR::before {
+    content: "";
+    position: absolute;
+    inset: -50% -70%;
+    background: linear-gradient(112deg, transparent 30%, rgba(255, 251, 235, 0.72) 46%, rgba(253, 224, 71, 0.5) 52%, rgba(244, 114, 182, 0.34) 58%, transparent 70%);
+    animation: gachaFoilSweep 1.85s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .gacha-result.tier-SSR::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 340px;
+    height: 340px;
+    margin-left: -170px;
+    margin-top: -170px;
+    background: repeating-conic-gradient(from 0deg, rgba(253, 224, 71, 0.14) 0deg 12deg, transparent 12deg 30deg);
+    animation: gachaHaloSpin 18s linear infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .gacha-spark-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .gacha-spark-dot {
+    position: absolute;
+    font-size: 10px;
+    line-height: 1;
+    opacity: 0.78;
+    animation: gmSparkPop 1.6s ease-in-out infinite;
+  }
+  @keyframes gachaFoilSweep {
+    0%   { transform: translateX(-55%); }
+    55%  { transform: translateX(55%); }
+    100% { transform: translateX(55%); }
+  }
+  @keyframes gachaSsrPulse {
+    0%, 100% { box-shadow: 0 8px 26px rgba(245, 158, 11, 0.4), 0 0 0 2px rgba(251, 191, 36, 0.25), inset 0 0 22px rgba(254, 240, 138, 0.28); }
+    50%      { box-shadow: 0 10px 34px rgba(245, 158, 11, 0.6), 0 0 0 3.5px rgba(253, 224, 71, 0.38), inset 0 0 28px rgba(254, 240, 138, 0.42); }
+  }
+
   .gacha-rarity {
     font-family: var(--font-mono);
     font-size: 9.5px;
     font-weight: 800;
-    padding: 1px 7px;
+    padding: 2px 8px;
     border-radius: 999px;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.05em;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
   }
-  .gacha-rarity.SSR { background: linear-gradient(90deg, #F59E0B, #E54826); color: #fff; }
-  .gacha-rarity.SR  { background: var(--active-bg); color: var(--active-fg); border: 1px solid var(--active-border); }
-  .gacha-rarity.R   { background: var(--surface-2); color: var(--muted); border: 1px solid var(--border); }
+  .gacha-rarity.SSR {
+    background: linear-gradient(90deg, #f59e0b, #f97316, #ec4899, #f59e0b);
+    background-size: 220% 100%;
+    color: #fff;
+    box-shadow: 0 2px 10px rgba(245, 158, 11, 0.45);
+    animation: gachaBadgeShimmer 2.6s linear infinite;
+  }
+  .gacha-rarity.SR {
+    background: linear-gradient(90deg, #9333ea, #ec4899);
+    color: #fff;
+    box-shadow: 0 2px 9px rgba(168, 85, 247, 0.38);
+  }
+  .gacha-rarity.R {
+    background: linear-gradient(90deg, #0284c7, #38bdf8);
+    color: #fff;
+    box-shadow: 0 2px 7px rgba(56, 189, 248, 0.3);
+  }
+  .gacha-rarity.N {
+    background: var(--surface-2);
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  @keyframes gachaBadgeShimmer {
+    0%   { background-position: 0% 50%; }
+    100% { background-position: 220% 50%; }
+  }
 
   /* ---- Carrot Coin Wallet Pill, Token->Carrot Exchange Card & KPI Link ---- */
   .carrot-wallet-pill {
@@ -6522,7 +6771,98 @@
       <div class="carrot-mint-foot" id="carrotMintFoot">持久化钱包 · —</div>
     </div>
     <div class="gacha-box">
-      <div class="gacha-machine" id="gachaMachine">🎰</div>
+      <button type="button" class="gacha-machine" id="gachaMachine" title="点我投币扭一颗，试试今日欧气！">
+        <svg viewBox="0 0 112 112" aria-hidden="true">
+          <defs>
+            <radialGradient id="gmDomeGlass" cx="35%" cy="28%" r="72%">
+              <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+              <stop offset="55%" stop-color="#fff7ed" stop-opacity="0.72"/>
+              <stop offset="100%" stop-color="#fed7aa" stop-opacity="0.52"/>
+            </radialGradient>
+            <linearGradient id="gmBody" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#fb7185"/>
+              <stop offset="52%" stop-color="#f97316"/>
+              <stop offset="100%" stop-color="#ea580c"/>
+            </linearGradient>
+            <linearGradient id="gmGold" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#fef08a"/>
+              <stop offset="55%" stop-color="#f59e0b"/>
+              <stop offset="100%" stop-color="#d97706"/>
+            </linearGradient>
+          </defs>
+          <!-- Ambient sparkles around dome -->
+          <path class="gm-spark" d="M16 32 L18 36 L22 38 L18 40 L16 44 L14 40 L10 38 L14 36 Z" fill="#f59e0b"/>
+          <path class="gm-spark" d="M96 28 L97.6 31.4 L101 33 L97.6 34.6 L96 38 L94.4 34.6 L91 33 L94.4 31.4 Z" fill="#a855f7"/>
+          <circle class="gm-spark" cx="19" cy="64" r="2.2" fill="#38bdf8"/>
+          <circle class="gm-spark" cx="95" cy="66" r="2.4" fill="#fb7185"/>
+          <!-- Cute floppy bunny ears perched on top of capsule dome -->
+          <g class="gm-ear-l">
+            <ellipse cx="41" cy="17" rx="7.5" ry="15" transform="rotate(-14 41 17)" fill="#fffdf8" stroke="#9a3412" stroke-width="2.2"/>
+            <ellipse cx="41" cy="18" rx="3.8" ry="9.5" transform="rotate(-14 41 18)" fill="#fda4af"/>
+          </g>
+          <g class="gm-ear-r">
+            <ellipse cx="71" cy="17" rx="7.5" ry="15" transform="rotate(14 71 17)" fill="#fffdf8" stroke="#9a3412" stroke-width="2.2"/>
+            <ellipse cx="71" cy="18" rx="3.8" ry="9.5" transform="rotate(14 71 18)" fill="#fda4af"/>
+          </g>
+          <!-- Machine soft base shadow -->
+          <ellipse cx="56" cy="102" rx="30" ry="5" fill="#9a3412" opacity="0.16"/>
+          <!-- Crystal dome back -->
+          <circle cx="56" cy="46" r="27" fill="url(#gmDomeGlass)" stroke="#9a3412" stroke-width="2.4"/>
+          <!-- Colorful gacha capsules nestled inside the dome (bounce on hover!) -->
+          <g class="gm-cap-1">
+            <circle cx="43" cy="52" r="8.2" fill="#38bdf8" stroke="#0369a1" stroke-width="1.3"/>
+            <path d="M35.2 52 A8.2 8.2 0 0 0 50.8 52 Z" fill="#ffffff"/>
+            <line x1="35" y1="52" x2="51" y2="52" stroke="#0369a1" stroke-width="1"/>
+          </g>
+          <g class="gm-cap-2">
+            <circle cx="68" cy="52" r="8.2" fill="#c084fc" stroke="#6b21a8" stroke-width="1.3"/>
+            <path d="M60.2 52 A8.2 8.2 0 0 0 75.8 52 Z" fill="#fdf4ff"/>
+            <line x1="60" y1="52" x2="76" y2="52" stroke="#6b21a8" stroke-width="1"/>
+          </g>
+          <g class="gm-cap-3">
+            <circle cx="56" cy="40" r="8.8" fill="url(#gmGold)" stroke="#92400e" stroke-width="1.4"/>
+            <path d="M47.4 40 A8.8 8.8 0 0 0 64.6 40 Z" fill="#fffbeb"/>
+            <line x1="47.2" y1="40" x2="64.8" y2="40" stroke="#92400e" stroke-width="1"/>
+            <path d="M56 33.4 L57.2 36.2 L60.2 36.5 L57.9 38.4 L58.6 41.2 L56 39.7 L53.4 41.2 L54.1 38.4 L51.8 36.5 L54.8 36.2 Z" fill="#fffbeb"/>
+          </g>
+          <g class="gm-cap-2">
+            <circle cx="56" cy="55" r="7.5" fill="#fb7185" stroke="#9f1239" stroke-width="1.2"/>
+            <path d="M48.8 55 A7.5 7.5 0 0 0 63.2 55 Z" fill="#fff1f2"/>
+          </g>
+          <g class="gm-cap-1">
+            <circle cx="43" cy="39" r="6.4" fill="#34d399" stroke="#047857" stroke-width="1.2"/>
+            <path d="M36.8 39 A6.4 6.4 0 0 0 49.2 39 Z" fill="#ecfdf5"/>
+          </g>
+          <g class="gm-cap-3">
+            <circle cx="69" cy="40" r="6.2" fill="#f472b6" stroke="#9d174d" stroke-width="1.2"/>
+            <path d="M63 40 A6.2 6.2 0 0 0 75 40 Z" fill="#fdf2f8"/>
+          </g>
+          <!-- Glossy curved glass specular highlight -->
+          <path d="M37 36 A21 21 0 0 1 56 23" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity="0.88"/>
+          <circle cx="34" cy="44" r="2.2" fill="#ffffff" opacity="0.85"/>
+          <!-- Dome gold collar -->
+          <rect x="31" y="61" width="50" height="7" rx="3.5" fill="url(#gmGold)" stroke="#9a3412" stroke-width="2"/>
+          <!-- Plump coral-peach gacha body -->
+          <path d="M33 67 H79 L83 94 Q83 100 76 100 H36 Q29 100 29 94 Z" fill="url(#gmBody)" stroke="#9a3412" stroke-width="2.4" stroke-linejoin="round"/>
+          <!-- Kawaii blush cheeks on machine body -->
+          <ellipse cx="38" cy="79" rx="3.6" ry="2.2" fill="#fecdd3" opacity="0.78"/>
+          <ellipse cx="74" cy="79" rx="3.6" ry="2.2" fill="#fecdd3" opacity="0.78"/>
+          <!-- Glowing carrot-coin slot -->
+          <rect x="70" y="71" width="6.5" height="9.5" rx="2.5" fill="#fef08a" stroke="#9a3412" stroke-width="1.4"/>
+          <line x1="73.25" y1="73.2" x2="73.25" y2="78.2" stroke="#9a3412" stroke-width="1.5" stroke-linecap="round"/>
+          <!-- Central 3D golden twistable crank dial (rotates on hover & spins on pull!) -->
+          <circle cx="56" cy="76" r="10.5" fill="#fffbeb" stroke="#9a3412" stroke-width="2"/>
+          <g class="gm-crank">
+            <rect x="46.5" y="73.2" width="19" height="5.6" rx="2.8" fill="url(#gmGold)" stroke="#9a3412" stroke-width="1.6"/>
+            <circle cx="56" cy="76" r="2.6" fill="#fffbeb" stroke="#9a3412" stroke-width="1.3"/>
+          </g>
+          <!-- Capsule dispenser chute with tiny peeking prize capsule -->
+          <rect x="43" y="88.5" width="26" height="9.5" rx="4.5" fill="#7c2d12" stroke="#9a3412" stroke-width="1.6"/>
+          <circle cx="56" cy="94" r="3.6" fill="#fde047" stroke="#b45309" stroke-width="0.9"/>
+          <!-- Tiny golden crown topper between ears -->
+          <path d="M51 20 L53 14 L56 17 L59 14 L61 20 Z" fill="url(#gmGold)" stroke="#9a3412" stroke-width="1.3" stroke-linejoin="round"/>
+        </svg>
+      </button>
       <div style="font-size:11px;color:var(--muted);margin-bottom:8px">
         当前余额 <strong id="gachaCoins" style="color:var(--accent)">0</strong> 枚萝卜币 · 扭蛋图鉴 <strong id="gachaColl" style="color:var(--ink)">0 / 24</strong>
       </div>
@@ -6543,8 +6883,9 @@
         <span class="dbg-tag">强制出货:</span>
         <button class="dbg-mini-btn on" data-rarity="auto">正常随机</button>
         <button class="dbg-mini-btn" data-rarity="SSR">👑 必SSR</button>
-        <button class="dbg-mini-btn" data-rarity="SR">⚡ 必SR</button>
-        <button class="dbg-mini-btn" data-rarity="R">🍀 必R</button>
+        <button class="dbg-mini-btn" data-rarity="SR">★ 必SR</button>
+        <button class="dbg-mini-btn" data-rarity="R">◆ 必R</button>
+        <button class="dbg-mini-btn" data-rarity="N">📄 必普通</button>
       </div>
     </div>
   </div>
@@ -8687,6 +9028,8 @@ window.addEventListener("resize", () => {
 // Live token arrival micro-celebration (+XXK floating badge + feed orb to bunny)
 let prevLiveTodayTokens = null;
 function triggerLiveTokenFeed(delta) {
+  // Never leak background dashboard token floaters/orbs over an open modal!
+  if (document.querySelector(".evo-backdrop.open")) return;
   const kpiEl = document.getElementById("kpiTokens");
   const bunny = document.getElementById("bunnyMascot");
   const layer = document.getElementById("fxLayer");
@@ -11781,30 +12124,30 @@ document.getElementById("reflexStage").addEventListener("click", () => {
 // GAME 3: 🎰 TOKEN ALCHEMY & GACHA MACHINE
 // ============================================================
 const GACHA_POOL = [
-  { id: 1, r: "SSR", icon: "👑", name: "缓存命中 99.9% 之神", desc: "今日所有长上下文精准命中缓存，老板直呼省钱！" },
-  { id: 2, r: "SSR", icon: "🚀", name: "一次编译通过圣兔", desc: "今天写的大重构居然零报错一次跑通，堪称神迹！" },
-  { id: 3, r: "SSR", icon: "✨", name: "零幻觉暴击兔", desc: "AI 今天思路清晰得像开了天眼，连边界条件都帮你补齐了。" },
-  { id: 4, r: "SSR", icon: "💎", name: "满血配额永动机", desc: "额度条怎么吸都吸不空，今天就是你的高产巅峰日！" },
-  { id: 5, r: "SR",  icon: "⚡", name: "200 tok/s 极速闪电兔", desc: "输出像瀑布一样倾泻，你的眼睛快跟不上滚屏速度了。" },
-  { id: 6, r: "SR",  icon: "🥕", name: "黄金胡萝卜收藏家", desc: "Token 转化效率拉满，每一千字都直击核心需求。" },
-  { id: 7, r: "SR",  icon: "🧠", name: "深度思考冥想兔", desc: "首字多等了三秒，但换来了一套极其优雅的架构设计。" },
-  { id: 8, r: "SR",  icon: "🔥", name: "深夜热修战神", desc: "越到晚上思路越丝滑，高峰时段就在今夜！" },
-  { id: 9, r: "SR",  icon: "🎯", name: "精准 Diff 外科医生", desc: "只改三行代码，干掉困扰一周的隐蔽竞态 Bug。" },
-  { id: 10, r: "SR", icon: "🌈", name: "多模型协同指挥官", desc: "AGY、Codex、OMP 轮番上阵，真正的 AI 军团长。" },
-  { id: 11, r: "SR", icon: "🛡️", name: "零回归守护兔", desc: "测试全绿，CI 一路畅通，晚上可以安心早点合电脑。" },
-  { id: 12, r: "SR", icon: "🧪", name: "神级 Prompt 炼金师", desc: "一句话精准命中模型心坎，免去十轮反复拉扯。" },
-  { id: 13, r: "R",  icon: "☕", name: "冰美式续命兔", desc: "边喝咖啡边看代码自动生长，摸鱼也是生产力。" },
-  { id: 14, r: "R",  icon: "📦", name: "整洁 Commit 强迫症", desc: "提交信息写得像诗一样工整，Reviewer 看完直接 Approve。" },
-  { id: 15, r: "R",  icon: "🔍", name: "日志侦探小兔", desc: "三秒从十万行日志里揪出罪魁祸首，深藏功与名。" },
-  { id: 16, r: "R",  icon: "🎧", name: "心流白噪音兔", desc: "戴上耳机进入心流，抬头一看已经狂飙 200M Token。" },
-  { id: 17, r: "R",  icon: "📝", name: "文档补全好心兔", desc: "顺手把 README 和注释也写明白了，未来的你会感谢现在。" },
-  { id: 18, r: "R",  icon: "🌱", name: "像素级细节控", desc: "把 1px 对齐和圆角强迫症打磨到极致，看着就舒服。" },
-  { id: 19, r: "R",  icon: "🐾", name: "快乐踩键盘兔", desc: "今天主打一个轻松愉悦，写代码像玩游戏一样上头。" },
-  { id: 20, r: "R",  icon: "🌙", name: "夜猫子算力收割者", desc: "月亮不睡你不睡，兔兔陪你一起刷满今天经验条。" },
-  { id: 21, r: "R",  icon: "🔋", name: "节能省流小能手", desc: "精简上下文立大功，小 Token 撬动大功能！" },
-  { id: 22, r: "R",  icon: "🎨", name: "丝滑动效魔法师", desc: "给产品加上灵魂微动效，用起来手感直接翻倍。" },
-  { id: 23, r: "R",  icon: "🍀", name: "防删库幸运兔", desc: "今天 git rebase 零冲突，本地分支干净如初。" },
-  { id: 24, r: "R",  icon: "🎉", name: "提前下班预言兔", desc: "效率太高提前收工，快奖励自己吃顿好的！" },
+  { id: 1,  r: "SSR", icon: "👑", name: "缓存命中 99.9% 之神", desc: "今日所有长上下文精准命中缓存，老板直呼省钱！" },
+  { id: 2,  r: "SSR", icon: "🚀", name: "一次编译通过圣兔", desc: "今天写的大重构居然零报错一次跑通，堪称神迹！" },
+  { id: 3,  r: "SSR", icon: "✨", name: "零幻觉暴击兔", desc: "AI 今天思路清晰得像开了天眼，连边界条件都帮你补齐了。" },
+  { id: 4,  r: "SSR", icon: "💎", name: "满血配额永动机", desc: "额度条怎么吸都吸不空，今天就是你的高产巅峰日！" },
+  { id: 5,  r: "SR",  icon: "⚡", name: "200 tok/s 极速闪电兔", desc: "输出像瀑布一样倾泻，你的眼睛快跟不上滚屏速度了。" },
+  { id: 6,  r: "SR",  icon: "🥕", name: "黄金胡萝卜收藏家", desc: "Token 转化效率拉满，每一千字都直击核心需求。" },
+  { id: 7,  r: "SR",  icon: "🧠", name: "深度思考冥想兔", desc: "首字多等了三秒，但换来了一套极其优雅的架构设计。" },
+  { id: 8,  r: "SR",  icon: "🔥", name: "深夜热修战神", desc: "越到晚上思路越丝滑，高峰时段就在今夜！" },
+  { id: 9,  r: "SR",  icon: "🎯", name: "精准 Diff 外科医生", desc: "只改三行代码，干掉困扰一周的隐蔽竞态 Bug。" },
+  { id: 10, r: "SR",  icon: "🌈", name: "多模型协同指挥官", desc: "AGY、Codex、OMP 轮番上阵，真正的 AI 军团长。" },
+  { id: 11, r: "R",   icon: "🛡️", name: "零回归守护兔", desc: "测试全绿，CI 一路畅通，晚上可以安心早点合电脑。" },
+  { id: 12, r: "R",   icon: "🧪", name: "神级 Prompt 炼金师", desc: "一句话精准命中模型心坎，免去十轮反复拉扯。" },
+  { id: 13, r: "R",   icon: "☕", name: "冰美式续命兔", desc: "边喝咖啡边看代码自动生长，摸鱼也是生产力。" },
+  { id: 14, r: "R",   icon: "📦", name: "整洁 Commit 强迫症", desc: "提交信息写得像诗一样工整，Reviewer 看完直接 Approve。" },
+  { id: 15, r: "R",   icon: "🔍", name: "日志侦探小兔", desc: "三秒从十万行日志里揪出罪魁祸首，深藏功与名。" },
+  { id: 16, r: "R",   icon: "🎧", name: "心流白噪音兔", desc: "戴上耳机进入心流，抬头一看已经狂飙 200M Token。" },
+  { id: 17, r: "R",   icon: "📝", name: "文档补全好心兔", desc: "顺手把 README 和注释也写明白了，未来的你会感谢现在。" },
+  { id: 18, r: "N",   icon: "🌱", name: "像素级细节控", desc: "把 1px 对齐和圆角强迫症打磨到极致，看着就舒服。" },
+  { id: 19, r: "N",   icon: "🐾", name: "快乐踩键盘兔", desc: "今天主打一个轻松愉悦，写代码像玩游戏一样上头。" },
+  { id: 20, r: "N",   icon: "🌙", name: "夜猫子算力收割者", desc: "月亮不睡你不睡，兔兔陪你一起刷满今天经验条。" },
+  { id: 21, r: "N",   icon: "🔋", name: "节能省流小能手", desc: "精简上下文立大功，小 Token 撬动大功能！" },
+  { id: 22, r: "N",   icon: "🎨", name: "丝滑动效魔法师", desc: "给产品加上灵魂微动效，用起来手感直接翻倍。" },
+  { id: 23, r: "N",   icon: "🍀", name: "防删库幸运兔", desc: "今天 git rebase 零冲突，本地分支干净如初。" },
+  { id: 24, r: "N",   icon: "🎉", name: "提前下班预言兔", desc: "效率太高提前收工，快奖励自己吃顿好的！" },
 ];
 
 const DEFAULT_HOME_STATE = {
@@ -12294,20 +12637,20 @@ document.getElementById("gachaPullBtn").addEventListener("click", () => {
 
   gachaBusy = true;
   const mac = document.getElementById("gachaMachine");
-  mac.classList.remove("shaking");
+  mac.classList.remove("shaking", "res-N", "res-R", "res-SR", "res-SSR");
   void mac.offsetWidth;
   mac.classList.add("shaking");
   playSfx("gacha");
   res.className = "gacha-result";
-  res.innerHTML = `<span style="font-size:11px;color:var(--muted)">🎲 扭蛋滚动中… 正在注入今日算力欧气…</span>`;
+  res.innerHTML = `<span style="font-size:11px;color:var(--muted)">🎲 扭蛋机咔哒转动中… 正在注入今日算力欧气…</span>`;
 
   setTimeout(() => {
     gachaBusy = false;
     const roll = Math.random();
     const forced = debugState.active && debugState.gachaForce !== "auto" ? debugState.gachaForce : null;
-    const tier = forced || (roll < 0.18 ? "SSR" : roll < 0.55 ? "SR" : "R");
+    const tier = forced || (roll < 0.15 ? "SSR" : roll < 0.42 ? "SR" : roll < 0.75 ? "R" : "N");
     const pool = GACHA_POOL.filter(x => x.r === tier);
-    const pick = pool[Math.floor(Math.random() * pool.length)];
+    const pick = pool[Math.floor(Math.random() * pool.length)] || GACHA_POOL[0];
 
     const coll = getGachaCollected();
     const isNew = !coll.includes(pick.id);
@@ -12320,27 +12663,44 @@ document.getElementById("gachaPullBtn").addEventListener("click", () => {
       renderGachaMeta();
     }
 
+    const rarityMeta = {
+      SSR: { label: "👑 SSR · 传世", sparks: `<div class="gacha-spark-layer"><span class="gacha-spark-dot" style="left:8%;top:14%;color:#f59e0b">✦</span><span class="gacha-spark-dot" style="right:9%;top:16%;color:#ec4899;animation-delay:.3s">★</span><span class="gacha-spark-dot" style="left:12%;bottom:12%;color:#f97316;animation-delay:.6s">✧</span><span class="gacha-spark-dot" style="right:11%;bottom:14%;color:#eab308;animation-delay:.9s">✦</span></div>` },
+      SR:  { label: "★ SR · 超稀有", sparks: `<div class="gacha-spark-layer"><span class="gacha-spark-dot" style="left:8%;top:16%;color:#a855f7">✦</span><span class="gacha-spark-dot" style="right:9%;top:18%;color:#ec4899;animation-delay:.4s">✦</span><span class="gacha-spark-dot" style="right:13%;bottom:14%;color:#c084fc;animation-delay:.8s">✧</span></div>` },
+      R:   { label: "◆ R · 稀有",    sparks: `<div class="gacha-spark-layer"><span class="gacha-spark-dot" style="left:9%;top:18%;color:#38bdf8">◆</span><span class="gacha-spark-dot" style="right:10%;bottom:16%;color:#0ea5e9;animation-delay:.5s">✦</span></div>` },
+      N:   { label: "普通",          sparks: "" },
+    };
+    const rm = rarityMeta[pick.r] || rarityMeta.N;
+
+    mac.classList.add(`res-${pick.r}`);
     res.className = `gacha-result pop tier-${pick.r}`;
     res.innerHTML = `
+      ${rm.sparks}
       <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center">
         ${debugState.active ? `<span class="pill amber" style="font-size:8.5px;padding:1px 5px">沙盒</span>` : ""}
-        <span class="gacha-rarity ${pick.r}">${pick.r}</span>
+        <span class="gacha-rarity ${pick.r}">${rm.label}</span>
         <strong style="font-size:12.5px;color:var(--ink)">${pick.icon} ${pick.name}</strong>
         ${isNew ? `<span class="pill accent" style="font-size:8.5px;padding:1px 5px">NEW!</span>` : ""}
       </div>
       <div style="font-size:11px;color:var(--muted);line-height:1.45">${pick.desc}</div>
     `;
     if (pick.r === "SSR") {
-      spawnConfettiBurst(mac, 28);
-      activateStardust(5000);
+      spawnConfettiBurst(mac, 32);
+      activateStardust(5200);
       playSfx("ssr");
     } else if (pick.r === "SR") {
-      spawnConfettiBurst(mac, 14);
+      spawnConfettiBurst(mac, 16);
       playSfx("gold");
+    } else if (pick.r === "R") {
+      spawnConfettiBurst(mac, 7);
+      playSfx("cache");
     } else {
       playSfx("token");
     }
   }, 600);
+});
+document.getElementById("gachaMachine")?.addEventListener("click", () => {
+  const btn = document.getElementById("gachaPullBtn");
+  if (btn && !btn.disabled) btn.click();
 });
 
 let dbgLevelUpTimer = null;
@@ -12587,6 +12947,7 @@ let homeUiState = {
   tab: "houses",   // houses | decor | wear
   decorSlot: "bed",
   wearSlot: "hat",
+  invHouseTier: 0, // 0 = all tiers, or 1..10 (my home inventory)
   invDecorSlot: "all", // all | bed | light | floor | garden | pool
   invWearSlot: "all",  // all | hat | outfit | acc | innate
   houseTier: 0,    // 0 = all tiers, or 1..10 (shop only)
@@ -13811,92 +14172,104 @@ function _buildHouseBackdropSvg(houseId, dayPhase = { phase: "day", isNight: fal
         <line x1="416" y1="148" x2="416" y2="208" stroke="#fde68a" stroke-width="1" opacity="0.78"/>
       `;
     }
-    case "atlantis":
+    case "atlantis": {
+      const seaStops = isNight
+        ? ["#042f4b", "#0369a1", "#06283d"]
+        : (isDusk
+          ? ["#1e3a5f", "#0e7490", "#b45309"]
+          : (isDawn
+            ? ["#0284c7", "#38bdf8", "#fbcfe8"]
+            : ["#0284c7", "#38bdf8", "#7dd3fc"]));
+      const flrSea = isNight ? "#103d52" : (isDusk ? "#1e4b63" : "#bae6fd");
       return `
         <defs>
-          <linearGradient id="hSea" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#042f4b"/><stop offset="48%" stop-color="#0369a1"/><stop offset="100%" stop-color="#06283d"/>
+          <linearGradient id="hSea_${phase}" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="${seaStops[0]}"/><stop offset="48%" stop-color="${seaStops[1]}"/><stop offset="100%" stop-color="${seaStops[2]}"/>
           </linearGradient>
-          <linearGradient id="hSeaRay" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#bae6fd" stop-opacity="0.34"/><stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
+          <linearGradient id="hSeaRay_${phase}" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="${isNight ? "#bae6fd" : "#ffffff"}" stop-opacity="${isNight ? "0.28" : "0.52"}"/><stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
           </linearGradient>
         </defs>
-        <rect width="420" height="208" fill="url(#hSea)"/>
+        <rect width="420" height="208" fill="url(#hSea_${phase})"/>
         <!-- Volumetric swaying ocean sunbeams -->
         <g class="h-aurora">
-          <polygon points="82,0 134,0 80,152 34,152" fill="url(#hSeaRay)"/>
-          <polygon points="222,0 292,0 238,152 178,152" fill="url(#hSeaRay)"/>
-          <polygon points="334,0 374,0 338,152 302,152" fill="url(#hSeaRay)" opacity="0.7"/>
+          <polygon points="82,0 134,0 80,152 34,152" fill="url(#hSeaRay_${phase})"/>
+          <polygon points="222,0 292,0 238,152 178,152" fill="url(#hSeaRay_${phase})"/>
+          <polygon points="334,0 374,0 338,152 302,152" fill="url(#hSeaRay_${phase})" opacity="0.72"/>
         </g>
         <!-- Gliding deep-sea manta ray silhouette -->
-        <path d="M124 62 Q144 50 166 58 Q150 66 146 74 Q140 65 124 62 Z" fill="#0c4a6e" opacity="0.6" class="h-drift-slow"/>
+        <path d="M124 62 Q144 50 166 58 Q150 66 146 74 Q140 65 124 62 Z" fill="${isNight ? "#0c4a6e" : "#0369a1"}" opacity="0.62" class="h-drift-slow"/>
         <!-- Faceted grand crystal temple dome arches -->
-        <path d="M26 150 L26 74 A184 86 0 0 1 394 74 L394 150" fill="none" stroke="#7dd3fc" stroke-width="2.4" opacity="0.62"/>
-        <path d="M52 150 L52 80 A158 72 0 0 1 368 80 L368 150" fill="none" stroke="#bae6fd" stroke-width="1.2" opacity="0.42"/>
-        <path d="M210 12 L124 148 M210 12 L296 148" stroke="#7dd3fc" stroke-width="0.9" opacity="0.24"/>
+        <path d="M26 150 L26 74 A184 86 0 0 1 394 74 L394 150" fill="none" stroke="${isNight ? "#7dd3fc" : "#ffffff"}" stroke-width="2.4" opacity="0.7"/>
+        <path d="M52 150 L52 80 A158 72 0 0 1 368 80 L368 150" fill="none" stroke="#e0f2fe" stroke-width="1.2" opacity="0.5"/>
+        <path d="M210 12 L124 148 M210 12 L296 148" stroke="#e0f2fe" stroke-width="0.9" opacity="0.28"/>
         <!-- Fluted pearl-marble columns with 24K gold capitals -->
         <g>
-          <rect x="28" y="54" width="18" height="94" rx="2" fill="url(#hsIvory)" opacity="0.82"/>
+          <rect x="28" y="54" width="18" height="94" rx="2" fill="url(#hsIvory)" opacity="${isNight ? "0.82" : "0.94"}"/>
           <line x1="33" y1="58" x2="33" y2="144" stroke="#94a3b8" stroke-width="0.9"/><line x1="41" y1="58" x2="41" y2="144" stroke="#94a3b8" stroke-width="0.9"/>
           <rect x="24" y="49" width="26" height="6" rx="2" fill="url(#hsGoldH)"/>
-          <rect x="374" y="54" width="18" height="94" rx="2" fill="url(#hsIvory)" opacity="0.82"/>
+          <rect x="374" y="54" width="18" height="94" rx="2" fill="url(#hsIvory)" opacity="${isNight ? "0.82" : "0.94"}"/>
           <line x1="379" y1="58" x2="379" y2="144" stroke="#94a3b8" stroke-width="0.9"/><line x1="387" y1="58" x2="387" y2="144" stroke="#94a3b8" stroke-width="0.9"/>
           <rect x="370" y="49" width="26" height="6" rx="2" fill="url(#hsGoldH)"/>
         </g>
         <!-- Bioluminescent translucent jellyfish -->
-        <g class="h-float" filter="url(#hsGlowSm)">
-          <path d="M318 58 A14 11 0 0 1 346 58 Q332 62 318 58 Z" fill="#f472b6" opacity="0.78"/>
-          <path d="M322 57 A10 7 0 0 1 342 57" fill="none" stroke="#fdf2f8" stroke-width="1.2" opacity="0.8"/>
+        <g class="h-float" ${isNight ? 'filter="url(#hsGlowSm)"' : ""}>
+          <path d="M318 58 A14 11 0 0 1 346 58 Q332 62 318 58 Z" fill="#f472b6" opacity="${isNight ? "0.85" : "0.72"}"/>
+          <path d="M322 57 A10 7 0 0 1 342 57" fill="none" stroke="#fdf2f8" stroke-width="1.2" opacity="0.82"/>
           <path d="M324 59 Q320 68 325 77 M332 60 Q334 70 331 82 M340 59 Q344 68 339 77" stroke="#fbcfe8" stroke-width="1.1" fill="none"/>
         </g>
         <!-- Pearlescent rising bubbles -->
-        <circle cx="88" cy="72" r="4.2" fill="none" stroke="#bae6fd" stroke-width="1.2" class="h-steam"/>
-        <circle cx="100" cy="54" r="2.6" fill="none" stroke="#e0f2fe" stroke-width="1" class="h-steam-d1"/>
-        <circle cx="304" cy="96" r="3.0" fill="none" stroke="#7dd3fc" stroke-width="1" class="h-steam"/>
+        <circle cx="88" cy="72" r="4.2" fill="none" stroke="#e0f2fe" stroke-width="1.2" class="h-steam"/>
+        <circle cx="100" cy="54" r="2.6" fill="none" stroke="#ffffff" stroke-width="1" class="h-steam-d1"/>
+        <circle cx="304" cy="96" r="3.0" fill="none" stroke="#e0f2fe" stroke-width="1" class="h-steam"/>
         <!-- Pearl temple floor -->
-        <rect x="0" y="148" width="420" height="60" fill="#103d52"/>
-        <line x1="0" y1="148" x2="420" y2="148" stroke="#38bdf8" stroke-width="2" opacity="0.78"/>
+        <rect x="0" y="148" width="420" height="60" fill="${flrSea}"/>
+        <line x1="0" y1="148" x2="420" y2="148" stroke="${isNight ? "#38bdf8" : "#ffffff"}" stroke-width="2" opacity="0.82"/>
       `;
-    case "rocket":
+    }
+    case "rocket": {
+      const hullC = isNight ? ["#334155", "#1e293b", "#0f172a"] : (isDusk ? ["#64748b", "#475569", "#334155"] : ["#f1f5f9", "#e2e8f0", "#cbd5e1"]);
+      const innerHull = isNight ? "#131c2e" : (isDusk ? "#2c374e" : "#f8fafc");
+      const deckC = isNight ? "#0c1322" : (isDusk ? "#263147" : "#cbd5e1");
+      const spaceC = isNight ? ["#020617", "#1e1b4b", "#090d1f"] : (isDusk ? ["#1e1b4b", "#7c2d6e", "#f97316"] : ["#0284c7", "#38bdf8", "#fef3c7"]);
       return `
         <defs>
-          <linearGradient id="hSpace" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#020617"/><stop offset="52%" stop-color="#1e1b4b"/><stop offset="100%" stop-color="#090d1f"/>
+          <linearGradient id="hSpace_${phase}" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="${spaceC[0]}"/><stop offset="52%" stop-color="${spaceC[1]}"/><stop offset="100%" stop-color="${spaceC[2]}"/>
           </linearGradient>
-          <linearGradient id="hHull" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#334155"/><stop offset="50%" stop-color="#1e293b"/><stop offset="100%" stop-color="#0f172a"/>
+          <linearGradient id="hHull_${phase}" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="${hullC[0]}"/><stop offset="50%" stop-color="${hullC[1]}"/><stop offset="100%" stop-color="${hullC[2]}"/>
           </linearGradient>
-          <linearGradient id="hSaturn" x1="0" y1="0" x2="1" y2="1">
+          <linearGradient id="hSaturn_${phase}" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stop-color="#fde68a"/><stop offset="55%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#92400e"/>
           </linearGradient>
         </defs>
-        <rect width="420" height="208" fill="url(#hHull)"/>
+        <rect width="420" height="208" fill="url(#hHull_${phase})"/>
         <!-- Curved aerospace observatory ribs + recessed telemetry LED strips -->
-        <rect x="20" y="14" width="380" height="130" rx="18" fill="#131c2e" stroke="#64748b" stroke-width="2.2"/>
-        <path d="M52 14 V144 M176 14 V144" stroke="#334155" stroke-width="1.4" opacity="0.65"/>
-        <line x1="42" y1="22" x2="162" y2="22" stroke="#38bdf8" stroke-width="1.6" opacity="0.7" filter="url(#hsGlowSm)"/>
-        <line x1="258" y1="22" x2="378" y2="22" stroke="#f59e0b" stroke-width="1.6" opacity="0.7" filter="url(#hsGlowSm)"/>
+        <rect x="20" y="14" width="380" height="130" rx="18" fill="${innerHull}" stroke="${isNight ? "#64748b" : "#94a3b8"}" stroke-width="2.2"/>
+        <path d="M52 14 V144 M176 14 V144" stroke="${isNight ? "#334155" : "#cbd5e1"}" stroke-width="1.4" opacity="0.72"/>
+        <line x1="42" y1="22" x2="162" y2="22" stroke="#38bdf8" stroke-width="1.6" opacity="${isNight ? "0.8" : "0.55"}" ${isNight ? 'filter="url(#hsGlowSm)"' : ""}/>
+        <line x1="258" y1="22" x2="378" y2="22" stroke="#f59e0b" stroke-width="1.6" opacity="${isNight ? "0.8" : "0.55"}" ${isNight ? 'filter="url(#hsGlowSm)"' : ""}/>
         <!-- Grand beveled panoramic space observation dome -->
-        <circle cx="304" cy="78" r="51" fill="#475569" stroke="#94a3b8" stroke-width="2.2"/>
-        <circle cx="304" cy="78" r="46" fill="url(#hSpace)" stroke="#38bdf8" stroke-width="1.3"/>
-        <!-- Deep space nebula & twinkling stars inside porthole -->
+        <circle cx="304" cy="78" r="51" fill="${isNight ? "#475569" : "#94a3b8"}" stroke="${isNight ? "#94a3b8" : "#cbd5e1"}" stroke-width="2.2"/>
+        <circle cx="304" cy="78" r="46" fill="url(#hSpace_${phase})" stroke="#38bdf8" stroke-width="1.3"/>
+        ${isNight ? `
         <ellipse cx="292" cy="64" rx="28" ry="12" transform="rotate(-24 292 64)" fill="#7c3aed" opacity="0.26" filter="url(#hsGlowSm)"/>
         <circle cx="278" cy="52" r="1.4" fill="#fff" class="h-twinkle"/>
         <circle cx="332" cy="50" r="1.6" fill="#fde047" class="h-twinkle-d1"/>
         <circle cx="274" cy="94" r="1.2" fill="#38bdf8" class="h-twinkle-d2"/>
-        <circle cx="334" cy="100" r="1.1" fill="#f472b6" class="h-twinkle"/>
+        <circle cx="334" cy="100" r="1.1" fill="#f472b6" class="h-twinkle"/>` : `<circle cx="282" cy="54" r="13" fill="#fffbeb" opacity="0.9" filter="url(#hsGlowMd)"/>`}
         <!-- Detailed banded Saturn with translucent double rings -->
         <g class="h-float-slow">
-          <ellipse cx="308" cy="79" rx="31" ry="7.4" transform="rotate(-18 308 79)" fill="none" stroke="#fde68a" stroke-width="2.8" opacity="0.75"/>
-          <ellipse cx="308" cy="79" rx="25" ry="5.6" transform="rotate(-18 308 79)" fill="none" stroke="#fbbf24" stroke-width="1.1" opacity="0.85"/>
-          <circle cx="308" cy="79" r="15.5" fill="url(#hSaturn)"/>
+          <ellipse cx="308" cy="79" rx="31" ry="7.4" transform="rotate(-18 308 79)" fill="none" stroke="#fde68a" stroke-width="2.8" opacity="0.78"/>
+          <ellipse cx="308" cy="79" rx="25" ry="5.6" transform="rotate(-18 308 79)" fill="none" stroke="#fbbf24" stroke-width="1.1" opacity="0.88"/>
+          <circle cx="308" cy="79" r="15.5" fill="url(#hSaturn_${phase})"/>
           <path d="M294 74 Q308 78 322 73" stroke="#b45309" stroke-width="1.6" fill="none" opacity="0.55"/>
           <path d="M294 82 Q308 86 322 81" stroke="#fef3c7" stroke-width="1.3" fill="none" opacity="0.45"/>
-          <!-- Front ring arc crossing over planet -->
           <path d="M279 88 A31 7.4 -18 0 0 337 70" fill="none" stroke="#fef3c7" stroke-width="2.4" opacity="0.9"/>
         </g>
         <!-- Illuminated holographic flight telemetry console -->
-        <rect x="42" y="42" width="112" height="58" rx="7" fill="#081222" stroke="#38bdf8" stroke-width="1.4"/>
+        <rect x="42" y="42" width="112" height="58" rx="7" fill="${isNight ? "#081222" : "#1e293b"}" stroke="#38bdf8" stroke-width="1.4"/>
         <circle cx="56" cy="54" r="2.8" fill="#22c55e" class="h-twinkle"/>
         <circle cx="67" cy="54" r="2.8" fill="#f59e0b"/>
         <circle cx="78" cy="54" r="2.8" fill="#38bdf8"/>
@@ -13904,167 +14277,143 @@ function _buildHouseBackdropSvg(houseId, dayPhase = { phase: "day", isNight: fal
         <rect x="52" y="64" width="92" height="24" rx="3" fill="#062233"/>
         <path d="M56 78 L68 72 L78 80 L90 68 L104 77 L118 70 L130 75 L140 72" fill="none" stroke="#22d3ee" stroke-width="1.6" stroke-dasharray="6 3" class="h-flow"/>
         <!-- Metallic cabin deck -->
-        <rect x="0" y="148" width="420" height="60" fill="#0c1322"/>
-        <line x1="0" y1="148" x2="420" y2="148" stroke="#38bdf8" stroke-width="2" opacity="0.78"/>
+        <rect x="0" y="148" width="420" height="60" fill="${deckC}"/>
+        <line x1="0" y1="148" x2="420" y2="148" stroke="#38bdf8" stroke-width="2" opacity="0.82"/>
       `;
-    case "wormhole":
+    }
+    case "wormhole": {
+      const wBg = isNight ? ["#311068", "#140b2e", "#03020a"] : (isDusk ? ["#6d28d9", "#9d174d", "#1e1b4b"] : ["#fffbeb", "#bae6fd", "#e0f2fe"]);
+      const wFlr = isNight ? ["#180d36", "#0d0720", "#04020c"] : (isDusk ? ["#3b1d5e", "#22103b", "#110821"] : ["#e0f2fe", "#cbd5e1", "#e2e8f0"]);
+      const wBridge = isNight ? ["#3b1d7a", "#1e1042", "#090418"] : (isDusk ? ["#7c3aed", "#4c1d95", "#2e1065"] : ["#ffffff", "#bae6fd", "#e0f2fe"]);
+      const coreFill = isNight ? "url(#hsBlackHole)" : (isDusk ? "#1e1042" : "#ffffff");
       return `
         <defs>
-          <radialGradient id="hWorm" cx="50%" cy="38%" r="64%">
-            <stop offset="0%" stop-color="#311068"/>
-            <stop offset="44%" stop-color="#140b2e"/>
-            <stop offset="100%" stop-color="#03020a"/>
+          <radialGradient id="hWorm_${phase}" cx="50%" cy="38%" r="64%">
+            <stop offset="0%" stop-color="${wBg[0]}"/><stop offset="44%" stop-color="${wBg[1]}"/><stop offset="100%" stop-color="${wBg[2]}"/>
           </radialGradient>
-          <radialGradient id="hWormLensing" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stop-color="#fef08a" stop-opacity="0.45"/>
-            <stop offset="42%" stop-color="#a855f7" stop-opacity="0.28"/>
-            <stop offset="100%" stop-color="#03020a" stop-opacity="0"/>
+          <radialGradient id="hWormLensing_${phase}" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#fef08a" stop-opacity="${isNight ? "0.45" : "0.62"}"/>
+            <stop offset="42%" stop-color="${isNight ? "#a855f7" : "#38bdf8"}" stop-opacity="0.28"/>
+            <stop offset="100%" stop-color="${wBg[2]}" stop-opacity="0"/>
           </radialGradient>
-          <linearGradient id="hWormFloor" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#180d36"/>
-            <stop offset="42%" stop-color="#0d0720"/>
-            <stop offset="100%" stop-color="#04020c"/>
+          <linearGradient id="hWormFloor_${phase}" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="${wFlr[0]}"/><stop offset="42%" stop-color="${wFlr[1]}"/><stop offset="100%" stop-color="${wFlr[2]}"/>
           </linearGradient>
-          <radialGradient id="hWormRefl" cx="50%" cy="0%" r="68%">
-            <stop offset="0%" stop-color="#fbbf24" stop-opacity="0.26"/>
-            <stop offset="42%" stop-color="#a855f7" stop-opacity="0.22"/>
-            <stop offset="100%" stop-color="#04020c" stop-opacity="0"/>
-          </radialGradient>
-          <linearGradient id="hWormBridge" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#3b1d7a" stop-opacity="0.58"/>
-            <stop offset="55%" stop-color="#1e1042" stop-opacity="0.42"/>
-            <stop offset="100%" stop-color="#090418" stop-opacity="0.18"/>
+          <linearGradient id="hWormBridge_${phase}" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="${wBridge[0]}" stop-opacity="0.68"/>
+            <stop offset="55%" stop-color="${wBridge[1]}" stop-opacity="0.48"/>
+            <stop offset="100%" stop-color="${wBridge[2]}" stop-opacity="0.24"/>
           </linearGradient>
-          <linearGradient id="hWormRail" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#fef08a" stop-opacity="0.9"/>
-            <stop offset="45%" stop-color="#c084fc" stop-opacity="0.72"/>
-            <stop offset="100%" stop-color="#22d3ee" stop-opacity="0.25"/>
+          <linearGradient id="hWormRail_${phase}" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.92"/>
+            <stop offset="45%" stop-color="#a855f7" stop-opacity="0.72"/>
+            <stop offset="100%" stop-color="#0284c7" stop-opacity="0.35"/>
           </linearGradient>
         </defs>
-        <rect width="420" height="208" fill="url(#hWorm)"/>
-        <!-- Subtle cosmic nebula wisps & starfield -->
+        <rect width="420" height="208" fill="url(#hWorm_${phase})"/>
+        ${isNight ? `
         <ellipse cx="144" cy="48" rx="88" ry="22" transform="rotate(-14 144 48)" fill="#7c3aed" opacity="0.14"/>
         <ellipse cx="294" cy="52" rx="82" ry="20" transform="rotate(12 294 52)" fill="#06b6d4" opacity="0.1"/>
         <circle cx="88" cy="28" r="1.5" fill="#fde047" class="h-twinkle"/>
         <circle cx="332" cy="24" r="1.6" fill="#22d3ee" class="h-twinkle-d1"/>
         <circle cx="142" cy="20" r="1.2" fill="#f472b6" class="h-twinkle-d2"/>
-        <circle cx="282" cy="30" r="1.3" fill="#fff" class="h-twinkle"/>
-        <circle cx="104" cy="116" r="1.1" fill="#c084fc" class="h-twinkle-d1"/>
-        <circle cx="320" cy="114" r="1.2" fill="#fde047" class="h-twinkle-d2"/>
-        <!-- Gargantua Relativistic Wormhole (non-clipping flowing orbital accretion rings) -->
-        <ellipse cx="210" cy="74" rx="124" ry="44" fill="url(#hWormLensing)"/>
-        <ellipse cx="210" cy="74" rx="116" ry="38" fill="none" stroke="#7c3aed" stroke-width="2.4" opacity="0.34"/>
+        <circle cx="282" cy="30" r="1.3" fill="#fff" class="h-twinkle"/>` : `<polygon points="120,0 300,0 360,148 60,148" fill="url(#hsSunbeam)" opacity="0.42"/>`}
+        <!-- Relativistic Wormhole / White-Hole Portal -->
+        <ellipse cx="210" cy="74" rx="124" ry="44" fill="url(#hWormLensing_${phase})"/>
+        <ellipse cx="210" cy="74" rx="116" ry="38" fill="none" stroke="${isNight ? "#7c3aed" : "#0284c7"}" stroke-width="2.4" opacity="0.36"/>
         <ellipse cx="210" cy="74" rx="110" ry="34" fill="none" stroke="#a855f7" stroke-width="1.6" stroke-dasharray="22 10 8 10" opacity="0.82" class="h-flow"/>
-        <ellipse cx="210" cy="74" rx="88" ry="25" fill="none" stroke="#22d3ee" stroke-width="1.5" stroke-dasharray="16 8 6 8" opacity="0.82" class="h-flow-rev"/>
-        <ellipse cx="210" cy="74" rx="64" ry="17" fill="none" stroke="#fbbf24" stroke-width="1.8" stroke-dasharray="20 6" opacity="0.92" class="h-flow"/>
-        <!-- Upper & lower gravitational-lensed golden photon arcs -->
-        <path d="M180 72 A30 28 0 0 1 240 72" fill="none" stroke="#fde68a" stroke-width="2.2" opacity="0.72" filter="url(#hsGlowSm)"/>
-        <path d="M184 78 A26 22 0 0 0 236 78" fill="none" stroke="#f59e0b" stroke-width="1.8" opacity="0.62" filter="url(#hsGlowSm)"/>
-        <!-- Event horizon singularity & blazing equatorial accretion band -->
-        <circle cx="210" cy="74" r="21" fill="url(#hsBlackHole)" filter="url(#hsGlowSm)"/>
-        <ellipse cx="210" cy="74" rx="50" ry="7.5" fill="none" stroke="#fef08a" stroke-width="2.2" opacity="0.92" filter="url(#hsGlowSm)"/>
-        <path d="M161 75 A50 7.5 0 0 0 259 75" fill="none" stroke="#ffffff" stroke-width="1.1" opacity="0.85"/>
-        <!-- Twin levitating faceted obsidian-gold crystal obelisks with base aura -->
-        <ellipse cx="52" cy="134" rx="16" ry="3.4" fill="#22d3ee" opacity="0.22" class="h-pulse"/>
+        <ellipse cx="210" cy="74" rx="88" ry="25" fill="none" stroke="#0ea5e9" stroke-width="1.5" stroke-dasharray="16 8 6 8" opacity="0.82" class="h-flow-rev"/>
+        <ellipse cx="210" cy="74" rx="64" ry="17" fill="none" stroke="#f59e0b" stroke-width="1.8" stroke-dasharray="20 6" opacity="0.92" class="h-flow"/>
+        <circle cx="210" cy="74" r="21" fill="${coreFill}" stroke="${isNight ? "#a855f7" : "#f59e0b"}" stroke-width="1.6" filter="url(#hsGlowSm)"/>
+        <ellipse cx="210" cy="74" rx="50" ry="7.5" fill="none" stroke="${isNight ? "#fef08a" : "#f59e0b"}" stroke-width="2.2" opacity="0.92" filter="url(#hsGlowSm)"/>
+        <!-- Twin levitating faceted crystal obelisks -->
         <g class="h-float">
-          <polygon points="52,32 66,68 52,108 38,68" fill="url(#hsObsidian)" stroke="#22d3ee" stroke-width="1.3"/>
+          <polygon points="52,32 66,68 52,108 38,68" fill="${isNight ? "url(#hsObsidian)" : "url(#hsIvory)"}" stroke="#0ea5e9" stroke-width="1.3"/>
           <polygon points="52,32 66,68 52,74" fill="#38bdf8" opacity="0.34"/>
-          <line x1="52" y1="36" x2="52" y2="102" stroke="#fef08a" stroke-width="0.9" opacity="0.78"/>
         </g>
-        <ellipse cx="368" cy="134" rx="16" ry="3.4" fill="#f472b6" opacity="0.22" class="h-pulse"/>
         <g class="h-float-slow">
-          <polygon points="368,36 382,72 368,112 354,72" fill="url(#hsObsidian)" stroke="#f472b6" stroke-width="1.3"/>
+          <polygon points="368,36 382,72 368,112 354,72" fill="${isNight ? "url(#hsObsidian)" : "url(#hsIvory)"}" stroke="#ec4899" stroke-width="1.3"/>
           <polygon points="368,36 382,72 368,78" fill="#ec4899" opacity="0.34"/>
-          <line x1="368" y1="40" x2="368" y2="106" stroke="#fef08a" stroke-width="0.9" opacity="0.78"/>
         </g>
-        <!-- Perspective Obsidian-Glass Quantum Light-Bridge Deck -->
-        <polygon points="0,148 420,148 420,208 0,208" fill="url(#hWormFloor)"/>
-        <!-- Central mirror reflection of the golden-violet wormhole -->
-        <ellipse cx="210" cy="150" rx="126" ry="44" fill="url(#hWormRefl)"/>
-        <!-- Architectural 1-point perspective light-bridge walkway -->
-        <polygon points="134,148 286,148 358,208 62,208" fill="url(#hWormBridge)"/>
-        <!-- Perspective chamfered rails & outer deck ribs -->
-        <line x1="134" y1="148" x2="62" y2="208" stroke="url(#hWormRail)" stroke-width="1.5"/>
-        <line x1="286" y1="148" x2="358" y2="208" stroke="url(#hWormRail)" stroke-width="1.5"/>
-        <line x1="78" y1="148" x2="0" y2="188" stroke="#7c3aed" stroke-width="0.9" opacity="0.38"/>
-        <line x1="342" y1="148" x2="420" y2="188" stroke="#7c3aed" stroke-width="0.9" opacity="0.38"/>
-        <!-- Subtle recessed transverse light inlays on the bridge -->
-        <line x1="115" y1="164" x2="305" y2="164" stroke="#a855f7" stroke-width="0.85" opacity="0.34"/>
-        <line x1="88" y1="186" x2="332" y2="186" stroke="#22d3ee" stroke-width="0.85" opacity="0.28"/>
-        <!-- Tiny luminous quantum diamond markers along bridge center -->
-        <polygon points="210,154 214,157.5 210,161 206,157.5" fill="#fef08a" opacity="0.58" class="h-twinkle"/>
-        <polygon points="210,171 215,175.5 210,180 205,175.5" fill="#c084fc" opacity="0.48" class="h-twinkle-d1"/>
-        <polygon points="210,192 216,197 210,202 204,197" fill="#38bdf8" opacity="0.38" class="h-twinkle-d2"/>
-        <!-- Crisp glowing horizon balustrade -->
-        <line x1="0" y1="148" x2="420" y2="148" stroke="#c084fc" stroke-width="2" filter="url(#hsGlowSm)"/>
-        <line x1="128" y1="148" x2="292" y2="148" stroke="#fef08a" stroke-width="1.2" opacity="0.85"/>
+        <!-- Quantum Light-Bridge Deck -->
+        <polygon points="0,148 420,148 420,208 0,208" fill="url(#hWormFloor_${phase})"/>
+        <polygon points="134,148 286,148 358,208 62,208" fill="url(#hWormBridge_${phase})"/>
+        <line x1="134" y1="148" x2="62" y2="208" stroke="url(#hWormRail_${phase})" stroke-width="1.5"/>
+        <line x1="286" y1="148" x2="358" y2="208" stroke="url(#hWormRail_${phase})" stroke-width="1.5"/>
+        <line x1="115" y1="164" x2="305" y2="164" stroke="#a855f7" stroke-width="0.85" opacity="0.36"/>
+        <line x1="88" y1="186" x2="332" y2="186" stroke="#0ea5e9" stroke-width="0.85" opacity="0.32"/>
+        <line x1="0" y1="148" x2="420" y2="148" stroke="${isNight ? "#c084fc" : "#0284c7"}" stroke-width="2" filter="url(#hsGlowSm)"/>
+        <line x1="128" y1="148" x2="292" y2="148" stroke="#f59e0b" stroke-width="1.3" opacity="0.85"/>
       `;
-    case "secret_palace":
+    }
+    case "secret_palace": {
+      const pSky = isNight
+        ? ["#070b1e", "#1e1b4b", "#312e81", "#4c1d95"]
+        : (isDusk
+          ? ["#1e1538", "#4c2656", "#b4533c", "#fde68a"]
+          : (isDawn
+            ? ["#38bdf8", "#bae6fd", "#fbcfe8", "#fef3c7"]
+            : ["#0284c7", "#7dd3fc", "#e0f2fe", "#fffbeb"]));
+      const clC = isNight ? ["#475569", "#334155", "#4c1d95"] : (isDusk ? ["#fed7aa", "#fef3c7", "#fbcfe8"] : ["#ffffff", "#fffbeb", "#f0f9ff"]);
+      const palFlr = isNight ? "#cbd5e1" : "url(#hsIvory)";
       return `
         <defs>
-          <linearGradient id="hPalSky" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#1e1538"/>
-            <stop offset="42%" stop-color="#4c2656"/>
-            <stop offset="74%" stop-color="#b4533c"/>
-            <stop offset="100%" stop-color="#fde68a"/>
+          <linearGradient id="hPalSky_${phase}" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="${pSky[0]}"/><stop offset="42%" stop-color="${pSky[1]}"/><stop offset="74%" stop-color="${pSky[2]}"/><stop offset="100%" stop-color="${pSky[3]}"/>
           </linearGradient>
-          <radialGradient id="hPalRose" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stop-color="#FFFBEB"/>
-            <stop offset="45%" stop-color="#FDE047"/>
-            <stop offset="78%" stop-color="#F97316"/>
-            <stop offset="100%" stop-color="#7C3AED"/>
+          <radialGradient id="hPalRose_${phase}" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#FFFBEB"/><stop offset="45%" stop-color="#FDE047"/><stop offset="78%" stop-color="#F97316"/><stop offset="100%" stop-color="${isNight ? "#7C3AED" : "#0284C7"}"/>
           </radialGradient>
         </defs>
-        <rect width="420" height="208" fill="url(#hPalSky)"/>
-        <!-- Radiant sunlit twilight clouds below horizon -->
-        <g opacity="0.58" class="h-drift-slow">
-          <ellipse cx="74" cy="134" rx="76" ry="22" fill="#fed7aa"/>
-          <ellipse cx="210" cy="142" rx="112" ry="24" fill="#fef3c7"/>
-          <ellipse cx="352" cy="132" rx="78" ry="22" fill="#fbcfe8"/>
+        <rect width="420" height="208" fill="url(#hPalSky_${phase})"/>
+        ${isNight ? `<circle cx="348" cy="36" r="13" fill="#fef08a" opacity="0.92"/><circle cx="354" cy="32" r="11" fill="${pSky[0]}"/>` : ""}
+        <!-- Radiant clouds below horizon -->
+        <g opacity="${isNight ? "0.45" : "0.86"}" class="h-drift-slow">
+          <ellipse cx="74" cy="134" rx="76" ry="22" fill="${clC[0]}"/>
+          <ellipse cx="210" cy="142" rx="112" ry="24" fill="${clC[1]}"/>
+          <ellipse cx="352" cy="132" rx="78" ry="22" fill="${clC[2]}"/>
         </g>
         <!-- Rotating 24K celestial armillary rings in the sky -->
-        <g class="h-spin-slow" opacity="0.72">
-          <circle cx="210" cy="76" r="64" fill="none" stroke="#fde047" stroke-width="1.3" stroke-dasharray="12 6"/>
-          <ellipse cx="210" cy="76" rx="84" ry="28" fill="none" stroke="#fef08a" stroke-width="1.2" opacity="0.75"/>
+        <g class="h-spin-slow" opacity="0.78">
+          <circle cx="210" cy="76" r="64" fill="none" stroke="${isNight ? "#fde047" : "#f59e0b"}" stroke-width="1.3" stroke-dasharray="12 6"/>
+          <ellipse cx="210" cy="76" rx="84" ry="28" fill="none" stroke="${isNight ? "#fef08a" : "#ffffff"}" stroke-width="1.2" opacity="0.78"/>
         </g>
         <g class="h-spin-rev" opacity="0.78">
           <circle cx="210" cy="76" r="46" fill="none" stroke="#f59e0b" stroke-width="1.4" stroke-dasharray="8 5"/>
         </g>
         <!-- Grand Stained-Glass Sunburst Carrot Rose Window -->
-        <circle cx="210" cy="76" r="34" fill="url(#hPalRose)" opacity="0.28" filter="url(#hsGlowLg)"/>
-        <circle cx="210" cy="76" r="28" fill="#1e1333" stroke="url(#hsGoldH)" stroke-width="2.4"/>
-        <circle cx="210" cy="76" r="22" fill="url(#hPalRose)" opacity="0.88"/>
+        <circle cx="210" cy="76" r="34" fill="url(#hPalRose_${phase})" opacity="0.32" filter="url(#hsGlowLg)"/>
+        <circle cx="210" cy="76" r="28" fill="${isNight ? "#1e1333" : "#fffbeb"}" stroke="url(#hsGoldH)" stroke-width="2.4"/>
+        <circle cx="210" cy="76" r="22" fill="url(#hPalRose_${phase})" opacity="0.88"/>
         <path d="M210 50 V102 M184 76 H236 M192 58 L228 94 M228 58 L192 94" stroke="#78350F" stroke-width="1.2" opacity="0.65"/>
         <circle cx="210" cy="76" r="9" fill="#FFFBEB" stroke="#D97706" stroke-width="1.2"/>
-        <!-- Iconic TooToo golden carrot emblem in the rose window heart -->
         <path d="M207.2 72.5 L212.8 72.5 L210 81.2 Z" fill="#E54826"/>
         <path d="M210 72.5 L208 69.5 M210 72.5 L212 69.5" stroke="#0D9488" stroke-width="1.2" stroke-linecap="round"/>
         <!-- Twin Ivory-Marble & 24K Gold Celestial Colonnades & Arches -->
-        <path d="M18 148 L18 54 A68 48 0 0 1 138 54 L138 148" fill="none" stroke="url(#hsGoldH)" stroke-width="2.6" opacity="0.85"/>
-        <path d="M282 148 L282 54 A68 48 0 0 1 402 54 L402 148" fill="none" stroke="url(#hsGoldH)" stroke-width="2.6" opacity="0.85"/>
-        <rect x="20" y="54" width="16" height="94" fill="url(#hsIvory)" stroke="#D97706" stroke-width="0.9"/>
+        <path d="M18 148 L18 54 A68 48 0 0 1 138 54 L138 148" fill="none" stroke="url(#hsGoldH)" stroke-width="2.6" opacity="0.88"/>
+        <path d="M282 148 L282 54 A68 48 0 0 1 402 54 L402 148" fill="none" stroke="url(#hsGoldH)" stroke-width="2.6" opacity="0.88"/>
+        <rect x="20" y="54" width="16" height="94" fill="${palFlr}" stroke="#D97706" stroke-width="0.9"/>
         <rect x="16" y="48" width="24" height="7" rx="2" fill="url(#hsGoldH)"/>
-        <rect x="384" y="54" width="16" height="94" fill="url(#hsIvory)" stroke="#D97706" stroke-width="0.9"/>
+        <rect x="384" y="54" width="16" height="94" fill="${palFlr}" stroke="#D97706" stroke-width="0.9"/>
         <rect x="380" y="48" width="24" height="7" rx="2" fill="url(#hsGoldH)"/>
-        <!-- Cascading liquid-gold stardust light curtains -->
-        <g opacity="0.52" class="h-pulse">
+        <g opacity="${isNight ? "0.28" : "0.58"}" class="h-pulse">
           <polygon points="62,24 94,24 114,148 48,148" fill="url(#hsSunbeam)"/>
           <polygon points="326,24 358,24 372,148 306,148" fill="url(#hsSunbeam)"/>
         </g>
-        <!-- Floating golden star lanterns -->
         <g class="h-float" filter="url(#hsGlowSm)">
           <path d="M116 42 L121 50 L116 58 L111 50 Z" fill="#fef08a" stroke="#f59e0b" stroke-width="0.9"/>
           <path d="M304 42 L309 50 L304 58 L299 50 Z" fill="#fef08a" stroke="#f59e0b" stroke-width="0.9"/>
         </g>
+        ${isNight ? `
         <circle cx="84" cy="36" r="1.6" fill="#fff" class="h-twinkle"/>
         <circle cx="338" cy="34" r="1.6" fill="#fef08a" class="h-twinkle-d1"/>
         <circle cx="162" cy="26" r="1.4" fill="#38bdf8" class="h-twinkle-d2"/>
-        <circle cx="258" cy="26" r="1.4" fill="#f472b6" class="h-twinkle"/>
-        <!-- Pearlescent ivory-and-gold celestial terrace floor -->
-        <rect x="0" y="148" width="420" height="60" fill="url(#hsIvory)"/>
+        <circle cx="258" cy="26" r="1.4" fill="#f472b6" class="h-twinkle"/>` : ""}
+        <rect x="0" y="148" width="420" height="60" fill="${palFlr}"/>
         <line x1="0" y1="148" x2="420" y2="148" stroke="url(#hsGoldH)" stroke-width="2.8"/>
         <line x1="24" y1="154" x2="396" y2="154" stroke="#f59e0b" stroke-width="0.8" opacity="0.55"/>
       `;
+    }
     default:
       return `<rect width="420" height="208" fill="#f3f0e8"/>`;
   }
@@ -15853,7 +16202,8 @@ function renderHomeStage(freshDecorSlot = null, twirlBunny = false, forceRedraw 
   const wearSvg = getWearOverlaySvgFor(view.wear, "st");
   const hasWeather = hasHouseWeather(house.id);
   const weather = hasWeather ? getEffectiveWeather() : null;
-  const dayPhase = hasWeather ? getEffectiveHomeDayPhase() : { phase: "day", isNight: false, icon: "", label: "", hm: "", mocked: false };
+  // Every house has real-time dawn/day/dusk/night lighting; only rain/snow/wind weather is gated on hasWeather!
+  const dayPhase = getEffectiveHomeDayPhase();
 
   if (homeBunnyPos.lastHouseId && homeBunnyPos.lastHouseId !== house.id) {
     stopHomeBunnyWalk();
@@ -15886,7 +16236,10 @@ function renderHomeStage(freshDecorSlot = null, twirlBunny = false, forceRedraw 
       weatherPillEl.textContent = `${wIcon} ${tempTxt}${mockTag}`;
       weatherPillEl.title = `${weather.city ? weather.city + " " : ""}${dayPhase.hm} ${dayPhase.label} · ${wLabel} ${tempTxt}（点击刷新）`;
     } else {
-      weatherPillEl.style.display = "none";
+      weatherPillEl.style.display = "inline-flex";
+      const mockTag = dayPhase.mocked ? "*" : "";
+      weatherPillEl.textContent = `${dayPhase.icon} ${dayPhase.label}${mockTag}`;
+      weatherPillEl.title = `${dayPhase.hm} ${dayPhase.label}（该房型无晴雨天气，仍随昼夜光影变化）`;
     }
   }
   if (slotsEl) {
@@ -16412,14 +16765,25 @@ function renderHomeShop() {
   // ==================== VIEW 1: MY HOME (OWNED INVENTORY ONLY) ====================
   if (!isShop) {
     if (homeUiState.tab === "houses") {
-      if (subbarEl) subbarEl.style.display = "none";
-      if (pillsEl) pillsEl.innerHTML = "";
-      // Sort: current house first, then active leased, then higher tier first
-      const sorted = [...myHouses].sort((a, b) => {
-        if (a.id === hState.house) return -1;
-        if (b.id === hState.house) return 1;
-        return (b.tier || 1) - (a.tier || 1) || (b.price || 0) - (a.price || 0);
-      });
+      // Natural ascending tier order (T1 -> T2 -> ... -> T10), stable catalog order inside each tier!
+      const catalogIdx = new Map(HOME_HOUSES.map((h, i) => [h.id, i]));
+      const ownedTiers = Array.from(new Set(myHouses.map(h => h.tier || 1))).sort((a, b) => a - b);
+      if (homeUiState.invHouseTier > 0 && !ownedTiers.includes(homeUiState.invHouseTier)) {
+        homeUiState.invHouseTier = 0;
+      }
+      if (ownedTiers.length >= 2) {
+        if (subbarEl) subbarEl.style.display = "flex";
+        if (pillsEl) {
+          pillsEl.innerHTML = `<button class="home-slot-pill${homeUiState.invHouseTier === 0 ? " active" : ""}" data-inv-htier="0">全部 (${myHouses.length})</button>`
+            + ownedTiers.map(t => `<button class="home-slot-pill${homeUiState.invHouseTier === t ? " active" : ""}" data-inv-htier="${t}">T${t}</button>`).join("");
+        }
+      } else {
+        if (subbarEl) subbarEl.style.display = "none";
+        if (pillsEl) pillsEl.innerHTML = "";
+      }
+      const sorted = myHouses
+        .filter(h => homeUiState.invHouseTier === 0 || (h.tier || 1) === homeUiState.invHouseTier)
+        .sort((a, b) => (a.tier || 1) - (b.tier || 1) || (catalogIdx.get(a.id) ?? 0) - (catalogIdx.get(b.id) ?? 0));
       const cards = sorted.map(h => {
         const owned = hState.owned_houses.includes(h.id);
         const leasedExp = TOOTOO_REG.getLeaseExpiresAt(h.id, hState);
@@ -16471,13 +16835,10 @@ function renderHomeShop() {
         if (subbarEl) subbarEl.style.display = "none";
         if (pillsEl) pillsEl.innerHTML = "";
       }
+      const slotOrd = { bed: 1, light: 2, floor: 3, garden: 4, pool: 5 };
       const list = myDecors
         .filter(it => homeUiState.invDecorSlot === "all" || it.slot === homeUiState.invDecorSlot)
-        .sort((a, b) => {
-          const ea = hState.decor[a.slot] === a.id ? 1 : 0;
-          const eb = hState.decor[b.slot] === b.id ? 1 : 0;
-          return eb - ea;
-        });
+        .sort((a, b) => (slotOrd[a.slot] || 9) - (slotOrd[b.slot] || 9) || (a.price || 0) - (b.price || 0));
       const cards = list.map(it => {
         const equipped = hState.decor[it.slot] === it.id;
         const slotUnlocked = house.slots.includes(it.slot);
@@ -16528,9 +16889,10 @@ function renderHomeShop() {
     }
     const cards = [];
     if (homeUiState.invWearSlot !== "innate") {
+      const wearOrd = { hat: 1, outfit: 2, acc: 3 };
       const wearList = myWears
         .filter(it => homeUiState.invWearSlot === "all" || it.slot === homeUiState.invWearSlot)
-        .sort((a, b) => (hState.wear[b.slot] === b.id ? 1 : 0) - (hState.wear[a.slot] === a.id ? 1 : 0));
+        .sort((a, b) => (wearOrd[a.slot] || 9) - (wearOrd[b.slot] || 9) || (a.price || 0) - (b.price || 0));
       wearList.forEach(it => {
         const equipped = hState.wear[it.slot] === it.id;
         const badge = equipped ? `<span class="hc-tag eq">穿戴中</span>` : `<span class="hc-tag own">衣橱</span>`;
@@ -16839,7 +17201,10 @@ document.getElementById("homeSlotPills").addEventListener("click", (e) => {
   if (!btn) return;
   homeUiState.pageLimit = 24;
   closeHomeConfirm();
-  if (btn.dataset.invDslot) {
+  if (btn.dataset.invHtier != null) {
+    homeUiState.invHouseTier = Number(btn.dataset.invHtier) || 0;
+    renderHomeShop();
+  } else if (btn.dataset.invDslot) {
     homeUiState.invDecorSlot = btn.dataset.invDslot;
     renderHomeShop();
   } else if (btn.dataset.invWslot) {

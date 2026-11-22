@@ -760,23 +760,29 @@
       : (s.isDusk
         ? ["#1d184a", "#7e2a70", "#db4d6d", "#fb923c", "#fde68a"]
         : (s.isDawn
-          ? ["#5c8fd6", "#c4b5fd", "#fbcfe8", "#fed7aa", "#fef3c7"]
-          : ["#3b82f6", "#7dd3fc", "#bae6fd", "#e0f2fe", "#f0f9ff"]));
+          ? ["#60a5fa", "#bfdbfe", "#fbcfe8", "#fed7aa", "#fef9c3"]
+          : ["#2563eb", "#60a5fa", "#bae6fd", "#e0f2fe", "#f8fafc"]));
     const riv = s.isNight
       ? ["#2c2459", "#192145", "#0e152e"]
       : (s.isDusk
         ? ["#4b3668", "#2d2859", "#181d3d"]
-        : ["#7dd3fc", "#38bdf8", "#0284c7"]);
-    const wallC = s.isNight ? ["#2c3244", "#232838", "#1a1f2c"] : (s.isDusk ? ["#343a4f", "#292f42", "#202536"] : ["#454d61", "#3a4254", "#2e3545"]);
-    const flrC = s.isNight ? ["#454c5e", "#383e4e", "#282d3a"] : (s.isDusk ? ["#4e5569", "#404657", "#303545"] : ["#6b7488", "#5b6478", "#475063"]);
-    const deckC = s.isNight ? ["#2d3446", "#191e2b"] : (s.isDusk ? ["#373f54", "#212738"] : ["#4b5563", "#334155"]);
-    const bld = lit ? ["#181c36", "#141830", "#1a1f3d", "#12162b", "#191e38"] : ["#64748b", "#475569", "#5b6b82", "#3e4e66", "#52637a"];
-    const lotusC = lit ? ["#67e8f9", "#818cf8", "#312e81"] : ["#e2e8f0", "#94a3b8", "#475569"];
-    const winOp = lit ? "0.78" : "0.28";
-    const glowOp = lit ? "0.95" : "0.35";
+        : ["#93c5fd", "#38bdf8", "#0284c7"]);
+    const wallC = s.isNight ? ["#2c3244", "#232838", "#1a1f2c"] : (s.isDusk ? ["#515973", "#41485e", "#31374a"] : ["#edf1f7", "#dce3ee", "#c5cfde"]);
+    const flrC = s.isNight ? ["#454c5e", "#383e4e", "#282d3a"] : (s.isDusk ? ["#6d758c", "#596175", "#434a5c"] : ["#eef2f6", "#dce3ec", "#c4cedb"]);
+    const deckC = s.isNight ? ["#2d3446", "#191e2b"] : (s.isDusk ? ["#6b5344", "#4a382d"] : ["#d6b286", "#b58d5e"]);
+    const bld = lit ? ["#181c36", "#141830", "#1a1f3d", "#12162b", "#191e38"] : ["#94a3b8", "#7c8ea6", "#a3b3c6", "#6b7d96", "#889ab2"];
+    const lotusC = lit ? ["#67e8f9", "#818cf8", "#312e81"] : ["#ffffff", "#e2e8f0", "#94a3b8"];
+    const winOp = lit ? "0.78" : "0.42";
+    const glowOp = lit ? "0.95" : "0.22";
+    const ceilC = s.isNight ? "#181d2b" : (s.isDusk ? "#2c3347" : "#cbd5e1");
+    const mezBg = s.isNight ? "#1a1f30" : (s.isDusk ? "#313952" : "#e2e8f0");
+    const mezTop = s.isNight ? "#2c3347" : (s.isDusk ? "#46506e" : "#cbd5e1");
+    const mezBeam = s.isNight ? "#0f172a" : (s.isDusk ? "#1e293b" : "#64748b");
+    const frameC = s.isNight ? "#0f172a" : (s.isDusk ? "#1e293b" : "#475569");
+    const curtC = s.isNight ? "#1e2438" : (s.isDusk ? "#475569" : "#f8fafc");
     const skyCel = s.isNight
       ? `${stars([[236,24,1.1],[318,28,1.3],[448,20,1.2],[516,18,1.0,"#fff"],[586,26,1.3],[688,22,1.1,"#bae6fd"]])}${moon(652, 34, 12)}`
-      : `<circle cx="652" cy="${s.isDusk || s.isDawn ? 40 : 32}" r="14" fill="${s.isDusk ? "#fb923c" : "#fde047"}" opacity="0.92" filter="url(#hsGlowMd)"/>`;
+      : `<circle cx="652" cy="${s.isDusk || s.isDawn ? 40 : 30}" r="16" fill="${s.isDusk ? "#fb923c" : "#fde047"}" opacity="0.95" filter="url(#hsGlowMd)"/>`;
     return `
       <defs>
         <linearGradient id="${id}_sky" x1="0" y1="0" x2="0" y2="1">
@@ -890,50 +896,50 @@
 
       <!-- ==================== INDOOR DOUBLE-HEIGHT LOFT (x=0..416) ==================== -->
       <rect x="0" y="0" width="186" height="148" fill="url(#${id}_wall)"/>
-      <g stroke="${lit ? "#394157" : "#58627a"}" stroke-width="0.8" opacity="0.45">
+      <g stroke="${lit ? "#394157" : "#94a3b8"}" stroke-width="0.8" opacity="0.45">
         <line x1="0" y1="92" x2="186" y2="92"/><line x1="62" y1="58" x2="62" y2="148"/><line x1="124" y1="58" x2="124" y2="148"/>
       </g>
-      <rect x="186" y="0" width="230" height="20" fill="${lit ? "#181d2b" : "#272f40"}"/>
-      <line x1="186" y1="20" x2="416" y2="20" stroke="#fbbf24" stroke-width="1.4" opacity="${lit ? "0.78" : "0.45"}" ${lit ? 'filter="url(#hsGlowSm)"' : ""}/>
+      <rect x="186" y="0" width="230" height="20" fill="${ceilC}"/>
+      <line x1="186" y1="20" x2="416" y2="20" stroke="#fbbf24" stroke-width="1.4" opacity="${lit ? "0.78" : "0.35"}" ${lit ? 'filter="url(#hsGlowSm)"' : ""}/>
 
       <!-- 2F Mezzanine Sleeping Loft (bed, warm lamp, mini bookshelf, glass rail) -->
-      <rect x="0" y="0" width="186" height="54" fill="${lit ? "#1a1f30" : "#2b3347"}"/>
-      <rect x="0" y="0" width="186" height="6" fill="${lit ? "#2c3347" : "#3f4961"}"/>
-      <polygon points="32,6 44,6 58,52 18,52" fill="#fef08a" opacity="${lit ? "0.1" : "0.04"}"/>
-      <polygon points="112,6 124,6 138,52 98,52" fill="#fef08a" opacity="${lit ? "0.1" : "0.04"}"/>
-      <rect x="14" y="28" width="54" height="24" rx="3" fill="#334155" stroke="#475569" stroke-width="1"/>
-      <rect x="18" y="34" width="46" height="18" rx="3" fill="#e2e8f0" opacity="0.88"/>
+      <rect x="0" y="0" width="186" height="54" fill="${mezBg}"/>
+      <rect x="0" y="0" width="186" height="6" fill="${mezTop}"/>
+      <polygon points="32,6 44,6 58,52 18,52" fill="#fef08a" opacity="${lit ? "0.12" : "0.02"}"/>
+      <polygon points="112,6 124,6 138,52 98,52" fill="#fef08a" opacity="${lit ? "0.12" : "0.02"}"/>
+      <rect x="14" y="28" width="54" height="24" rx="3" fill="${lit ? "#334155" : "#94a3b8"}" stroke="#64748b" stroke-width="1"/>
+      <rect x="18" y="34" width="46" height="18" rx="3" fill="#ffffff" opacity="0.92"/>
       <rect x="18" y="36" width="16" height="8" rx="3" fill="#f97316" opacity="0.88"/>
-      <rect x="74" y="36" width="16" height="16" rx="2" fill="#475569"/>
-      <ellipse cx="82" cy="31" rx="6" ry="4" fill="#fef08a" ${lit ? 'filter="url(#hsGlowSm)"' : ""}/>
+      <rect x="74" y="36" width="16" height="16" rx="2" fill="${lit ? "#475569" : "#94a3b8"}"/>
+      <ellipse cx="82" cy="31" rx="6" ry="4" fill="${lit ? "#fef08a" : "#fffbeb"}" ${lit ? 'filter="url(#hsGlowSm)"' : ""}/>
       <line x1="82" y1="35" x2="82" y2="38" stroke="#cbd5e1" stroke-width="1.2"/>
-      <rect x="104" y="20" width="44" height="32" rx="2" fill="#272e42" stroke="#475569" stroke-width="1"/>
+      <rect x="104" y="20" width="44" height="32" rx="2" fill="${lit ? "#272e42" : "#cbd5e1"}" stroke="#64748b" stroke-width="1"/>
       <rect x="109" y="25" width="5" height="10" fill="#ef4444"/><rect x="115" y="27" width="5" height="8" fill="#38bdf8"/>
       <rect x="122" y="24" width="5" height="11" fill="#f59e0b"/><rect x="132" y="26" width="6" height="9" fill="#22c55e"/>
-      <line x1="104" y1="36" x2="148" y2="36" stroke="#475569" stroke-width="1"/>
+      <line x1="104" y1="36" x2="148" y2="36" stroke="#64748b" stroke-width="1"/>
       <rect x="0" y="26" width="174" height="28" fill="#38bdf8" fill-opacity="0.08" stroke="#64748b" stroke-width="1.1"/>
       <line x1="58" y1="26" x2="58" y2="54" stroke="#64748b" stroke-width="1.2"/>
       <line x1="116" y1="26" x2="116" y2="54" stroke="#64748b" stroke-width="1.2"/>
-      <rect x="0" y="52" width="178" height="7" fill="#0f172a"/>
-      <line x1="0" y1="59" x2="178" y2="59" stroke="#22d3ee" stroke-width="1.5" opacity="${lit ? "0.95" : "0.55"}" ${lit ? 'filter="url(#hsGlowSm)"' : ""}/>
+      <rect x="0" y="52" width="178" height="7" fill="${mezBeam}"/>
+      <line x1="0" y1="59" x2="178" y2="59" stroke="#22d3ee" stroke-width="1.5" opacity="${lit ? "0.95" : "0.28"}" ${lit ? 'filter="url(#hsGlowSm)"' : ""}/>
 
       <!-- 1F Cyber-Creator Accent Wall under Mezzanine -->
-      <circle cx="62" cy="108" r="38" fill="url(#${id}_sun)"/>
-      <rect x="16" y="70" width="30" height="38" rx="2" fill="#0f172a" stroke="#f472b6" stroke-width="1.3"/>
+      ${lit ? `<circle cx="62" cy="108" r="38" fill="url(#${id}_sun)"/>` : ""}
+      <rect x="16" y="70" width="30" height="38" rx="2" fill="${lit ? "#0f172a" : "#ffffff"}" stroke="${lit ? "#f472b6" : "#64748b"}" stroke-width="1.3"/>
       <circle cx="31" cy="85" r="8" fill="#f97316" opacity="0.88"/>
-      <path d="M19 98 L27 89 L35 96 L42 91 V105 H19 Z" fill="#312e81"/>
+      <path d="M19 98 L27 89 L35 96 L42 91 V105 H19 Z" fill="${lit ? "#312e81" : "#60a5fa"}"/>
       <rect x="56" y="76" width="54" height="4" rx="1.5" fill="#92400e"/>
       <circle cx="68" cy="70" r="6" fill="#18181b" stroke="#e2e8f0" stroke-width="0.7"/><circle cx="68" cy="70" r="2" fill="#f97316"/>
       <rect x="82" y="67" width="8" height="9" rx="1.5" fill="#fffdf8"/><circle cx="86" cy="64" r="4" fill="#22c55e"/>
-      <rect x="56" y="102" width="52" height="14" rx="7" fill="#0f172a" fill-opacity="0.85" stroke="#22d3ee" stroke-width="1" ${lit ? 'filter="url(#hsGlowSm)"' : ""}/>
-      <text x="82" y="111.5" font-size="6.4" font-family="monospace" font-weight="900" fill="#a5f3fc" text-anchor="middle">LOFT 24H</text>
+      <rect x="56" y="102" width="52" height="14" rx="7" fill="${lit ? "#0f172a" : "#ffffff"}" fill-opacity="${lit ? "0.85" : "0.88"}" stroke="${lit ? "#22d3ee" : "#94a3b8"}" stroke-width="1" ${lit ? 'filter="url(#hsGlowSm)"' : ""}/>
+      <text x="82" y="111.5" font-size="6.4" font-family="monospace" font-weight="900" fill="${lit ? "#a5f3fc" : "#334155"}" text-anchor="middle">LOFT 24H</text>
 
       <!-- Industrial Black-Steel + Oak Floating Loft Staircase -->
-      <line x1="126" y1="148" x2="176" y2="56" stroke="#0f172a" stroke-width="4"/>
+      <line x1="126" y1="148" x2="176" y2="56" stroke="${frameC}" stroke-width="4"/>
       <line x1="118" y1="124" x2="168" y2="34" stroke="#64748b" stroke-width="1.6"/>
-      <line x1="130" y1="142" x2="130" y2="104" stroke="#475569" stroke-width="1" opacity="0.7"/>
-      <line x1="146" y1="114" x2="146" y2="76" stroke="#475569" stroke-width="1" opacity="0.7"/>
-      <line x1="162" y1="84" x2="162" y2="48" stroke="#475569" stroke-width="1" opacity="0.7"/>
+      <line x1="130" y1="142" x2="130" y2="104" stroke="#64748b" stroke-width="1" opacity="0.7"/>
+      <line x1="146" y1="114" x2="146" y2="76" stroke="#64748b" stroke-width="1" opacity="0.7"/>
+      <line x1="162" y1="84" x2="162" y2="48" stroke="#64748b" stroke-width="1" opacity="0.7"/>
       <g>
         <rect x="124" y="138" width="26" height="4" rx="1" fill="#c79a63" stroke="#451a03" stroke-width="0.6"/>
         <rect x="132" y="124" width="26" height="4" rx="1" fill="#c79a63" stroke="#451a03" stroke-width="0.6"/>
@@ -944,45 +950,45 @@
       </g>
 
       <!-- Double-Height Steel-Grid Window (x=186..384) + Open Sliding Glass Door -->
-      <rect x="186" y="20" width="198" height="128" fill="url(#${id}_glass)" stroke="#0f172a" stroke-width="2.4"/>
-      <line x1="252" y1="20" x2="252" y2="148" stroke="#0f172a" stroke-width="1.6"/>
-      <line x1="318" y1="20" x2="318" y2="148" stroke="#0f172a" stroke-width="1.6"/>
-      <line x1="186" y1="84" x2="384" y2="84" stroke="#0f172a" stroke-width="1.4" opacity="0.82"/>
-      <path d="M186 20 L204 20 Q196 84 202 148 L186 148 Z" fill="#1e2438" opacity="0.85"/>
-      <rect x="384" y="20" width="32" height="128" fill="none" stroke="#475569" stroke-width="2.2"/>
+      <rect x="186" y="20" width="198" height="128" fill="url(#${id}_glass)" stroke="${frameC}" stroke-width="2.4"/>
+      <line x1="252" y1="20" x2="252" y2="148" stroke="${frameC}" stroke-width="1.6"/>
+      <line x1="318" y1="20" x2="318" y2="148" stroke="${frameC}" stroke-width="1.6"/>
+      <line x1="186" y1="84" x2="384" y2="84" stroke="${frameC}" stroke-width="1.4" opacity="0.82"/>
+      <path d="M186 20 L204 20 Q196 84 202 148 L186 148 Z" fill="${curtC}" opacity="0.88"/>
+      <rect x="384" y="20" width="32" height="128" fill="none" stroke="#64748b" stroke-width="2.2"/>
       <rect x="384" y="20" width="12" height="128" fill="url(#${id}_glass)" stroke="#64748b" stroke-width="1.1"/>
       <rect x="392" y="76" width="2.5" height="20" rx="1" fill="#cbd5e1"/>
 
       <!-- ==================== OUTDOOR SKY TERRACE (x=416..720) ==================== -->
-      <path d="M418 16 Q506 42 598 22 Q660 36 718 18" fill="none" stroke="#475569" stroke-width="1.1"/>
-      <g ${lit ? 'filter="url(#hsGlowSm)"' : ""} opacity="${lit ? "0.96" : "0.62"}">
-        <circle cx="452" cy="26" r="2.8" fill="#fef08a" class="h-twinkle"/>
-        <circle cx="492" cy="31" r="2.8" fill="#fde047" class="h-twinkle-d1"/>
-        <circle cx="534" cy="30" r="2.8" fill="#fef08a" class="h-twinkle-d2"/>
-        <circle cx="576" cy="25" r="2.8" fill="#fde047" class="h-twinkle"/>
-        <circle cx="624" cy="27" r="2.8" fill="#fef08a" class="h-twinkle-d1"/>
-        <circle cx="672" cy="28" r="2.8" fill="#fde047" class="h-twinkle-d2"/>
+      <path d="M418 16 Q506 42 598 22 Q660 36 718 18" fill="none" stroke="${lit ? "#475569" : "#94a3b8"}" stroke-width="1.1"/>
+      <g ${lit ? 'filter="url(#hsGlowSm)"' : ""} opacity="${lit ? "0.96" : "0.45"}">
+        <circle cx="452" cy="26" r="2.6" fill="${lit ? "#fef08a" : "#e2e8f0"}" class="${lit ? "h-twinkle" : ""}"/>
+        <circle cx="492" cy="31" r="2.6" fill="${lit ? "#fde047" : "#f1f5f9"}" class="${lit ? "h-twinkle-d1" : ""}"/>
+        <circle cx="534" cy="30" r="2.6" fill="${lit ? "#fef08a" : "#e2e8f0"}" class="${lit ? "h-twinkle-d2" : ""}"/>
+        <circle cx="576" cy="25" r="2.6" fill="${lit ? "#fde047" : "#f1f5f9"}" class="${lit ? "h-twinkle" : ""}"/>
+        <circle cx="624" cy="27" r="2.6" fill="${lit ? "#fef08a" : "#e2e8f0"}" class="${lit ? "h-twinkle-d1" : ""}"/>
+        <circle cx="672" cy="28" r="2.6" fill="${lit ? "#fde047" : "#f1f5f9"}" class="${lit ? "h-twinkle-d2" : ""}"/>
       </g>
-      <rect x="416" y="114" width="304" height="34" fill="#38bdf8" opacity="0.14"/>
-      <line x1="416" y1="114" x2="720" y2="114" stroke="#1e293b" stroke-width="3.2"/>
+      <rect x="416" y="114" width="304" height="34" fill="#38bdf8" opacity="${lit ? "0.14" : "0.1"}"/>
+      <line x1="416" y1="114" x2="720" y2="114" stroke="${frameC}" stroke-width="3.2"/>
       <line x1="416" y1="116" x2="720" y2="116" stroke="#22d3ee" stroke-width="1.4" opacity="${glowOp}" ${lit ? 'filter="url(#hsGlowSm)"' : ""}/>
       <line x1="496" y1="114" x2="496" y2="148" stroke="#64748b" stroke-width="1.8"/>
       <line x1="582" y1="114" x2="582" y2="148" stroke="#64748b" stroke-width="1.8"/>
       <line x1="668" y1="114" x2="668" y2="148" stroke="#64748b" stroke-width="1.8"/>
 
-      <!-- Floors: Polished loft concrete + outdoor deck planks -->
+      <!-- Floors: Polished loft terrazzo + outdoor deck planks -->
       <rect x="0" y="148" width="416" height="60" fill="url(#${id}_flr)"/>
-      <g stroke="#202533" stroke-width="0.9" opacity="0.42">
+      <g stroke="${lit ? "#202533" : "#94a3b8"}" stroke-width="0.9" opacity="0.42">
         <line x1="0" y1="168" x2="416" y2="168"/><line x1="0" y1="188" x2="416" y2="188"/>
         <line x1="94" y1="148" x2="66" y2="208"/><line x1="208" y1="148" x2="208" y2="208"/><line x1="322" y1="148" x2="350" y2="208"/>
       </g>
-      <polygon points="196,148 374,148 340,192 162,192" fill="${lit ? "#f472b6" : "#fffbeb"}" opacity="${lit ? "0.08" : "0.14"}"/>
+      <polygon points="196,148 374,148 340,192 162,192" fill="${lit ? "#f472b6" : "#fffbeb"}" opacity="${lit ? "0.08" : "0.38"}"/>
       <rect x="416" y="148" width="304" height="60" fill="url(#${id}_deck)"/>
-      <g stroke="#0f172a" stroke-width="0.9" opacity="0.52">
+      <g stroke="${lit ? "#0f172a" : "#785028"}" stroke-width="0.9" opacity="0.42">
         <line x1="416" y1="164" x2="720" y2="164"/><line x1="416" y1="180" x2="720" y2="180"/><line x1="416" y1="196" x2="720" y2="196"/>
       </g>
-      <line x1="416" y1="148" x2="416" y2="208" stroke="#475569" stroke-width="4"/>
-      <line x1="416" y1="148" x2="416" y2="208" stroke="#f472b6" stroke-width="1.2" opacity="${lit ? "0.85" : "0.45"}"/>
+      <line x1="416" y1="148" x2="416" y2="208" stroke="${lit ? "#475569" : "#94a3b8"}" stroke-width="4"/>
+      <line x1="416" y1="148" x2="416" y2="208" stroke="${lit ? "#f472b6" : "#ffffff"}" stroke-width="1.2" opacity="${lit ? "0.85" : "0.55"}"/>
 
       <!-- Outdoor terrace planter with uplight -->
       <g transform="translate(454, 158)">
@@ -1244,10 +1250,12 @@
           ? ["#5b88d6", "#f5c2d1", "#fde68a", "#fef3c7"]
           : ["#3b82f6", "#7dd3fc", "#bae6fd", "#e0f2fe"]));
     const canalC = s.isNight ? ["#172554", "#0a1229"] : (s.isDusk ? ["#3b2a5c", "#172042"] : ["#7dd3fc", "#0284c7"]);
-    const bld = lit ? ["#0f172a", "#131c33", "#0e1529", "#141e36", "#111930"] : ["#64748b", "#475569", "#334155", "#52637a", "#5b6b82"];
-    const flrC = s.isNight ? ["#292e3d", "#1e222e", "#13161f"] : (s.isDusk ? ["#32384a", "#262b3b", "#1a1e2b"] : ["#454c5e", "#373d4d", "#282d3b"]);
-    const deckC = s.isNight ? ["#1e2433", "#0d1018"] : ["#333b4d", "#1e2433"];
-    const winOp = lit ? "0.8" : "0.32";
+    const bld = lit ? ["#0f172a", "#131c33", "#0e1529", "#141e36", "#111930"] : ["#94a3b8", "#7c8ea6", "#6b7d96", "#889ab2", "#a3b3c6"];
+    const flrC = s.isNight ? ["#292e3d", "#1e222e", "#13161f"] : (s.isDusk ? ["#4a4654", "#383440", "#26232d"] : ["#f3efe6", "#e4ddd0", "#cfc6b4"]);
+    const deckC = s.isNight ? ["#1e2433", "#0d1018"] : (s.isDusk ? ["#474352", "#2d2a36"] : ["#cbd5e1", "#94a3b8"]);
+    const ceilW = lit ? "#12141c" : "#e5dfd3";
+    const cellarBg = lit ? "#161822" : "#dfd8cc";
+    const winOp = lit ? "0.8" : "0.42";
     const skyCel = s.isNight
       ? `${stars([[152,30,1.1],[244,24,1.2],[332,32,1.0,"#fff"],[458,22,1.2],[540,18,1.1,"#bae6fd"],[628,28,1.3]])}${moon(668, 34, 12)}`
       : `<circle cx="668" cy="${s.isDusk || s.isDawn ? 40 : 32}" r="14" fill="${s.isDusk ? "#fb923c" : "#fde047"}" opacity="0.92" filter="url(#hsGlowMd)"/>
@@ -1318,12 +1326,12 @@
         </g>
       </g>
 
-      <!-- ==================== INDOOR BLACK-GOLD PENTHOUSE (x=0..416) ==================== -->
-      <rect x="0" y="0" width="416" height="20" fill="#12141c"/>
+      <!-- ==================== INDOOR PENTHOUSE (x=0..416) ==================== -->
+      <rect x="0" y="0" width="416" height="20" fill="${ceilW}"/>
       <line x1="0" y1="20" x2="416" y2="20" stroke="url(#${id}_gold)" stroke-width="2.2" ${lit ? 'filter="url(#hsGlowSm)"' : ""}/>
       <!-- LEFT FEATURE: Floor-to-Ceiling Illuminated Wine Cellar Wall (顶天立地发光红酒墙) -->
-      <rect x="0" y="20" width="106" height="128" fill="#161822" stroke="#334155" stroke-width="1"/>
-      <rect x="8" y="26" width="90" height="116" rx="3" fill="#231914" stroke="url(#${id}_gold)" stroke-width="1.3"/>
+      <rect x="0" y="20" width="106" height="128" fill="${cellarBg}" stroke="${lit ? "#334155" : "#c7beae"}" stroke-width="1"/>
+      <rect x="8" y="26" width="90" height="116" rx="3" fill="${lit ? "#231914" : "#5c4028"}" stroke="url(#${id}_gold)" stroke-width="1.3"/>
       <rect x="12" y="30" width="82" height="108" fill="#f59e0b" opacity="${lit ? "0.14" : "0.09"}"/>
       <g stroke="#d4af37" stroke-width="1.1" opacity="0.85">
         <line x1="12" y1="54" x2="94" y2="54"/><line x1="12" y1="78" x2="94" y2="78"/>
@@ -1662,340 +1670,540 @@
   // ==================== T7: 4 WORLD WONDER PALACES ====================
 
   // 21. 🌋 熔岩黑曜石堡 — Volcanic basalt gothic vault with twin magma falls & glowing fissures
-  R.registerHouseArt("obsidian_fortress", () => `
-    <defs>
-      <linearGradient id="ha_ob_bg" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#14070a"/><stop offset="56%" stop-color="#3b0c0c"/><stop offset="100%" stop-color="#9a3412"/>
-      </linearGradient>
-    </defs>
-    <rect width="420" height="208" fill="url(#ha_ob_bg)"/>
-    <!-- Jagged volcanic cavern ridges in distance -->
-    <path d="M0 148 L42 86 L92 126 L154 74 L210 112 L268 72 L332 124 L380 84 L420 148 Z" fill="#1c0d10" opacity="0.72"/>
-    <!-- Twin molten magma waterfalls -->
-    <rect x="58" y="22" width="24" height="126" fill="#ea580c" opacity="0.88" filter="url(#hsGlowSm)"/>
-    <line x1="70" y1="22" x2="70" y2="148" stroke="#fef08a" stroke-width="5" stroke-dasharray="14 8" class="h-flow-rev"/>
-    <rect x="338" y="22" width="24" height="126" fill="#ea580c" opacity="0.88" filter="url(#hsGlowSm)"/>
-    <line x1="350" y1="22" x2="350" y2="148" stroke="#fef08a" stroke-width="5" stroke-dasharray="14 8" class="h-flow-rev"/>
-    <!-- Gothic basalt vault & carved obsidian rune columns -->
-    <path d="M0 0 H420 V42 Q315 12 210 42 Q105 12 0 42 Z" fill="#18121e" stroke="#f59e0b" stroke-width="1.5"/>
-    <rect x="114" y="24" width="22" height="124" fill="#1c1917" stroke="#f59e0b" stroke-width="1.2"/>
-    <rect x="284" y="24" width="22" height="124" fill="#1c1917" stroke="#f59e0b" stroke-width="1.2"/>
-    <line x1="125" y1="42" x2="125" y2="132" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="6 6" class="h-pulse"/>
-    <line x1="295" y1="42" x2="295" y2="132" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="6 6" class="h-pulse"/>
-    <circle cx="98" cy="112" r="2" fill="#fde047" class="h-steam"/>
-    <circle cx="210" cy="96" r="2.2" fill="#fb923c" class="h-steam-d1"/>
-    <circle cx="322" cy="108" r="2" fill="#fef08a" class="h-steam"/>
-    <rect x="0" y="148" width="420" height="60" fill="#18181b"/>
-    <path d="M44 166 L96 178 L142 168 M274 172 L326 164 L378 180" fill="none" stroke="#ea580c" stroke-width="1.2" opacity="0.62"/>
-    <line x1="0" y1="148" x2="420" y2="148" stroke="#f97316" stroke-width="2.4" filter="url(#hsGlowSm)"/>
-  `);
+  // ==================== T7: 4 EPIC WONDER SANCTUARIES ====================
+
+  // 21. 🏰 黑曜石熔岩堡
+  R.registerHouseArt("obsidian_fortress", (dp) => {
+    const s = skyOf(dp);
+    const id = `ob_${s.phase}`;
+    const lit = s.isNight || s.isDusk;
+    const bg = s.isNight
+      ? ["#14070a", "#3b0c0c", "#9a3412"]
+      : (s.isDusk
+        ? ["#3b0764", "#c2410c", "#fbbf24"]
+        : (s.isDawn
+          ? ["#60a5fa", "#fbcfe8", "#fdba74"]
+          : ["#38bdf8", "#bae6fd", "#fed7aa"]));
+    const mtn = s.isNight ? "#1c0d10" : (s.isDusk ? "#431407" : "#78716c");
+    const arch = s.isNight ? "#18121e" : (s.isDusk ? "#2d1b24" : "#57534e");
+    const col = s.isNight ? "#1c1917" : (s.isDusk ? "#352620" : "#78716c");
+    const flr = s.isNight ? "#18181b" : (s.isDusk ? "#292524" : "#a8a29e");
+    return `
+      <defs>
+        <linearGradient id="${id}_bg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${bg[0]}"/><stop offset="56%" stop-color="${bg[1]}"/><stop offset="100%" stop-color="${bg[2]}"/>
+        </linearGradient>
+      </defs>
+      <rect width="420" height="208" fill="url(#${id}_bg)"/>
+      ${s.isNight ? stars([[96,24,1.2,"#fde68a"],[210,18,1.3,"#fff"],[312,26,1.2,"#fb923c"]]) : `<circle cx="210" cy="${s.isDusk || s.isDawn ? 56 : 44}" r="18" fill="${s.isDusk ? "#fb923c" : "#fef08a"}" opacity="0.9" filter="url(#hsGlowMd)"/>`}
+      <!-- Jagged volcanic highland ridges in distance -->
+      <path d="M0 148 L42 86 L92 126 L154 74 L210 112 L268 72 L332 124 L380 84 L420 148 Z" fill="${mtn}" opacity="${lit ? "0.78" : "0.62"}"/>
+      <!-- Twin molten magma waterfalls -->
+      <rect x="58" y="22" width="24" height="126" fill="${lit ? "#ea580c" : "#f97316"}" opacity="0.88" ${lit ? 'filter="url(#hsGlowSm)"' : ""}/>
+      <line x1="70" y1="22" x2="70" y2="148" stroke="#fef08a" stroke-width="5" stroke-dasharray="14 8" class="h-flow-rev"/>
+      <rect x="338" y="22" width="24" height="126" fill="${lit ? "#ea580c" : "#f97316"}" opacity="0.88" ${lit ? 'filter="url(#hsGlowSm)"' : ""}/>
+      <line x1="350" y1="22" x2="350" y2="148" stroke="#fef08a" stroke-width="5" stroke-dasharray="14 8" class="h-flow-rev"/>
+      <!-- Gothic basalt vault & carved rune columns -->
+      <path d="M0 0 H420 V42 Q315 12 210 42 Q105 12 0 42 Z" fill="${arch}" stroke="#f59e0b" stroke-width="1.5"/>
+      <rect x="114" y="24" width="22" height="124" fill="${col}" stroke="#f59e0b" stroke-width="1.2"/>
+      <rect x="284" y="24" width="22" height="124" fill="${col}" stroke="#f59e0b" stroke-width="1.2"/>
+      <line x1="125" y1="42" x2="125" y2="132" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="6 6" class="h-pulse"/>
+      <line x1="295" y1="42" x2="295" y2="132" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="6 6" class="h-pulse"/>
+      <circle cx="98" cy="112" r="2" fill="#fde047" class="h-steam"/>
+      <circle cx="210" cy="96" r="2.2" fill="#fb923c" class="h-steam-d1"/>
+      <circle cx="322" cy="108" r="2" fill="#fef08a" class="h-steam"/>
+      <rect x="0" y="148" width="420" height="60" fill="${flr}"/>
+      <path d="M44 166 L96 178 L142 168 M274 172 L326 164 L378 180" fill="none" stroke="${lit ? "#ea580c" : "#d97706"}" stroke-width="1.2" opacity="0.68"/>
+      <line x1="0" y1="148" x2="420" y2="148" stroke="#f97316" stroke-width="2.4" ${lit ? 'filter="url(#hsGlowSm)"' : ""}/>
+    `;
+  });
 
   // 22. ☁️ 天空之城浮岛宫 — Floating marble citadel over golden-rimmed volumetric clouds
-  R.registerHouseArt("sky_castle", () => `
-    <defs>
-      <linearGradient id="ha_sc_bg" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#0284c7"/><stop offset="48%" stop-color="#7dd3fc"/><stop offset="100%" stop-color="#fffbeb"/>
-      </linearGradient>
-    </defs>
-    <rect width="420" height="208" fill="url(#ha_sc_bg)"/>
-    <path d="M56 146 A154 118 0 0 1 364 146" fill="none" stroke="url(#hsPrism)" stroke-width="9" opacity="0.42" filter="url(#hsGlowSm)"/>
-    <!-- Distant floating castle island with spires -->
-    <g class="h-float-slow" transform="translate(210, 74)">
-      <path d="M-38 14 L0 36 L38 14 Z" fill="#94a3b8"/>
-      <rect x="-26" y="-8" width="52" height="22" fill="url(#hsIvory)" stroke="#cbd5e1" stroke-width="0.9"/>
-      <polygon points="-24,-8 -16,-24 -8,-8" fill="#38bdf8"/><polygon points="8,-8 16,-24 24,-8" fill="#38bdf8"/>
-      <polygon points="-8,-8 0,-32 8,-8" fill="#fbbf24"/>
-    </g>
-    <!-- Volumetric sunlit cloud sea -->
-    <g class="h-drift-slow" opacity="0.94">
-      <ellipse cx="64" cy="130" rx="58" ry="22" fill="#ffffff"/>
-      <ellipse cx="146" cy="138" rx="52" ry="18" fill="#fffbeb"/>
-      <ellipse cx="274" cy="138" rx="54" ry="18" fill="#fffbeb"/>
-      <ellipse cx="356" cy="128" rx="58" ry="22" fill="#ffffff"/>
-    </g>
-    <!-- Sculpted ivory Corinthian columns with gold capitals -->
-    <path d="M0 0 H420 V24 Q210 6 0 24 Z" fill="url(#hsIvory)" stroke="url(#hsGoldH)" stroke-width="1.6"/>
-    <rect x="28" y="20" width="18" height="128" fill="url(#hsIvory)" stroke="#cbd5e1" stroke-width="1"/>
-    <rect x="24" y="20" width="26" height="7" rx="2" fill="url(#hsGoldH)"/>
-    <rect x="374" y="20" width="18" height="128" fill="url(#hsIvory)" stroke="#cbd5e1" stroke-width="1"/>
-    <rect x="370" y="20" width="26" height="7" rx="2" fill="url(#hsGoldH)"/>
-    <rect x="0" y="148" width="420" height="60" fill="url(#hsIvory)"/>
-    ${floorPlanks(148, 0, 420, "#d4af37", 0.22)}
-    <line x1="0" y1="148" x2="420" y2="148" stroke="url(#hsGoldH)" stroke-width="2.4"/>
-  `);
+  R.registerHouseArt("sky_castle", (dp) => {
+    const s = skyOf(dp);
+    const id = `sc_${s.phase}`;
+    const bg = s.isNight
+      ? ["#090e24", "#1e1b4b", "#312e81"]
+      : (s.isDusk
+        ? ["#4338ca", "#f472b6", "#fde68a"]
+        : (s.isDawn
+          ? ["#60a5fa", "#fbcfe8", "#fef9c3"]
+          : ["#0284c7", "#7dd3fc", "#fffbeb"]));
+    const cl1 = s.isNight ? "#475569" : (s.isDusk ? "#fbcfe8" : "#ffffff");
+    const cl2 = s.isNight ? "#334155" : (s.isDusk ? "#fed7aa" : "#fffbeb");
+    const flr = s.isNight ? "#cbd5e1" : "url(#hsIvory)";
+    return `
+      <defs>
+        <linearGradient id="${id}_bg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${bg[0]}"/><stop offset="48%" stop-color="${bg[1]}"/><stop offset="100%" stop-color="${bg[2]}"/>
+        </linearGradient>
+      </defs>
+      <rect width="420" height="208" fill="url(#${id}_bg)"/>
+      ${s.isNight
+        ? `${stars([[64,34,1.3,"#fff"],[128,22,1.5,"#fde68a"],[294,26,1.4,"#bae6fd"],[356,42,1.2,"#fff"]])}${moon(336, 44, 14)}`
+        : `<path d="M56 146 A154 118 0 0 1 364 146" fill="none" stroke="url(#hsPrism)" stroke-width="9" opacity="${s.isDusk ? "0.28" : "0.45"}" filter="url(#hsGlowSm)"/>
+           <circle cx="336" cy="${s.isDusk || s.isDawn ? 48 : 38}" r="15" fill="${s.isDusk ? "#fb923c" : "#fef08a"}" opacity="0.92" filter="url(#hsGlowMd)"/>`}
+      <!-- Distant floating castle island with spires -->
+      <g class="h-float-slow" transform="translate(210, 74)">
+        <path d="M-38 14 L0 36 L38 14 Z" fill="${s.isNight ? "#475569" : "#94a3b8"}"/>
+        <rect x="-26" y="-8" width="52" height="22" fill="${s.isNight ? "#cbd5e1" : "url(#hsIvory)"}" stroke="#94a3b8" stroke-width="0.9"/>
+        <polygon points="-24,-8 -16,-24 -8,-8" fill="${s.isNight ? "#1d4ed8" : "#38bdf8"}"/><polygon points="8,-8 16,-24 24,-8" fill="${s.isNight ? "#1d4ed8" : "#38bdf8"}"/>
+        <polygon points="-8,-8 0,-32 8,-8" fill="#fbbf24"/>
+        ${s.isNight ? `<rect x="-18" y="-2" width="5" height="7" rx="2" fill="#fef08a" filter="url(#hsGlowSm)"/><rect x="-2.5" y="-3" width="5" height="8" rx="2" fill="#fde047" filter="url(#hsGlowSm)"/><rect x="13" y="-2" width="5" height="7" rx="2" fill="#fef08a" filter="url(#hsGlowSm)"/>` : ""}
+      </g>
+      <!-- Volumetric cloud sea -->
+      <g class="h-drift-slow" opacity="${s.isNight ? "0.8" : "0.94"}">
+        <ellipse cx="64" cy="130" rx="58" ry="22" fill="${cl1}"/>
+        <ellipse cx="146" cy="138" rx="52" ry="18" fill="${cl2}"/>
+        <ellipse cx="274" cy="138" rx="54" ry="18" fill="${cl2}"/>
+        <ellipse cx="356" cy="128" rx="58" ry="22" fill="${cl1}"/>
+      </g>
+      <!-- Sculpted ivory Corinthian columns with gold capitals -->
+      <path d="M0 0 H420 V24 Q210 6 0 24 Z" fill="${flr}" stroke="url(#hsGoldH)" stroke-width="1.6"/>
+      <rect x="28" y="20" width="18" height="128" fill="${flr}" stroke="#cbd5e1" stroke-width="1"/>
+      <rect x="24" y="20" width="26" height="7" rx="2" fill="url(#hsGoldH)"/>
+      <rect x="374" y="20" width="18" height="128" fill="${flr}" stroke="#cbd5e1" stroke-width="1"/>
+      <rect x="370" y="20" width="26" height="7" rx="2" fill="url(#hsGoldH)"/>
+      <rect x="0" y="148" width="420" height="60" fill="${flr}"/>
+      ${floorPlanks(148, 0, 420, s.isNight ? "#64748b" : "#d4af37", 0.24)}
+      <line x1="0" y1="148" x2="420" y2="148" stroke="url(#hsGoldH)" stroke-width="2.4"/>
+    `;
+  });
 
-  // 23. ❄️ 极光冰晶宫殿 — REBUILT! Faceted Gothic Ice-Crystal Arches & Arctic Fjord under Aurora!
-  R.registerHouseArt("aurora_ice_palace", () => `
-    <defs>
-      <linearGradient id="ha_ai_bg" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#030f22"/><stop offset="52%" stop-color="#0a2d54"/><stop offset="100%" stop-color="#19527a"/>
-      </linearGradient>
-    </defs>
-    <rect width="420" height="208" fill="url(#ha_ai_bg)"/>
-    <!-- Multi-ribbon dancing Arctic Aurora Borealis -->
-    <g class="h-aurora" filter="url(#hsGlowMd)">
-      <path d="M0 44 Q114 8 216 38 Q318 68 420 22" fill="none" stroke="url(#hsAuroraCyan)" stroke-width="22" opacity="0.78"/>
-      <path d="M18 66 Q146 28 258 56 Q346 76 410 40" fill="none" stroke="url(#hsAuroraGold)" stroke-width="12" opacity="0.54"/>
-    </g>
-    <!-- Distant snow-capped Arctic fjord peaks -->
-    <path d="M0 148 L64 102 L126 132 L210 88 L294 130 L356 98 L420 148 Z" fill="#0f3a60" opacity="0.72"/>
-    <path d="M210 88 L226 104 L210 100 L194 104 Z M64 102 L78 114 L64 111 L50 114 Z" fill="#e0f2fe" opacity="0.78"/>
-    <!-- Sculpted translucent Gothic Ice-Crystal Cathedral Arches (replaces bare triangles!) -->
-    <path d="M0 0 H420 V42 Q350 6 280 54 V148 H266 V56 Q210 10 154 56 V148 H140 V54 Q70 6 0 42 Z" fill="#7dd3fc" fill-opacity="0.22" stroke="#bae6fd" stroke-width="1.3"/>
-    <!-- Hanging shimmering icicle prism cluster -->
-    <polygon points="186,22 192,22 189,44" fill="#e0f2fe" opacity="0.72"/>
-    <polygon points="206,18 214,18 210,48" fill="#ffffff" opacity="0.82"/>
-    <polygon points="228,22 234,22 231,42" fill="#e0f2fe" opacity="0.72"/>
-    ${stars([[86,32,1.5,"#e0f2fe"],[194,24,1.6,"#fff"],[326,30,1.5,"#bae6fd"],[246,74,1.3,"#a5f3fc"]])}
-    <rect x="0" y="148" width="420" height="60" fill="#0e3a5c"/>
-    <rect x="0" y="148" width="420" height="60" fill="url(#hsGlassSheen)" opacity="0.65"/>
-    <path d="M36 164 L108 176 L154 162 M268 178 L334 164 L388 182" fill="none" stroke="#bae6fd" stroke-width="0.9" opacity="0.45"/>
-    <line x1="0" y1="148" x2="420" y2="148" stroke="#7dd3fc" stroke-width="2.2" filter="url(#hsGlowSm)"/>
-  `);
+  // 23. ❄️ 极光冰晶宫殿 — Faceted Gothic Ice-Crystal Arches & Arctic Fjord (Sunlit Crystal Day vs Aurora Polar Night!)
+  R.registerHouseArt("aurora_ice_palace", (dp) => {
+    const s = skyOf(dp);
+    const id = `ai_${s.phase}`;
+    const bg = s.isNight
+      ? ["#030f22", "#0a2d54", "#19527a"]
+      : (s.isDusk
+        ? ["#312e81", "#7e22ce", "#fbcfe8"]
+        : (s.isDawn
+          ? ["#38bdf8", "#bae6fd", "#fce7f3"]
+          : ["#0ea5e9", "#7dd3fc", "#f0f9ff"]));
+    const mtn = s.isNight ? "#0f3a60" : (s.isDusk ? "#4c1d95" : "#7dd3fc");
+    const flr = s.isNight ? "#0e3a5c" : (s.isDusk ? "#3b2f63" : "#bae6fd");
+    const archFill = s.isNight ? "#7dd3fc" : "#ffffff";
+    const archOp = s.isNight ? "0.22" : "0.42";
+    return `
+      <defs>
+        <linearGradient id="${id}_bg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${bg[0]}"/><stop offset="52%" stop-color="${bg[1]}"/><stop offset="100%" stop-color="${bg[2]}"/>
+        </linearGradient>
+      </defs>
+      <rect width="420" height="208" fill="url(#${id}_bg)"/>
+      ${s.isNight || s.isDusk ? `
+      <g class="h-aurora" filter="url(#hsGlowMd)" opacity="${s.isNight ? "1" : "0.68"}">
+        <path d="M0 44 Q114 8 216 38 Q318 68 420 22" fill="none" stroke="url(#hsAuroraCyan)" stroke-width="22" opacity="0.78"/>
+        <path d="M18 66 Q146 28 258 56 Q346 76 410 40" fill="none" stroke="url(#hsAuroraGold)" stroke-width="12" opacity="0.54"/>
+      </g>` : `
+      <!-- Radiant Arctic sun halo & diamond-dust sunbeams by day -->
+      <circle cx="210" cy="48" r="24" fill="#ffffff" opacity="0.78" filter="url(#hsGlowLg)"/>
+      <circle cx="210" cy="48" r="46" fill="none" stroke="#e0f2fe" stroke-width="1.5" opacity="0.65"/>
+      <polygon points="154,0 266,0 320,148 100,148" fill="url(#hsSunbeam)" opacity="0.34"/>`}
+      <!-- Distant snow-capped Arctic fjord peaks -->
+      <path d="M0 148 L64 102 L126 132 L210 88 L294 130 L356 98 L420 148 Z" fill="${mtn}" opacity="0.78"/>
+      <path d="M210 88 L226 104 L210 100 L194 104 Z M64 102 L78 114 L64 111 L50 114 Z M356 98 L370 112 L356 108 L342 112 Z" fill="#ffffff" opacity="0.88"/>
+      <!-- Sculpted translucent Gothic Ice-Crystal Cathedral Arches -->
+      <path d="M0 0 H420 V42 Q350 6 280 54 V148 H266 V56 Q210 10 154 56 V148 H140 V54 Q70 6 0 42 Z" fill="${archFill}" fill-opacity="${archOp}" stroke="${s.isNight ? "#bae6fd" : "#ffffff"}" stroke-width="1.4"/>
+      <!-- Hanging shimmering icicle prism cluster -->
+      <polygon points="186,22 192,22 189,44" fill="#e0f2fe" opacity="0.85"/>
+      <polygon points="206,18 214,18 210,48" fill="#ffffff" opacity="0.92"/>
+      <polygon points="228,22 234,22 231,42" fill="#e0f2fe" opacity="0.85"/>
+      ${s.isNight ? stars([[86,32,1.5,"#e0f2fe"],[194,24,1.6,"#fff"],[326,30,1.5,"#bae6fd"],[246,74,1.3,"#a5f3fc"]]) : ""}
+      <rect x="0" y="148" width="420" height="60" fill="${flr}"/>
+      <rect x="0" y="148" width="420" height="60" fill="url(#hsGlassSheen)" opacity="0.65"/>
+      <path d="M36 164 L108 176 L154 162 M268 178 L334 164 L388 182" fill="none" stroke="${s.isNight ? "#bae6fd" : "#ffffff"}" stroke-width="1.1" opacity="0.58"/>
+      <line x1="0" y1="148" x2="420" y2="148" stroke="${s.isNight ? "#7dd3fc" : "#ffffff"}" stroke-width="2.2" filter="url(#hsGlowSm)"/>
+    `;
+  });
 
   // 24. 🏺 空中花园黄金阁 — Stepped Babylonian terraces, turquoise cascades & lush vine curtains
-  R.registerHouseArt("hanging_gardens", () => `
-    <defs>
-      <linearGradient id="ha_hg_bg" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#0ea5e9"/><stop offset="52%" stop-color="#fde68a"/><stop offset="100%" stop-color="#fef3c7"/>
-      </linearGradient>
-    </defs>
-    <rect width="420" height="208" fill="url(#ha_hg_bg)"/>
-    <!-- Stepped Babylonian terraced sanctuary in distance with cascading waterfall -->
-    <rect x="130" y="88" width="160" height="60" fill="#f3ead8" stroke="#d4af37" stroke-width="1.2"/>
-    <rect x="156" y="62" width="108" height="26" fill="#faf4e6" stroke="#d4af37" stroke-width="1.2"/>
-    <rect x="196" y="64" width="28" height="84" fill="#38bdf8" opacity="0.76"/>
-    <line x1="210" y1="64" x2="210" y2="148" stroke="#e0f2fe" stroke-width="4" stroke-dasharray="10 6" class="h-flow-rev"/>
-    <!-- Grand ivory-and-gold colonnade framing -->
-    <rect x="0" y="0" width="420" height="24" fill="url(#hsIvory)" stroke="url(#hsGoldH)" stroke-width="1.8"/>
-    <rect x="30" y="24" width="22" height="124" fill="url(#hsIvory)" stroke="url(#hsGoldH)" stroke-width="1.4"/>
-    <rect x="368" y="24" width="22" height="124" fill="url(#hsIvory)" stroke="url(#hsGoldH)" stroke-width="1.4"/>
-    <path d="M132 148 V78 A78 54 0 0 1 288 78 V148" fill="none" stroke="url(#hsGoldH)" stroke-width="3.2"/>
-    <!-- Lush overflowing hanging emerald vine curtains & flowers -->
-    <g stroke="#15803d" stroke-width="2.6" fill="none" class="h-drift-slow">
-      <path d="M70 24 Q64 62 76 96 Q70 118 78 134"/><path d="M98 24 Q106 58 96 92"/>
-      <path d="M322 24 Q330 62 318 96 Q324 116 316 132"/><path d="M348 24 Q340 56 350 88"/>
-    </g>
-    <g fill="#22c55e">
-      <circle cx="72" cy="54" r="6"/><circle cx="76" cy="84" r="5.5"/><circle cx="100" cy="60" r="6"/>
-      <circle cx="320" cy="56" r="6"/><circle cx="316" cy="88" r="5.5"/><circle cx="346" cy="62" r="6"/>
-      <ellipse cx="164" cy="88" rx="18" ry="6"/><ellipse cx="256" cy="88" rx="18" ry="6"/>
-    </g>
-    <circle cx="74" cy="68" r="3" fill="#fde047"/><circle cx="318" cy="70" r="3" fill="#f472b6"/>
-    <rect x="0" y="148" width="420" height="60" fill="url(#hsIvory)"/>
-    ${floorPlanks(148, 0, 420, "#d4af37", 0.24)}
-    <line x1="0" y1="148" x2="420" y2="148" stroke="url(#hsGoldH)" stroke-width="2.4"/>
-  `);
+  R.registerHouseArt("hanging_gardens", (dp) => {
+    const s = skyOf(dp);
+    const id = `hg_${s.phase}`;
+    const bg = s.isNight
+      ? ["#090f24", "#1e293b", "#312e81"]
+      : (s.isDusk
+        ? ["#7c2d12", "#f97316", "#fde68a"]
+        : (s.isDawn
+          ? ["#60a5fa", "#fbcfe8", "#fef3c7"]
+          : ["#0ea5e9", "#bae6fd", "#fef3c7"]));
+    const ter1 = s.isNight ? "#94a3b8" : "#f3ead8";
+    const ter2 = s.isNight ? "#cbd5e1" : "#faf4e6";
+    const flr = s.isNight ? "#cbd5e1" : "url(#hsIvory)";
+    const vine = s.isNight ? "#14532d" : "#22c55e";
+    return `
+      <defs>
+        <linearGradient id="${id}_bg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${bg[0]}"/><stop offset="52%" stop-color="${bg[1]}"/><stop offset="100%" stop-color="${bg[2]}"/>
+        </linearGradient>
+      </defs>
+      <rect width="420" height="208" fill="url(#${id}_bg)"/>
+      ${s.isNight ? `${stars([[90,34,1.3,"#fff"],[148,26,1.2,"#fde68a"],[286,28,1.3,"#bae6fd"],[344,36,1.2,"#fff"]])}${moon(324, 42, 13)}` : `<circle cx="324" cy="${s.isDusk || s.isDawn ? 48 : 38}" r="15" fill="${s.isDusk ? "#fb923c" : "#fde047"}" opacity="0.92" filter="url(#hsGlowMd)"/>`}
+      <!-- Stepped Babylonian terraced sanctuary in distance with cascading waterfall -->
+      <rect x="130" y="88" width="160" height="60" fill="${ter1}" stroke="#d4af37" stroke-width="1.2"/>
+      <rect x="156" y="62" width="108" height="26" fill="${ter2}" stroke="#d4af37" stroke-width="1.2"/>
+      <rect x="196" y="64" width="28" height="84" fill="${s.isNight ? "#1d4ed8" : "#38bdf8"}" opacity="0.78"/>
+      <line x1="210" y1="64" x2="210" y2="148" stroke="#e0f2fe" stroke-width="4" stroke-dasharray="10 6" class="h-flow-rev"/>
+      ${s.isNight ? `<g filter="url(#hsGlowSm)"><circle cx="146" cy="96" r="3" fill="#fef08a"/><circle cx="274" cy="96" r="3" fill="#fef08a"/><circle cx="172" cy="70" r="2.6" fill="#fde047"/><circle cx="248" cy="70" r="2.6" fill="#fde047"/></g>` : ""}
+      <!-- Grand ivory-and-gold colonnade framing -->
+      <rect x="0" y="0" width="420" height="24" fill="${flr}" stroke="url(#hsGoldH)" stroke-width="1.8"/>
+      <rect x="30" y="24" width="22" height="124" fill="${flr}" stroke="url(#hsGoldH)" stroke-width="1.4"/>
+      <rect x="368" y="24" width="22" height="124" fill="${flr}" stroke="url(#hsGoldH)" stroke-width="1.4"/>
+      <path d="M132 148 V78 A78 54 0 0 1 288 78 V148" fill="none" stroke="url(#hsGoldH)" stroke-width="3.2"/>
+      <!-- Lush overflowing hanging emerald vine curtains & flowers -->
+      <g stroke="${s.isNight ? "#052e16" : "#15803d"}" stroke-width="2.6" fill="none" class="h-drift-slow">
+        <path d="M70 24 Q64 62 76 96 Q70 118 78 134"/><path d="M98 24 Q106 58 96 92"/>
+        <path d="M322 24 Q330 62 318 96 Q324 116 316 132"/><path d="M348 24 Q340 56 350 88"/>
+      </g>
+      <g fill="${vine}">
+        <circle cx="72" cy="54" r="6"/><circle cx="76" cy="84" r="5.5"/><circle cx="100" cy="60" r="6"/>
+        <circle cx="320" cy="56" r="6"/><circle cx="316" cy="88" r="5.5"/><circle cx="346" cy="62" r="6"/>
+        <ellipse cx="164" cy="88" rx="18" ry="6"/><ellipse cx="256" cy="88" rx="18" ry="6"/>
+      </g>
+      <circle cx="74" cy="68" r="3" fill="#fde047"/><circle cx="318" cy="70" r="3" fill="#f472b6"/>
+      <rect x="0" y="148" width="420" height="60" fill="${flr}"/>
+      ${floorPlanks(148, 0, 420, s.isNight ? "#64748b" : "#d4af37", 0.24)}
+      <line x1="0" y1="148" x2="420" y2="148" stroke="url(#hsGoldH)" stroke-width="2.4"/>
+    `;
+  });
 
   // ==================== T8: 4 INTERSTELLAR ERA STATIONS ====================
 
-  // 25. 🌕 月球静海科研舱
-  R.registerHouseArt("lunar_base", () => `
-    <defs>
-      <radialGradient id="ha_lb_earth" cx="38%" cy="35%" r="65%">
-        <stop offset="0%" stop-color="#60a5fa"/><stop offset="55%" stop-color="#1d4ed8"/><stop offset="100%" stop-color="#0f172a"/>
-      </radialGradient>
-    </defs>
-    <rect width="420" height="208" fill="#050814"/>
-    ${stars([[42,24,1.3,"#fff"],[112,42,1.1],[184,20,1.4,"#bae6fd"],[336,28,1.2,"#fff"],[384,52,1.3]])}
-    <!-- Luminous blue Earthrise with atmospheric halo & cloud swirls -->
-    <g transform="translate(274, 58)" class="h-float-slow">
-      <circle cx="0" cy="0" r="35" fill="#38bdf8" opacity="0.18" filter="url(#hsGlowMd)"/>
-      <circle cx="0" cy="0" r="28" fill="url(#ha_lb_earth)" stroke="#93c5fd" stroke-width="1.2"/>
-      <path d="M-16 -10 Q-2 -20 10 -8 Q18 2 6 14 Q-8 18 -14 6 Z" fill="#22c55e" opacity="0.78"/>
-      <path d="M-22 2 Q0 -7 22 4" fill="none" stroke="#ffffff" stroke-width="2.8" opacity="0.74" stroke-linecap="round"/>
-    </g>
-    <!-- Shaded Sea of Tranquility craters -->
-    <path d="M0 116 Q108 102 210 120 Q316 130 420 110 L420 148 L0 148 Z" fill="#64748b"/>
-    <ellipse cx="94" cy="132" rx="26" ry="7" fill="#475569" stroke="#94a3b8" stroke-width="0.9"/>
-    <ellipse cx="332" cy="128" rx="30" ry="8" fill="#475569" stroke="#94a3b8" stroke-width="0.9"/>
-    <!-- Pressurized geodesic dome struts -->
-    <path d="M0 148 Q210 -18 420 148" fill="none" stroke="#cbd5e1" stroke-width="2.8" opacity="0.65"/>
-    <path d="M62 148 L120 68 L210 48 L300 68 L358 148" fill="none" stroke="#94a3b8" stroke-width="1.4" opacity="0.5"/>
-    <rect x="0" y="148" width="420" height="60" fill="#cbd5e1"/>
-    ${floorPlanks(148, 0, 420, "#64748b", 0.25)}
-    <line x1="0" y1="148" x2="420" y2="148" stroke="#38bdf8" stroke-width="2.2"/>
-  `);
-
-  // 26. 🛰️ 火星红岩生态穹顶
-  R.registerHouseArt("mars_dome", () => `
-    <defs>
-      <linearGradient id="ha_md_sky" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#3b120e"/><stop offset="56%" stop-color="#9a3412"/><stop offset="100%" stop-color="#ea580c"/>
-      </linearGradient>
-    </defs>
-    <rect width="420" height="208" fill="url(#ha_md_sky)"/>
-    <circle cx="338" cy="42" r="14" fill="#fde68a" opacity="0.88" filter="url(#hsGlowMd)"/>
-    <!-- Layered Valles Marineris canyon mesas -->
-    <path d="M0 112 L52 84 L112 110 L182 76 L248 114 L322 80 L384 110 L420 94 L420 148 L0 148 Z" fill="#7c2d12"/>
-    <path d="M0 130 Q140 118 280 132 Q360 136 420 124 L420 148 L0 148 Z" fill="#b45309"/>
-    <!-- Mars rover & solar panel array -->
-    <g transform="translate(310, 134)">
-      <rect x="-12" y="-8" width="24" height="6" rx="1.5" fill="#e2e8f0"/>
-      <line x1="-8" y1="-8" x2="-8" y2="-16" stroke="#cbd5e1" stroke-width="1.5"/>
-      <circle cx="-8" cy="-17" r="2.2" fill="#38bdf8"/>
-      <circle cx="-8" cy="0" r="3" fill="#1e293b"/><circle cx="0" cy="0" r="3" fill="#1e293b"/><circle cx="8" cy="0" r="3" fill="#1e293b"/>
-    </g>
-    <path d="M0 148 C34 14 386 14 420 148" fill="url(#hsGlassSheen)" opacity="0.2" stroke="#f8fafc" stroke-width="2.8"/>
-    <line x1="210" y1="30" x2="210" y2="148" stroke="#cbd5e1" stroke-width="1.6" opacity="0.45"/>
-    <rect x="0" y="148" width="420" height="60" fill="#27272a"/>
-    ${floorPlanks(148, 0, 420, "#52525b", 0.3)}
-    <line x1="0" y1="148" x2="420" y2="148" stroke="#fb923c" stroke-width="2.2"/>
-  `);
-
-  // 27. 🪐 土星冰环观景站 — Proper back/front ring occlusion around banded Saturn!
-  R.registerHouseArt("saturn_ring_station", () => `
-    <defs>
-      <linearGradient id="ha_sr_bg" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#050816"/><stop offset="60%" stop-color="#1e1b4b"/><stop offset="100%" stop-color="#312e81"/>
-      </linearGradient>
-      <linearGradient id="ha_sr_pl" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#fde68a"/><stop offset="48%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#b45309"/>
-      </linearGradient>
-    </defs>
-    <rect width="420" height="208" fill="url(#ha_sr_bg)"/>
-    ${stars([[54,28,1.3,"#fff"],[148,22,1.2,"#bae6fd"],[298,24,1.4,"#fde68a"],[374,40,1.2,"#fff"],[96,64,1.1,"#e0f2fe"]])}
-    <!-- Back half of Saturn rings -->
-    <ellipse cx="294" cy="94" rx="164" ry="26" transform="rotate(-14 294 94)" fill="none" stroke="#e0f2fe" stroke-width="8" opacity="0.48"/>
-    <!-- Banded Saturn body -->
-    <circle cx="294" cy="94" r="44" fill="url(#ha_sr_pl)" filter="url(#hsGlowSm)"/>
-    <path d="M254 84 Q294 90 334 80 M252 100 Q294 106 336 96" stroke="#92400e" stroke-width="2.4" fill="none" opacity="0.34"/>
-    <!-- Front half of Saturn icy rings crossing cleanly in front of planet -->
-    <path d="M134 132 A164 26 -14 0 0 454 56" fill="none" stroke="#e0f2fe" stroke-width="8" opacity="0.72"/>
-    <path d="M156 126 A142 20 -14 0 0 432 62" fill="none" stroke="#fde68a" stroke-width="3" stroke-dasharray="18 8" class="h-flow"/>
-    <rect x="0" y="0" width="420" height="20" fill="#1e293b"/>
-    <line x1="0" y1="20" x2="420" y2="20" stroke="#7dd3fc" stroke-width="1.8"/>
-    <rect x="0" y="148" width="420" height="60" fill="#1e293b"/>
-    ${floorPlanks(148, 0, 420, "#38bdf8", 0.22)}
-    <line x1="0" y1="148" x2="420" y2="148" stroke="#38bdf8" stroke-width="2.2" filter="url(#hsGlowSm)"/>
-  `);
-
-  // 28. ☀️ 戴森球恒星殿
-  R.registerHouseArt("dyson_sphere", () => `
-    <defs>
-      <radialGradient id="ha_ds_star" cx="50%" cy="46%" r="54%">
-        <stop offset="0%" stop-color="#ffffff"/><stop offset="28%" stop-color="#fef08a"/><stop offset="62%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#180a02"/>
-      </radialGradient>
-    </defs>
-    <rect width="420" height="208" fill="url(#ha_ds_star)"/>
-    <g transform="translate(210, 82)">
-      <circle cx="0" cy="0" r="38" fill="#fffbeb" opacity="0.9" filter="url(#hsGlowLg)" class="h-pulse"/>
-      <g class="h-spin-slow">
-        <ellipse cx="0" cy="0" rx="116" ry="34" fill="none" stroke="url(#hsGoldH)" stroke-width="3.2" stroke-dasharray="22 10"/>
+  // 25. 🌕 月球静海科研舱 (Sunlit Lunar Day vs Starry Lunar Night)
+  R.registerHouseArt("lunar_base", (dp) => {
+    const s = skyOf(dp);
+    const id = `lb_${s.phase}`;
+    const sky = s.isNight
+      ? ["#050814", "#0a1026"]
+      : (s.isDusk
+        ? ["#1e1b4b", "#4c1d95"]
+        : (s.isDawn
+          ? ["#1e3a8a", "#60a5fa"]
+          : ["#1d4ed8", "#93c5fd"]));
+    const surf = s.isNight ? "#475569" : (s.isDusk ? "#78716c" : "#e2e8f0");
+    const crat = s.isNight ? "#334155" : (s.isDusk ? "#57534e" : "#cbd5e1");
+    const flr = s.isNight ? "#1e293b" : (s.isDusk ? "#475569" : "#f1f5f9");
+    return `
+      <defs>
+        <linearGradient id="${id}_sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${sky[0]}"/><stop offset="100%" stop-color="${sky[1]}"/>
+        </linearGradient>
+        <radialGradient id="${id}_earth" cx="38%" cy="35%" r="65%">
+          <stop offset="0%" stop-color="#60a5fa"/><stop offset="55%" stop-color="#1d4ed8"/><stop offset="100%" stop-color="#0f172a"/>
+        </radialGradient>
+      </defs>
+      <rect width="420" height="208" fill="url(#${id}_sky)"/>
+      ${s.isNight || s.isDusk ? stars([[42,24,1.3,"#fff"],[112,42,1.1],[184,20,1.4,"#bae6fd"],[336,28,1.2,"#fff"],[384,52,1.3]]) : `
+      <!-- Blazing lunar-day solar corona flare -->
+      <circle cx="96" cy="40" r="24" fill="#fffbeb" opacity="0.86" filter="url(#hsGlowLg)"/>
+      <circle cx="96" cy="40" r="44" fill="#fde68a" opacity="0.22" filter="url(#hsGlowMd)"/>`}
+      <!-- Luminous blue Earthrise with atmospheric halo & cloud swirls -->
+      <g transform="translate(274, 58)" class="h-float-slow">
+        <circle cx="0" cy="0" r="35" fill="#38bdf8" opacity="0.24" filter="url(#hsGlowMd)"/>
+        <circle cx="0" cy="0" r="28" fill="url(#${id}_earth)" stroke="#93c5fd" stroke-width="1.2"/>
+        <path d="M-16 -10 Q-2 -20 10 -8 Q18 2 6 14 Q-8 18 -14 6 Z" fill="#22c55e" opacity="0.78"/>
+        <path d="M-22 2 Q0 -7 22 4" fill="none" stroke="#ffffff" stroke-width="2.8" opacity="0.74" stroke-linecap="round"/>
       </g>
-      <g class="h-spin-rev">
-        <ellipse cx="0" cy="0" rx="84" ry="26" transform="rotate(-18)" fill="none" stroke="#fef08a" stroke-width="2.2" stroke-dasharray="14 8"/>
+      <!-- Shaded Sea of Tranquility craters -->
+      <path d="M0 116 Q108 102 210 120 Q316 130 420 110 L420 148 L0 148 Z" fill="${surf}"/>
+      <ellipse cx="94" cy="132" rx="26" ry="7" fill="${crat}" stroke="#94a3b8" stroke-width="0.9"/>
+      <ellipse cx="332" cy="128" rx="30" ry="8" fill="${crat}" stroke="#94a3b8" stroke-width="0.9"/>
+      <!-- Pressurized geodesic dome struts -->
+      <path d="M0 148 Q210 -18 420 148" fill="none" stroke="${s.isNight ? "#94a3b8" : "#ffffff"}" stroke-width="2.8" opacity="0.72"/>
+      <path d="M62 148 L120 68 L210 48 L300 68 L358 148" fill="none" stroke="${s.isNight ? "#64748b" : "#e2e8f0"}" stroke-width="1.4" opacity="0.58"/>
+      <rect x="0" y="148" width="420" height="60" fill="${flr}"/>
+      ${floorPlanks(148, 0, 420, s.isNight ? "#38bdf8" : "#94a3b8", 0.25)}
+      <line x1="0" y1="148" x2="420" y2="148" stroke="#38bdf8" stroke-width="2.2" ${s.isNight ? 'filter="url(#hsGlowSm)"' : ""}/>
+    `;
+  });
+
+  // 26. 🛰️ 火星红岩生态穹顶 (Bright Peach Martian Day vs Blue-Sunset Dusk vs Starry Martian Night)
+  R.registerHouseArt("mars_dome", (dp) => {
+    const s = skyOf(dp);
+    const id = `md_${s.phase}`;
+    const sky = s.isNight
+      ? ["#0b0918", "#2b1015", "#5c1d14"]
+      : (s.isDusk
+        ? ["#3b120e", "#9a3412", "#7dd3fc"]
+        : (s.isDawn
+          ? ["#9a3412", "#fb923c", "#fde68a"]
+          : ["#ea580c", "#fdba74", "#ffedd5"]));
+    const m1 = s.isNight ? "#431407" : (s.isDusk ? "#7c2d12" : "#c2410c");
+    const m2 = s.isNight ? "#5c200c" : (s.isDusk ? "#b45309" : "#ea580c");
+    const flr = s.isNight ? "#27272a" : (s.isDusk ? "#44403c" : "#e7e5e4");
+    return `
+      <defs>
+        <linearGradient id="${id}_sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${sky[0]}"/><stop offset="56%" stop-color="${sky[1]}"/><stop offset="100%" stop-color="${sky[2]}"/>
+        </linearGradient>
+      </defs>
+      <rect width="420" height="208" fill="url(#${id}_sky)"/>
+      ${s.isNight
+        ? `${stars([[64,28,1.2,"#fff"],[154,22,1.3,"#fde68a"],[252,32,1.1,"#fff"],[356,24,1.2,"#fed7aa"]])}<circle cx="332" cy="44" r="9" fill="#cbd5e1" opacity="0.88"/><circle cx="304" cy="34" r="4.5" fill="#94a3b8" opacity="0.78"/>`
+        : `<circle cx="338" cy="${s.isDusk || s.isDawn ? 48 : 38}" r="15" fill="${s.isDusk ? "#bae6fd" : "#fffbeb"}" opacity="0.92" filter="url(#hsGlowMd)"/>`}
+      <!-- Layered Valles Marineris canyon mesas -->
+      <path d="M0 112 L52 84 L112 110 L182 76 L248 114 L322 80 L384 110 L420 94 L420 148 L0 148 Z" fill="${m1}"/>
+      <path d="M0 130 Q140 118 280 132 Q360 136 420 124 L420 148 L0 148 Z" fill="${m2}"/>
+      <!-- Mars rover & solar panel array -->
+      <g transform="translate(310, 134)">
+        <rect x="-12" y="-8" width="24" height="6" rx="1.5" fill="#e2e8f0"/>
+        <line x1="-8" y1="-8" x2="-8" y2="-16" stroke="#cbd5e1" stroke-width="1.5"/>
+        <circle cx="-8" cy="-17" r="2.2" fill="#38bdf8"/>
+        <circle cx="-8" cy="0" r="3" fill="#1e293b"/><circle cx="0" cy="0" r="3" fill="#1e293b"/><circle cx="8" cy="0" r="3" fill="#1e293b"/>
       </g>
-    </g>
-    <!-- Hexagonal megastructure pillars -->
-    <polygon points="0,0 74,0 44,148 0,148" fill="#18120e" stroke="url(#hsGoldH)" stroke-width="1.8"/>
-    <polygon points="420,0 346,0 376,148 420,148" fill="#18120e" stroke="url(#hsGoldH)" stroke-width="1.8"/>
-    <line x1="22" y1="36" x2="54" y2="36" stroke="#f59e0b" stroke-width="1.4" opacity="0.65"/>
-    <line x1="366" y1="36" x2="398" y2="36" stroke="#f59e0b" stroke-width="1.4" opacity="0.65"/>
-    <rect x="0" y="148" width="420" height="60" fill="#1c140c"/>
-    ${floorPlanks(148, 0, 420, "#f59e0b", 0.24)}
-    <line x1="0" y1="148" x2="420" y2="148" stroke="url(#hsGoldH)" stroke-width="2.6" filter="url(#hsGlowSm)"/>
-  `);
+      <path d="M0 148 C34 14 386 14 420 148" fill="url(#hsGlassSheen)" opacity="${s.isNight ? "0.18" : "0.28"}" stroke="#f8fafc" stroke-width="2.8"/>
+      <line x1="210" y1="30" x2="210" y2="148" stroke="#cbd5e1" stroke-width="1.6" opacity="0.5"/>
+      <rect x="0" y="148" width="420" height="60" fill="${flr}"/>
+      ${floorPlanks(148, 0, 420, s.isNight ? "#52525b" : "#a8a29e", 0.3)}
+      <line x1="0" y1="148" x2="420" y2="148" stroke="#fb923c" stroke-width="2.2"/>
+    `;
+  });
+
+  // 27. 🪐 土星冰环观景站 — Proper back/front ring occlusion (Sunlit Platinum Day Deck vs Starry Night Deck)
+  R.registerHouseArt("saturn_ring_station", (dp) => {
+    const s = skyOf(dp);
+    const id = `sr_${s.phase}`;
+    const bg = s.isNight
+      ? ["#050816", "#1e1b4b", "#312e81"]
+      : (s.isDusk
+        ? ["#312e81", "#7c2d6e", "#f59e0b"]
+        : (s.isDawn
+          ? ["#1d4ed8", "#60a5fa", "#fde68a"]
+          : ["#0284c7", "#7dd3fc", "#fef3c7"]));
+    const deck = s.isNight ? "#1e293b" : (s.isDusk ? "#334155" : "#e2e8f0");
+    return `
+      <defs>
+        <linearGradient id="${id}_bg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${bg[0]}"/><stop offset="60%" stop-color="${bg[1]}"/><stop offset="100%" stop-color="${bg[2]}"/>
+        </linearGradient>
+        <linearGradient id="${id}_pl" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${s.isNight ? "#fde68a" : "#fffbeb"}"/><stop offset="48%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#b45309"/>
+        </linearGradient>
+      </defs>
+      <rect width="420" height="208" fill="url(#${id}_bg)"/>
+      ${s.isNight || s.isDusk
+        ? stars([[54,28,1.3,"#fff"],[148,22,1.2,"#bae6fd"],[298,24,1.4,"#fde68a"],[374,40,1.2,"#fff"],[96,64,1.1,"#e0f2fe"]])
+        : `<circle cx="78" cy="48" r="20" fill="#fffbeb" opacity="0.88" filter="url(#hsGlowLg)"/>`}
+      <!-- Back half of Saturn rings -->
+      <ellipse cx="294" cy="94" rx="164" ry="26" transform="rotate(-14 294 94)" fill="none" stroke="${s.isNight ? "#e0f2fe" : "#ffffff"}" stroke-width="8" opacity="0.56"/>
+      <!-- Banded Saturn body -->
+      <circle cx="294" cy="94" r="44" fill="url(#${id}_pl)" filter="url(#hsGlowSm)"/>
+      <path d="M254 84 Q294 90 334 80 M252 100 Q294 106 336 96" stroke="#92400e" stroke-width="2.4" fill="none" opacity="0.34"/>
+      <!-- Front half of Saturn icy rings crossing cleanly in front of planet -->
+      <path d="M134 132 A164 26 -14 0 0 454 56" fill="none" stroke="${s.isNight ? "#e0f2fe" : "#ffffff"}" stroke-width="8" opacity="0.82"/>
+      <path d="M156 126 A142 20 -14 0 0 432 62" fill="none" stroke="#fde68a" stroke-width="3" stroke-dasharray="18 8" class="h-flow"/>
+      <rect x="0" y="0" width="420" height="20" fill="${deck}"/>
+      <line x1="0" y1="20" x2="420" y2="20" stroke="${s.isNight ? "#7dd3fc" : "#38bdf8"}" stroke-width="1.8"/>
+      <rect x="0" y="148" width="420" height="60" fill="${deck}"/>
+      ${floorPlanks(148, 0, 420, s.isNight ? "#38bdf8" : "#64748b", 0.24)}
+      <line x1="0" y1="148" x2="420" y2="148" stroke="#38bdf8" stroke-width="2.2" ${s.isNight ? 'filter="url(#hsGlowSm)"' : ""}/>
+    `;
+  });
+
+  // 28. ☀️ 戴森球恒星殿 (Blazing Golden Daylight Cathedral vs Solar Eclipse Night Hall)
+  R.registerHouseArt("dyson_sphere", (dp) => {
+    const s = skyOf(dp);
+    const id = `ds_${s.phase}`;
+    const bg = s.isNight
+      ? ["#fef08a", "#f59e0b", "#451a03", "#090402"]
+      : (s.isDusk
+        ? ["#ffffff", "#fde047", "#ea580c", "#431407"]
+        : ["#ffffff", "#fef9c3", "#fde68a", "#f59e0b"]);
+    const pil = s.isNight ? "#18120e" : (s.isDusk ? "#451a03" : "#fffbeb");
+    const flr = s.isNight ? "#1c140c" : (s.isDusk ? "#451a03" : "#fef3c7");
+    return `
+      <defs>
+        <radialGradient id="${id}_star" cx="50%" cy="46%" r="58%">
+          <stop offset="0%" stop-color="${bg[0]}"/><stop offset="28%" stop-color="${bg[1]}"/><stop offset="62%" stop-color="${bg[2]}"/><stop offset="100%" stop-color="${bg[3]}"/>
+        </radialGradient>
+      </defs>
+      <rect width="420" height="208" fill="url(#${id}_star)"/>
+      ${s.isNight ? stars([[84,26,1.3,"#fef08a"],[338,28,1.3,"#fff"],[114,122,1.1,"#fde047"],[310,120,1.1,"#fff"]]) : ""}
+      <g transform="translate(210, 82)">
+        <circle cx="0" cy="0" r="38" fill="${s.isNight ? "#180a02" : "#ffffff"}" stroke="${s.isNight ? "#fef08a" : "#fde047"}" stroke-width="${s.isNight ? "4" : "2"}" opacity="0.95" filter="url(#hsGlowLg)" class="h-pulse"/>
+        <g class="h-spin-slow">
+          <ellipse cx="0" cy="0" rx="116" ry="34" fill="none" stroke="url(#hsGoldH)" stroke-width="3.2" stroke-dasharray="22 10"/>
+        </g>
+        <g class="h-spin-rev">
+          <ellipse cx="0" cy="0" rx="84" ry="26" transform="rotate(-18)" fill="none" stroke="${s.isNight ? "#fef08a" : "#d97706"}" stroke-width="2.2" stroke-dasharray="14 8"/>
+        </g>
+      </g>
+      <!-- Hexagonal megastructure pillars -->
+      <polygon points="0,0 74,0 44,148 0,148" fill="${pil}" stroke="url(#hsGoldH)" stroke-width="1.8"/>
+      <polygon points="420,0 346,0 376,148 420,148" fill="${pil}" stroke="url(#hsGoldH)" stroke-width="1.8"/>
+      <line x1="22" y1="36" x2="54" y2="36" stroke="#f59e0b" stroke-width="1.4" opacity="0.65"/>
+      <line x1="366" y1="36" x2="398" y2="36" stroke="#f59e0b" stroke-width="1.4" opacity="0.65"/>
+      <rect x="0" y="148" width="420" height="60" fill="${flr}"/>
+      ${floorPlanks(148, 0, 420, "#d97706", 0.24)}
+      <line x1="0" y1="148" x2="420" y2="148" stroke="url(#hsGoldH)" stroke-width="2.6" filter="url(#hsGlowSm)"/>
+    `;
+  });
 
   // ==================== T9: 4 DIMENSIONAL SANCTUARIES ====================
 
-  // 29. 🔮 量子镜像浮殿 — Receding crystalline portal arches & faceted floating octahedrons!
-  R.registerHouseArt("quantum_mirror", () => `
-    <defs>
-      <linearGradient id="ha_qm_bg" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="#09071a"/><stop offset="50%" stop-color="#1e1b4b"/><stop offset="100%" stop-color="#0f172a"/>
-      </linearGradient>
-    </defs>
-    <rect width="420" height="208" fill="url(#ha_qm_bg)"/>
-    <!-- Infinite receding diamond mirror portal corridor -->
-    <polygon points="210,12 316,80 210,148 104,80" fill="none" stroke="#38bdf8" stroke-width="1.6" opacity="0.68"/>
-    <polygon points="210,28 288,80 210,132 132,80" fill="none" stroke="#c084fc" stroke-width="1.5" opacity="0.76"/>
-    <polygon points="210,46 258,80 210,114 162,80" fill="#22d3ee" fill-opacity="0.16" stroke="#f472b6" stroke-width="1.5" class="h-pulse"/>
-    <!-- Floating faceted quantum crystal octahedrons -->
-    <g class="h-float" filter="url(#hsGlowSm)">
-      <polygon points="68,36 86,62 68,88 50,62" fill="#38bdf8" fill-opacity="0.28" stroke="#7dd3fc" stroke-width="1.3"/>
-      <line x1="68" y1="36" x2="68" y2="88" stroke="#e0f2fe" stroke-width="0.9"/>
-    </g>
-    <g class="h-float-slow" filter="url(#hsGlowSm)">
-      <polygon points="352,36 370,62 352,88 334,62" fill="#c084fc" fill-opacity="0.28" stroke="#f0abfc" stroke-width="1.3"/>
-      <line x1="352" y1="36" x2="352" y2="88" stroke="#fae8ff" stroke-width="0.9"/>
-    </g>
-    <rect x="0" y="148" width="420" height="60" fill="#0d1026"/>
-    ${floorPlanks(148, 0, 420, "#38bdf8", 0.24)}
-    <line x1="0" y1="148" x2="420" y2="148" stroke="url(#hsPrism)" stroke-width="2.4" filter="url(#hsGlowSm)"/>
-  `);
-
-  // 30. ⏳ 时光裂隙钟楼 — Grand Gothic-celestial rose clockface & interlocking golden gears
-  R.registerHouseArt("time_clocktower", () => `
-    <defs>
-      <radialGradient id="ha_tc_bg" cx="50%" cy="42%" r="62%">
-        <stop offset="0%" stop-color="#3b1d5e"/><stop offset="60%" stop-color="#140c24"/><stop offset="100%" stop-color="#07050f"/>
-      </radialGradient>
-    </defs>
-    <rect width="420" height="208" fill="url(#ha_tc_bg)"/>
-    <!-- Grand celestial clockface rose-window -->
-    <g transform="translate(210, 82)">
-      <circle cx="0" cy="0" r="68" fill="#1e1b4b" fill-opacity="0.5" stroke="url(#hsGoldH)" stroke-width="2.6"/>
-      <g class="h-spin-slow">
-        <circle cx="0" cy="0" r="58" fill="none" stroke="#f59e0b" stroke-width="4.5" stroke-dasharray="6 8" opacity="0.82"/>
-        <line x1="-66" y1="0" x2="66" y2="0" stroke="#fbbf24" stroke-width="1.2" opacity="0.52"/>
-        <line x1="0" y1="-66" x2="0" y2="66" stroke="#fbbf24" stroke-width="1.2" opacity="0.52"/>
+  // 29. 🔮 量子镜像浮殿 — Bright Crystalline Sky-Mirror Day vs Deep Neon Midnight Portal
+  R.registerHouseArt("quantum_mirror", (dp) => {
+    const s = skyOf(dp);
+    const id = `qm_${s.phase}`;
+    const bg = s.isNight
+      ? ["#09071a", "#1e1b4b", "#0f172a"]
+      : (s.isDusk
+        ? ["#3b0764", "#9d174d", "#fbcfe8"]
+        : (s.isDawn
+          ? ["#bfdbfe", "#f5d0fe", "#fef9c3"]
+          : ["#bae6fd", "#f0f9ff", "#ede9fe"]));
+    const flr = s.isNight ? "#0d1026" : (s.isDusk ? "#311842" : "#e2e8f0");
+    return `
+      <defs>
+        <linearGradient id="${id}_bg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="${bg[0]}"/><stop offset="50%" stop-color="${bg[1]}"/><stop offset="100%" stop-color="${bg[2]}"/>
+        </linearGradient>
+      </defs>
+      <rect width="420" height="208" fill="url(#${id}_bg)"/>
+      ${s.isNight ? stars([[52,22,1.2,"#fff"],[132,20,1.3,"#38bdf8"],[288,24,1.3,"#f0abfc"],[366,22,1.2,"#fff"]]) : `<polygon points="140,0 280,0 340,148 80,148" fill="url(#hsSunbeam)" opacity="0.32"/>`}
+      <!-- Infinite receding diamond mirror portal corridor -->
+      <polygon points="210,12 316,80 210,148 104,80" fill="${s.isNight ? "none" : "rgba(255,255,255,0.28)"}" stroke="${s.isNight ? "#38bdf8" : "#0284c7"}" stroke-width="1.6" opacity="0.75"/>
+      <polygon points="210,28 288,80 210,132 132,80" fill="none" stroke="${s.isNight ? "#c084fc" : "#9333ea"}" stroke-width="1.5" opacity="0.78"/>
+      <polygon points="210,46 258,80 210,114 162,80" fill="${s.isNight ? "#22d3ee" : "#ffffff"}" fill-opacity="${s.isNight ? "0.18" : "0.52"}" stroke="${s.isNight ? "#f472b6" : "#ec4899"}" stroke-width="1.5" class="h-pulse"/>
+      <!-- Floating faceted quantum crystal octahedrons -->
+      <g class="h-float" ${s.isNight ? 'filter="url(#hsGlowSm)"' : ""}>
+        <polygon points="68,36 86,62 68,88 50,62" fill="#38bdf8" fill-opacity="0.34" stroke="${s.isNight ? "#7dd3fc" : "#0284c7"}" stroke-width="1.3"/>
+        <line x1="68" y1="36" x2="68" y2="88" stroke="#ffffff" stroke-width="1"/>
       </g>
-      <g class="h-spin-rev">
-        <circle cx="0" cy="0" r="36" fill="none" stroke="#38bdf8" stroke-width="2" stroke-dasharray="10 6"/>
+      <g class="h-float-slow" ${s.isNight ? 'filter="url(#hsGlowSm)"' : ""}>
+        <polygon points="352,36 370,62 352,88 334,62" fill="#c084fc" fill-opacity="0.34" stroke="${s.isNight ? "#f0abfc" : "#7e22ce"}" stroke-width="1.3"/>
+        <line x1="352" y1="36" x2="352" y2="88" stroke="#ffffff" stroke-width="1"/>
       </g>
-      <line x1="0" y1="0" x2="0" y2="-42" stroke="#fef08a" stroke-width="2.4" stroke-linecap="round"/>
-      <line x1="0" y1="0" x2="30" y2="15" stroke="#f59e0b" stroke-width="2.8" stroke-linecap="round"/>
-      <circle cx="0" cy="0" r="4.8" fill="#fef08a" filter="url(#hsGlowSm)"/>
-    </g>
-    <!-- Flanking golden gears -->
-    <g transform="translate(84, 58)" class="h-spin-rev" opacity="0.62">
-      <circle cx="0" cy="0" r="24" fill="none" stroke="#f59e0b" stroke-width="4" stroke-dasharray="5 6"/>
-      <circle cx="0" cy="0" r="14" fill="none" stroke="#fbbf24" stroke-width="1.4"/>
-    </g>
-    <g transform="translate(336, 58)" class="h-spin-rev" opacity="0.62">
-      <circle cx="0" cy="0" r="24" fill="none" stroke="#f59e0b" stroke-width="4" stroke-dasharray="5 6"/>
-      <circle cx="0" cy="0" r="14" fill="none" stroke="#fbbf24" stroke-width="1.4"/>
-    </g>
-    <rect x="0" y="148" width="420" height="60" fill="#120c1f"/>
-    ${floorPlanks(148, 0, 420, "#f59e0b", 0.22)}
-    <line x1="0" y1="148" x2="420" y2="148" stroke="url(#hsGoldH)" stroke-width="2.4"/>
-  `);
+      <rect x="0" y="148" width="420" height="60" fill="${flr}"/>
+      ${floorPlanks(148, 0, 420, s.isNight ? "#38bdf8" : "#94a3b8", 0.25)}
+      <line x1="0" y1="148" x2="420" y2="148" stroke="url(#hsPrism)" stroke-width="2.4" filter="url(#hsGlowSm)"/>
+    `;
+  });
 
-  // 31. 🌠 银河核心星云阁
-  R.registerHouseArt("galactic_core", () => `
-    <defs>
-      <radialGradient id="ha_gc_bg" cx="50%" cy="44%" r="65%">
-        <stop offset="0%" stop-color="#10b981"/><stop offset="32%" stop-color="#0f3d4c"/><stop offset="70%" stop-color="#1e1b4b"/><stop offset="100%" stop-color="#050816"/>
-      </radialGradient>
-    </defs>
-    <rect width="420" height="208" fill="url(#ha_gc_bg)"/>
-    <g transform="translate(210, 78)" class="h-spin-slow" opacity="0.72">
-      <ellipse cx="0" cy="0" rx="146" ry="40" fill="none" stroke="url(#hsAuroraCyan)" stroke-width="11" filter="url(#hsGlowMd)"/>
-      <ellipse cx="0" cy="0" rx="96" ry="26" transform="rotate(24)" fill="none" stroke="url(#hsAuroraGold)" stroke-width="8"/>
-    </g>
-    <circle cx="210" cy="78" r="17" fill="#ecfdf5" opacity="0.9" filter="url(#hsGlowLg)" class="h-pulse"/>
-    <!-- Upturned jade-and-gold celestial pavilion eaves -->
-    <path d="M0 0 H420 V26 Q315 10 210 24 Q105 10 0 26 Z" fill="#064e3b" stroke="url(#hsGoldH)" stroke-width="1.8"/>
-    ${stars([[54,48,1.6,"#fef08a"],[118,62,1.3,"#6ee7b7"],[298,56,1.6,"#fef08a"],[362,44,1.4,"#38bdf8"],[156,36,1.2,"#fff"],[264,34,1.2,"#fff"]])}
-    <rect x="0" y="148" width="420" height="60" fill="#071e26"/>
-    ${floorPlanks(148, 0, 420, "#34d399", 0.22)}
-    <line x1="0" y1="148" x2="420" y2="148" stroke="#34d399" stroke-width="2.4" filter="url(#hsGlowSm)"/>
-  `);
+  // 30. ⏳ 时光裂隙钟楼 — Sunlit Golden Cathedral Clockface Day vs Starry Midnight Velvet Clocktower
+  R.registerHouseArt("time_clocktower", (dp) => {
+    const s = skyOf(dp);
+    const id = `tc_${s.phase}`;
+    const bg = s.isNight
+      ? ["#3b1d5e", "#140c24", "#07050f"]
+      : (s.isDusk
+        ? ["#f59e0b", "#7c2d6e", "#1e1b4b"]
+        : (s.isDawn
+          ? ["#fef3c7", "#fbcfe8", "#60a5fa"]
+          : ["#fffbeb", "#bae6fd", "#38bdf8"]));
+    const dialBg = s.isNight ? "#1e1b4b" : (s.isDusk ? "#4c1d95" : "#fffbeb");
+    const flr = s.isNight ? "#120c1f" : (s.isDusk ? "#2e1a36" : "#f3ead8");
+    const handC = s.isNight ? "#fef08a" : "#b45309";
+    return `
+      <defs>
+        <radialGradient id="${id}_bg" cx="50%" cy="42%" r="65%">
+          <stop offset="0%" stop-color="${bg[0]}"/><stop offset="60%" stop-color="${bg[1]}"/><stop offset="100%" stop-color="${bg[2]}"/>
+        </radialGradient>
+      </defs>
+      <rect width="420" height="208" fill="url(#${id}_bg)"/>
+      ${s.isNight ? stars([[44,24,1.3,"#fde68a"],[122,18,1.2,"#fff"],[300,22,1.3,"#bae6fd"],[376,28,1.2,"#fff"]]) : `<polygon points="150,0 270,0 326,148 94,148" fill="url(#hsSunbeam)" opacity="0.34"/>`}
+      <!-- Grand celestial clockface rose-window -->
+      <g transform="translate(210, 82)">
+        <circle cx="0" cy="0" r="68" fill="${dialBg}" fill-opacity="${s.isNight ? "0.52" : "0.78"}" stroke="url(#hsGoldH)" stroke-width="2.6"/>
+        <g class="h-spin-slow">
+          <circle cx="0" cy="0" r="58" fill="none" stroke="#d97706" stroke-width="4.5" stroke-dasharray="6 8" opacity="0.82"/>
+          <line x1="-66" y1="0" x2="66" y2="0" stroke="#d97706" stroke-width="1.2" opacity="0.52"/>
+          <line x1="0" y1="-66" x2="0" y2="66" stroke="#d97706" stroke-width="1.2" opacity="0.52"/>
+        </g>
+        <g class="h-spin-rev">
+          <circle cx="0" cy="0" r="36" fill="none" stroke="${s.isNight ? "#38bdf8" : "#0284c7"}" stroke-width="2" stroke-dasharray="10 6"/>
+        </g>
+        <line x1="0" y1="0" x2="0" y2="-42" stroke="${handC}" stroke-width="2.4" stroke-linecap="round"/>
+        <line x1="0" y1="0" x2="30" y2="15" stroke="#f59e0b" stroke-width="2.8" stroke-linecap="round"/>
+        <circle cx="0" cy="0" r="4.8" fill="#fef08a" stroke="#d97706" stroke-width="1" filter="url(#hsGlowSm)"/>
+      </g>
+      <!-- Flanking golden gears -->
+      <g transform="translate(84, 58)" class="h-spin-rev" opacity="${s.isNight ? "0.62" : "0.78"}">
+        <circle cx="0" cy="0" r="24" fill="none" stroke="#d97706" stroke-width="4" stroke-dasharray="5 6"/>
+        <circle cx="0" cy="0" r="14" fill="none" stroke="#f59e0b" stroke-width="1.4"/>
+      </g>
+      <g transform="translate(336, 58)" class="h-spin-rev" opacity="${s.isNight ? "0.62" : "0.78"}">
+        <circle cx="0" cy="0" r="24" fill="none" stroke="#d97706" stroke-width="4" stroke-dasharray="5 6"/>
+        <circle cx="0" cy="0" r="14" fill="none" stroke="#f59e0b" stroke-width="1.4"/>
+      </g>
+      <rect x="0" y="148" width="420" height="60" fill="${flr}"/>
+      ${floorPlanks(148, 0, 420, "#d97706", 0.24)}
+      <line x1="0" y1="148" x2="420" y2="148" stroke="url(#hsGoldH)" stroke-width="2.4"/>
+    `;
+  });
 
-  // 32. 🌀 奇点视界王庭 — Gargantua-style double-lensed golden-violet event horizon!
-  R.registerHouseArt("singularity_court", () => `
-    <rect width="420" height="208" fill="#05030d"/>
-    <g transform="translate(210, 80)">
-      <ellipse cx="0" cy="0" rx="164" ry="24" fill="none" stroke="#f59e0b" stroke-width="9" opacity="0.72" filter="url(#hsGlowMd)" class="h-pulse"/>
-      <ellipse cx="0" cy="0" rx="142" ry="16" fill="none" stroke="#fef08a" stroke-width="3" stroke-dasharray="26 12" class="h-flow"/>
-      <circle cx="0" cy="0" r="46" fill="none" stroke="url(#hsGoldH)" stroke-width="3.4" filter="url(#hsGlowSm)"/>
-      <circle cx="0" cy="0" r="39" fill="#020106" stroke="#a855f7" stroke-width="1.8"/>
-      <path d="M-158 0 Q0 24 158 0" fill="none" stroke="#fde047" stroke-width="3.6" opacity="0.92" filter="url(#hsGlowSm)"/>
-    </g>
-    <path d="M0 0 H52 L34 148 H0 Z M420 0 H368 L386 148 H420 Z" fill="url(#hsObsidian)" stroke="url(#hsGoldH)" stroke-width="1.8"/>
-    <rect x="0" y="148" width="420" height="60" fill="url(#hsObsidian)"/>
-    ${floorPlanks(148, 0, 420, "#f59e0b", 0.22)}
-    <line x1="0" y1="148" x2="420" y2="148" stroke="url(#hsGoldH)" stroke-width="2.6" filter="url(#hsGlowSm)"/>
-  `);
+  // 31. 🌠 银河核心星云阁 (Luminous Celadon-Jade Day Pavilion vs Deep Space Emerald Night)
+  R.registerHouseArt("galactic_core", (dp) => {
+    const s = skyOf(dp);
+    const id = `gc_${s.phase}`;
+    const bg = s.isNight
+      ? ["#10b981", "#0f3d4c", "#1e1b4b", "#050816"]
+      : (s.isDusk
+        ? ["#34d399", "#0e7490", "#6b21a8", "#1e1b4b"]
+        : (s.isDawn
+          ? ["#ecfdf5", "#a7f3d0", "#bae6fd", "#fbcfe8"]
+          : ["#ffffff", "#a7f3d0", "#7dd3fc", "#38bdf8"]));
+    const eave = s.isNight ? "#064e3b" : (s.isDusk ? "#0f766e" : "#ecfdf5");
+    const flr = s.isNight ? "#071e26" : (s.isDusk ? "#134e4a" : "#d1fae5");
+    return `
+      <defs>
+        <radialGradient id="${id}_bg" cx="50%" cy="44%" r="65%">
+          <stop offset="0%" stop-color="${bg[0]}"/><stop offset="32%" stop-color="${bg[1]}"/><stop offset="70%" stop-color="${bg[2]}"/><stop offset="100%" stop-color="${bg[3]}"/>
+        </radialGradient>
+      </defs>
+      <rect width="420" height="208" fill="url(#${id}_bg)"/>
+      <g transform="translate(210, 78)" class="h-spin-slow" opacity="${s.isNight ? "0.74" : "0.62"}">
+        <ellipse cx="0" cy="0" rx="146" ry="40" fill="none" stroke="url(#hsAuroraCyan)" stroke-width="11" filter="url(#hsGlowMd)"/>
+        <ellipse cx="0" cy="0" rx="96" ry="26" transform="rotate(24)" fill="none" stroke="url(#hsAuroraGold)" stroke-width="8"/>
+      </g>
+      <circle cx="210" cy="78" r="17" fill="#ffffff" opacity="0.92" filter="url(#hsGlowLg)" class="h-pulse"/>
+      <!-- Upturned jade-and-gold celestial pavilion eaves -->
+      <path d="M0 0 H420 V26 Q315 10 210 24 Q105 10 0 26 Z" fill="${eave}" stroke="url(#hsGoldH)" stroke-width="1.8"/>
+      ${s.isNight || s.isDusk ? stars([[54,48,1.6,"#fef08a"],[118,62,1.3,"#6ee7b7"],[298,56,1.6,"#fef08a"],[362,44,1.4,"#38bdf8"],[156,36,1.2,"#fff"],[264,34,1.2,"#fff"]]) : ""}
+      <rect x="0" y="148" width="420" height="60" fill="${flr}"/>
+      ${floorPlanks(148, 0, 420, s.isNight ? "#34d399" : "#10b981", 0.24)}
+      <line x1="0" y1="148" x2="420" y2="148" stroke="${s.isNight ? "#34d399" : "#059669"}" stroke-width="2.4" ${s.isNight ? 'filter="url(#hsGlowSm)"' : ""}/>
+    `;
+  });
+
+  // 32. 🌀 奇点视界王庭 — Radiant White-Gold Solar Singularity Day vs Deep Obsidian Gargantua Night!
+  R.registerHouseArt("singularity_court", (dp) => {
+    const s = skyOf(dp);
+    const id = `sg_${s.phase}`;
+    const bg = s.isNight
+      ? ["#05030d", "#0c071c", "#180d2e"]
+      : (s.isDusk
+        ? ["#2e1065", "#9a3412", "#fde68a"]
+        : (s.isDawn
+          ? ["#bae6fd", "#fbcfe8", "#fef3c7"]
+          : ["#e0f2fe", "#fef9c3", "#fde68a"]));
+    const coreFill = s.isNight ? "#020106" : (s.isDusk ? "#180a26" : "#fffbeb");
+    const coreStroke = s.isNight ? "#a855f7" : (s.isDusk ? "#f97316" : "#f59e0b");
+    const pilFill = s.isNight ? "url(#hsObsidian)" : (s.isDusk ? "#311a3d" : "url(#hsIvory)");
+    const flrFill = s.isNight ? "url(#hsObsidian)" : (s.isDusk ? "#261530" : "url(#hsIvory)");
+    const ringMain = s.isNight ? "#f59e0b" : "#d97706";
+    return `
+      <defs>
+        <linearGradient id="${id}_bg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${bg[0]}"/><stop offset="56%" stop-color="${bg[1]}"/><stop offset="100%" stop-color="${bg[2]}"/>
+        </linearGradient>
+      </defs>
+      <rect width="420" height="208" fill="url(#${id}_bg)"/>
+      ${s.isNight ? stars([[72,26,1.3,"#fef08a"],[142,20,1.2,"#c084fc"],[282,22,1.3,"#fff"],[348,30,1.2,"#fde047"]]) : `<polygon points="118,0 302,0 360,148 60,148" fill="url(#hsSunbeam)" opacity="0.45"/>`}
+      <g transform="translate(210, 80)">
+        <ellipse cx="0" cy="0" rx="164" ry="24" fill="none" stroke="${ringMain}" stroke-width="9" opacity="${s.isNight ? "0.72" : "0.52"}" filter="url(#hsGlowMd)" class="h-pulse"/>
+        <ellipse cx="0" cy="0" rx="142" ry="16" fill="none" stroke="${s.isNight ? "#fef08a" : "#ffffff"}" stroke-width="3" stroke-dasharray="26 12" class="h-flow"/>
+        <circle cx="0" cy="0" r="46" fill="none" stroke="url(#hsGoldH)" stroke-width="3.4" filter="url(#hsGlowSm)"/>
+        <circle cx="0" cy="0" r="39" fill="${coreFill}" stroke="${coreStroke}" stroke-width="2"/>
+        ${!s.isNight && !s.isDusk ? `<circle cx="0" cy="0" r="24" fill="#fef08a" opacity="0.55" filter="url(#hsGlowMd)" class="h-pulse"/>` : ""}
+        <path d="M-158 0 Q0 24 158 0" fill="none" stroke="${s.isNight ? "#fde047" : "#f59e0b"}" stroke-width="3.6" opacity="0.92" filter="url(#hsGlowSm)"/>
+      </g>
+      <path d="M0 0 H52 L34 148 H0 Z M420 0 H368 L386 148 H420 Z" fill="${pilFill}" stroke="url(#hsGoldH)" stroke-width="1.8"/>
+      <rect x="0" y="148" width="420" height="60" fill="${flrFill}"/>
+      ${floorPlanks(148, 0, 420, s.isNight ? "#f59e0b" : "#d4af37", 0.24)}
+      <line x1="0" y1="148" x2="420" y2="148" stroke="url(#hsGoldH)" stroke-width="2.6" filter="url(#hsGlowSm)"/>
+    `;
+  });
 })(typeof window !== "undefined" ? window : globalThis);
