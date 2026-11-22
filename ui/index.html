@@ -3070,38 +3070,69 @@
     gap: 4px;
     line-height: 1.4;
   }
-  .token-carrot-bar {
-    margin-top: 7px;
-    padding: 4px 7px;
-    border-radius: 5px;
-    border: 1px dashed var(--border);
-    background: color-mix(in srgb, var(--surface-2) 65%, transparent);
+  .token-carrot-hover {
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    bottom: 7px;
+    z-index: 6;
     display: flex;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(6px);
+    transition: opacity 0.18s ease, transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .card[data-kpi="tokens"]:hover .token-carrot-hover,
+  .card[data-kpi="tokens"]:focus-within .token-carrot-hover {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+  .token-carrot-btn {
+    appearance: none;
+    width: 100%;
+    padding: 5px 10px;
+    border-radius: 7px;
+    border: 1px solid color-mix(in srgb, var(--active-border) 75%, var(--border));
+    background: color-mix(in srgb, var(--surface) 92%, var(--active-bg));
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 4px 12px rgba(24, 24, 27, 0.12);
+    display: inline-flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 6px;
+    justify-content: center;
+    gap: 5px;
+    font-family: var(--font-sans);
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--active-fg);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.14s ease, box-shadow 0.15s ease;
+  }
+  .token-carrot-btn:hover {
+    background: var(--active-bg);
+    border-color: var(--active-border);
+    box-shadow: 0 5px 14px rgba(234, 88, 12, 0.18);
+    transform: translateY(-0.5px);
+  }
+  .token-carrot-btn:active {
+    transform: scale(0.98);
+  }
+  .token-carrot-btn .tc-badge {
+    display: none;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: #fff;
     font-family: var(--font-mono);
     font-size: 9.5px;
-    color: var(--muted);
-    cursor: pointer;
-    transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease;
+    font-weight: 800;
+    line-height: 15px;
   }
-  .token-carrot-bar:hover {
-    border-color: var(--active-border);
-    background: var(--active-bg);
-    color: var(--active-fg);
-  }
-  .token-carrot-bar.claimable {
-    border-style: solid;
-    border-color: var(--active-border);
-    background: var(--active-bg);
-    color: var(--active-fg);
-    font-weight: 700;
-  }
-  .token-carrot-bar .tc-cta {
-    flex-shrink: 0;
-    font-weight: 700;
-    color: var(--active-fg);
+  .token-carrot-btn.claimable .tc-badge {
+    display: inline-block;
   }
 
   /* ---- Daily Check-in Strip & TooToo Cozy Home Studio ---- */
@@ -5823,9 +5854,11 @@
         <span id="kpiInOut">输入 — · 输出 —</span>
         <span id="kpiCache">缓存 —</span>
       </div>
-      <div class="token-carrot-bar" id="tokenCarrotBar" title="点击打开萝卜币兑换与算力扭蛋">
-        <span id="tokenCarrotText">🥕 每日每 10M 可兑 1 萝卜币</span>
-        <span class="tc-cta" id="tokenCarrotCta">兑换 ▸</span>
+      <div class="token-carrot-hover" id="tokenCarrotHover">
+        <button type="button" class="token-carrot-btn" id="tokenCarrotBtn" title="点击去兑换萝卜币">
+          <span>🥕 换点胡萝卜去？</span>
+          <span class="tc-badge" id="tokenCarrotBadge"></span>
+        </button>
       </div>
     </div>
 
@@ -11876,23 +11909,21 @@ function renderGachaMeta() {
     `;
   }
 
-  // Render readable exchange hint directly on main "总用量" KPI card
-  const tcBar = document.getElementById("tokenCarrotBar");
-  const tcTxt = document.getElementById("tokenCarrotText");
-  const tcCta = document.getElementById("tokenCarrotCta");
-  if (tcBar && tcTxt && tcCta) {
-    tcBar.classList.toggle("claimable", cs.claimable > 0);
+  // Update hover-only carrot exchange prompt on main "总用量" KPI card
+  const tcBtn = document.getElementById("tokenCarrotBtn");
+  const tcBadge = document.getElementById("tokenCarrotBadge");
+  if (tcBtn && tcBadge) {
+    tcBtn.classList.toggle("claimable", cs.claimable > 0);
     if (cs.claimable > 0) {
-      tcTxt.textContent = cs.claimed > 0
-        ? `🥕 已兑 ${fmtNum(cs.convertedTok)} · 待兑 +${cs.claimable} 萝卜币`
-        : `🥕 今日可兑 +${cs.claimable} 萝卜币 (${fmtNum(cs.claimableTok)})`;
-      tcCta.textContent = "去兑换 ▸";
-    } else if (cs.claimed > 0) {
-      tcTxt.textContent = `🥕 已兑 ${fmtNum(cs.convertedTok)}(${cs.claimed}币) · 差 ${fmtNum(cs.remainForNext)}`;
-      tcCta.textContent = `余${cs.balance} ▸`;
+      tcBadge.textContent = `+${cs.claimable}`;
+      tcBtn.title = cs.claimed > 0
+        ? `今日已兑 ${fmtNum(cs.convertedTok)} · 待兑 +${cs.claimable} 萝卜币，点击前往兑换`
+        : `今日可兑 +${cs.claimable} 萝卜币 (${fmtNum(cs.claimableTok)})，点击前往兑换`;
     } else {
-      tcTxt.textContent = `🥕 距首枚萝卜币差 ${fmtNum(cs.remainForNext)}`;
-      tcCta.textContent = `余${cs.balance} ▸`;
+      tcBadge.textContent = "";
+      tcBtn.title = cs.claimed > 0
+        ? `今日已兑 ${fmtNum(cs.convertedTok)} (${cs.claimed}币) · 距下枚差 ${fmtNum(cs.remainForNext)} · 当前余 ${cs.balance} 币`
+        : `距首枚萝卜币还差 ${fmtNum(cs.remainForNext)} · 当前余 ${cs.balance} 币`;
     }
   }
 
@@ -11956,11 +11987,11 @@ function renderAlchemyStats() {
 }
 
 document.getElementById("carrotClaimBtn").addEventListener("click", claimCarrotCoins);
-document.getElementById("tokenCarrotBar").addEventListener("click", (e) => {
+document.getElementById("tokenCarrotBtn").addEventListener("click", (e) => {
   e.stopPropagation();
   openGachaModal();
 });
-document.getElementById("tokenCarrotBar").addEventListener("dblclick", (e) => {
+document.getElementById("tokenCarrotBtn").addEventListener("dblclick", (e) => {
   e.stopPropagation();
 });
 document.getElementById("arcWalletBtn").addEventListener("click", () => {
