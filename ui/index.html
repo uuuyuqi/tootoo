@@ -1454,13 +1454,41 @@
   .mood-stars {
     display: inline-flex;
     align-items: center;
+    gap: 2px;
     font-family: var(--font-mono);
+    font-size: 11px;
     font-weight: 900;
     color: #fde047;
     text-shadow: 0 0 6px rgba(245, 158, 11, 0.85);
-    letter-spacing: -0.02em;
+    letter-spacing: 0.01em;
     animation: moodStarTwinkle 2.2s ease-in-out infinite;
   }
+  .star-svg {
+    display: inline-block;
+    vertical-align: -0.18em;
+    flex-shrink: 0;
+    filter: drop-shadow(0 0 3px rgba(245, 158, 11, 0.55));
+  }
+  .star-svg.is-dim {
+    filter: none;
+    opacity: 0.24;
+  }
+  .evo-star-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin-left: 5px;
+    padding: 1.5px 7px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.14));
+    border: 1px solid rgba(217, 119, 6, 0.52);
+    color: #b45309;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    font-weight: 900;
+    vertical-align: middle;
+  }
+  [data-theme="dark"] .evo-star-pill { color: #fde047; border-color: rgba(251, 191, 36, 0.55); }
   @keyframes moodStarTwinkle {
     0%, 100% { filter: brightness(1); transform: scale(1); }
     50%      { filter: brightness(1.3); transform: scale(1.06); }
@@ -1573,28 +1601,33 @@
   /* ---- CS Perfect-World Style Star Strip in Evo Modal ---- */
   .evo-star-strip {
     display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 7px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    background: linear-gradient(125deg, rgba(30, 18, 52, 0.06), rgba(245, 158, 11, 0.13));
+    border: 1px solid color-mix(in srgb, #f59e0b 46%, var(--border));
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+  }
+  .evo-star-strip-top {
+    display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    margin-top: 6px;
-    padding: 5px 8px;
-    border-radius: 7px;
-    background: linear-gradient(125deg, rgba(30, 18, 52, 0.08), rgba(245, 158, 11, 0.13));
-    border: 1px solid color-mix(in srgb, #f59e0b 42%, var(--border));
-    font-family: var(--font-mono);
-    font-size: 9.5px;
+    flex-wrap: wrap;
   }
   .evo-star-pips {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 3px;
+  }
+  .evo-star-pips-row {
     display: inline-flex;
     align-items: center;
-    gap: 2px;
-    font-size: 11px;
-    color: #f59e0b;
-    text-shadow: 0 0 6px rgba(245, 158, 11, 0.55);
-  }
-  .evo-star-pips .dim {
-    opacity: 0.25;
-    text-shadow: none;
+    gap: 4px;
   }
 
   /* ---- Full-Panel Escalating Level-Up Cinematic Takeover (Lv.4 -> EX 50B + Star Ascension) ---- */
@@ -6300,10 +6333,19 @@ function getStarRankInfo(tokens) {
   return { active: true, stars, prevAt, nextAt, remain: Math.max(0, nextAt - val), pct };
 }
 
+function renderStarSvg(size = 14, dim = false) {
+  const fill = dim ? "#9c9486" : "#F59E0B";
+  const hi = dim ? "#b8b1a3" : "#FEF08A";
+  const stroke = dim ? "#7a756b" : "#B45309";
+  return `<svg class="star-svg${dim ? " is-dim" : ""}" width="${size}" height="${size}" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 1.4L12.65 6.8L18.6 7.65L14.3 11.85L15.32 17.78L10 14.98L4.68 17.78L5.7 11.85L1.4 7.65L7.35 6.8L10 1.4Z" fill="${fill}" stroke="${stroke}" stroke-width="1.2" stroke-linejoin="round"/><path d="M10 2.6L11.9 6.6L10 10.2L8.1 6.6Z" fill="${hi}" opacity="0.82"/></svg>`;
+}
+
 function formatStarBadgeHtml(stars) {
   if (!stars || stars <= 0) return "";
-  if (stars <= 3) return `<span class="mood-stars">${"★".repeat(stars)}</span>`;
-  return `<span class="mood-stars">★×${stars}</span>`;
+  if (stars <= 3) {
+    return `<span class="mood-stars">${Array.from({ length: stars }, () => renderStarSvg(13)).join("")}</span>`;
+  }
+  return `<span class="mood-stars">${renderStarSvg(13)}<span>×${stars}</span></span>`;
 }
 
 // ---- First-Panel-Open Pending Level-Up Queue (Lv.4+ & Star-Up!) ----
@@ -6445,7 +6487,7 @@ function triggerFullPanelLevelUpFx(tier, opts = {}) {
     extrasHtml += `<div class="lvlup-mandala m1"></div><div class="lvlup-mandala m2"></div>`;
   }
   const starBadgeHtml = (stars > 0 && (lv >= 9 || isStarOnly))
-    ? `<div class="lvlup-star-slam">${stars <= 5 ? "★".repeat(stars) : `★ × ${stars}`} ${isStarOnly ? "摘星成功！" : "摘星段位"}</div>`
+    ? `<div class="lvlup-star-slam">${stars <= 5 ? Array.from({ length: stars }, () => renderStarSvg(17)).join("") : `${renderStarSvg(18)} × ${stars}`} <span>${isStarOnly ? "摘星成功！" : "摘星段位"}</span></div>`
     : "";
 
   stage.innerHTML = `
@@ -6658,10 +6700,10 @@ function renderBunnyState(tokens) {
   if (starInfo.active) {
     // Lv.9 & EX 50B: CS Perfect-World style 5B Star-Collection Progress Bar!
     if (xpFill) xpFill.style.width = starInfo.pct + "%";
-    const starTag = starInfo.stars > 0 ? `★×${starInfo.stars}` : "冲刺首星";
-    const nextStarLbl = `★×${starInfo.stars + 1}`;
+    const starTag = starInfo.stars > 0 ? `${renderStarSvg(12)}×${starInfo.stars}` : "冲刺首星";
+    const nextStarLbl = `${renderStarSvg(12)}×${starInfo.stars + 1}`;
     if (xpText) {
-      xpText.innerHTML = `<strong>${fmtNum(val)}</strong> · ${starTag} · 距${nextStarLbl} ${fmtNum(starInfo.remain)}`;
+      xpText.innerHTML = `<strong>${fmtNum(val)}</strong> · ${starTag} · 距 ${nextStarLbl} ${fmtNum(starInfo.remain)}`;
     }
   } else if (next) {
     const pct = Math.max(3, Math.min(100, Math.round((val / next.min) * 100)));
@@ -7266,12 +7308,18 @@ function renderEvoModal() {
   const renderStarStripHtml = () => {
     if (!starInfo.active) return "";
     const filled = Math.min(10, starInfo.stars);
-    const pips = starInfo.stars <= 10
-      ? "★".repeat(filled) + `<span class="dim">${"★".repeat(10 - filled)}</span>`
-      : `★×${starInfo.stars} <span style="font-size:9px;opacity:0.8">(${starInfo.stars * 5}B+)</span>`;
+    const pipsRow = starInfo.stars <= 10
+      ? `<span class="evo-star-pips-row">${Array.from({ length: 10 }, (_, idx) => renderStarSvg(16, idx >= filled)).join("")}</span>`
+      : `<span class="evo-star-pips-row">${Array.from({ length: 5 }, () => renderStarSvg(16, false)).join("")}<strong style="margin-left:4px;color:#d97706;font-size:12px">×${starInfo.stars}</strong></span>`;
     return `<div class="evo-star-strip">
-      <span>⭐ 摘星制度（每 5B = 1★）· <strong style="color:var(--accent)">距 ★×${starInfo.stars + 1} 还差 ${fmtNum(starInfo.remain)}</strong></span>
-      <span class="evo-star-pips">${pips}</span>
+      <div class="evo-star-strip-top">
+        <span>摘星制度（每 5B = 1 ${renderStarSvg(13)}）</span>
+        <strong style="color:var(--accent)">距 ${renderStarSvg(13)}×${starInfo.stars + 1} 还差 ${fmtNum(starInfo.remain)}</strong>
+      </div>
+      <div class="evo-star-pips">
+        ${pipsRow}
+        <span style="font-size:10px;color:var(--muted);font-weight:800">${starInfo.stars} / ${starInfo.stars >= 10 ? starInfo.stars + 1 : 10} 星</span>
+      </div>
     </div>`;
   };
 
@@ -7283,12 +7331,13 @@ function renderEvoModal() {
     const nextLabel = next.secret ? "EX" : `Lv.${next.level}`;
     const nextName = nextUnlocked ? `${nextLabel} ${next.name}` : (next.secret ? "EX 究极隐藏款" : `Lv.${next.level} 神秘形态`);
     const curLabel = cur.secret ? "EX" : `Lv.${cur.level}`;
+    const starPill = starInfo.stars > 0 ? `<span class="evo-star-pill">${renderStarSvg(13)}×${starInfo.stars}</span>` : "";
     const rightTxt = starInfo.active
-      ? `距 ★×${starInfo.stars + 1} 还差 ${fmtNum(starInfo.remain)}${next.secret ? ` · EX还差 ${fmtNum(Math.max(0, next.min - tokens))}` : ""}`
+      ? `距 ${renderStarSvg(12)}×${starInfo.stars + 1} 还差 ${fmtNum(starInfo.remain)}${next.secret ? ` · EX还差 ${fmtNum(Math.max(0, next.min - tokens))}` : ""}`
       : `距「${nextName}」还差 ${fmtNum(remain)}`;
     box.innerHTML = `
       <div class="evo-prog-head">
-        <span>今日：<strong>${curLabel} ${cur.name}${starInfo.stars > 0 ? ` ★×${starInfo.stars}` : ""}</strong> (${fmtNum(tokens)})</span>
+        <span>今日：<strong>${curLabel} ${cur.name}</strong>${starPill} <span style="color:var(--muted)">(${fmtNum(tokens)})</span></span>
         <span class="evo-prog-rem${remain > 0 ? " is-waiting" : ""}" id="evoProgRem">${rightTxt}</span>
       </div>
       <div class="evo-prog-track">
@@ -7318,9 +7367,10 @@ function renderEvoModal() {
   } else {
     const isSecretNow = Boolean(cur.secret);
     const barPct = starInfo.active ? starInfo.pct : 100;
+    const starPill = starInfo.stars > 0 ? `<span class="evo-star-pill">${renderStarSvg(13)}×${starInfo.stars}</span>` : "";
     box.innerHTML = `
       <div class="evo-prog-head">
-        <span>今日：<strong>${isSecretNow ? "EX" : `Lv.${cur.level}`} ${cur.name}${starInfo.stars > 0 ? ` ★×${starInfo.stars}` : ""}</strong> (${fmtNum(tokens)})</span>
+        <span>今日：<strong>${isSecretNow ? "EX" : `Lv.${cur.level}`} ${cur.name}</strong>${starPill} <span style="color:var(--muted)">(${fmtNum(tokens)})</span></span>
         <span class="evo-prog-rem">${isSecretNow ? "50B 究极隐藏款已觉醒 ✦" : "今日已达满阶巅峰 ✨"}</span>
       </div>
       <div class="evo-prog-track">
