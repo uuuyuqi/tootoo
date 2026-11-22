@@ -2739,10 +2739,36 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 6px;
     margin-top: 7px;
     font-family: var(--font-mono);
     font-size: 10px;
     color: var(--muted);
+  }
+  .blaster-btn-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+  }
+  #blBerserkBtn.ready {
+    border-color: #f97316;
+    background: linear-gradient(135deg, #ea580c, #dc2626);
+    color: #fff;
+    font-weight: 800;
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.55);
+    animation: berserkBtnPulse 0.75s ease-in-out infinite;
+  }
+  #blBerserkBtn.active {
+    border-color: #fde047;
+    background: linear-gradient(135deg, #dc2626, #f59e0b);
+    color: #fff;
+    font-weight: 800;
+    box-shadow: 0 0 14px rgba(245, 158, 11, 0.7);
+  }
+  @keyframes berserkBtnPulse {
+    0%, 100% { transform: scale(1); filter: brightness(1); }
+    50% { transform: scale(1.05); filter: brightness(1.18); }
   }
   .arcade-tabs button.active {
     background: var(--active-bg);
@@ -7689,19 +7715,24 @@
         <canvas id="blasterCanvas"></canvas>
         <div class="rain-overlay" id="blasterOverlay">
           <h3 id="blasterTitle">🚀 TooToo 大冒险 · Bug 歼灭战</h3>
-          <p id="blasterDesc">4大机制Boss（OOM巨兽/死循环魔眼/防火墙泰坦/幽灵内存体）轮番登场！局内低概率掉落「🎁神秘扭蛋宝箱」直接开出扭蛋真奖！斩Boss或破 800/1800/3200 分赢萝卜币（快捷键 1–8 放神装道具）！</p>
+          <p id="blasterDesc">新增「🚨敌潮来袭」（6种异化形态 Bug 军团涌入！）与「🔥狂暴形态」（攒满怒气按 B/点击变身或拾取狂暴核，6.5s 无敌金身+7管穿透烈焰+追踪飞弹大战敌潮！），更有4大机制Boss与扭蛋宝箱！</p>
           <button class="arc-primary-btn" id="blasterStartBtn">▶ 装填今日弹药出击</button>
         </div>
       </div>
       <div class="blaster-actions">
         <span id="blWaveInfo">防线完好 ❤️❤️❤️ · 移动走位自动射击</span>
-        <button class="btn" id="blNovaBtn" style="padding:3px 9px;font-size:10px" title="消耗 25 发 Token 弹药释放全屏清屏激光（快捷键：空格）">⚡ 算力清屏 (-25弹)</button>
+        <div class="blaster-btn-group">
+          <button class="btn" id="blBerserkBtn" style="padding:3px 9px;font-size:10px" title="怒气满 100% 后变身狂暴形态 6.5s：无敌金身 + 7管穿透烈焰 + 追踪飞弹（快捷键：B / Shift）">🔥 狂暴 0%</button>
+          <button class="btn" id="blNovaBtn" style="padding:3px 9px;font-size:10px" title="消耗 25 发 Token 弹药释放全屏清屏激光（快捷键：空格）">⚡ 清屏 (-25弹)</button>
+        </div>
       </div>
       <div class="adv-prop-bar" id="blPropBar"></div>
       <div class="dbg-only dbg-inline">
         <div class="dbg-inline-row">
           <span class="dbg-tag">🛠 打Bug调试:</span>
           <button class="dbg-mini-btn" id="dbgBlGodBtn">🔥 无双: 关</button>
+          <button class="dbg-mini-btn" id="dbgBlHordeBtn">🚨 触发敌潮</button>
+          <button class="dbg-mini-btn" id="dbgBlBerserkBtn">🔥 满能狂暴</button>
           <button class="dbg-mini-btn" id="dbgBlAddPropsBtn">🎒 +全套道具</button>
           <button class="dbg-mini-btn" id="dbgBlAllBgBtn">🎨 解锁全背景</button>
           <button class="dbg-mini-btn" id="dbgBlLootBtn">🎁 掉扭蛋宝箱</button>
@@ -7729,7 +7760,7 @@
         <canvas id="rainCanvas"></canvas>
         <div class="rain-overlay" id="rainOverlay">
           <h3 id="rainTitle">🥕 TooToo 大冒险 · 接 Token 雨</h3>
-          <p id="rainDesc">接住 Token/💎蓝钻/⏰续命/🎁神秘扭蛋宝箱！点击画布或空格「⚡闪避冲刺」无敌穿梭，最后 8 秒黄金狂潮！破 600/1200/2000 分赢萝卜币（快捷键 1–7 放神装道具）！</p>
+          <p id="rainDesc">新增水果忍者风神道具：❄️冰冻蕉(减速停表)、⚡双倍星蕉(2×得分)、🌊浪潮彩蕉(触发雨水浪潮)、🍉爆汁石榴(全屏收割+弹射宝石籽)、🧲磁铁、🛡️护盾！浪潮福利波期间零炸弹、漏接不扣分不断连击！</p>
           <button class="arc-primary-btn" id="rainStartBtn">▶ 开始 30 秒冲刺</button>
         </div>
       </div>
@@ -7737,6 +7768,11 @@
       <div class="dbg-only dbg-inline">
         <div class="dbg-inline-row">
           <span class="dbg-tag">🛠 Token雨调试:</span>
+          <button class="dbg-mini-btn" id="dbgRainWaveBtn">🌊 雨水浪潮</button>
+          <button class="dbg-mini-btn" id="dbgRainIceBtn">❄️ 冰冻蕉</button>
+          <button class="dbg-mini-btn" id="dbgRainDoubleBtn">⚡ 双倍星蕉</button>
+          <button class="dbg-mini-btn" id="dbgRainPomBtn">🍉 爆汁石榴</button>
+          <button class="dbg-mini-btn" id="dbgRainMagBtn">🧲 磁铁</button>
           <button class="dbg-mini-btn" id="dbgRainAddPropsBtn">🎒 +全套道具</button>
           <button class="dbg-mini-btn" id="dbgRainAllBgBtn">🎨 解锁全背景</button>
           <button class="dbg-mini-btn" id="dbgRainLootBtn">🎁 掉扭蛋宝箱</button>
@@ -11410,6 +11446,21 @@ function playSfx(kind) {
   else if (kind === "mythic") {
     [392, 523, 659, 784, 1046, 1318, 1568, 2093].forEach((f, i) => playTone(f, 0.24, "triangle", 0.07, i * 0.055));
   }
+  else if (kind === "alarm") {
+    [520, 390, 520, 390].forEach((f, i) => playTone(f, 0.13, "sawtooth", 0.045, i * 0.14));
+  }
+  else if (kind === "berserk") {
+    [220, 330, 440, 659, 880, 1175].forEach((f, i) => playTone(f, 0.17, "sawtooth", 0.055, i * 0.045));
+  }
+  else if (kind === "wave") {
+    [440, 554, 659, 880, 1108, 1318].forEach((f, i) => playTone(f, 0.15, "sine", 0.065, i * 0.05));
+  }
+  else if (kind === "freeze") {
+    [1318, 1568, 1760, 2093].forEach((f, i) => playTone(f, 0.16, "sine", 0.05, i * 0.045));
+  }
+  else if (kind === "pomegranate") {
+    [330, 523, 659, 784, 1046, 1318, 1568].forEach((f, i) => playTone(f, 0.12, "triangle", 0.065, i * 0.035));
+  }
 }
 
 document.getElementById("arcSfxBtn").addEventListener("click", () => {
@@ -12126,6 +12177,10 @@ window.addEventListener("keydown", (e) => {
     e.preventDefault();
     triggerBlasterNova();
   }
+  if (e.key === "b" || e.key === "B" || e.key === "Shift") {
+    e.preventDefault();
+    triggerBlasterBerserk(false);
+  }
   const propKeys = {
     "1": "ammo_box", "2": "overclock_core", "3": "energy_shield", "4": "slow_mo",
     "5": "orbital_nuke", "6": "homing_drones", "7": "laser_beam", "8": "time_freeze",
@@ -12147,6 +12202,146 @@ blasterCanvas.addEventListener("pointerdown", () => {
 document.getElementById("blNovaBtn").addEventListener("click", () => {
   if (blasterState && blasterState.running) triggerBlasterNova();
 });
+document.getElementById("blBerserkBtn")?.addEventListener("click", () => {
+  if (blasterState && blasterState.running) triggerBlasterBerserk(false);
+});
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    blKeys.left = blKeys.right = false;
+    rainKeys.left = rainKeys.right = false;
+  } else {
+    const now = performance.now();
+    if (blasterState && blasterState.running) blasterState.lastTs = now;
+    if (rainState && rainState.running) rainState.lastTs = now;
+  }
+});
+
+function triggerBlasterBerserk(force = false, customMsg = null) {
+  const s = blasterState;
+  if (!s || !s.running) return false;
+  if (!force && s.berserkCharge < 100 && s.berserkTimer <= 0) {
+    s.floats.push({ x: s.x, y: s.h - 46, txt: `🔥 怒气 ${Math.floor(s.berserkCharge)}% (满100%变身)`, col: "#F97316", life: 0.75 });
+    playSfx("token");
+    return false;
+  }
+  const extending = s.berserkTimer > 0;
+  s.berserkCharge = 0;
+  s.berserkTimer = Math.min(9.5, extending ? (s.berserkTimer + 3.5) : 6.5);
+  s.berserkShockRing = { r: 18, maxR: Math.max(s.w, s.h) * 0.95, alpha: 1 };
+  s.shakeTimer = 0.34;
+  // Shatter all enemy bullets & beams into fiery sparks!
+  for (const eb of s.enemyBullets) spawnBlasterParts(eb.x, eb.y, "#F97316", 3);
+  s.enemyBullets = [];
+  s.bossBeams = [];
+  const by = s.h - 26;
+  const wave = 1 + Math.floor(s.elapsed / 10);
+  for (let i = s.enemies.length - 1; i >= 0; i--) {
+    const en = s.enemies[i];
+    if (Math.hypot(en.x - s.x, en.y - by) < 145) {
+      en.hp -= 2.5;
+      en.y = Math.max(20, en.y - 26);
+      spawnBlasterParts(en.x, en.y, "#F59E0B", 6);
+      if (en.hp <= 0) {
+        handleBlasterEnemyDeath(s, en, wave);
+        s.enemies.splice(i, 1);
+      }
+    }
+  }
+  s.bossBanner = {
+    txt: customMsg || (extending ? "🔥 狂暴续能 +3.5s！毁天灭地火力全开！" : "🔥 狂暴形态觉醒！6.5s 无敌金身 · 7管穿透烈焰大战敌潮！"),
+    col: "#FDE047",
+    life: 2.0,
+  };
+  spawnBlasterParts(s.x, by, "#F97316", 20);
+  playSfx("berserk");
+  return true;
+}
+
+function triggerBlasterHorde(s, wave) {
+  if (!s || !s.running) return;
+  s.hordeState = "warn";
+  s.hordeTimer = 1.65;
+  s.hordeCount = (s.hordeCount || 0) + 1;
+  s.hordeWaveAcc = 0;
+  s.hordeEliteSpawned = false;
+  s.hordeSurvived = true;
+  s.hordeKills = 0;
+  s.bossBanner = {
+    txt: `🚨 警报！第 ${s.hordeCount} 波敌潮来袭！异化 Bug 军团涌入，准备狂暴迎战！`,
+    col: "#F87171",
+    life: 2.3,
+  };
+  s.shakeTimer = 0.25;
+  playSfx("alarm");
+}
+
+function spawnHordeFormation(s, wave) {
+  if (s.enemies.length >= 26) return;
+  const pattern = Math.floor(Math.random() * 4);
+  if (pattern === 0) {
+    // V-formation crimson-magenta Swarm Minis (4~5 units!)
+    const cnt = s.enemies.length <= 21 ? 5 : 3;
+    const cx = 66 + Math.random() * (s.w - 132);
+    const half = Math.floor(cnt / 2);
+    for (let i = 0; i < cnt; i++) {
+      const off = i - half;
+      s.enemies.push({
+        kind: "swarm_mini", lbl: "ERR", hp: 1, maxHp: 1, r: 9.5, vy: 92 + wave * 6,
+        col: "#F43F5E", pts: 28, boss: false, horde: true,
+        x: Math.max(18, Math.min(s.w - 18, cx + off * 24)),
+        y: -14 - Math.abs(off) * 18,
+        wobble: i * 0.45,
+      });
+    }
+  } else if (pattern === 1) {
+    // Twin High-Speed Dart Interceptors + 1 Neon Emerald Zigzag Phaser!
+    for (const side of [0.22, 0.78]) {
+      const x = Math.max(24, Math.min(s.w - 24, s.w * side + (Math.random() - 0.5) * 60));
+      s.enemies.push({
+        kind: "dart", lbl: "ZAP", hp: 1, maxHp: 1, r: 11.5, vy: 58,
+        col: "#FACC15", pts: 45, boss: false, horde: true,
+        x, y: -14, vx: 0, diveState: "aim", diveTimer: 0.75, wobble: 0,
+      });
+    }
+    s.enemies.push({
+      kind: "zigzag", lbl: "NaN", hp: 2, maxHp: 2, r: 12, vy: 76 + wave * 5,
+      col: "#10B981", pts: 55, boss: false, horde: true,
+      x: s.w * (0.3 + Math.random() * 0.4), y: -18, wobble: Math.random() * 6,
+    });
+  } else if (pattern === 2) {
+    // Armored Octagon Tank Beetle (fires back!) flanked by 2 Swarm Minis
+    const cx = 54 + Math.random() * (s.w - 108);
+    const thp = 4 + Math.min(3, Math.floor(wave / 2));
+    s.enemies.push({
+      kind: "tank", lbl: "503", hp: thp, maxHp: thp, r: 16, vy: 46 + wave * 2.5,
+      col: "#475569", pts: 85, boss: false, horde: true,
+      x: cx, y: -20, atkCd: 1.5, wobble: 0,
+    });
+    for (const dir of [-1, 1]) {
+      s.enemies.push({
+        kind: "swarm_mini", lbl: "ERR", hp: 1, maxHp: 1, r: 9.5, vy: 94 + wave * 5,
+        col: "#FB7185", pts: 28, boss: false, horde: true,
+        x: Math.max(18, Math.min(s.w - 18, cx + dir * 32)), y: -10, wobble: dir,
+      });
+    }
+  } else {
+    // Spiky Chain-Reaction Bomber Star + 2 Emerald Zigzag Viruses!
+    const bx = 54 + Math.random() * (s.w - 108);
+    s.enemies.push({
+      kind: "bomber", lbl: "BOOM", hp: 2, maxHp: 2, r: 13.5, vy: 68 + wave * 4,
+      col: "#F97316", pts: 70, boss: false, horde: true,
+      x: bx, y: -18, wobble: Math.random() * 6,
+    });
+    for (const dir of [-1, 1]) {
+      s.enemies.push({
+        kind: "zigzag", lbl: "NaN", hp: 1, maxHp: 1, r: 11, vy: 82 + wave * 5,
+        col: "#10B981", pts: 45, boss: false, horde: true,
+        x: Math.max(22, Math.min(s.w - 22, bx + dir * 56)), y: -26, wobble: dir * 2,
+      });
+    }
+  }
+}
 
 function stopBlasterGame() {
   if (blasterRaf) {
@@ -12199,24 +12394,52 @@ function spawnSpecialBoss(s, kind, wave = 1) {
 
 function handleBlasterEnemyDeath(s, en, wave) {
   s.kills++;
+  if (en.horde) s.hordeKills = (s.hordeKills || 0) + 1;
   s.combo++;
   s.comboTimer = 2.6;
-  const cMult = s.combo >= 15 ? 3 : (s.combo >= 8 ? 2 : (s.combo >= 4 ? 1.5 : 1));
+  const cMult = (s.combo >= 15 ? 3 : (s.combo >= 8 ? 2 : (s.combo >= 4 ? 1.5 : 1))) * (s.berserkTimer > 0 ? 2 : 1);
   const gain = Math.round(en.pts * cMult);
   s.score += gain;
-  s.feverCharge = Math.min(100, s.feverCharge + (en.boss ? 36 : 8));
+  // Charge Berserk Rage Gauge (extra fast during Enemy Horde!)
+  if (s.berserkTimer <= 0) {
+    const rageGain = en.boss ? 42 : (en.kind === "elite" ? 30 : (en.horde ? 11 : 8));
+    const wasReady = s.berserkCharge >= 100;
+    s.berserkCharge = Math.min(100, s.berserkCharge + rageGain);
+    if (!wasReady && s.berserkCharge >= 100) {
+      s.floats.push({ x: s.w / 2, y: s.h * 0.34, txt: "🔥 狂暴满能！按 B 或点【狂暴】觉醒无敌大战敌潮！", col: "#F97316", life: 1.5 });
+      playSfx("gold");
+    }
+  }
+  s.feverCharge = Math.min(100, s.feverCharge + (en.boss ? 36 : 7));
   if (s.feverCharge >= 100) {
     s.feverCharge = 0;
     s.overclockTimer = Math.max(s.overclockTimer, 4.5);
-    s.floats.push({ x: s.w / 2, y: s.h * 0.35, txt: "🔥 狂热满能！5管黄金暴走 4.5s!", col: "#F59E0B", life: 1.1 });
+    s.floats.push({ x: s.w / 2, y: s.h * 0.42, txt: "⚡ 超频满能！5管黄金连射 4.5s!", col: "#F59E0B", life: 1.1 });
     playSfx("ssr");
   }
-  spawnBlasterParts(en.x, en.y, en.col, en.boss ? 26 : 10);
-  s.floats.push({ x: en.x, y: en.y, txt: en.boss ? `💥 斩杀 ${en.name || en.lbl} +${gain}!` : (cMult > 1 ? `+${gain} ×${cMult}` : `+${gain}`), col: en.col, life: en.boss ? 1.2 : 0.72 });
+  spawnBlasterParts(en.x, en.y, s.berserkTimer > 0 ? "#F97316" : en.col, en.boss ? 22 : (en.kind === "bomber" ? 16 : 9));
+  if (s.floats.length < 24) {
+    s.floats.push({ x: en.x, y: en.y, txt: en.boss ? `💥 斩杀 ${en.name || en.lbl} +${gain}!` : (cMult > 1 ? `+${gain} ×${cMult}` : `+${gain}`), col: s.berserkTimer > 0 ? "#FDE047" : en.col, life: en.boss ? 1.2 : 0.7 });
+  }
   playSfx(en.boss ? "ssr" : "token");
 
+  // Chain-Reaction Bomber Star: blasts nearby bugs + ejects 4 slow diagonal embers!
+  if (en.kind === "bomber" && !en._exploded) {
+    en._exploded = true;
+    for (const other of s.enemies) {
+      if (other !== en && !other.boss && Math.hypot(other.x - en.x, other.y - en.y) < 58) {
+        other.hp -= 2;
+        spawnBlasterParts(other.x, other.y, "#FB923C", 4);
+      }
+    }
+    if (s.berserkTimer <= 0 && s.freezeTimer <= 0) {
+      for (const ang of [Math.PI * 0.25, Math.PI * 0.75, -Math.PI * 0.25, -Math.PI * 0.75]) {
+        s.enemyBullets.push({ x: en.x, y: en.y, vx: Math.cos(ang) * 95, vy: Math.sin(ang) * 95 + 38, r: 4.2, col: "#FB923C" });
+      }
+    }
+  }
+
   if (en.boss && en.bossType === "boss_phantom" && !en.isDecoy) {
-    // Killing real Phantom destroys any decoy!
     s.enemies = s.enemies.filter(other => !other.isDecoy);
   }
   if (en.split) {
@@ -12227,24 +12450,33 @@ function handleBlasterEnemyDeath(s, en, wave) {
       });
     }
   }
-  if (en.boss && !en.isDecoy) {
+  if (en.kind === "elite") {
+    // Horde Elite Commander ALWAYS drops a blazing Berserk Core + Ammo!
+    s.pickups.push({ x: Math.max(24, en.x - 14), y: en.y, vy: 76, kind: "berserk_orb", amt: 1 });
+    s.pickups.push({ x: Math.min(s.w - 24, en.x + 14), y: en.y - 6, vy: 82, kind: "ammo", amt: 18 });
+  } else if (en.boss && !en.isDecoy) {
     s.bossKills = (s.bossKills || 0) + 1;
-    // Boss always drops a physical Carrot Coin + high chance of Mystery Gacha Box + Overclock!
     s.pickups.push({ x: Math.max(24, en.x - 16), y: en.y, vy: 76, kind: "carrot_coin", amt: 1 });
     if (Math.random() < 0.34) {
       s.pickups.push({ x: Math.min(s.w - 24, en.x + 16), y: en.y - 6, vy: 72, kind: "gacha_box", amt: 1 });
     } else {
-      s.pickups.push({ x: Math.min(s.w - 24, en.x + 16), y: en.y, vy: 82, kind: "overclock", amt: 0 });
+      s.pickups.push({ x: Math.min(s.w - 24, en.x + 16), y: en.y, vy: 82, kind: "berserk_orb", amt: 1 });
     }
   } else if (!en.isDecoy) {
     const dropRoll = Math.random();
     const boxChance = en.split ? 0.055 : 0.022;
     const coinChance = en.split ? 0.06 : 0.032;
+    const berserkChance = en.kind === "tank" ? 0.24 : (en.horde ? 0.045 : 0.022);
+    const shieldChance = en.horde ? 0.055 : 0.018;
     if (dropRoll < boxChance) {
       s.pickups.push({ x: en.x, y: en.y, vy: 76, kind: "gacha_box", amt: 1 });
     } else if (dropRoll < boxChance + coinChance) {
       s.pickups.push({ x: en.x, y: en.y, vy: 82, kind: "carrot_coin", amt: 1 });
-    } else if (dropRoll < boxChance + coinChance + 0.10) {
+    } else if (dropRoll < boxChance + coinChance + berserkChance) {
+      s.pickups.push({ x: en.x, y: en.y, vy: 82, kind: "berserk_orb", amt: 1 });
+    } else if (dropRoll < boxChance + coinChance + berserkChance + shieldChance) {
+      s.pickups.push({ x: en.x, y: en.y, vy: 84, kind: "shield_pack", amt: 1 });
+    } else if (dropRoll < boxChance + coinChance + berserkChance + shieldChance + 0.11) {
       s.pickups.push({ x: en.x, y: en.y, vy: 88, kind: "ammo", amt: 14 });
     }
   }
@@ -12285,6 +12517,11 @@ function triggerBlasterNova(freeDebug = false) {
 }
 
 function spawnBlasterParts(x, y, col, n = 10) {
+  if (!blasterState) return;
+  const maxP = 110;
+  if (blasterState.parts.length + n > maxP) {
+    blasterState.parts.splice(0, Math.min(blasterState.parts.length, blasterState.parts.length + n - maxP));
+  }
   for (let i = 0; i < n; i++) {
     const a = (Math.PI * 2 * i) / n + Math.random() * 0.5;
     const sp = 50 + Math.random() * 125;
@@ -12321,7 +12558,19 @@ function startBlasterGame() {
     droneFireAcc: 0,
     laserTickAcc: 0,
     spawnAcc: 0,
-    nextBossAt: 12,
+    nextBossAt: 22,
+    nextHordeAt: 9.5,
+    hordeState: "idle", // "idle" | "warn" | "active"
+    hordeTimer: 0,
+    hordeCount: 0,
+    hordeWaveAcc: 0,
+    hordeEliteSpawned: false,
+    hordeSurvived: true,
+    hordeKills: 0,
+    berserkCharge: 0,
+    berserkTimer: 0,
+    berserkMissileAcc: 0,
+    berserkShockRing: null,
     bossIdx: 0,
     bossKills: 0,
     coinsCaught: 0,
@@ -12359,6 +12608,8 @@ function startBlasterGame() {
   document.getElementById("blAmmo").textContent = lo.god ? "♾️ 无限" : `${lo.ammo} 发`;
   document.getElementById("blFireRate").textContent = `${lo.fireHz}/s ×${lo.cannons}管`;
   document.getElementById("blRefund").textContent = `${Math.round(lo.refundProb * 100)}%`;
+  const bBtn = document.getElementById("blBerserkBtn");
+  if (bBtn) { bBtn.textContent = "🔥 狂暴 0%"; bBtn.classList.remove("ready", "active"); }
   blasterRaf = requestAnimationFrame(tickBlasterGame);
 }
 
@@ -12370,6 +12621,7 @@ function tickBlasterGame(now) {
   s.elapsed += dt;
   if (s.shakeTimer > 0) s.shakeTimer = Math.max(0, s.shakeTimer - dt);
   if (s.overclockTimer > 0) s.overclockTimer = Math.max(0, s.overclockTimer - dt);
+  if (s.berserkTimer > 0) s.berserkTimer = Math.max(0, s.berserkTimer - dt);
   if (s.shieldTimer > 0) s.shieldTimer = Math.max(0, s.shieldTimer - dt);
   if (s.slowTimer > 0) s.slowTimer = Math.max(0, s.slowTimer - dt);
   if (s.freeAmmoTimer > 0) s.freeAmmoTimer = Math.max(0, s.freeAmmoTimer - dt);
@@ -12386,51 +12638,74 @@ function tickBlasterGame(now) {
   }
 
   const isGod = debugState.active && debugState.godMode;
+  const isBerserk = s.berserkTimer > 0;
   if (isGod) s.debugTainted = true;
 
-  if (blKeys.left) s.targetX -= 400 * dt;
-  if (blKeys.right) s.targetX += 400 * dt;
+  if (blKeys.left) s.targetX -= (isBerserk ? 470 : 400) * dt;
+  if (blKeys.right) s.targetX += (isBerserk ? 470 : 400) * dt;
   s.targetX = Math.max(22, Math.min(s.w - 22, s.targetX));
-  s.x += (s.targetX - s.x) * Math.min(1, dt * 18);
+  s.x += (s.targetX - s.x) * Math.min(1, dt * (isBerserk ? 24 : 18));
 
   const by = s.h - 26;
   const wave = 1 + Math.floor(s.elapsed / 10);
   const frozen = s.freezeTimer > 0;
 
-  // Auto-fire player bullets
-  const effHz = (isGod ? 11.0 : s.fireHz) * (s.overclockTimer > 0 ? 1.55 : 1);
+  // Auto-fire player bullets (Berserk = 2.1x speed, 0 ammo cost, 7-barrel crimson-gold fan + center piercing super-bolt!)
+  const effHz = (isGod ? 11.0 : s.fireHz) * (isBerserk ? 2.1 : (s.overclockTimer > 0 ? 1.55 : 1));
   const fireInterval = 1 / effHz;
   s.fireAcc += dt;
-  if ((isGod || s.overclockTimer > 0 || s.freeAmmoTimer > 0 || s.ammo > 0) && s.fireAcc >= fireInterval) {
+  if ((isGod || isBerserk || s.overclockTimer > 0 || s.freeAmmoTimer > 0 || s.ammo > 0) && s.fireAcc >= fireInterval) {
     s.fireAcc -= fireInterval;
-    const isCacheFree = isGod || s.overclockTimer > 0 || s.freeAmmoTimer > 0 || Math.random() < s.refundProb;
+    const isCacheFree = isGod || isBerserk || s.overclockTimer > 0 || s.freeAmmoTimer > 0 || Math.random() < s.refundProb;
     if (isCacheFree) {
       s.refunded++;
-      if (!isGod && s.overclockTimer <= 0 && s.refunded % 6 === 1) {
+      if (!isGod && !isBerserk && s.overclockTimer <= 0 && s.refunded % 6 === 1) {
         s.floats.push({ x: s.x, y: by - 26, txt: "♻️ CACHE 免弹!", col: "#0E8A78", life: 0.65 });
       }
     } else {
       s.ammo = Math.max(0, s.ammo - 1);
     }
-    const bCol = s.overclockTimer > 0 ? "#F59E0B" : (isCacheFree ? "#0E8A78" : s.aura);
-    const cannons = s.overclockTimer > 0 ? 5 : (isGod ? 3 : s.cannons);
-    if (cannons === 1) {
-      s.bullets.push({ x: s.x, y: by - 16, vx: 0, vy: -440, col: bCol, dmg: 1 });
-    } else if (cannons === 2) {
-      s.bullets.push({ x: s.x - 8, y: by - 14, vx: -12, vy: -440, col: bCol, dmg: 1 });
-      s.bullets.push({ x: s.x + 8, y: by - 14, vx: 12, vy: -440, col: bCol, dmg: 1 });
-    } else if (cannons === 3) {
-      s.bullets.push({ x: s.x, y: by - 18, vx: 0, vy: -460, col: bCol, dmg: 1 });
-      s.bullets.push({ x: s.x - 10, y: by - 12, vx: -58, vy: -440, col: bCol, dmg: 1 });
-      s.bullets.push({ x: s.x + 10, y: by - 12, vx: 58, vy: -440, col: bCol, dmg: 1 });
-    } else {
-      s.bullets.push({ x: s.x, y: by - 20, vx: 0, vy: -500, col: bCol, dmg: 2 });
-      s.bullets.push({ x: s.x - 8, y: by - 15, vx: -48, vy: -470, col: bCol, dmg: 1 });
-      s.bullets.push({ x: s.x + 8, y: by - 15, vx: 48, vy: -470, col: bCol, dmg: 1 });
-      s.bullets.push({ x: s.x - 14, y: by - 10, vx: -115, vy: -440, col: "#E54826", dmg: 1 });
-      s.bullets.push({ x: s.x + 14, y: by - 10, vx: 115, vy: -440, col: "#E54826", dmg: 1 });
+    if (s.bullets.length < 90) {
+      const bCol = isBerserk ? "#EF4444" : (s.overclockTimer > 0 ? "#F59E0B" : (isCacheFree ? "#0E8A78" : s.aura));
+      const cannons = isBerserk ? 7 : (s.overclockTimer > 0 ? 5 : (isGod ? 3 : s.cannons));
+      if (cannons === 1) {
+        s.bullets.push({ x: s.x, y: by - 16, vx: 0, vy: -440, col: bCol, dmg: 1 });
+      } else if (cannons === 2) {
+        s.bullets.push({ x: s.x - 8, y: by - 14, vx: -12, vy: -440, col: bCol, dmg: 1 });
+        s.bullets.push({ x: s.x + 8, y: by - 14, vx: 12, vy: -440, col: bCol, dmg: 1 });
+      } else if (cannons === 3) {
+        s.bullets.push({ x: s.x, y: by - 18, vx: 0, vy: -460, col: bCol, dmg: 1 });
+        s.bullets.push({ x: s.x - 10, y: by - 12, vx: -58, vy: -440, col: bCol, dmg: 1 });
+        s.bullets.push({ x: s.x + 10, y: by - 12, vx: 58, vy: -440, col: bCol, dmg: 1 });
+      } else if (cannons === 5) {
+        s.bullets.push({ x: s.x, y: by - 20, vx: 0, vy: -500, col: bCol, dmg: 2 });
+        s.bullets.push({ x: s.x - 8, y: by - 15, vx: -48, vy: -470, col: bCol, dmg: 1 });
+        s.bullets.push({ x: s.x + 8, y: by - 15, vx: 48, vy: -470, col: bCol, dmg: 1 });
+        s.bullets.push({ x: s.x - 14, y: by - 10, vx: -115, vy: -440, col: "#E54826", dmg: 1 });
+        s.bullets.push({ x: s.x + 14, y: by - 10, vx: 115, vy: -440, col: "#E54826", dmg: 1 });
+      } else {
+        // BERSERK 7-BARREL MOLTEN VOLLEY + CENTER PIERCING SUPER-BOLT!
+        s.bullets.push({ x: s.x, y: by - 22, vx: 0, vy: -560, col: "#FDE047", dmg: 2.2, pierce: 3, berserkBolt: true });
+        s.bullets.push({ x: s.x - 7, y: by - 18, vx: -36, vy: -510, col: "#F97316", dmg: 1.5, berserkBolt: true });
+        s.bullets.push({ x: s.x + 7, y: by - 18, vx: 36, vy: -510, col: "#F97316", dmg: 1.5, berserkBolt: true });
+        s.bullets.push({ x: s.x - 12, y: by - 14, vx: -92, vy: -480, col: "#EF4444", dmg: 1.2, berserkBolt: true });
+        s.bullets.push({ x: s.x + 12, y: by - 14, vx: 92, vy: -480, col: "#EF4444", dmg: 1.2, berserkBolt: true });
+        s.bullets.push({ x: s.x - 16, y: by - 10, vx: -158, vy: -445, col: "#DC2626", dmg: 1, berserkBolt: true });
+        s.bullets.push({ x: s.x + 16, y: by - 10, vx: 158, vy: -445, col: "#DC2626", dmg: 1, berserkBolt: true });
+      }
     }
-    if (Math.random() < 0.25) playTone(s.overclockTimer > 0 ? 1046 : (isCacheFree ? 880 : 620), 0.04, "triangle", 0.025);
+    if (Math.random() < (isBerserk ? 0.3 : 0.24)) playTone(isBerserk ? 1175 : (s.overclockTimer > 0 ? 1046 : (isCacheFree ? 880 : 620)), 0.04, isBerserk ? "sawtooth" : "triangle", 0.024);
+  }
+
+  // Berserk auto-homing crimson-gold rage missiles every 0.30s!
+  if (isBerserk && s.bullets.length < 90) {
+    s.berserkMissileAcc += dt;
+    if (s.berserkMissileAcc >= 0.30) {
+      s.berserkMissileAcc = 0;
+      for (const side of [-20, 20]) {
+        s.bullets.push({ x: s.x + side, y: by - 8, vx: side * 4, vy: -340, col: "#FDE047", dmg: 2, homing: true, berserkBolt: true });
+      }
+    }
   }
 
   // Homing Wingman Drones auto-fire cyan seeking missiles!
@@ -12465,28 +12740,91 @@ function tickBlasterGame(now) {
     }
   }
 
-  // Periodic Special Mechanism Bosses!
+  // Periodic Enemy Horde & Special Mechanism Bosses (cleanly interleaved!)
   const hasActiveBoss = s.enemies.some(e => e.boss && !e.isDecoy);
-  if (!frozen && !hasActiveBoss && s.elapsed >= s.nextBossAt) {
-    const bossCycle = ["boss_oom", "boss_loop", "boss_firewall", "boss_phantom"];
-    spawnSpecialBoss(s, bossCycle[s.bossIdx % bossCycle.length], wave);
-    s.bossIdx++;
-    s.nextBossAt = s.elapsed + 18;
+  if (!frozen) {
+    if (s.hordeState === "idle" && !hasActiveBoss && s.elapsed >= s.nextHordeAt) {
+      triggerBlasterHorde(s, wave);
+    } else if (s.hordeState === "warn") {
+      s.hordeTimer -= dt;
+      if (s.hordeTimer <= 0) {
+        s.hordeState = "active";
+        s.hordeTimer = 9.5;
+        s.hordeWaveAcc = 0.6; // Immediate first formation!
+      }
+    } else if (s.hordeState === "active") {
+      s.hordeTimer -= dt;
+      s.hordeWaveAcc += dt;
+      if (s.hordeWaveAcc >= 1.05) {
+        s.hordeWaveAcc = 0;
+        spawnHordeFormation(s, wave);
+      }
+      // Mid-horde Crowned Elite Commander drops guaranteed Berserk Core!
+      if (!s.hordeEliteSpawned && s.hordeTimer <= 5.4 && s.enemies.length < 27) {
+        s.hordeEliteSpawned = true;
+        const ehp = 7 + Math.min(6, wave);
+        s.enemies.push({
+          kind: "elite", lbl: "CRIT", hp: ehp, maxHp: ehp, r: 17, vy: 36,
+          col: "#EC4899", pts: 150, boss: false, horde: true,
+          x: s.w * (0.28 + Math.random() * 0.44), y: -22, atkCd: 1.4, wobble: 0,
+        });
+        s.floats.push({ x: s.w / 2, y: 52, txt: "👑 敌潮精英统领现身！击杀必爆🔥狂暴核！", col: "#F472B6", life: 1.3 });
+      }
+      if (s.hordeTimer <= 0) {
+        s.hordeState = "idle";
+        s.nextHordeAt = s.elapsed + 24;
+        if (s.nextBossAt < s.elapsed + 4) s.nextBossAt = s.elapsed + 4;
+        if (s.hordeSurvived) {
+          s.score += 200;
+          s.ammo += 15;
+          s.bossBanner = { txt: `🏆 第 ${s.hordeCount} 波敌潮守卫成功！+200分 · 补弹 +15！`, col: "#34D399", life: 2.0 };
+          playSfx("ssr");
+        } else {
+          s.bossBanner = { txt: `✅ 第 ${s.hordeCount} 波敌潮退散！共击退 ${s.hordeKills || 0} 只异化Bug`, col: "#38BDF8", life: 1.8 };
+          playSfx("cache");
+        }
+      }
+    }
+    if (s.hordeState === "idle" && !hasActiveBoss && s.elapsed >= s.nextBossAt) {
+      const bossCycle = ["boss_oom", "boss_loop", "boss_firewall", "boss_phantom"];
+      spawnSpecialBoss(s, bossCycle[s.bossIdx % bossCycle.length], wave);
+      s.bossIdx++;
+      s.nextBossAt = s.elapsed + 24;
+      if (s.nextHordeAt < s.elapsed + 12) s.nextHordeAt = s.elapsed + 12;
+    }
   }
 
-  // Spawn regular enemies
-  const spawnInterval = Math.max(0.30, 0.88 - wave * 0.065) * (hasActiveBoss ? 1.55 : 1);
-  if (!frozen) s.spawnAcc += dt;
-  while (!frozen && s.spawnAcc >= spawnInterval) {
+  // Spawn regular enemies (faster + varied during Horde!)
+  const isHorde = s.hordeState === "active";
+  const spawnInterval = isHorde
+    ? Math.max(0.28, 0.50 - wave * 0.025)
+    : Math.max(0.32, 0.88 - wave * 0.065) * (hasActiveBoss ? 1.55 : 1);
+  if (!frozen && s.hordeState !== "warn") s.spawnAcc += dt;
+  while (!frozen && s.hordeState !== "warn" && s.spawnAcc >= spawnInterval) {
     s.spawnAcc -= spawnInterval;
+    if (s.enemies.length >= 28) break;
     const roll = Math.random();
     let spec;
-    if (roll < 0.18 && s.elapsed > 4) {
+    if (isHorde) {
+      if (roll < 0.28) {
+        spec = { kind: "swarm_mini", lbl: "ERR", hp: 1, r: 9.5, vy: 98 + wave * 6, col: "#F43F5E", pts: 28, boss: false, horde: true };
+      } else if (roll < 0.50) {
+        spec = { kind: "dart", lbl: "ZAP", hp: 1, r: 11.5, vy: 58, col: "#FACC15", pts: 45, boss: false, horde: true, vx: 0, diveState: "aim", diveTimer: 0.7 };
+      } else if (roll < 0.72) {
+        spec = { kind: "zigzag", lbl: "NaN", hp: 1 + (wave >= 3 ? 1 : 0), r: 11.5, vy: 84 + wave * 5, col: "#10B981", pts: 50, boss: false, horde: true };
+      } else if (roll < 0.88) {
+        spec = { kind: "bomber", lbl: "BOOM", hp: 2, r: 13.5, vy: 72 + wave * 4, col: "#F97316", pts: 70, boss: false, horde: true };
+      } else {
+        spec = { kind: "tank", lbl: "503", hp: 4, r: 15.5, vy: 48 + wave * 2.5, col: "#475569", pts: 85, boss: false, horde: true, atkCd: 1.7 };
+      }
+    } else if (roll < 0.16 && s.elapsed > 4) {
       spec = { lbl: "SPLT", hp: 2, r: 14, vy: 64 + wave * 5, col: "#0EA5E9", pts: 55, boss: false, split: true };
-    } else if (roll < 0.40) {
+    } else if (roll < 0.34) {
       spec = { lbl: "429", hp: 1, r: 12, vy: 118 + wave * 9, col: "#D97706", pts: 35, boss: false };
-    } else if (roll < 0.64) {
+    } else if (roll < 0.54) {
       spec = { lbl: "502", hp: 2, r: 13.5, vy: 72 + wave * 5, col: "#52525B", pts: 45, boss: false };
+    } else if (roll < 0.68 && s.elapsed > 6) {
+      spec = { kind: "zigzag", lbl: "NaN", hp: 1, r: 11.5, vy: 82 + wave * 5, col: "#10B981", pts: 48, boss: false };
     } else {
       spec = { lbl: "BUG", hp: 1 + (wave >= 4 ? 1 : 0), r: 12.5, vy: 82 + wave * 6, col: "#DC2626", pts: 25, boss: false };
     }
@@ -12589,12 +12927,58 @@ function tickBlasterGame(now) {
       }
     } else {
       en.wobble += dt * 3.5 * enemySpeedMult;
-      en.y += en.vy * dt * enemySpeedMult;
-      en.x += Math.sin(en.wobble) * (en.lbl === "429" ? 42 : 14) * dt * enemySpeedMult;
+      if (en.kind === "dart") {
+        // High-speed dive-bomber: descends to y=32, aims briefly, then blasts diagonally toward player!
+        if (en.y < 32 && en.diveState === "aim") {
+          en.y += en.vy * dt * enemySpeedMult;
+        } else if (en.diveState === "aim") {
+          en.diveTimer = (en.diveTimer || 0.65) - dt * enemySpeedMult;
+          if (en.diveTimer <= 0) {
+            en.diveState = "dive";
+            const ang = Math.atan2(by - en.y, s.x - en.x);
+            en.vx = Math.cos(ang) * 215;
+            en.vy = Math.max(175, Math.sin(ang) * 235);
+          }
+        } else {
+          en.x += (en.vx || 0) * dt * enemySpeedMult;
+          en.y += en.vy * dt * enemySpeedMult;
+        }
+      } else if (en.kind === "zigzag") {
+        en.y += en.vy * dt * enemySpeedMult;
+        en.x += Math.sin(en.wobble * 1.85) * 126 * dt * enemySpeedMult;
+      } else if (en.kind === "tank" || en.kind === "elite") {
+        en.y += en.vy * dt * enemySpeedMult;
+        en.x += Math.sin(en.wobble * 0.6) * (en.kind === "elite" ? 42 : 16) * dt * enemySpeedMult;
+        if (!frozen) {
+          en.atkCd = (en.atkCd || 1.8) - dt * enemySpeedMult;
+          if (en.atkCd <= 0 && en.y > 22 && en.y < s.h - 70) {
+            en.atkCd = en.kind === "elite" ? 1.55 : 2.35;
+            const ang = Math.atan2(by - en.y, s.x - en.x);
+            if (en.kind === "elite") {
+              for (const off of [-0.22, 0.22]) {
+                s.enemyBullets.push({ x: en.x, y: en.y + 10, vx: Math.cos(ang + off) * 140, vy: Math.sin(ang + off) * 140, r: 4.5, col: "#F472B6" });
+              }
+            } else {
+              s.enemyBullets.push({ x: en.x, y: en.y + 10, vx: Math.cos(ang) * 125, vy: Math.sin(ang) * 125, r: 4.5, col: "#FB923C" });
+            }
+          }
+        }
+      } else if (en.kind === "swarm_mini") {
+        en.y += en.vy * dt * enemySpeedMult;
+        en.x += Math.sin(en.wobble * 1.4) * 54 * dt * enemySpeedMult;
+      } else {
+        en.y += en.vy * dt * enemySpeedMult;
+        en.x += Math.sin(en.wobble) * (en.lbl === "429" ? 42 : 14) * dt * enemySpeedMult;
+      }
       en.x = Math.max(en.r + 4, Math.min(s.w - en.r - 4, en.x));
     }
 
-    let killed = false;
+    let killed = en.hp <= 0;
+    if (killed) {
+      handleBlasterEnemyDeath(s, en, wave);
+      s.enemies.splice(i, 1);
+      continue;
+    }
     for (let j = s.bullets.length - 1; j >= 0; j--) {
       const b = s.bullets[j];
       // Check boss_loop orbiting satellites first!
@@ -12623,14 +13007,21 @@ function tickBlasterGame(now) {
         }
       }
 
-      if (Math.hypot(b.x - en.x, b.y - en.y) < en.r + 6) {
-        s.bullets.splice(j, 1);
+      if (Math.hypot(b.x - en.x, b.y - en.y) < en.r + (b.berserkBolt ? 8 : 6)) {
+        if (b.pierce && b.pierce > 1) {
+          if (b._hitSet && b._hitSet.has(en)) continue;
+          if (!b._hitSet) b._hitSet = new Set();
+          b._hitSet.add(en);
+          b.pierce--;
+        } else {
+          s.bullets.splice(j, 1);
+        }
         let effDmg = b.dmg * (frozen ? 2 : 1);
         if (en.bossType === "boss_firewall") {
-          effDmg = en.shieldOn ? effDmg * 0.3 : effDmg * 2.0;
+          effDmg = (en.shieldOn && !b.berserkBolt) ? effDmg * 0.3 : effDmg * 2.0;
         }
         en.hp -= effDmg;
-        spawnBlasterParts(b.x, b.y, en.bossType === "boss_firewall" && !en.shieldOn ? "#FACC15" : b.col, 4);
+        spawnBlasterParts(b.x, b.y, en.bossType === "boss_firewall" && !en.shieldOn ? "#FACC15" : b.col, 3);
         // Phantom teleports every 5 hits!
         if (en.bossType === "boss_phantom" && !en.isDecoy && en.hp > 0 && !frozen) {
           en.tpHits = (en.tpHits || 0) + 1;
@@ -12653,13 +13044,23 @@ function tickBlasterGame(now) {
       continue;
     }
 
+    // Direct body collision during Berserk = fiery ram kill!
+    if (isBerserk && !en.boss && Math.hypot(en.x - s.x, en.y - by) < en.r + 22) {
+      handleBlasterEnemyDeath(s, en, wave);
+      s.enemies.splice(i, 1);
+      continue;
+    }
+
     if (en.y > s.h - 10) {
       s.enemies.splice(i, 1);
-      if (isGod || s.shieldTimer > 0) {
-        s.floats.push({ x: en.x, y: s.h - 24, txt: `🛡️ 护盾格挡 ${en.lbl}`, col: "#0EA5E9", life: 0.8 });
+      if (isGod || isBerserk || s.shieldTimer > 0) {
+        s.floats.push({ x: en.x, y: s.h - 24, txt: isBerserk ? `🔥 狂暴金身弹飞 ${en.lbl}` : `🛡️ 护盾格挡 ${en.lbl}`, col: isBerserk ? "#F97316" : "#0EA5E9", life: 0.75 });
         playSfx("cache");
+      } else if (s.berserkCharge >= 100) {
+        triggerBlasterBerserk(true, "🔥 濒危狂暴反杀！自动觉醒无敌金身 6.5s!");
       } else {
         s.combo = 0;
+        if (s.hordeState === "active") s.hordeSurvived = false;
         s.lives = Math.max(0, s.lives - 1);
         s.shakeTimer = 0.32;
         s.floats.push({ x: en.x, y: s.h - 24, txt: `${en.lbl} 突破防线!`, col: "#DC2626", life: 0.9 });
@@ -12675,14 +13076,18 @@ function tickBlasterGame(now) {
       eb.x += eb.vx * dt * enemySpeedMult;
       eb.y += eb.vy * dt * enemySpeedMult;
     }
-    if (Math.hypot(eb.x - s.x, eb.y - by) < eb.r + 14) {
+    if (Math.hypot(eb.x - s.x, eb.y - by) < eb.r + (isBerserk ? 24 : 14)) {
       s.enemyBullets.splice(i, 1);
-      if (isGod || s.shieldTimer > 0) {
-        spawnBlasterParts(eb.x, eb.y, "#38BDF8", 8);
-        s.floats.push({ x: s.x, y: by - 22, txt: "🛡️ 格挡敌弹!", col: "#38BDF8", life: 0.65 });
+      if (isGod || isBerserk || s.shieldTimer > 0) {
+        spawnBlasterParts(eb.x, eb.y, isBerserk ? "#FDE047" : "#38BDF8", 6);
+        if (isBerserk) s.score += 15;
+        s.floats.push({ x: s.x, y: by - 22, txt: isBerserk ? "🔥 震碎敌弹 +15!" : "🛡️ 格挡敌弹!", col: isBerserk ? "#FDE047" : "#38BDF8", life: 0.65 });
         playSfx("cache");
+      } else if (s.berserkCharge >= 100) {
+        triggerBlasterBerserk(true, "🔥 濒危狂暴反杀！震碎敌弹觉醒无敌！");
       } else {
         s.combo = 0;
+        if (s.hordeState === "active") s.hordeSurvived = false;
         s.lives = Math.max(0, s.lives - 1);
         s.shakeTimer = 0.34;
         s.shieldTimer = 1.1; // Brief i-frames after hit
@@ -12705,27 +13110,39 @@ function tickBlasterGame(now) {
       else bm.active -= dt * enemySpeedMult;
     }
     if (bm.warn <= 0 && bm.active > 0 && Math.abs(s.x - bm.x) < bm.w * 0.5 + 12) {
-      if (!isGod && s.shieldTimer <= 0) {
-        s.combo = 0;
-        s.lives = Math.max(0, s.lives - 1);
-        s.shakeTimer = 0.36;
-        s.shieldTimer = 1.2;
-        s.floats.push({ x: s.x, y: by - 22, txt: "🔥 防火墙激光命中 -1❤️!", col: "#EF4444", life: 0.95 });
-        playSfx("bomb");
+      if (!isGod && !isBerserk && s.shieldTimer <= 0) {
+        if (s.berserkCharge >= 100) {
+          triggerBlasterBerserk(true, "🔥 濒危狂暴反杀！硬抗激光无伤觉醒！");
+        } else {
+          s.combo = 0;
+          if (s.hordeState === "active") s.hordeSurvived = false;
+          s.lives = Math.max(0, s.lives - 1);
+          s.shakeTimer = 0.36;
+          s.shieldTimer = 1.2;
+          s.floats.push({ x: s.x, y: by - 22, txt: "🔥 防火墙激光命中 -1❤️!", col: "#EF4444", life: 0.95 });
+          playSfx("bomb");
+        }
       }
     }
     if (bm.active <= 0) s.bossBeams.splice(i, 1);
   }
 
-  // Update pickups (ammo, overclock, carrot_coin, gacha_box!)
+  // Update pickups (ammo, overclock, berserk_orb, shield_pack, carrot_coin, gacha_box!)
   for (let i = s.pickups.length - 1; i >= 0; i--) {
     const pk = s.pickups[i];
     pk.y += pk.vy * dt;
-    if (Math.hypot(pk.x - s.x, pk.y - by) < 32) {
-      if (pk.kind === "overclock") {
+    if (Math.hypot(pk.x - s.x, pk.y - by) < 34) {
+      if (pk.kind === "berserk_orb") {
+        triggerBlasterBerserk(true);
+      } else if (pk.kind === "shield_pack") {
+        s.shieldTimer = Math.max(s.shieldTimer, 4.8);
+        spawnBlasterParts(pk.x, pk.y, "#38BDF8", 14);
+        s.floats.push({ x: pk.x, y: by - 22, txt: "🛡️ 紧急能量护盾 4.8s!", col: "#38BDF8", life: 1.0 });
+        playSfx("cache");
+      } else if (pk.kind === "overclock") {
         s.overclockTimer = 6.0;
         spawnBlasterParts(pk.x, pk.y, "#F59E0B", 20);
-        s.floats.push({ x: pk.x, y: by - 22, txt: "⚡ 隐藏超频! 5管狂暴 6s!", col: "#F59E0B", life: 1.15 });
+        s.floats.push({ x: pk.x, y: by - 22, txt: "⚡ 隐藏超频! 5管连射 6s!", col: "#F59E0B", life: 1.15 });
         playSfx("ssr");
       } else if (pk.kind === "carrot_coin") {
         const added = grantAdventureCoins(1);
@@ -12758,11 +13175,16 @@ function tickBlasterGame(now) {
     }
   }
 
-  // Update nova ring, particles, floats
+  // Update nova & berserk shockwave rings, particles, floats
   if (s.novaRing) {
     s.novaRing.r += 760 * dt;
     s.novaRing.alpha = Math.max(0, 1 - s.novaRing.r / s.novaRing.maxR);
     if (s.novaRing.alpha <= 0) s.novaRing = null;
+  }
+  if (s.berserkShockRing) {
+    s.berserkShockRing.r += 700 * dt;
+    s.berserkShockRing.alpha = Math.max(0, 1 - s.berserkShockRing.r / s.berserkShockRing.maxR);
+    if (s.berserkShockRing.alpha <= 0) s.berserkShockRing = null;
   }
   for (let i = s.parts.length - 1; i >= 0; i--) {
     const p = s.parts[i];
@@ -12784,6 +13206,21 @@ function tickBlasterGame(now) {
     blCtx.translate((Math.random() - 0.5) * 7, (Math.random() - 0.5) * 5);
   }
   drawAdventureBackdrop(blCtx, s.w, s.h, now, frozen);
+
+  // Enemy Horde crimson alert edge pulse / Berserk molten gold-red edge aura!
+  if (isBerserk) {
+    const p = 0.16 + 0.08 * Math.sin(now * 0.018);
+    blCtx.fillStyle = `rgba(239, 68, 68, ${p * 0.5})`;
+    blCtx.fillRect(0, 0, s.w, s.h);
+    blCtx.strokeStyle = `rgba(253, 224, 71, ${0.65 + 0.3 * Math.sin(now * 0.02)})`;
+    blCtx.lineWidth = 4;
+    blCtx.strokeRect(2, 2, s.w - 4, s.h - 4);
+  } else if (s.hordeState === "warn" || s.hordeState === "active") {
+    const p = 0.25 + 0.25 * Math.abs(Math.sin(now * (s.hordeState === "warn" ? 0.016 : 0.008)));
+    blCtx.strokeStyle = `rgba(239, 68, 68, ${p})`;
+    blCtx.lineWidth = s.hordeState === "warn" ? 4.5 : 3;
+    blCtx.strokeRect(2, 2, s.w - 4, s.h - 4);
+  }
 
   // Boss Laser Beams
   for (const bm of s.bossBeams) {
@@ -12818,7 +13255,7 @@ function tickBlasterGame(now) {
     blCtx.restore();
   }
 
-  // Nova shockwave
+  // Nova & Berserk Shockwaves
   if (s.novaRing) {
     blCtx.save();
     blCtx.globalAlpha = s.novaRing.alpha;
@@ -12827,41 +13264,81 @@ function tickBlasterGame(now) {
     blCtx.beginPath(); blCtx.arc(s.x, by, s.novaRing.r, 0, Math.PI * 2); blCtx.stroke();
     blCtx.restore();
   }
+  if (s.berserkShockRing) {
+    blCtx.save();
+    blCtx.globalAlpha = s.berserkShockRing.alpha;
+    blCtx.strokeStyle = "#EF4444";
+    blCtx.lineWidth = 7;
+    blCtx.beginPath(); blCtx.arc(s.x, by, s.berserkShockRing.r, 0, Math.PI * 2); blCtx.stroke();
+    blCtx.strokeStyle = "#FDE047";
+    blCtx.lineWidth = 2.5;
+    blCtx.beginPath(); blCtx.arc(s.x, by, s.berserkShockRing.r * 0.88, 0, Math.PI * 2); blCtx.stroke();
+    blCtx.restore();
+  }
 
-  // Bullets
+  // Bullets (including molten piercing Berserk super-bolts!)
   for (const b of s.bullets) {
     blCtx.fillStyle = b.col;
     if (b.homing) {
-      blCtx.beginPath(); blCtx.arc(b.x, b.y, 4, 0, Math.PI * 2); blCtx.fill();
+      blCtx.beginPath(); blCtx.arc(b.x, b.y, b.berserkBolt ? 4.8 : 4, 0, Math.PI * 2); blCtx.fill();
+      if (b.berserkBolt) {
+        blCtx.fillStyle = "#EF4444";
+        blCtx.beginPath(); blCtx.arc(b.x, b.y, 2.2, 0, Math.PI * 2); blCtx.fill();
+      }
+    } else if (b.pierce && b.pierce > 0) {
+      blCtx.fillStyle = "rgba(239, 68, 68, 0.45)";
+      blCtx.beginPath(); blCtx.roundRect(b.x - 4.5, b.y - 10, 9, 20, 4); blCtx.fill();
+      blCtx.fillStyle = "#FEF08A";
+      blCtx.beginPath(); blCtx.roundRect(b.x - 2.2, b.y - 8, 4.4, 16, 2); blCtx.fill();
     } else {
       blCtx.beginPath(); blCtx.roundRect(b.x - 2, b.y - 6, 4, 12, 2); blCtx.fill();
     }
   }
 
-  // Enemy Bullets
+  // Enemy Bullets (lightweight halo instead of heavy shadowBlur for 60fps during horde!)
   for (const eb of s.enemyBullets) {
-    blCtx.save();
-    blCtx.shadowColor = eb.col;
-    blCtx.shadowBlur = 8;
     blCtx.fillStyle = eb.col;
+    blCtx.globalAlpha = 0.28;
+    blCtx.beginPath(); blCtx.arc(eb.x, eb.y, eb.r + 3.2, 0, Math.PI * 2); blCtx.fill();
+    blCtx.globalAlpha = 1;
     blCtx.beginPath(); blCtx.arc(eb.x, eb.y, eb.r, 0, Math.PI * 2); blCtx.fill();
     blCtx.fillStyle = "#fff";
     blCtx.beginPath(); blCtx.arc(eb.x, eb.y, eb.r * 0.42, 0, Math.PI * 2); blCtx.fill();
-    blCtx.restore();
   }
 
   // Pickups
   for (const pk of s.pickups) {
-    if (pk.kind === "carrot_coin") {
+    if (pk.kind === "berserk_orb") {
       blCtx.save();
-      blCtx.shadowColor = "rgba(251, 191, 36, 0.9)";
-      blCtx.shadowBlur = 12;
+      blCtx.fillStyle = "rgba(239, 68, 68, 0.34)";
+      blCtx.beginPath(); blCtx.arc(pk.x, pk.y, 16 + Math.sin(now * 0.015) * 2, 0, Math.PI * 2); blCtx.fill();
+      const bg = blCtx.createRadialGradient(pk.x - 2, pk.y - 2, 2, pk.x, pk.y, 12);
+      bg.addColorStop(0, "#FEF08A"); bg.addColorStop(0.55, "#F97316"); bg.addColorStop(1, "#DC2626");
+      blCtx.fillStyle = bg;
+      blCtx.beginPath(); blCtx.arc(pk.x, pk.y, 12, 0, Math.PI * 2); blCtx.fill();
+      blCtx.strokeStyle = "#FEF08A"; blCtx.lineWidth = 1.6; blCtx.stroke();
+      blCtx.font = "12px sans-serif"; blCtx.textAlign = "center"; blCtx.textBaseline = "middle";
+      blCtx.fillText("🔥", pk.x, pk.y + 0.5);
+      blCtx.restore();
+    } else if (pk.kind === "shield_pack") {
+      blCtx.save();
+      blCtx.fillStyle = "rgba(56, 189, 248, 0.3)";
+      blCtx.beginPath(); blCtx.arc(pk.x, pk.y, 14, 0, Math.PI * 2); blCtx.fill();
+      blCtx.fillStyle = "#0284C7";
+      blCtx.beginPath(); blCtx.arc(pk.x, pk.y, 11, 0, Math.PI * 2); blCtx.fill();
+      blCtx.strokeStyle = "#BAE6FD"; blCtx.lineWidth = 1.4; blCtx.stroke();
+      blCtx.font = "11px sans-serif"; blCtx.textAlign = "center"; blCtx.textBaseline = "middle";
+      blCtx.fillText("🛡️", pk.x, pk.y + 0.5);
+      blCtx.restore();
+    } else if (pk.kind === "carrot_coin") {
+      blCtx.save();
+      blCtx.fillStyle = "rgba(251, 191, 36, 0.3)";
+      blCtx.beginPath(); blCtx.arc(pk.x, pk.y, 15, 0, Math.PI * 2); blCtx.fill();
       blCtx.fillStyle = "#F59E0B";
       blCtx.beginPath(); blCtx.arc(pk.x, pk.y, 11, 0, Math.PI * 2); blCtx.fill();
       blCtx.strokeStyle = "#FEF08A";
       blCtx.lineWidth = 1.6;
       blCtx.stroke();
-      blCtx.shadowBlur = 0;
       blCtx.font = "12px sans-serif";
       blCtx.textAlign = "center";
       blCtx.textBaseline = "middle";
@@ -12869,15 +13346,14 @@ function tickBlasterGame(now) {
       blCtx.restore();
     } else if (pk.kind === "gacha_box") {
       blCtx.save();
-      blCtx.shadowColor = "rgba(192, 132, 252, 0.95)";
-      blCtx.shadowBlur = 14;
+      blCtx.fillStyle = "rgba(192, 132, 252, 0.32)";
+      blCtx.beginPath(); blCtx.arc(pk.x, pk.y, 16, 0, Math.PI * 2); blCtx.fill();
       const gg = blCtx.createRadialGradient(pk.x - 3, pk.y - 3, 2, pk.x, pk.y, 13);
       gg.addColorStop(0, "#FEF08A");
       gg.addColorStop(0.6, "#C084FC");
       gg.addColorStop(1, "#F472B6");
       blCtx.fillStyle = gg;
       blCtx.beginPath(); blCtx.arc(pk.x, pk.y, 12.5, 0, Math.PI * 2); blCtx.fill();
-      blCtx.shadowBlur = 0;
       blCtx.font = "13px sans-serif";
       blCtx.textAlign = "center";
       blCtx.textBaseline = "middle";
@@ -12885,11 +13361,9 @@ function tickBlasterGame(now) {
       blCtx.restore();
     } else if (pk.kind === "overclock") {
       blCtx.save();
-      blCtx.shadowColor = "rgba(245, 158, 11, 0.8)";
-      blCtx.shadowBlur = 12;
       blCtx.fillStyle = "#F59E0B";
       blCtx.beginPath(); blCtx.roundRect(pk.x - 15, pk.y - 10, 30, 20, 6); blCtx.fill();
-      blCtx.shadowBlur = 0;
+      blCtx.strokeStyle = "#FEF08A"; blCtx.lineWidth = 1.2; blCtx.stroke();
       blCtx.fillStyle = "#fff";
       blCtx.font = "bold 9.5px monospace";
       blCtx.textAlign = "center";
@@ -12907,13 +13381,14 @@ function tickBlasterGame(now) {
     }
   }
 
-  // Enemies & Special Bosses
+  // Enemies (6 Distinct Horde Morphologies + Regular + 4 Special Bosses!)
   let activeBossForBar = null;
   for (const en of s.enemies) {
     if (en.boss && !en.isDecoy) activeBossForBar = en;
     blCtx.save();
     blCtx.translate(en.x, en.y);
     if (en.isDecoy) blCtx.globalAlpha = 0.52;
+    if (en.kind === "zigzag") blCtx.globalAlpha = 0.62 + 0.38 * Math.abs(Math.sin(now * 0.012 + en.wobble));
     if (en.bossType === "boss_firewall") {
       blCtx.strokeStyle = en.shieldOn ? "#38BDF8" : "#FACC15";
       blCtx.lineWidth = en.shieldOn ? 3.2 : 2.2;
@@ -12923,25 +13398,116 @@ function tickBlasterGame(now) {
       blCtx.lineWidth = 2;
       blCtx.beginPath(); blCtx.arc(0, 0, en.r + 3, 0, Math.PI * 2); blCtx.stroke();
     }
-    blCtx.fillStyle = frozen ? "#38BDF8" : en.col;
-    blCtx.beginPath();
-    if (en.boss) {
-      blCtx.roundRect(-en.r, -en.r * 0.78, en.r * 2, en.r * 1.56, 9);
+    const fillC = frozen ? "#38BDF8" : en.col;
+    blCtx.fillStyle = fillC;
+
+    if (en.kind === "dart") {
+      // Aiming laser cue before high-speed dive!
+      if (en.diveState === "aim") {
+        blCtx.save();
+        blCtx.strokeStyle = "rgba(250, 204, 21, 0.45)";
+        blCtx.setLineDash([4, 4]);
+        blCtx.lineWidth = 1.2;
+        blCtx.beginPath(); blCtx.moveTo(0, en.r); blCtx.lineTo((s.x - en.x) * 0.45, 75); blCtx.stroke();
+        blCtx.restore();
+      }
+      // Sleek pointed delta-wing interceptor + thruster flame
+      blCtx.fillStyle = "#EF4444";
+      blCtx.beginPath(); blCtx.moveTo(-4, -en.r * 0.7); blCtx.lineTo(0, -en.r * 1.45 - Math.random() * 4); blCtx.lineTo(4, -en.r * 0.7); blCtx.closePath(); blCtx.fill();
+      blCtx.fillStyle = fillC;
+      blCtx.beginPath();
+      blCtx.moveTo(0, en.r * 1.15);
+      blCtx.lineTo(en.r * 0.95, -en.r * 0.8);
+      blCtx.lineTo(0, -en.r * 0.45);
+      blCtx.lineTo(-en.r * 0.95, -en.r * 0.8);
+      blCtx.closePath();
+      blCtx.fill();
+      blCtx.strokeStyle = "#78350F"; blCtx.lineWidth = 1.2; blCtx.stroke();
+    } else if (en.kind === "swarm_mini" || en.kind === "elite") {
+      // Crisp Hexagon Bug (Elite adds rotating gold halo + crown!)
+      if (en.kind === "elite") {
+        blCtx.save();
+        blCtx.rotate(now * 0.003);
+        blCtx.strokeStyle = "#FDE047";
+        blCtx.lineWidth = 2;
+        blCtx.setLineDash([6, 4]);
+        blCtx.beginPath(); blCtx.arc(0, 0, en.r + 5, 0, Math.PI * 2); blCtx.stroke();
+        blCtx.restore();
+      }
+      blCtx.beginPath();
+      for (let k = 0; k < 6; k++) {
+        const a = (Math.PI / 3) * k - Math.PI / 6;
+        const px = Math.cos(a) * en.r, py = Math.sin(a) * en.r * 0.88;
+        if (k === 0) blCtx.moveTo(px, py); else blCtx.lineTo(px, py);
+      }
+      blCtx.closePath();
+      blCtx.fill();
+      blCtx.strokeStyle = en.kind === "elite" ? "#FEF08A" : "#881337";
+      blCtx.lineWidth = en.kind === "elite" ? 2 : 1.1;
+      blCtx.stroke();
+      if (en.kind === "elite") {
+        blCtx.font = "11px sans-serif"; blCtx.textAlign = "center"; blCtx.fillText("👑", 0, -en.r - 4);
+      }
+    } else if (en.kind === "tank") {
+      // Heavy Beveled Octagon Armor Crab + Front Cyan-Gold Shield Arc
+      const r = en.r;
+      blCtx.beginPath();
+      for (let k = 0; k < 8; k++) {
+        const a = (Math.PI / 4) * k + Math.PI / 8;
+        const px = Math.cos(a) * r, py = Math.sin(a) * r * 0.86;
+        if (k === 0) blCtx.moveTo(px, py); else blCtx.lineTo(px, py);
+      }
+      blCtx.closePath();
+      blCtx.fill();
+      blCtx.strokeStyle = "#CBD5E1"; blCtx.lineWidth = 2; blCtx.stroke();
+      blCtx.strokeStyle = "#38BDF8"; blCtx.lineWidth = 2.6;
+      blCtx.beginPath(); blCtx.arc(0, 2, r + 2, 0.25, Math.PI - 0.25); blCtx.stroke();
+    } else if (en.kind === "zigzag") {
+      // Neon Emerald Diamond Virus
+      blCtx.beginPath();
+      blCtx.moveTo(0, -en.r * 1.1);
+      blCtx.lineTo(en.r * 1.05, 0);
+      blCtx.lineTo(0, en.r * 1.1);
+      blCtx.lineTo(-en.r * 1.05, 0);
+      blCtx.closePath();
+      blCtx.fill();
+      blCtx.strokeStyle = "#A7F3D0"; blCtx.lineWidth = 1.4; blCtx.stroke();
+    } else if (en.kind === "bomber") {
+      // Spiky Pulsing 8-Pointed Star Bomber!
+      blCtx.save();
+      blCtx.rotate(now * 0.004);
+      blCtx.beginPath();
+      for (let k = 0; k < 16; k++) {
+        const a = (Math.PI / 8) * k;
+        const rad = k % 2 === 0 ? en.r * 1.12 : en.r * 0.62;
+        const px = Math.cos(a) * rad, py = Math.sin(a) * rad;
+        if (k === 0) blCtx.moveTo(px, py); else blCtx.lineTo(px, py);
+      }
+      blCtx.closePath();
+      blCtx.fill();
+      blCtx.strokeStyle = "#FEF08A"; blCtx.lineWidth = 1.3; blCtx.stroke();
+      blCtx.restore();
     } else {
-      blCtx.roundRect(-en.r, -en.r * 0.78, en.r * 2, en.r * 1.56, 6);
+      blCtx.beginPath();
+      if (en.boss) {
+        blCtx.roundRect(-en.r, -en.r * 0.78, en.r * 2, en.r * 1.56, 9);
+      } else {
+        blCtx.roundRect(-en.r, -en.r * 0.78, en.r * 2, en.r * 1.56, 6);
+      }
+      blCtx.fill();
     }
-    blCtx.fill();
-    blCtx.fillStyle = "#fff";
-    blCtx.font = `bold ${en.boss ? 10.5 : 8.5}px monospace`;
+
+    blCtx.fillStyle = en.kind === "dart" ? "#18181B" : "#fff";
+    blCtx.font = `bold ${en.boss ? 10.5 : (en.kind === "swarm_mini" ? 7.5 : 8.5)}px monospace`;
     blCtx.textAlign = "center";
     blCtx.textBaseline = "middle";
-    blCtx.fillText(en.bossType === "boss_firewall" ? (en.shieldOn ? "🛡️WAF" : "🔥破防") : en.lbl, 0, 0.5);
+    blCtx.fillText(en.bossType === "boss_firewall" ? (en.shieldOn ? "🛡️WAF" : "🔥破防") : en.lbl, 0, en.kind === "dart" ? -1 : 0.5);
     if (en.maxHp > 1 && !en.boss) {
       const bw = en.r * 1.8;
       blCtx.fillStyle = "rgba(0,0,0,0.28)";
-      blCtx.fillRect(-bw / 2, -en.r * 0.78 - 5, bw, 3);
+      blCtx.fillRect(-bw / 2, -en.r * 0.85 - 6, bw, 3);
       blCtx.fillStyle = "#FEF08A";
-      blCtx.fillRect(-bw / 2, -en.r * 0.78 - 5, bw * Math.max(0, en.hp / en.maxHp), 3);
+      blCtx.fillRect(-bw / 2, -en.r * 0.85 - 6, bw * Math.max(0, en.hp / en.maxHp), 3);
     }
     blCtx.restore();
 
@@ -12976,9 +13542,29 @@ function tickBlasterGame(now) {
     }
   }
 
-  // Draw Bunny Turret + Shield/Overclock Aura
+  // Draw Bunny Turret + Super-Saiyan Berserk Flame Aura / Shield / Overclock
   blCtx.save();
   blCtx.translate(s.x, by);
+  if (isBerserk) {
+    // Blazing Super-Saiyan Flame Aura + Flickering Energy Spikes!
+    const pulse = 28 + Math.sin(now * 0.03) * 4;
+    const fg = blCtx.createRadialGradient(0, 0, 8, 0, 0, pulse + 8);
+    fg.addColorStop(0, "rgba(254, 240, 138, 0.58)");
+    fg.addColorStop(0.55, "rgba(249, 115, 22, 0.42)");
+    fg.addColorStop(1, "rgba(220, 38, 38, 0)");
+    blCtx.fillStyle = fg;
+    blCtx.beginPath(); blCtx.arc(0, 0, pulse + 8, 0, Math.PI * 2); blCtx.fill();
+    blCtx.strokeStyle = "#FDE047";
+    blCtx.lineWidth = 2.4;
+    blCtx.beginPath();
+    for (let k = 0; k < 12; k++) {
+      const a = (Math.PI * 2 * k) / 12 + now * 0.008;
+      const r = k % 2 === 0 ? pulse + 2 : pulse - 6;
+      const px = Math.cos(a) * r, py = Math.sin(a) * r;
+      if (k === 0) blCtx.moveTo(px, py); else blCtx.lineTo(px, py);
+    }
+    blCtx.closePath(); blCtx.stroke();
+  }
   if (s.shieldTimer > 0) {
     blCtx.beginPath();
     blCtx.arc(0, 0, 26 + Math.sin(now / 70) * 2.5, 0, Math.PI * 2);
@@ -12986,30 +13572,40 @@ function tickBlasterGame(now) {
     blCtx.lineWidth = 2.6;
     blCtx.stroke();
   }
-  if (s.overclockTimer > 0) {
+  if (s.overclockTimer > 0 && !isBerserk) {
     blCtx.beginPath();
     blCtx.arc(0, 0, 23 + Math.sin(now / 55) * 3, 0, Math.PI * 2);
     blCtx.strokeStyle = "rgba(245, 158, 11, 0.85)";
     blCtx.lineWidth = 2.5;
     blCtx.stroke();
   }
-  blCtx.fillStyle = "#181715";
+  blCtx.fillStyle = isBerserk ? "#7F1D1D" : "#181715";
   blCtx.beginPath();
-  blCtx.ellipse(-7, -14, 3.8, 9.5, -0.15, 0, Math.PI * 2);
-  blCtx.ellipse(7, -14, 3.8, 9.5, 0.15, 0, Math.PI * 2);
+  blCtx.ellipse(-7, -14, 3.8, isBerserk ? 10.5 : 9.5, -0.15, 0, Math.PI * 2);
+  blCtx.ellipse(7, -14, 3.8, isBerserk ? 10.5 : 9.5, 0.15, 0, Math.PI * 2);
   blCtx.fill();
-  blCtx.fillStyle = s.aura;
+  blCtx.fillStyle = isBerserk ? "#FDE047" : s.aura;
   blCtx.beginPath();
-  blCtx.ellipse(-7, -14, 1.8, 6, -0.15, 0, Math.PI * 2);
-  blCtx.ellipse(7, -14, 1.8, 6, 0.15, 0, Math.PI * 2);
+  blCtx.ellipse(-7, -14, 1.9, 6.4, -0.15, 0, Math.PI * 2);
+  blCtx.ellipse(7, -14, 1.9, 6.4, 0.15, 0, Math.PI * 2);
   blCtx.fill();
-  blCtx.fillStyle = "#181715";
+  blCtx.fillStyle = isBerserk ? "#DC2626" : "#181715";
   blCtx.beginPath(); blCtx.roundRect(-14, -9, 28, 21, 10); blCtx.fill();
-  blCtx.fillStyle = "#FAF8F3";
+  blCtx.fillStyle = isBerserk ? "#FEF9C3" : "#FAF8F3";
   blCtx.beginPath(); blCtx.roundRect(-12, -7, 24, 17, 8.5); blCtx.fill();
-  blCtx.fillStyle = "#181715";
-  blCtx.beginPath(); blCtx.arc(-5, 0, 1.8, 0, Math.PI * 2); blCtx.arc(5, 0, 1.8, 0, Math.PI * 2); blCtx.fill();
-  blCtx.fillStyle = s.aura;
+  if (isBerserk) {
+    // Fierce Glowing Berserk Battle Eyes & Brows!
+    blCtx.fillStyle = "#EF4444";
+    blCtx.beginPath(); blCtx.arc(-5, 0.5, 2.2, 0, Math.PI * 2); blCtx.arc(5, 0.5, 2.2, 0, Math.PI * 2); blCtx.fill();
+    blCtx.fillStyle = "#FEF08A";
+    blCtx.beginPath(); blCtx.arc(-5, 0.5, 1.0, 0, Math.PI * 2); blCtx.arc(5, 0.5, 1.0, 0, Math.PI * 2); blCtx.fill();
+    blCtx.strokeStyle = "#7F1D1D"; blCtx.lineWidth = 1.6; blCtx.lineCap = "round";
+    blCtx.beginPath(); blCtx.moveTo(-8.5, -3.5); blCtx.lineTo(-2.5, -1.5); blCtx.moveTo(8.5, -3.5); blCtx.lineTo(2.5, -1.5); blCtx.stroke();
+  } else {
+    blCtx.fillStyle = "#181715";
+    blCtx.beginPath(); blCtx.arc(-5, 0, 1.8, 0, Math.PI * 2); blCtx.arc(5, 0, 1.8, 0, Math.PI * 2); blCtx.fill();
+  }
+  blCtx.fillStyle = isBerserk ? "#DC2626" : s.aura;
   blCtx.fillRect(-1.5, 2.5, 3, 2);
   blCtx.restore();
 
@@ -13029,7 +13625,8 @@ function tickBlasterGame(now) {
   }
   blCtx.globalAlpha = 1;
 
-  // Top Boss HP Bar
+  // Top Boss HP Bar OR Enemy Horde Survival Countdown Bar!
+  const hasTopBar = Boolean(activeBossForBar || s.hordeState === "active" || s.hordeState === "warn");
   if (activeBossForBar) {
     const bw = Math.min(240, s.w - 60);
     const bx = (s.w - bw) / 2;
@@ -13043,50 +13640,80 @@ function tickBlasterGame(now) {
     blCtx.font = "bold 9px monospace";
     blCtx.textAlign = "center";
     blCtx.fillText(`${activeBossForBar.name} (${Math.ceil(activeBossForBar.hp)}/${activeBossForBar.maxHp})`, s.w / 2, 14.5);
+  } else if (s.hordeState === "active" || s.hordeState === "warn") {
+    const bw = Math.min(250, s.w - 50);
+    const bx = (s.w - bw) / 2;
+    blCtx.fillStyle = "rgba(127, 29, 29, 0.84)";
+    blCtx.beginPath(); blCtx.roundRect(bx - 4, 7, bw + 8, 17, 6); blCtx.fill();
+    blCtx.fillStyle = "rgba(255,255,255,0.18)";
+    blCtx.fillRect(bx, 18, bw, 3.5);
+    blCtx.fillStyle = s.hordeState === "warn" ? "#FACC15" : "#EF4444";
+    blCtx.fillRect(bx, 18, bw * Math.max(0, s.hordeTimer / (s.hordeState === "warn" ? 1.65 : 9.5)), 3.5);
+    blCtx.fillStyle = "#FEF08A";
+    blCtx.font = "bold 9px monospace";
+    blCtx.textAlign = "center";
+    blCtx.fillText(s.hordeState === "warn" ? `🚨 第 ${s.hordeCount} 波敌潮逼近 ${s.hordeTimer.toFixed(1)}s!` : `🚨 敌潮来袭中 ${s.hordeTimer.toFixed(1)}s · 守住防线 / 开狂暴反杀!`, s.w / 2, 14.5);
   }
   if (s.bossBanner) {
     blCtx.save();
     blCtx.globalAlpha = Math.min(1, s.bossBanner.life * 1.4);
-    blCtx.fillStyle = "rgba(15, 23, 42, 0.82)";
-    blCtx.beginPath(); blCtx.roundRect(16, s.h * 0.40 - 12, s.w - 32, 24, 7); blCtx.fill();
+    blCtx.fillStyle = "rgba(15, 23, 42, 0.85)";
+    blCtx.beginPath(); blCtx.roundRect(14, s.h * 0.40 - 12, s.w - 28, 24, 7); blCtx.fill();
     blCtx.fillStyle = s.bossBanner.col;
-    blCtx.font = "bold 10px monospace";
+    blCtx.font = "bold 9.8px monospace";
     blCtx.textAlign = "center";
     blCtx.fillText(s.bossBanner.txt, s.w / 2, s.h * 0.40 + 3.5);
     blCtx.restore();
   }
 
-  // Live combo & active prop HUD inside canvas
+  // Live combo & active mode HUD inside canvas
   if (s.combo >= 3) {
-    blCtx.fillStyle = s.combo >= 15 ? "#F59E0B" : "#E54826";
+    blCtx.fillStyle = isBerserk ? "#FDE047" : (s.combo >= 15 ? "#F59E0B" : "#E54826");
     blCtx.font = "bold 11px monospace";
     blCtx.textAlign = "left";
-    blCtx.fillText(`🔥 COMBO ×${s.combo}`, 10, activeBossForBar ? 36 : 18);
+    blCtx.fillText(`🔥 COMBO ×${s.combo}`, 10, hasTopBar ? 36 : 18);
   }
-  const activeTag = frozen ? `❄️ 时停 ${s.freezeTimer.toFixed(1)}s`
+  const activeTag = isBerserk ? `🔥 狂暴无双 ${s.berserkTimer.toFixed(1)}s`
+    : frozen ? `❄️ 时停 ${s.freezeTimer.toFixed(1)}s`
     : s.laserTimer > 0 ? `🌈 激光 ${s.laserTimer.toFixed(1)}s`
     : s.droneTimer > 0 ? `🤖 僚机 ${s.droneTimer.toFixed(1)}s`
-    : s.slowTimer > 0 ? `⏱️ 缓时 ${s.slowTimer.toFixed(1)}s` : "";
+    : s.slowTimer > 0 ? `⏱️ 缓时 ${s.slowTimer.toFixed(1)}s`
+    : (s.berserkCharge >= 100 ? "🔥 狂暴就绪[B]!" : "");
   if (activeTag) {
-    blCtx.fillStyle = frozen ? "#38BDF8" : "#F59E0B";
+    blCtx.fillStyle = isBerserk ? "#FDE047" : (frozen ? "#38BDF8" : "#F97316");
     blCtx.font = "bold 10px monospace";
     blCtx.textAlign = "right";
-    blCtx.fillText(activeTag, s.w - 10, activeBossForBar ? 36 : 18);
+    blCtx.fillText(activeTag, s.w - 10, hasTopBar ? 36 : 18);
   }
-  // Fever progress bar along very top
-  blCtx.fillStyle = "rgba(128,128,128,0.14)";
-  blCtx.fillRect(0, 0, s.w, 3.5);
-  blCtx.fillStyle = s.overclockTimer > 0 ? "#F59E0B" : "#EA580C";
-  blCtx.fillRect(0, 0, s.w * (s.overclockTimer > 0 ? 1 : (s.feverCharge / 100)), 3.5);
+  // Berserk Rage Progress Bar along very top!
+  blCtx.fillStyle = "rgba(128,128,128,0.16)";
+  blCtx.fillRect(0, 0, s.w, 4);
+  blCtx.fillStyle = isBerserk ? "#FDE047" : (s.berserkCharge >= 100 ? "#EF4444" : "#F97316");
+  blCtx.fillRect(0, 0, s.w * (isBerserk ? (s.berserkTimer / 6.5) : (s.berserkCharge / 100)), 4);
   blCtx.restore();
 
-  document.getElementById("blAmmo").textContent = isGod ? "♾️ 无限" : `${s.ammo} 发`;
+  document.getElementById("blAmmo").textContent = isGod ? "♾️ 无限" : (isBerserk ? "🔥 免弹" : `${s.ammo} 发`);
   document.getElementById("blScore").textContent = s.score;
-  const ocTxt = s.overclockTimer > 0 ? ` · ⚡超频 ${s.overclockTimer.toFixed(1)}s` : (s.shieldTimer > 0 ? ` · 🛡️盾 ${s.shieldTimer.toFixed(1)}s` : "");
-  document.getElementById("blWaveInfo").textContent = `防线 ${isGod ? "🛡️无双" : ("❤️".repeat(s.lives) + "🖤".repeat(Math.max(0, 3 - s.lives)))} · 第 ${wave} 波 · 免弹 ${s.refunded}${ocTxt}`;
+  const ocTxt = isBerserk ? ` · 🔥狂暴 ${s.berserkTimer.toFixed(1)}s`
+    : (s.hordeState === "active" ? ` · 🚨敌潮 ${s.hordeTimer.toFixed(0)}s`
+    : (s.overclockTimer > 0 ? ` · ⚡超频 ${s.overclockTimer.toFixed(1)}s` : (s.shieldTimer > 0 ? ` · 🛡️盾 ${s.shieldTimer.toFixed(1)}s` : "")));
+  document.getElementById("blWaveInfo").textContent = `防线 ${isGod ? "🛡️无双" : ("❤️".repeat(s.lives) + "🖤".repeat(Math.max(0, 3 - s.lives)))} · 第 ${wave} 波${ocTxt}`;
+  const bBtn = document.getElementById("blBerserkBtn");
+  if (bBtn) {
+    if (isBerserk) {
+      bBtn.textContent = `🔥 狂暴 ${s.berserkTimer.toFixed(1)}s`;
+      bBtn.classList.add("active"); bBtn.classList.remove("ready");
+    } else if (s.berserkCharge >= 100) {
+      bBtn.textContent = "🔥 释放狂暴[B]";
+      bBtn.classList.add("ready"); bBtn.classList.remove("active");
+    } else {
+      bBtn.textContent = `🔥 狂暴 ${Math.floor(s.berserkCharge)}%`;
+      bBtn.classList.remove("ready", "active");
+    }
+  }
 
-  // End check
-  if (!isGod && (s.lives <= 0 || (s.ammo <= 0 && s.bullets.length === 0))) {
+  // End check (never end from 0 ammo while Berserk / Overclock / Free-Ammo is active!)
+  if (!isGod && (s.lives <= 0 || (!isBerserk && s.overclockTimer <= 0 && s.freeAmmoTimer <= 0 && s.ammo <= 0 && s.bullets.length === 0))) {
     s.running = false;
     let best = 0;
     try { best = Number(localStorage.getItem("tootoo_blaster_best") || 0) || 0; } catch {}
@@ -13201,6 +13828,16 @@ function startRainGame() {
     spawnAcc: 0,
     magnetTimer: 0,
     feverTimer: 0,
+    doubleTimer: 0,
+    iceTimer: 0,
+    waveTimer: 0,
+    waveMaxDur: 6.0,
+    waveTotalPts: 0,
+    waveSideAcc: 0,
+    waveBanner: null,
+    midWaveTriggered: false,
+    finalWaveTriggered: false,
+    pomRing: null,
     slowTimer: 0,
     droneTimer: 0,
     laserTimer: 0,
@@ -13230,7 +13867,37 @@ function startRainGame() {
   rainRaf = requestAnimationFrame(tickRainGame);
 }
 
+function triggerRainWave(s, duration = 6.0, reason = "🌊 雨水浪潮来袭") {
+  if (!s || !s.running) return;
+  const extending = s.waveTimer > 0;
+  s.waveTimer = Math.min(10.0, extending ? (s.waveTimer + Math.min(4.0, duration)) : duration);
+  s.waveMaxDur = Math.max(s.waveMaxDur || duration, s.waveTimer);
+  if (!extending) s.waveTotalPts = 0;
+  // Purify any existing bombs on screen into golden carrots so wave is a 100% safe bonus!
+  for (const it of s.items) {
+    if (it.kind === "bomb") {
+      it.kind = "gold";
+      it.noPenalty = true;
+      spawnRainParticles(it.x, it.y, "#FACC15", 8);
+    } else {
+      it.noPenalty = true;
+    }
+  }
+  s.waveBanner = {
+    txt: `${reason}！零炸弹 · 漏接不扣分不断连击 · 狂潮福利波！`,
+    col: "#38BDF8",
+    life: 2.2,
+  };
+  s.shakeTimer = 0.22;
+  playSfx("wave");
+}
+
 function spawnRainParticles(x, y, col, n = 10) {
+  if (!rainState) return;
+  const maxP = 110;
+  if (rainState.parts.length + n > maxP) {
+    rainState.parts.splice(0, Math.min(rainState.parts.length, rainState.parts.length + n - maxP));
+  }
   for (let i = 0; i < n; i++) {
     const a = (Math.PI * 2 * i) / n + Math.random() * 0.5;
     const sp = 55 + Math.random() * 115;
@@ -13248,6 +13915,8 @@ function tickRainGame(now) {
   else s.timeLeft = Math.max(0, s.timeLeft - dt);
   if (s.magnetTimer > 0) s.magnetTimer = Math.max(0, s.magnetTimer - dt);
   if (s.feverTimer > 0) s.feverTimer = Math.max(0, s.feverTimer - dt);
+  if (s.doubleTimer > 0) s.doubleTimer = Math.max(0, s.doubleTimer - dt);
+  if (s.iceTimer > 0) s.iceTimer = Math.max(0, s.iceTimer - dt);
   if (s.slowTimer > 0) s.slowTimer = Math.max(0, s.slowTimer - dt);
   if (s.droneTimer > 0) s.droneTimer = Math.max(0, s.droneTimer - dt);
   if (s.laserTimer > 0) s.laserTimer = Math.max(0, s.laserTimer - dt);
@@ -13255,6 +13924,34 @@ function tickRainGame(now) {
   if (s.dashCd > 0) s.dashCd = Math.max(0, s.dashCd - dt);
   if (s.dizzyTimer > 0) s.dizzyTimer = Math.max(0, s.dizzyTimer - dt);
   if (s.shakeTimer > 0) s.shakeTimer = Math.max(0, s.shakeTimer - dt);
+  if (s.waveBanner) {
+    s.waveBanner.life -= dt;
+    if (s.waveBanner.life <= 0) s.waveBanner = null;
+  }
+  if (s.pomRing) {
+    s.pomRing.r += 640 * dt;
+    s.pomRing.alpha = Math.max(0, 1 - s.pomRing.r / s.pomRing.maxR);
+    if (s.pomRing.alpha <= 0) s.pomRing = null;
+  }
+
+  // Auto-trigger Mid-Game & Final Reward Token Waves!
+  if (!s.midWaveTriggered && s.timeLeft <= 18.0 && s.timeLeft > 12.0) {
+    s.midWaveTriggered = true;
+    triggerRainWave(s, 5.5, "🌊 中场雨水浪潮");
+  }
+  if (!s.finalWaveTriggered && s.timeLeft <= 6.5 && s.timeLeft > 0.5) {
+    s.finalWaveTriggered = true;
+    triggerRainWave(s, 6.5, "🌟 终极黄金浪潮");
+  }
+  const wasWave = s.waveTimer > 0;
+  if (s.waveTimer > 0) {
+    s.waveTimer = Math.max(0, s.waveTimer - dt);
+    if (wasWave && s.waveTimer === 0 && s.waveTotalPts > 0) {
+      s.floats.push({ x: s.w / 2, y: s.h * 0.36, txt: `🌊 浪潮福利结算 +${s.waveTotalPts} 分！`, col: "#38BDF8", life: 1.45 });
+      playSfx("gold");
+    }
+  }
+  const inWave = s.waveTimer > 0;
 
   // Move bunny smoothly (extra brisk during Dash!)
   if (rainKeys.left) s.targetX -= 390 * dt;
@@ -13262,32 +13959,81 @@ function tickRainGame(now) {
   s.targetX = Math.max(24, Math.min(s.w - 24, s.targetX));
   s.x += (s.targetX - s.x) * Math.min(1, dt * (s.dashTimer > 0 ? 34 : 16));
 
-  // Spawn items scaled by real TPS + Final 8s Golden Rush + rare Carrot Coin & Mystery Gacha Box!
+  // Spawn items: Fruit-Ninja Powerups + Safe Reward Token Wave cascades!
   const isRush = s.timeLeft <= 8;
-  const spawnInterval = Math.max(0.18, (0.58 - (s.tps / 180) * 0.28) * (isRush ? 0.68 : 1) * (s.freezeTimer > 0 ? 0.72 : 1));
+  const spawnInterval = inWave
+    ? 0.13
+    : Math.max(0.18, (0.56 - (s.tps / 180) * 0.26) * (isRush ? 0.72 : 1) * (s.freezeTimer > 0 ? 0.75 : 1));
   s.spawnAcc += dt;
   while (s.spawnAcc >= spawnInterval) {
     s.spawnAcc -= spawnInterval;
+    if (s.items.length >= 42) break;
     const roll = Math.random();
     let kind = "token";
-    if (roll < 0.018) kind = "gacha_box";
-    else if (roll < 0.043) kind = "carrot_coin";
-    else if (roll < 0.078) kind = "rainbow";
-    else if (roll < 0.112) kind = "hourglass";
-    else if (roll < 0.172) kind = "diamond";
-    else if (roll < (isRush ? 0.31 : 0.22)) kind = "gold";
-    else if (s.freezeTimer <= 0 && roll < (isRush ? 0.41 : 0.34)) kind = "bomb";
-    else if (roll < 0.34 + s.cacheRate * 0.55) kind = "cache";
-    const baseVy = 115 + (s.tps / 180) * 115 + Math.random() * 55;
+    if (inWave) {
+      // ZERO bombs during Token Wave! Pure lush multi-color token & treasure shower!
+      if (roll < 0.018) kind = "gacha_box";
+      else if (roll < 0.048) kind = "carrot_coin";
+      else if (roll < 0.09) kind = "pomegranate";
+      else if (roll < 0.14) kind = "double_banana";
+      else if (roll < 0.28) kind = "diamond";
+      else if (roll < 0.46) kind = "gold";
+      else if (roll < 0.70) kind = "cache";
+      else kind = "token";
+    } else {
+      if (roll < 0.016) kind = "gacha_box";
+      else if (roll < 0.038) kind = "carrot_coin";
+      else if (roll < 0.068) kind = "wave_banana";
+      else if (roll < 0.102) kind = "ice_banana";
+      else if (roll < 0.138) kind = "double_banana";
+      else if (roll < 0.168) kind = "pomegranate";
+      else if (roll < 0.200) kind = "magnet_orb";
+      else if (roll < 0.228) kind = "shield_bubble";
+      else if (roll < 0.256) kind = "rainbow";
+      else if (roll < 0.286) kind = "hourglass";
+      else if (roll < 0.340) kind = "diamond";
+      else if (roll < (isRush ? 0.44 : 0.39)) kind = "gold";
+      else if (s.freezeTimer <= 0 && s.iceTimer <= 0 && roll < (isRush ? 0.52 : 0.49)) kind = "bomb";
+      else if (roll < 0.49 + s.cacheRate * 0.42) kind = "cache";
+    }
+    const baseVy = 112 + (s.tps / 180) * 108 + Math.random() * 52;
+    const isBanana = kind === "ice_banana" || kind === "double_banana" || kind === "wave_banana";
     s.items.push({
       kind,
+      noPenalty: inWave,
       x: 20 + Math.random() * (s.w - 40),
       y: -14,
-      vx: kind === "diamond" ? ((Math.random() < 0.5 ? -1 : 1) * (95 + Math.random() * 55)) : 0,
-      vy: (kind === "gacha_box" || kind === "carrot_coin") ? baseVy * 0.88 : ((kind === "gold" || kind === "rainbow" || kind === "diamond") ? baseVy * 1.12 : baseVy),
-      r: (kind === "rainbow" || kind === "gacha_box") ? 12.5 : (kind === "gold" || kind === "diamond" || kind === "hourglass" || kind === "carrot_coin") ? 11 : kind === "bomb" ? 11 : 9.5,
+      vx: kind === "diamond" ? ((Math.random() < 0.5 ? -1 : 1) * (95 + Math.random() * 55)) : (isBanana ? ((Math.random() - 0.5) * 34) : 0),
+      vy: (kind === "gacha_box" || kind === "carrot_coin" || isBanana || kind === "pomegranate") ? baseVy * 0.86 : ((kind === "gold" || kind === "rainbow" || kind === "diamond") ? baseVy * 1.1 : baseVy),
+      r: (kind === "rainbow" || kind === "gacha_box" || kind === "pomegranate" || isBanana) ? 13 : (kind === "gold" || kind === "diamond" || kind === "hourglass" || kind === "carrot_coin" || kind === "magnet_orb" || kind === "shield_bubble") ? 11 : kind === "bomb" ? 11 : 9.5,
       rot: Math.random() * Math.PI * 2,
     });
+  }
+
+  // Fruit-Ninja Style Side-Cannon Parabolic Arcs during Token Wave!
+  if (inWave && s.items.length < 40) {
+    s.waveSideAcc += dt;
+    if (s.waveSideAcc >= 0.44) {
+      s.waveSideAcc = 0;
+      const fromLeft = Math.random() < 0.5;
+      const sx = fromLeft ? 10 : (s.w - 10);
+      const sy = 56 + Math.random() * 76;
+      const pool = ["token", "cache", "gold", "diamond"];
+      for (let k = 0; k < 2; k++) {
+        const kd = pool[Math.floor(Math.random() * pool.length)];
+        s.items.push({
+          kind: kd,
+          noPenalty: true,
+          gravity: 255,
+          x: sx,
+          y: sy + k * 14,
+          vx: (fromLeft ? 1 : -1) * (135 + Math.random() * 75),
+          vy: -(95 + Math.random() * 55),
+          r: kd === "gold" || kd === "diamond" ? 10.5 : 9.5,
+          rot: Math.random() * Math.PI * 2,
+        });
+      }
+    }
   }
 
   const by = s.h - 28;
@@ -13303,24 +14049,30 @@ function tickRainGame(now) {
       const dx = s.x - it.x;
       const dy = by - it.y;
       const dist = Math.hypot(dx, dy) || 1;
-      if (dist < (s.feverTimer > 0 ? 255 : 195)) {
-        it.x += (dx / dist) * 380 * dt;
-        it.y += (dy / dist) * 290 * dt;
+      if (dist < (s.feverTimer > 0 ? 260 : 210)) {
+        it.x += (dx / dist) * 400 * dt;
+        it.y += (dy / dist) * 310 * dt;
       }
+    }
+    const fallMult = s.iceTimer > 0 ? 0.42 : (s.freezeTimer > 0 ? 0.52 : ((s.slowTimer > 0 && it.kind === "bomb") ? 0.42 : (s.slowTimer > 0 ? 0.78 : 1)));
+    if (it.gravity) {
+      it.vy += it.gravity * dt * fallMult;
     }
     if (it.vx) {
-      it.x += it.vx * dt;
-      if (it.x < it.r + 6 || it.x > s.w - it.r - 6) {
+      it.x += it.vx * dt * (it.gravity ? fallMult : 1);
+      if (!it.gravity && (it.x < it.r + 6 || it.x > s.w - it.r - 6)) {
         it.vx = -it.vx;
         it.x = Math.max(it.r + 6, Math.min(s.w - it.r - 6, it.x));
+      } else if (it.gravity && (it.x < 8 || it.x > s.w - 8)) {
+        it.vx = -it.vx * 0.7;
+        it.x = Math.max(8, Math.min(s.w - 8, it.x));
       }
     }
-    const fallMult = s.freezeTimer > 0 ? 0.55 : ((s.slowTimer > 0 && it.kind === "bomb") ? 0.42 : (s.slowTimer > 0 ? 0.78 : 1));
     it.y += it.vy * dt * fallMult;
     it.rot += dt * 3;
 
     // Hit check: player OR wingman collector drones!
-    let caught = Math.hypot(it.x - s.x, it.y - by) < it.r + 20;
+    let caught = Math.hypot(it.x - s.x, it.y - by) < it.r + 21;
     if (!caught && s.droneTimer > 0 && it.kind !== "bomb") {
       for (const side of [-52, 52]) {
         const dx = Math.max(18, Math.min(s.w - 18, s.x + side));
@@ -13353,12 +14105,13 @@ function tickRainGame(now) {
         const added = grantAdventureCoins(1);
         if (added > 0) {
           s.coinsCaught += added;
-          spawnRainParticles(it.x, it.y, "#FBBF24", 22);
+          spawnRainParticles(it.x, it.y, "#FBBF24", 20);
           s.floats.push({ x: it.x, y: by - 22, txt: "🥕 接到 +1 萝卜币!", col: "#F59E0B", life: 1.25 });
           playSfx("ssr");
         } else {
           s.score += 120;
-          spawnRainParticles(it.x, it.y, "#F59E0B", 16);
+          if (inWave) s.waveTotalPts += 120;
+          spawnRainParticles(it.x, it.y, "#F59E0B", 14);
           s.floats.push({ x: it.x, y: by - 20, txt: "🥕 今日满5币 · +120分!", col: "#F59E0B", life: 1.0 });
           playSfx("gold");
         }
@@ -13367,21 +14120,99 @@ function tickRainGame(now) {
         if (s.combo > s.maxCombo) s.maxCombo = s.combo;
         const loot = rollInGameMysteryLoot();
         s.lootsFound.push(`${loot.icon}${loot.actualName}`);
-        spawnRainParticles(it.x, it.y, loot.r === "SSR" ? "#FACC15" : "#C084FC", 26);
+        spawnRainParticles(it.x, it.y, loot.r === "SSR" ? "#FACC15" : "#C084FC", 22);
         s.floats.push({ x: s.w / 2, y: by - 32, txt: `🎁 [${loot.r}] ${loot.icon} ${loot.actualName}!`, col: loot.r === "SSR" ? "#FACC15" : "#A855F7", life: 1.65 });
         playSfx("ssr");
+      } else if (it.kind === "pomegranate") {
+        // FRUIT-NINJA SUPER POMEGRANATE BURST: Vacuum every positive item on screen + launch 8 ruby seeds!
+        s.combo++;
+        if (s.combo > s.maxCombo) s.maxCombo = s.combo;
+        s.pomRing = { x: it.x, y: it.y, r: 16, maxR: Math.max(s.w, s.h) * 0.95, alpha: 1 };
+        s.shakeTimer = 0.28;
+        let swept = 0;
+        let sweepPts = 80;
+        const mult = (s.combo >= 12 ? 3 : s.combo >= 5 ? 2 : 1) * (s.feverTimer > 0 ? 2 : 1) * (s.doubleTimer > 0 ? 2 : 1);
+        for (let k = s.items.length - 1; k >= 0; k--) {
+          if (k === i) continue;
+          const o = s.items[k];
+          if (o.kind === "bomb") {
+            spawnRainParticles(o.x, o.y, "#FB7185", 8);
+            s.items.splice(k, 1);
+            if (k < i) i--;
+          } else if (o.kind !== "gacha_box" && o.kind !== "carrot_coin") {
+            swept++;
+            sweepPts += (o.kind === "diamond" ? 65 : o.kind === "gold" ? 45 : o.kind === "cache" ? 25 : 15);
+            spawnRainParticles(o.x, o.y, "#F43F5E", 4);
+            s.items.splice(k, 1);
+            if (k < i) i--;
+          }
+        }
+        const totalPomPts = Math.round(sweepPts * mult * (s.tierMult || 1));
+        s.score += totalPomPts;
+        if (inWave) s.waveTotalPts += totalPomPts;
+        // Launch 8 bouncing ruby算力籽!
+        for (let k = 0; k < 8; k++) {
+          const ang = -Math.PI * 0.15 - (Math.PI * 0.7 * k) / 7;
+          s.items.push({
+            kind: "ruby_seed",
+            noPenalty: true,
+            gravity: 340,
+            x: it.x,
+            y: it.y - 6,
+            vx: Math.cos(ang) * (120 + Math.random() * 80),
+            vy: Math.sin(ang) * (170 + Math.random() * 55),
+            r: 7.5,
+            rot: Math.random() * 6,
+          });
+        }
+        spawnRainParticles(it.x, it.y, "#F43F5E", 24);
+        s.floats.push({ x: s.w / 2, y: by - 28, txt: `🍉 爆汁石榴连爆！收割 ${swept} 枚 +${totalPomPts}!`, col: "#F43F5E", life: 1.35 });
+        playSfx("pomegranate");
       } else {
         s.combo++;
         if (s.combo > s.maxCombo) s.maxCombo = s.combo;
-        const mult = (s.combo >= 12 ? 3 : s.combo >= 5 ? 2 : 1) * (s.feverTimer > 0 ? 2 : 1);
-        const basePts = it.kind === "rainbow" ? 90 : it.kind === "diamond" ? 75 : it.kind === "gold" ? 50 : it.kind === "hourglass" ? 30 : it.kind === "cache" ? 25 : 10;
+        const mult = (s.combo >= 12 ? 3 : s.combo >= 5 ? 2 : 1) * (s.feverTimer > 0 ? 2 : 1) * (s.doubleTimer > 0 ? 2 : 1);
+        const basePts = it.kind === "rainbow" ? 90 : it.kind === "diamond" ? 75 : it.kind === "gold" ? 50
+          : it.kind === "wave_banana" ? 60 : it.kind === "double_banana" ? 45 : it.kind === "ice_banana" ? 40
+          : it.kind === "ruby_seed" ? 35 : it.kind === "hourglass" ? 30 : it.kind === "magnet_orb" ? 30
+          : it.kind === "shield_bubble" ? 25 : it.kind === "cache" ? 25 : 10;
         const pts = Math.round(basePts * mult * (s.tierMult || 1));
         s.score += pts;
-        if (it.kind === "rainbow") {
+        if (inWave) s.waveTotalPts += pts;
+
+        if (it.kind === "ice_banana") {
+          s.iceTimer = Math.max(s.iceTimer, 5.0);
+          s.freezeTimer = Math.max(s.freezeTimer, 3.0);
+          spawnRainParticles(it.x, it.y, "#38BDF8", 20);
+          s.floats.push({ x: it.x, y: by - 22, txt: `+${pts} ❄️ 冰冻香蕉！减速+停表3s!`, col: "#38BDF8", life: 1.2 });
+          playSfx("freeze");
+        } else if (it.kind === "double_banana") {
+          s.doubleTimer = Math.max(s.doubleTimer, 6.5);
+          spawnRainParticles(it.x, it.y, "#FACC15", 20);
+          s.floats.push({ x: it.x, y: by - 22, txt: `+${pts} ⚡ 双倍星蕉！6.5s 2×得分!`, col: "#FACC15", life: 1.2 });
+          playSfx("gold");
+        } else if (it.kind === "wave_banana") {
+          spawnRainParticles(it.x, it.y, "#38BDF8", 22);
+          triggerRainWave(s, 6.5, "🌊 浪潮彩蕉觉醒");
+        } else if (it.kind === "magnet_orb") {
+          s.magnetTimer = Math.max(s.magnetTimer, 5.5);
+          spawnRainParticles(it.x, it.y, "#F97316", 16);
+          s.floats.push({ x: it.x, y: by - 20, txt: `+${pts} 🧲 超级磁铁 5.5s!`, col: "#F97316", life: 1.05 });
+          playSfx("gold");
+        } else if (it.kind === "shield_bubble") {
+          s.shields = Math.min(5, s.shields + 1);
+          spawnRainParticles(it.x, it.y, "#0E8A78", 16);
+          s.floats.push({ x: it.x, y: by - 20, txt: `+${pts} 🛡️ 护盾 +1 (×${s.shields})`, col: "#0E8A78", life: 1.05 });
+          playSfx("cache");
+        } else if (it.kind === "ruby_seed") {
+          spawnRainParticles(it.x, it.y, "#FB7185", 8);
+          if (s.floats.length < 24) s.floats.push({ x: it.x, y: by - 16, txt: `+${pts} 💎石榴籽`, col: "#FB7185", life: 0.7 });
+          playSfx("token");
+        } else if (it.kind === "rainbow") {
           s.feverTimer = 5.0;
           s.magnetTimer = Math.max(s.magnetTimer, 5.0);
           s.shields = Math.min(5, s.shields + 1);
-          spawnRainParticles(it.x, it.y, "#A78BFA", 24);
+          spawnRainParticles(it.x, it.y, "#A78BFA", 22);
           s.floats.push({ x: it.x, y: by - 20, txt: `+${pts} 🌈 彩虹狂热 2× +护盾!`, col: "#A78BFA", life: 1.15 });
           playSfx("ssr");
         } else if (it.kind === "hourglass") {
@@ -13390,21 +14221,21 @@ function tickRainGame(now) {
           s.floats.push({ x: it.x, y: by - 18, txt: `+${pts} ⏰ 续命 +4s!`, col: "#0284C7", life: 1.0 });
           playSfx("cache");
         } else if (it.kind === "diamond") {
-          spawnRainParticles(it.x, it.y, "#38BDF8", 18);
+          spawnRainParticles(it.x, it.y, "#38BDF8", 16);
           s.floats.push({ x: it.x, y: by - 18, txt: `+${pts} 💎 算力蓝钻!`, col: "#0284C7", life: 0.95 });
           playSfx("gold");
         } else if (it.kind === "gold") {
-          s.magnetTimer = 3.6;
-          spawnRainParticles(it.x, it.y, "#F59E0B", 18);
+          s.magnetTimer = Math.max(s.magnetTimer, 3.6);
+          spawnRainParticles(it.x, it.y, "#F59E0B", 16);
           s.floats.push({ x: it.x, y: by - 18, txt: `+${pts} 磁铁暴走!`, col: "#F59E0B", life: 1.0 });
           playSfx("gold");
         } else if (it.kind === "cache") {
-          spawnRainParticles(it.x, it.y, "#0E8A78", 12);
-          s.floats.push({ x: it.x, y: by - 14, txt: `+${pts} CACHE`, col: "#0E8A78", life: 0.75 });
+          spawnRainParticles(it.x, it.y, "#0E8A78", 10);
+          if (s.floats.length < 24) s.floats.push({ x: it.x, y: by - 14, txt: `+${pts} CACHE`, col: "#0E8A78", life: 0.72 });
           playSfx("cache");
         } else {
-          spawnRainParticles(it.x, it.y, "#E54826", 8);
-          s.floats.push({ x: it.x, y: by - 14, txt: `+${pts}${mult > 1 ? ` ×${mult}` : ""}`, col: "#E54826", life: 0.65 });
+          spawnRainParticles(it.x, it.y, "#E54826", 7);
+          if (s.floats.length < 24) s.floats.push({ x: it.x, y: by - 14, txt: `+${pts}${mult > 1 ? ` ×${mult}` : ""}`, col: "#E54826", life: 0.65 });
           playSfx("token");
         }
       }
@@ -13412,7 +14243,8 @@ function tickRainGame(now) {
       continue;
     }
     if (it.y > s.h + 24) {
-      if (it.kind !== "bomb") s.combo = 0;
+      // ZERO PENALTY during Token Wave (or for wave/pomegranate items): NEVER deduct score, NEVER break combo!
+      if (!inWave && !it.noPenalty && it.kind !== "bomb") s.combo = 0;
       s.items.splice(i, 1);
     }
   }
@@ -13438,7 +14270,57 @@ function tickRainGame(now) {
   if (s.shakeTimer > 0) {
     rainCtx.translate((Math.random() - 0.5) * 7, (Math.random() - 0.5) * 5);
   }
-  drawAdventureBackdrop(rainCtx, s.w, s.h, now, s.freezeTimer > 0);
+  drawAdventureBackdrop(rainCtx, s.w, s.h, now, s.freezeTimer > 0 || s.iceTimer > 0);
+
+  // Drifting frosty crystals during Fruit-Ninja Ice Banana freeze!
+  if (s.iceTimer > 0) {
+    rainCtx.save();
+    rainCtx.fillStyle = "rgba(224, 242, 254, 0.72)";
+    const it = now * 0.001;
+    for (let k = 0; k < 14; k++) {
+      const fx = (k * 67 + Math.sin(it * 1.4 + k) * 14) % s.w;
+      const fy = (k * 43 + it * 24) % s.h;
+      rainCtx.beginPath(); rainCtx.arc(fx, fy, k % 3 === 0 ? 2.4 : 1.5, 0, Math.PI * 2); rainCtx.fill();
+    }
+    rainCtx.restore();
+  }
+
+  // Shimmering Ocean-Gold Wave Ripples during Token Wave!
+  if (inWave) {
+    rainCtx.save();
+    const t = now * 0.004;
+    rainCtx.fillStyle = "rgba(56, 189, 248, 0.14)";
+    rainCtx.beginPath();
+    rainCtx.moveTo(0, s.h);
+    for (let x = 0; x <= s.w; x += 20) {
+      rainCtx.lineTo(x, s.h - 24 + Math.sin(x * 0.03 + t) * 6);
+    }
+    rainCtx.lineTo(s.w, s.h);
+    rainCtx.closePath();
+    rainCtx.fill();
+    rainCtx.strokeStyle = "rgba(254, 240, 138, 0.55)";
+    rainCtx.lineWidth = 2;
+    rainCtx.beginPath();
+    for (let x = 0; x <= s.w; x += 20) {
+      const wy = s.h - 24 + Math.sin(x * 0.03 + t) * 6;
+      if (x === 0) rainCtx.moveTo(x, wy); else rainCtx.lineTo(x, wy);
+    }
+    rainCtx.stroke();
+    rainCtx.restore();
+  }
+
+  // Pomegranate Crimson-Gold Shockwave Ring!
+  if (s.pomRing) {
+    rainCtx.save();
+    rainCtx.globalAlpha = s.pomRing.alpha;
+    rainCtx.strokeStyle = "#F43F5E";
+    rainCtx.lineWidth = 6;
+    rainCtx.beginPath(); rainCtx.arc(s.pomRing.x, s.pomRing.y, s.pomRing.r, 0, Math.PI * 2); rainCtx.stroke();
+    rainCtx.strokeStyle = "#FDE047";
+    rainCtx.lineWidth = 2.2;
+    rainCtx.beginPath(); rainCtx.arc(s.pomRing.x, s.pomRing.y, s.pomRing.r * 0.86, 0, Math.PI * 2); rainCtx.stroke();
+    rainCtx.restore();
+  }
 
   // Golden Purifier Beam (laser_beam prop in Rain!)
   if (s.laserTimer > 0) {
@@ -13470,139 +14352,145 @@ function tickRainGame(now) {
     }
   }
 
-  // Magnet / Rainbow fever aura ring
-  if (s.magnetTimer > 0 || s.feverTimer > 0) {
+  // Magnet / Rainbow fever / Double-Points aura ring
+  if (s.magnetTimer > 0 || s.feverTimer > 0 || s.doubleTimer > 0) {
     rainCtx.save();
     rainCtx.beginPath();
     rainCtx.arc(s.x, by, (s.feverTimer > 0 ? 52 : 44) + Math.sin(now / 70) * 6, 0, Math.PI * 2);
-    rainCtx.strokeStyle = s.feverTimer > 0 ? "rgba(168, 85, 247, 0.72)" : "rgba(245, 158, 11, 0.55)";
-    rainCtx.lineWidth = s.feverTimer > 0 ? 2.5 : 2;
+    rainCtx.strokeStyle = s.feverTimer > 0 ? "rgba(168, 85, 247, 0.72)" : (s.doubleTimer > 0 ? "rgba(250, 204, 21, 0.75)" : "rgba(245, 158, 11, 0.55)");
+    rainCtx.lineWidth = s.feverTimer > 0 || s.doubleTimer > 0 ? 2.5 : 2;
     rainCtx.setLineDash([5, 5]);
     rainCtx.stroke();
     rainCtx.restore();
   }
 
-  // Draw items
+  // Draw items (including Fruit-Ninja Freeze/Double/Wave Bananas, Pomegranate, Magnet, Shield Bubble & Ruby Seeds!)
   for (const it of s.items) {
     rainCtx.save();
     rainCtx.translate(it.x, it.y);
     if (it.kind === "token") {
       rainCtx.fillStyle = "#E54826";
-      rainCtx.beginPath();
-      rainCtx.arc(0, 0, it.r, 0, Math.PI * 2);
-      rainCtx.fill();
+      rainCtx.beginPath(); rainCtx.arc(0, 0, it.r, 0, Math.PI * 2); rainCtx.fill();
       rainCtx.fillStyle = "#FAF8F3";
-      rainCtx.font = "bold 9px monospace";
-      rainCtx.textAlign = "center";
-      rainCtx.textBaseline = "middle";
+      rainCtx.font = "bold 9px monospace"; rainCtx.textAlign = "center"; rainCtx.textBaseline = "middle";
       rainCtx.fillText("T", 0, 0.5);
     } else if (it.kind === "cache") {
       rainCtx.rotate(it.rot * 0.5);
       rainCtx.fillStyle = "#0E8A78";
       rainCtx.beginPath();
-      rainCtx.moveTo(0, -it.r);
-      rainCtx.lineTo(it.r, 0);
-      rainCtx.lineTo(0, it.r);
-      rainCtx.lineTo(-it.r, 0);
+      rainCtx.moveTo(0, -it.r); rainCtx.lineTo(it.r, 0); rainCtx.lineTo(0, it.r); rainCtx.lineTo(-it.r, 0);
+      rainCtx.closePath(); rainCtx.fill();
+      rainCtx.fillStyle = "#fff";
+      rainCtx.font = "bold 8px monospace"; rainCtx.textAlign = "center"; rainCtx.textBaseline = "middle";
+      rainCtx.fillText("⚡", 0, 0.5);
+    } else if (it.kind === "ice_banana" || it.kind === "double_banana" || it.kind === "wave_banana") {
+      // Fruit-Ninja Iconic Curved Power Banana with soft aura ring!
+      const auraCol = it.kind === "ice_banana" ? "rgba(56,189,248,0.34)" : it.kind === "double_banana" ? "rgba(250,204,21,0.34)" : "rgba(192,132,252,0.36)";
+      const mainCol = it.kind === "ice_banana" ? "#38BDF8" : it.kind === "double_banana" ? "#FACC15" : "#C084FC";
+      const rimCol = it.kind === "ice_banana" ? "#E0F2FE" : it.kind === "double_banana" ? "#1D4ED8" : "#38BDF8";
+      const ico = it.kind === "ice_banana" ? "❄️" : it.kind === "double_banana" ? "2×" : "🌊";
+      rainCtx.fillStyle = auraCol;
+      rainCtx.beginPath(); rainCtx.arc(0, 0, it.r + 4, 0, Math.PI * 2); rainCtx.fill();
+      rainCtx.save();
+      rainCtx.rotate(Math.sin(it.rot * 0.6) * 0.35);
+      rainCtx.fillStyle = mainCol;
+      rainCtx.strokeStyle = rimCol;
+      rainCtx.lineWidth = 2;
+      rainCtx.beginPath();
+      rainCtx.moveTo(-11, -5);
+      rainCtx.quadraticCurveTo(0, 14, 12, -4);
+      rainCtx.quadraticCurveTo(1, 5, -11, -5);
       rainCtx.closePath();
       rainCtx.fill();
-      rainCtx.fillStyle = "#fff";
-      rainCtx.font = "bold 8px monospace";
-      rainCtx.textAlign = "center";
-      rainCtx.textBaseline = "middle";
-      rainCtx.fillText("⚡", 0, 0.5);
+      rainCtx.stroke();
+      rainCtx.restore();
+      rainCtx.fillStyle = it.kind === "double_banana" ? "#1E3A8A" : "#FFFFFF";
+      rainCtx.font = it.kind === "double_banana" ? "bold 9px monospace" : "11px sans-serif";
+      rainCtx.textAlign = "center"; rainCtx.textBaseline = "middle";
+      rainCtx.fillText(ico, 0, 1);
+    } else if (it.kind === "pomegranate") {
+      rainCtx.fillStyle = "rgba(244,63,94,0.34)";
+      rainCtx.beginPath(); rainCtx.arc(0, 0, it.r + 4, 0, Math.PI * 2); rainCtx.fill();
+      const pg = rainCtx.createRadialGradient(-3, -3, 2, 0, 0, it.r);
+      pg.addColorStop(0, "#FDA4AF"); pg.addColorStop(0.55, "#E11D48"); pg.addColorStop(1, "#881337");
+      rainCtx.fillStyle = pg;
+      rainCtx.beginPath(); rainCtx.arc(0, 0, it.r, 0, Math.PI * 2); rainCtx.fill();
+      rainCtx.strokeStyle = "#FDE047"; rainCtx.lineWidth = 1.6; rainCtx.stroke();
+      rainCtx.font = "13px sans-serif"; rainCtx.textAlign = "center"; rainCtx.textBaseline = "middle";
+      rainCtx.fillText("🍉", 0, 1);
+    } else if (it.kind === "ruby_seed") {
+      rainCtx.rotate(it.rot);
+      rainCtx.fillStyle = "#FB7185";
+      rainCtx.beginPath();
+      rainCtx.moveTo(0, -it.r); rainCtx.lineTo(it.r * 0.78, 0); rainCtx.lineTo(0, it.r); rainCtx.lineTo(-it.r * 0.78, 0);
+      rainCtx.closePath(); rainCtx.fill();
+      rainCtx.strokeStyle = "#FEF08A"; rainCtx.lineWidth = 1; rainCtx.stroke();
+    } else if (it.kind === "magnet_orb") {
+      rainCtx.fillStyle = "rgba(249,115,22,0.28)";
+      rainCtx.beginPath(); rainCtx.arc(0, 0, it.r + 3.5, 0, Math.PI * 2); rainCtx.fill();
+      rainCtx.fillStyle = "#1E293B";
+      rainCtx.beginPath(); rainCtx.arc(0, 0, it.r, 0, Math.PI * 2); rainCtx.fill();
+      rainCtx.strokeStyle = "#F97316"; rainCtx.lineWidth = 1.6; rainCtx.stroke();
+      rainCtx.font = "11px sans-serif"; rainCtx.textAlign = "center"; rainCtx.textBaseline = "middle";
+      rainCtx.fillText("🧲", 0, 1);
+    } else if (it.kind === "shield_bubble") {
+      rainCtx.fillStyle = "rgba(14,138,120,0.28)";
+      rainCtx.beginPath(); rainCtx.arc(0, 0, it.r + 3.5, 0, Math.PI * 2); rainCtx.fill();
+      rainCtx.fillStyle = "#0E8A78";
+      rainCtx.beginPath(); rainCtx.arc(0, 0, it.r, 0, Math.PI * 2); rainCtx.fill();
+      rainCtx.strokeStyle = "#99F6E4"; rainCtx.lineWidth = 1.5; rainCtx.stroke();
+      rainCtx.font = "11px sans-serif"; rainCtx.textAlign = "center"; rainCtx.textBaseline = "middle";
+      rainCtx.fillText("🛡️", 0, 1);
     } else if (it.kind === "rainbow") {
       const grad = rainCtx.createRadialGradient(0, 0, 2, 0, 0, it.r);
-      grad.addColorStop(0, "#FEF08A");
-      grad.addColorStop(0.5, "#C084FC");
-      grad.addColorStop(1, "#38BDF8");
+      grad.addColorStop(0, "#FEF08A"); grad.addColorStop(0.5, "#C084FC"); grad.addColorStop(1, "#38BDF8");
+      rainCtx.fillStyle = "rgba(168,85,247,0.3)";
+      rainCtx.beginPath(); rainCtx.arc(0, 0, it.r + 4, 0, Math.PI * 2); rainCtx.fill();
       rainCtx.fillStyle = grad;
-      rainCtx.shadowColor = "rgba(168,85,247,0.85)";
-      rainCtx.shadowBlur = 14;
-      rainCtx.beginPath();
-      rainCtx.arc(0, 0, it.r, 0, Math.PI * 2);
-      rainCtx.fill();
-      rainCtx.shadowBlur = 0;
-      rainCtx.font = "13px sans-serif";
-      rainCtx.textAlign = "center";
-      rainCtx.textBaseline = "middle";
+      rainCtx.beginPath(); rainCtx.arc(0, 0, it.r, 0, Math.PI * 2); rainCtx.fill();
+      rainCtx.font = "13px sans-serif"; rainCtx.textAlign = "center"; rainCtx.textBaseline = "middle";
       rainCtx.fillText("🌈", 0, 1);
     } else if (it.kind === "diamond") {
+      rainCtx.fillStyle = "rgba(56,189,248,0.28)";
+      rainCtx.beginPath(); rainCtx.arc(0, 0, it.r + 3, 0, Math.PI * 2); rainCtx.fill();
       rainCtx.fillStyle = "#38BDF8";
-      rainCtx.shadowColor = "rgba(56,189,248,0.78)";
-      rainCtx.shadowBlur = 10;
-      rainCtx.beginPath();
-      rainCtx.arc(0, 0, it.r, 0, Math.PI * 2);
-      rainCtx.fill();
-      rainCtx.shadowBlur = 0;
-      rainCtx.font = "12px sans-serif";
-      rainCtx.textAlign = "center";
-      rainCtx.textBaseline = "middle";
+      rainCtx.beginPath(); rainCtx.arc(0, 0, it.r, 0, Math.PI * 2); rainCtx.fill();
+      rainCtx.font = "12px sans-serif"; rainCtx.textAlign = "center"; rainCtx.textBaseline = "middle";
       rainCtx.fillText("💎", 0, 1);
     } else if (it.kind === "hourglass") {
       rainCtx.fillStyle = "#0284C7";
-      rainCtx.shadowColor = "rgba(14,165,233,0.7)";
-      rainCtx.shadowBlur = 8;
-      rainCtx.beginPath();
-      rainCtx.arc(0, 0, it.r, 0, Math.PI * 2);
-      rainCtx.fill();
-      rainCtx.shadowBlur = 0;
-      rainCtx.font = "11px sans-serif";
-      rainCtx.textAlign = "center";
-      rainCtx.textBaseline = "middle";
+      rainCtx.beginPath(); rainCtx.arc(0, 0, it.r, 0, Math.PI * 2); rainCtx.fill();
+      rainCtx.font = "11px sans-serif"; rainCtx.textAlign = "center"; rainCtx.textBaseline = "middle";
       rainCtx.fillText("⏰", 0, 1);
     } else if (it.kind === "carrot_coin") {
+      rainCtx.fillStyle = "rgba(251,191,36,0.32)";
+      rainCtx.beginPath(); rainCtx.arc(0, 0, it.r + 4, 0, Math.PI * 2); rainCtx.fill();
       rainCtx.fillStyle = "#F59E0B";
-      rainCtx.shadowColor = "rgba(251,191,36,0.92)";
-      rainCtx.shadowBlur = 12;
-      rainCtx.beginPath();
-      rainCtx.arc(0, 0, it.r, 0, Math.PI * 2);
-      rainCtx.fill();
-      rainCtx.strokeStyle = "#FEF08A";
-      rainCtx.lineWidth = 1.6;
-      rainCtx.stroke();
-      rainCtx.shadowBlur = 0;
-      rainCtx.font = "12px sans-serif";
-      rainCtx.textAlign = "center";
-      rainCtx.textBaseline = "middle";
+      rainCtx.beginPath(); rainCtx.arc(0, 0, it.r, 0, Math.PI * 2); rainCtx.fill();
+      rainCtx.strokeStyle = "#FEF08A"; rainCtx.lineWidth = 1.6; rainCtx.stroke();
+      rainCtx.font = "12px sans-serif"; rainCtx.textAlign = "center"; rainCtx.textBaseline = "middle";
       rainCtx.fillText("🥕", 0, 1);
     } else if (it.kind === "gacha_box") {
       const grad = rainCtx.createRadialGradient(-2, -2, 2, 0, 0, it.r);
-      grad.addColorStop(0, "#FEF08A");
-      grad.addColorStop(0.55, "#C084FC");
-      grad.addColorStop(1, "#F472B6");
+      grad.addColorStop(0, "#FEF08A"); grad.addColorStop(0.55, "#C084FC"); grad.addColorStop(1, "#F472B6");
+      rainCtx.fillStyle = "rgba(192,132,252,0.34)";
+      rainCtx.beginPath(); rainCtx.arc(0, 0, it.r + 4, 0, Math.PI * 2); rainCtx.fill();
       rainCtx.fillStyle = grad;
-      rainCtx.shadowColor = "rgba(192,132,252,0.95)";
-      rainCtx.shadowBlur = 15;
-      rainCtx.beginPath();
-      rainCtx.arc(0, 0, it.r, 0, Math.PI * 2);
-      rainCtx.fill();
-      rainCtx.shadowBlur = 0;
-      rainCtx.font = "13px sans-serif";
-      rainCtx.textAlign = "center";
-      rainCtx.textBaseline = "middle";
+      rainCtx.beginPath(); rainCtx.arc(0, 0, it.r, 0, Math.PI * 2); rainCtx.fill();
+      rainCtx.font = "13px sans-serif"; rainCtx.textAlign = "center"; rainCtx.textBaseline = "middle";
       rainCtx.fillText("🎁", 0, 1);
     } else if (it.kind === "gold") {
+      rainCtx.fillStyle = "rgba(245,158,11,0.28)";
+      rainCtx.beginPath(); rainCtx.arc(0, 0, it.r + 3, 0, Math.PI * 2); rainCtx.fill();
       rainCtx.fillStyle = "#F59E0B";
-      rainCtx.shadowColor = "rgba(245,158,11,0.7)";
-      rainCtx.shadowBlur = 10;
-      rainCtx.beginPath();
-      rainCtx.arc(0, 0, it.r, 0, Math.PI * 2);
-      rainCtx.fill();
-      rainCtx.shadowBlur = 0;
-      rainCtx.font = "12px sans-serif";
-      rainCtx.textAlign = "center";
-      rainCtx.textBaseline = "middle";
+      rainCtx.beginPath(); rainCtx.arc(0, 0, it.r, 0, Math.PI * 2); rainCtx.fill();
+      rainCtx.font = "12px sans-serif"; rainCtx.textAlign = "center"; rainCtx.textBaseline = "middle";
       rainCtx.fillText("🥕", 0, 1);
     } else {
       rainCtx.fillStyle = "#DC2626";
-      rainCtx.beginPath();
-      rainCtx.arc(0, 0, it.r, 0, Math.PI * 2);
-      rainCtx.fill();
+      rainCtx.beginPath(); rainCtx.arc(0, 0, it.r, 0, Math.PI * 2); rainCtx.fill();
       rainCtx.fillStyle = "#fff";
-      rainCtx.font = "bold 10px monospace";
-      rainCtx.textAlign = "center";
-      rainCtx.textBaseline = "middle";
+      rainCtx.font = "bold 10px monospace"; rainCtx.textAlign = "center"; rainCtx.textBaseline = "middle";
       rainCtx.fillText("!", 0, 0.5);
     }
     rainCtx.restore();
@@ -13678,30 +14566,53 @@ function tickRainGame(now) {
   }
   rainCtx.globalAlpha = 1;
 
-  // Live combo HUD badge inside canvas
+  // Top Token Wave Reward Bar & Banner!
+  if (inWave) {
+    const bw = Math.min(276, s.w - 36);
+    const bx = (s.w - bw) / 2;
+    rainCtx.fillStyle = "rgba(12, 74, 110, 0.84)";
+    rainCtx.beginPath(); rainCtx.roundRect(bx - 4, 6, bw + 8, 17, 6); rainCtx.fill();
+    rainCtx.fillStyle = "rgba(255,255,255,0.2)";
+    rainCtx.fillRect(bx, 17, bw, 3.2);
+    rainCtx.fillStyle = "#38BDF8";
+    rainCtx.fillRect(bx, 17, bw * Math.max(0, Math.min(1, s.waveTimer / (s.waveMaxDur || 6))), 3.2);
+    rainCtx.fillStyle = "#FEF08A";
+    rainCtx.font = "bold 9px monospace";
+    rainCtx.textAlign = "center";
+    rainCtx.fillText(`🌊 雨水浪潮福利波 ${s.waveTimer.toFixed(1)}s · 漏接不扣分不断连击!`, s.w / 2, 13.5);
+  }
+  if (s.waveBanner) {
+    rainCtx.save();
+    rainCtx.globalAlpha = Math.min(1, s.waveBanner.life * 1.4);
+    rainCtx.fillStyle = "rgba(15, 23, 42, 0.85)";
+    rainCtx.beginPath(); rainCtx.roundRect(14, s.h * 0.42 - 12, s.w - 28, 24, 7); rainCtx.fill();
+    rainCtx.fillStyle = s.waveBanner.col;
+    rainCtx.font = "bold 9.8px monospace";
+    rainCtx.textAlign = "center";
+    rainCtx.fillText(s.waveBanner.txt, s.w / 2, s.h * 0.42 + 3.5);
+    rainCtx.restore();
+  }
+
+  // Live combo & active Fruit-Ninja buffs HUD inside canvas
+  const hudY = inWave ? 36 : 20;
   if (s.combo >= 3) {
     rainCtx.fillStyle = s.combo >= 12 ? "#F59E0B" : "#E54826";
     rainCtx.font = "bold 12px monospace";
     rainCtx.textAlign = "left";
-    rainCtx.fillText(`🔥 COMBO ×${s.combo}`, 10, 20);
+    rainCtx.fillText(`🔥 COMBO ×${s.combo}`, 10, hudY);
   }
-  if (s.feverTimer > 0) {
-    rainCtx.fillStyle = "#A78BFA";
-    rainCtx.font = "bold 11px monospace";
-    rainCtx.textAlign = "right";
-    rainCtx.fillText(`🌈 2×狂热 ${s.feverTimer.toFixed(1)}s`, s.w - 10, 20);
-  } else if (s.magnetTimer > 0) {
-    rainCtx.fillStyle = "#F59E0B";
-    rainCtx.font = "bold 11px monospace";
-    rainCtx.textAlign = "right";
-    rainCtx.fillText(`🧲 磁铁 ${s.magnetTimer.toFixed(1)}s`, s.w - 10, 20);
-  }
-  if (s.shields > 0) {
-    rainCtx.fillStyle = "#0E8A78";
-    rainCtx.font = "bold 10.5px monospace";
-    rainCtx.textAlign = "right";
-    rainCtx.fillText(`🛡️×${s.shields}`, s.w - 10, (s.feverTimer > 0 || s.magnetTimer > 0) ? 35 : 20);
-  }
+  const buffs = [];
+  if (s.iceTimer > 0) buffs.push({ txt: `❄️ 冰冻 ${s.iceTimer.toFixed(1)}s`, col: "#38BDF8" });
+  if (s.doubleTimer > 0) buffs.push({ txt: `⚡ 2×双倍 ${s.doubleTimer.toFixed(1)}s`, col: "#FACC15" });
+  if (s.feverTimer > 0) buffs.push({ txt: `🌈 2×狂热 ${s.feverTimer.toFixed(1)}s`, col: "#A78BFA" });
+  else if (s.magnetTimer > 0) buffs.push({ txt: `🧲 磁铁 ${s.magnetTimer.toFixed(1)}s`, col: "#F59E0B" });
+  if (s.shields > 0) buffs.push({ txt: `🛡️×${s.shields}`, col: "#0E8A78" });
+  rainCtx.font = "bold 10.5px monospace";
+  rainCtx.textAlign = "right";
+  buffs.forEach((bf, idx) => {
+    rainCtx.fillStyle = bf.col;
+    rainCtx.fillText(bf.txt, s.w - 10, hudY + idx * 14);
+  });
   rainCtx.restore();
 
   document.getElementById("rainScore").textContent = s.score;
@@ -15402,6 +16313,16 @@ function grantDebugAllPropsAndBg(unlockBgOnly = false) {
 
 // Blaster inline debug item & Boss spawners
 document.getElementById("dbgBlGodBtn").addEventListener("click", toggleDebugGodMode);
+document.getElementById("dbgBlHordeBtn")?.addEventListener("click", () => {
+  if (!blasterState || !blasterState.running) startBlasterGame();
+  blasterState.debugTainted = true;
+  triggerBlasterHorde(blasterState, 1 + Math.floor(blasterState.elapsed / 10));
+});
+document.getElementById("dbgBlBerserkBtn")?.addEventListener("click", () => {
+  if (!blasterState || !blasterState.running) startBlasterGame();
+  blasterState.debugTainted = true;
+  triggerBlasterBerserk(true);
+});
 document.getElementById("dbgBlAddPropsBtn")?.addEventListener("click", () => grantDebugAllPropsAndBg(false));
 document.getElementById("dbgBlAllBgBtn")?.addEventListener("click", () => grantDebugAllPropsAndBg(true));
 document.getElementById("dbgBlLootBtn")?.addEventListener("click", () => {
@@ -15451,6 +16372,35 @@ document.getElementById("dbgBlNovaBtn").addEventListener("click", () => {
 });
 
 // Rain inline debug item spawners
+document.getElementById("dbgRainWaveBtn")?.addEventListener("click", () => {
+  if (!rainState || !rainState.running) startRainGame();
+  rainState.debugTainted = true;
+  triggerRainWave(rainState, 6.5, "🌊 [调试] 雨水浪潮");
+});
+document.getElementById("dbgRainIceBtn")?.addEventListener("click", () => {
+  if (!rainState || !rainState.running) startRainGame();
+  const s = rainState; s.debugTainted = true;
+  s.items.push({ kind: "ice_banana", x: Math.max(24, Math.min(s.w - 24, s.x)), y: -8, vy: 130, vx: 0, r: 13, rot: 0 });
+  playSfx("freeze");
+});
+document.getElementById("dbgRainDoubleBtn")?.addEventListener("click", () => {
+  if (!rainState || !rainState.running) startRainGame();
+  const s = rainState; s.debugTainted = true;
+  s.items.push({ kind: "double_banana", x: Math.max(24, Math.min(s.w - 24, s.x)), y: -8, vy: 130, vx: 0, r: 13, rot: 0 });
+  playSfx("gold");
+});
+document.getElementById("dbgRainPomBtn")?.addEventListener("click", () => {
+  if (!rainState || !rainState.running) startRainGame();
+  const s = rainState; s.debugTainted = true;
+  s.items.push({ kind: "pomegranate", x: Math.max(24, Math.min(s.w - 24, s.x)), y: -8, vy: 130, vx: 0, r: 13, rot: 0 });
+  playSfx("pomegranate");
+});
+document.getElementById("dbgRainMagBtn")?.addEventListener("click", () => {
+  if (!rainState || !rainState.running) startRainGame();
+  const s = rainState; s.debugTainted = true;
+  s.items.push({ kind: "magnet_orb", x: Math.max(24, Math.min(s.w - 24, s.x)), y: -8, vy: 135, vx: 0, r: 11, rot: 0 });
+  playSfx("gold");
+});
 document.getElementById("dbgRainAddPropsBtn")?.addEventListener("click", () => grantDebugAllPropsAndBg(false));
 document.getElementById("dbgRainAllBgBtn")?.addEventListener("click", () => grantDebugAllPropsAndBg(true));
 document.getElementById("dbgRainLootBtn")?.addEventListener("click", () => {
