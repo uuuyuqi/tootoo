@@ -112,6 +112,8 @@ def _sanitize_home_state(raw: Any) -> dict[str, Any]:
     h["owned_decor"] = []
     h["owned_wear"] = []
     h["hidden_tier_acc"] = []
+    h["leases"] = {}
+    h["rent_equity"] = {}
     if not isinstance(raw, dict):
         return h
     if isinstance(raw.get("house"), str) and raw["house"].strip():
@@ -121,7 +123,19 @@ def _sanitize_home_state(raw: Any) -> dict[str, Any]:
         if "street" not in oh:
             oh.insert(0, "street")
         h["owned_houses"] = list(dict.fromkeys(oh))
-    if h["house"] not in h["owned_houses"]:
+    if isinstance(raw.get("leases"), dict):
+        leases: dict[str, int] = {}
+        for k, v in raw["leases"].items():
+            if isinstance(k, str) and k.strip() and isinstance(v, (int, float)) and v > 0:
+                leases[k.strip()] = int(v)
+        h["leases"] = leases
+    if isinstance(raw.get("rent_equity"), dict):
+        eq: dict[str, int] = {}
+        for k, v in raw["rent_equity"].items():
+            if isinstance(k, str) and k.strip() and isinstance(v, (int, float)) and v > 0:
+                eq[k.strip()] = int(v)
+        h["rent_equity"] = eq
+    if h["house"] not in h["owned_houses"] and h["house"] not in h["leases"]:
         h["owned_houses"].append(h["house"])
     if isinstance(raw.get("decor"), dict):
         for slot in ("bed", "light", "floor", "garden", "pool"):

@@ -239,6 +239,25 @@ class TooTooHandler(BaseHTTPRequestHandler):
                 self._send_json({"error": str(e)}, status=500)
             return
 
+        if parsed.path.startswith("/ui/") and (parsed.path.endswith(".js") or parsed.path.endswith(".json")):
+            rel = parsed.path[len("/ui/"):]
+            ui_root = os.path.realpath(os.path.join(BASE_DIR, "ui"))
+            target = os.path.realpath(os.path.join(ui_root, rel))
+            if target.startswith(ui_root + os.sep) and os.path.isfile(target):
+                try:
+                    with open(target, "rb") as f:
+                        blob = f.read()
+                    ctype = "application/javascript; charset=utf-8" if target.endswith(".js") else "application/json; charset=utf-8"
+                    self.send_response(HTTPStatus.OK)
+                    self.send_header("Content-Type", ctype)
+                    self.send_header("Cache-Control", "no-store")
+                    self.send_header("Content-Length", str(len(blob)))
+                    self.end_headers()
+                    self.wfile.write(blob)
+                except OSError as e:
+                    self._send_json({"error": str(e)}, status=500)
+                return
+
         if parsed.path == "/api/bunny_lines":
             try:
                 with open(BUNNY_LINES_FILE, "r", encoding="utf-8") as f:
