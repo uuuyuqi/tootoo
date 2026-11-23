@@ -114,6 +114,17 @@ class CodexQuotaTests(unittest.TestCase):
                 server.shutdown()
                 thread.join(timeout=5)
 
+    def test_aliases_keep_legacy_cache_key_and_are_scanned_once(self):
+        self.log(self.override / "sessions" / "real.jsonl", token(1, secondary=bucket(3)))
+        default_root = self.home / ".codex"
+        default_root.symlink_to(self.override, target_is_directory=True)
+        legacy_key = f"codex:{default_root / 'sessions' / 'real.jsonl'}"
+        with patch.object(scanner, "parse_codex_file", wraps=scanner.parse_codex_file) as parse:
+            _, quotas, _ = scanner.scan_all_events(force=True)
+        self.assertEqual(parse.call_count, 1)
+        self.assertEqual(set(scanner._MEM_FILE_CACHE["files"]), {legacy_key})
+        self.assertEqual(quotas["codex"]["secondary"], bucket(3))
+
     def test_with_only_nulls_omits_codex_quota(self):
         self.log(self.override / "sessions" / "nulls.jsonl", token(1), token(2, secondary=bucket(None)))
         self.assertNotIn("codex", scanner.scan_all_events(force=True)[1])

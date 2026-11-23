@@ -1993,8 +1993,14 @@ def scan_all_events(force: bool = False, rebuild: bool = False) -> tuple[list[di
         codex_home = os.environ.get("CODEX_HOME")
         codex_roots = [os.path.join(HOME, ".codex")]
         if codex_home:
-            codex_roots.insert(0, os.path.abspath(os.path.expanduser(codex_home)))
-        for root in dict.fromkeys(os.path.realpath(path) for path in codex_roots):
+            codex_roots.append(os.path.abspath(os.path.expanduser(codex_home)))
+        seen_codex_roots: set[str] = set()
+        for root in codex_roots:
+            # Deduplicate aliases without changing historical cache keys.
+            identity = os.path.realpath(root)
+            if identity in seen_codex_roots:
+                continue
+            seen_codex_roots.add(identity)
             for folder in ("sessions", "archived_sessions"):
                 cx_dir = os.path.join(root, folder)
                 for p in glob.glob(os.path.join(cx_dir, "**", "*.jsonl"), recursive=True):
