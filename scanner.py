@@ -806,6 +806,26 @@ def discover_antigravity_dbs() -> list[str]:
 _RE_ITEM_STARTED = re.compile(r'"started_at_ms"\s*:\s*(\d+)')
 
 
+def _is_valid_quota_bucket(bucket: Any) -> bool:
+    return isinstance(bucket, dict) and bucket.get("used_percent") is not None
+
+
+def _has_valid_quota(quota: Any) -> bool:
+    if not isinstance(quota, dict):
+        return False
+    if any(_is_valid_quota_bucket(quota.get(slot)) for slot in ("primary", "secondary")):
+        return True
+    buckets = quota.get("buckets")
+    return isinstance(buckets, list) and any(_is_valid_quota_bucket(bucket) for bucket in buckets)
+
+
+def _codex_quota_key(quota: dict[str, Any]) -> tuple[bool, float]:
+    # Old cache entries don't record the limit ID; don't let them outrank
+    # a snapshot known to represent the generic Codex allowance.
+    generic = "limit_id" in quota and quota["limit_id"] in (None, "", "codex")
+    return generic, quota.get("ts", 0)
+
+
 def parse_codex_file(path: str) -> dict[str, Any]:
     events: list[dict[str, Any]] = []
     project: str | None = None
@@ -814,7 +834,6 @@ def parse_codex_file(path: str) -> dict[str, Any]:
     perf_first: float | None = None
     prev_total_key: tuple[int, int, int, int] | None = None
     latest_quota: dict[str, Any] | None = None
-    latest_quota_ts: float = 0.0
 
     try:
         with open(path, "r", encoding="utf-8", errors="ignore") as f:
@@ -863,14 +882,18 @@ def parse_codex_file(path: str) -> dict[str, Any]:
                         perf_first = None
                     elif ptyp == "token_count":
                         rl = payload.get("rate_limits")
-                        if isinstance(rl, dict) and ts and ts > latest_quota_ts:
-                            latest_quota_ts = ts
-                            latest_quota = {
+                        if isinstance(rl, dict) and ts and any(
+                            _is_valid_quota_bucket(rl.get(slot)) for slot in ("primary", "secondary")
+                        ):
+                            snapshot = {
                                 "ts": ts,
                                 "plan": rl.get("plan_type"),
+                                "limit_id": rl.get("limit_id"),
                                 "primary": rl.get("primary"),
                                 "secondary": rl.get("secondary"),
                             }
+                            if latest_quota is None or _codex_quota_key(snapshot) > _codex_quota_key(latest_quota):
+                                latest_quota = snapshot
                         info = payload.get("info") or {}
                         tot = info.get("total_token_usage") or {}
                         last = info.get("last_token_usage") or {}
@@ -1967,11 +1990,13 @@ def scan_all_events(force: bool = False, rebuild: bool = False) -> tuple[list[di
         sources: list[tuple[str, str]] = []
         for p in discover_antigravity_dbs():
             sources.append(("antigravity", p))
-        for cx_dir in (
-            os.path.join(HOME, ".codex", "sessions"),
-            os.path.join(HOME, ".codex", "archived_sessions"),
-        ):
-            if os.path.isdir(cx_dir):
+        codex_home = os.environ.get("CODEX_HOME")
+        codex_roots = [os.path.join(HOME, ".codex")]
+        if codex_home:
+            codex_roots.insert(0, os.path.abspath(os.path.expanduser(codex_home)))
+        for root in dict.fromkeys(os.path.realpath(path) for path in codex_roots):
+            for folder in ("sessions", "archived_sessions"):
+                cx_dir = os.path.join(root, folder)
                 for p in glob.glob(os.path.join(cx_dir, "**", "*.jsonl"), recursive=True):
                     sources.append(("codex", p))
         for p in discover_omp_files():
@@ -2050,7 +2075,11 @@ def scan_all_events(force: bool = False, rebuild: bool = False) -> tuple[list[di
 
             cached = fcache.get(key)
             if cached and cached.get("sig") == sig:
-                continue
+                cached_quota = cached["data"].get("quota")
+                # Old parsers could persist an empty quota dict. Reparse it
+                # once; the new parser uses None when no usable quota exists.
+                if tool != "codex" or not isinstance(cached_quota, dict) or _has_valid_quota(cached_quota):
+                    continue
 
             if tool == "antigravity":
                 parsed = parse_antigravity_db(path)
@@ -2118,9 +2147,13 @@ def scan_all_events(force: bool = False, rebuild: bool = False) -> tuple[list[di
             if _hydrate_parsed(tool, path, parsed, fallback_proj=fb_proj):
                 dirty = True
             q = parsed.get("quota")
-            if q and isinstance(q, dict):
+            if _has_valid_quota(q):
                 prev_q = quotas.get(tool)
-                if prev_q is None or q.get("ts", 0) > prev_q.get("ts", 0):
+                if prev_q is None or (
+                    _codex_quota_key(q) > _codex_quota_key(prev_q)
+                    if tool == "codex"
+                    else q.get("ts", 0) > prev_q.get("ts", 0)
+                ):
                     quotas[tool] = q
             evs = parsed.get("events")
             if evs:

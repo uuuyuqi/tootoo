@@ -314,6 +314,7 @@ struct TodayMetrics {
     let gem7dRem: Int?
     let cg5hRem: Int?
     let codexRem: Int?
+    let codexWeekly: Bool
 }
 
 // Bottom micro quota bar options for menu bar
@@ -830,6 +831,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             var gem7d: Int? = nil
             var cg5h: Int? = nil
             var codex: Int? = nil
+            var codexWeekly = false
 
             let quotas = obj["quotas"] as? [String: Any] ?? [:]
             if let agy = quotas["antigravity"] as? [String: Any],
@@ -841,14 +843,23 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
                     else if key == "antigravity:cg_5h" { cg5h = self.remPct(from: b["used_percent"]) }
                 }
             }
-            if let cx = quotas["codex"] as? [String: Any],
-               let pri = cx["primary"] as? [String: Any] {
-                codex = self.remPct(from: pri["used_percent"])
+            if let cx = quotas["codex"] as? [String: Any] {
+                let buckets = ["primary", "secondary"].compactMap { key -> (remaining: Int, weekly: Bool)? in
+                    guard let bucket = cx[key] as? [String: Any],
+                          let remaining = self.remPct(from: bucket["used_percent"]) else { return nil }
+                    let rawWindow = bucket["window_minutes"]
+                    let minutes = (rawWindow as? NSNumber)?.intValue ?? (rawWindow as? String).flatMap(Int.init)
+                    return (remaining, minutes == 10080)
+                }
+                if let selected = buckets.first(where: { $0.weekly }) ?? buckets.first {
+                    codex = selected.remaining
+                    codexWeekly = selected.weekly
+                }
             }
 
             completion(TodayMetrics(
                 tokens: tok, cost: cost, tps: tps, ttft: ttft,
-                gem5hRem: gem5h, gem7dRem: gem7d, cg5hRem: cg5h, codexRem: codex
+                gem5hRem: gem5h, gem7dRem: gem7d, cg5hRem: cg5h, codexRem: codex, codexWeekly: codexWeekly
             ))
         }.resume()
     }
@@ -882,15 +893,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         let title = parts.isEmpty ? "" : (" " + parts.joined(separator: " · "))
 
         // Resolve bottom micro quota bar value & tooltip
-        var barPct: Int? = nil
-        var barName: String = ""
-        switch menuBarQuotaBar {
-        case "gem5h": barPct = m.gem5hRem; barName = "Gemini 5h"
-        case "gem7d": barPct = m.gem7dRem; barName = "Gemini 周"
-        case "cg5h":  barPct = m.cg5hRem;  barName = "C/G 5h"
-        case "codex": barPct = m.codexRem; barName = "Codex 周"
-        default: break
-        }
+        let quotaBars: [(key: String, remaining: Int?, label: String)] = [
+            ("gem5h", m.gem5hRem, "Gemini 5h"),
+            ("gem7d", m.gem7dRem, "Gemini 周"),
+            ("cg5h", m.cg5hRem, "C/G 5h"),
+            ("codex", m.codexRem, m.codexWeekly ? "Codex 周" : "Codex"),
+        ]
+        let chosenBar = menuBarQuotaBar == "none" ? nil :
+            (quotaBars.first { $0.key == menuBarQuotaBar && $0.remaining != nil } ??
+             quotaBars.first { $0.remaining != nil })
+        let barPct = chosenBar?.remaining
+        let barName = chosenBar?.label ?? ""
 
         DispatchQueue.main.async {
             guard let button = self.statusItem.button else { return }

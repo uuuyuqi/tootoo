@@ -100,7 +100,7 @@ brew upgrade --cask tootoo
 
 ### 方式二：下载 GitHub Release 安装包
 
-1. 前往 [**Releases**](https://github.com/uuuyuqi/tootoo/releases) 下载最新版 `TooToo-v0.2.0-macos-universal.zip`。
+1. 前往 [**Releases**](https://github.com/uuuyuqi/tootoo/releases) 下载最新版 `TooToo-v0.2.1-macos-universal.zip`。
 2. 解压后将 `TooToo.app` 拖入 `/Applications`。
 3. 首次打开若遇 macOS 未知开发者提示（开源项目使用 ad-hoc 本地签名），在终端执行一次即可：
    ```bash

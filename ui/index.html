@@ -10230,6 +10230,11 @@ function renderToolChips(d) {
   });
 }
 
+function pickCodexQuotaBucket(cx) {
+  const buckets = [cx?.primary, cx?.secondary].filter(b => b?.used_percent != null);
+  return buckets.find(b => Number(b.window_minutes) === 10080) ?? buckets[0];
+}
+
 function renderTopQuota(d) {
   const box = document.getElementById("topQuota");
   if (!box) return;
@@ -10239,39 +10244,32 @@ function renderTopQuota(d) {
     return;
   }
   const quotas = d.quotas || {};
-  let name = "";
-  let usedPct = null;
-  let resetsAt = null;
-
-  if (mode === "codex") {
-    const p = quotas.codex && quotas.codex.primary;
-    if (p && p.used_percent != null) {
-      name = Number(p.window_minutes) === 10080 ? "Codex 周" : "Codex";
-      usedPct = Number(p.used_percent);
-      resetsAt = p.resets_at;
+  const keyMap = {
+    gem5h: ["antigravity:gemini_5h", "Gemini 5h"],
+    gem7d: ["antigravity:gemini_7d", "Gemini 周"],
+    cg5h:  ["antigravity:cg_5h", "C/G 5h"],
+  };
+  const buckets = quotas.antigravity?.buckets || [];
+  let selected = null;
+  for (const source of new Set([mode, "gem5h", "gem7d", "cg5h", "codex"])) {
+    if (source === "codex") {
+      const b = pickCodexQuotaBucket(quotas.codex);
+      if (b) selected = [b, Number(b.window_minutes) === 10080 ? "Codex 周" : "Codex"];
+    } else {
+      const spec = keyMap[source];
+      const b = spec && buckets.find(x => x?.key === spec[0] && x.used_percent != null);
+      if (b) selected = [b, b.label || spec[1]];
     }
-  } else {
-    const keyMap = {
-      gem5h: ["antigravity:gemini_5h", "Gemini 5h"],
-      gem7d: ["antigravity:gemini_7d", "Gemini 周"],
-      cg5h:  ["antigravity:cg_5h", "C/G 5h"],
-    };
-    const spec = keyMap[mode];
-    const buckets = (quotas.antigravity && quotas.antigravity.buckets) || [];
-    if (spec) {
-      const b = buckets.find(x => x.key === spec[0]);
-      if (b && b.used_percent != null) {
-        name = b.label || spec[1];
-        usedPct = Number(b.used_percent);
-        resetsAt = b.resets_at;
-      }
-    }
+    if (selected) break;
   }
 
-  if (usedPct == null) {
+  if (!selected) {
     box.classList.remove("show");
     return;
   }
+  const [bucket, name] = selected;
+  const usedPct = Number(bucket.used_percent);
+  const resetsAt = bucket.resets_at;
 
   const remPct = Math.max(0, Math.min(100, Math.round(100 - usedPct)));
   const col = remPct <= 15 ? "var(--bad)" : remPct <= 30 ? "var(--warn)" : "var(--teal)";
