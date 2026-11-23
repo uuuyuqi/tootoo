@@ -151,6 +151,10 @@ TooToo 启动后自动发现本机已安装工具的会话记录，零配置开�
 
 ---
 
+### 本地开发调试（macOS）
+
+执行 `bash macos/run_debug.sh` 启动隔离的 `TooToo-Debug.app`，可以与 Homebrew 正式版同时运行。用 `NO_INSTALL=1 bash macos/run_debug.sh` 从 `dist/` 运行，不安装到「应用程序」。调试版默认使用 `~/.tootoo-debug`，正式版仍使用 `~/.tootoo`；可按需设置非空的 `TOOTOO_HOME` 为其他独立目录。两个版本仍读取同一套 AI 工具原始日志。
+
 ## CLI 与浏览器模式
 
 不想用菜单栏 App？也可以直接在终端或任意浏览器使用：

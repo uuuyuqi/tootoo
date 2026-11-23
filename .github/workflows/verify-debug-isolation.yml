@@ -1,0 +1,45 @@
+name: TooToo debug isolation
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/verify-debug-isolation.yml
+      - macos/**
+      - scanner.py
+      - pricing.py
+      - server.py
+      - tests/**
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: macos-15
+    timeout-minutes: 12
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Test Python state and process isolation and browser regressions
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s tests -v
+          node --test tests/*.test.cjs
+          bash -n macos/build_app.sh
+          bash -n macos/run_debug.sh
+      - name: Build both packaged modes without installing either app
+        run: |
+          set -euo pipefail
+          NO_INSTALL=1 TOOTOO_DEBUG=0 UNIVERSAL=0 bash macos/build_app.sh
+          unset UNIVERSAL
+          NO_INSTALL=1 TOOTOO_DEBUG=1 bash macos/build_app.sh
+      - name: Verify bundles, simultaneous isolated backends and targeted restart
+        run: python3 tests/debug_isolation_macos.py
+      - name: Verify caller can request a Universal debug build
+        run: |
+          set -euo pipefail
+          NO_INSTALL=1 TOOTOO_DEBUG=1 UNIVERSAL=1 bash macos/build_app.sh
+          lipo "dist/TooToo-Debug.app/Contents/MacOS/TooToo-Debug" -verify_arch arm64 x86_64

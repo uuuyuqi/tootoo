@@ -25,7 +25,7 @@ import urllib.request
 from typing import Any
 
 HOME = os.path.expanduser("~")
-TOOTOO_DIR = os.path.join(HOME, ".tootoo")
+TOOTOO_DIR = os.path.expanduser(os.environ.get("TOOTOO_HOME") or "~/.tootoo")
 REMOTE_CACHE_FILE = os.path.join(TOOTOO_DIR, "pricing_remote.json")
 OVERRIDES_FILE = os.path.join(TOOTOO_DIR, "pricing_overrides.json")
 CONFIG_FILE = os.path.join(TOOTOO_DIR, "config.json")

@@ -370,6 +370,18 @@ class MenuBarQuotaBarView: NSView {
     }
 }
 
+#if TOOTOO_DEBUG
+private let variantName = "TooToo-Debug"
+private let variantPreferredPort: UInt16 = 17892
+private let variantMenuPrefix = " DBG"
+private let keepAwakeReason = "TooToo-Debug Keep Awake (AI Coding)"
+#else
+private let variantName = "TooToo"
+private let variantPreferredPort: UInt16 = 17891
+private let variantMenuPrefix = ""
+private let keepAwakeReason = "TooToo Keep Awake (AI Coding)"
+#endif
+
 class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private var statusItem: NSStatusItem!
     private var quotaBarView: MenuBarQuotaBarView?
@@ -378,7 +390,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private var fullWindow: NSWindow?
     private var fullWindowVC: TelemetryWebViewController?
     private var backendProcess: Process?
-    private var port: UInt16 = 17891
+    private var port: UInt16 = variantPreferredPort
     private var statusTimer: Timer?
     private var eventMonitor: Any?
     private var menuBarFields: [String] = ["tokens", "cost"]
@@ -391,7 +403,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private var keepAwakeAssertionID: IOPMAssertionID?
     private var keepAwakeTimer: Timer?
     private var keepAwakeError: String?
-    private var baseStatusToolTip = "TooToo"
+    private var baseStatusToolTip = variantName
     private var currentTier: BunnyTierInfo = BUNNY_TIERS[0]
     private var lastMetrics: TodayMetrics?
     #if TOOTOO_DEBUG
@@ -426,7 +438,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         }
         #endif
 
-        port = findFreePort(preferred: 17891)
+        port = findFreePort(preferred: variantPreferredPort)
         startBackend()
         setupStatusItem()
         setupPopover()
@@ -474,7 +486,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
 
         keepAwakeError = nil
         guard releaseKeepAwakeAssertion() else {
-            keepAwakeError = "未能关闭防休眠，请重试或退出 TooToo。"
+            keepAwakeError = "未能关闭防休眠，请重试或退出 \(variantName)。"
             syncKeepAwakeToWeb()
             return
         }
@@ -500,7 +512,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         var id: IOPMAssertionID = 0
         let result = IOPMAssertionCreateWithName(assertionType as CFString,
                                                 IOPMAssertionLevel(kIOPMAssertionLevelOn),
-                                                "TooToo Keep Awake (AI Coding)" as CFString, &id)
+                                                keepAwakeReason as CFString, &id)
         guard result == kIOReturnSuccess else {
             keepAwakeError = "macOS 未能开启防休眠，请重试。"
             return
@@ -656,6 +668,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         env["PYTHONUNBUFFERED"] = "1"
         #if TOOTOO_DEBUG
         env["TOOTOO_DEBUG"] = "1"
+        if env["TOOTOO_HOME"]?.isEmpty != false {
+            let home = env["HOME"].flatMap { $0.isEmpty ? nil : $0 } ?? NSHomeDirectory()
+            env["TOOTOO_HOME"] = (home as NSString).appendingPathComponent(".tootoo-debug")
+        }
         #else
         env.removeValue(forKey: "TOOTOO_DEBUG")
         #endif
@@ -702,7 +718,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         guard let button = statusItem.button else { return }
         button.image = makeBunnyMenuBarIcon()
         button.imagePosition = .imageLeading
-        button.title = " tootoo"
+        button.title = variantMenuPrefix.isEmpty ? " tootoo" : variantMenuPrefix
+        button.toolTip = baseStatusToolTip
         button.font = NSFont.monospacedDigitSystemFont(ofSize: 11.5, weight: .medium)
         button.target = self
         button.action = #selector(statusBarClicked(_:))
@@ -777,7 +794,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         menu.addItem(makeKeepAwakeMenu())
 
         menu.addItem(NSMenuItem.separator())
-        menu.addItem(withTitle: "退出 TooToo", action: #selector(quitApp), keyEquivalent: "q")
+        menu.addItem(withTitle: "退出 \(variantName)", action: #selector(quitApp), keyEquivalent: "q")
 
         statusItem.menu = menu
         statusItem.button?.performClick(nil)
@@ -1018,7 +1035,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
                 DispatchQueue.main.async {
                     self.currentTier = BUNNY_TIERS[0]
                     self.statusItem.button?.image = makeBunnyMenuBarIcon(tier: 1)
-                    self.statusItem.button?.title = self.menuBarFields.isEmpty ? "" : " 0"
+                    self.statusItem.button?.title = variantMenuPrefix + (self.menuBarFields.isEmpty ? "" : " 0")
+                    self.baseStatusToolTip = variantName
+                    self.updateKeepAwakeToolTip()
                 }
             }
         }
@@ -1124,6 +1143,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
 
         DispatchQueue.main.async {
             guard let button = self.statusItem.button else { return }
+            let title = variantMenuPrefix + title
             let hasText = !title.isEmpty
             let compactIcon = (!hasText && barPct != nil)
             #if TOOTOO_DEBUG
@@ -1147,7 +1167,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
                 ]
                 let attrStr = NSAttributedString(string: title, attributes: attrs)
                 button.attributedTitle = attrStr
-                self.baseStatusToolTip = "TooToo · \(barName) 剩余 \(pct)%"
+                self.baseStatusToolTip = "\(variantName) · \(barName) 剩余 \(pct)%"
 
                 let positionBar = {
                     guard let btn = self.statusItem.button,
@@ -1192,7 +1212,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
                     string: title,
                     attributes: [.font: NSFont.monospacedDigitSystemFont(ofSize: 11.5, weight: .medium)]
                 )
-                self.baseStatusToolTip = "TooToo"
+                self.baseStatusToolTip = variantName
                 self.quotaBarView?.percent = nil
                 self.quotaBarView?.isHidden = true
             }

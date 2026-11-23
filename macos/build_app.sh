@@ -3,24 +3,34 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DIST="$ROOT/dist"
-APP="$DIST/TooToo.app"
-CONTENTS="$APP/Contents"
-MACOS="$CONTENTS/MacOS"
-RES="$CONTENTS/Resources"
-
 VERSION="${VERSION:-0.2.2}"
 VERSION_CLEAN="${VERSION#v}"
 BUILD_NUMBER="${BUILD_NUMBER:-4}"
 TOOTOO_DEBUG="${TOOTOO_DEBUG:-0}"
-UNIVERSAL="${UNIVERSAL:-1}"
 NO_INSTALL="${NO_INSTALL:-0}"
 PACKAGE_ZIP="${PACKAGE_ZIP:-0}"
+
+if [[ "$TOOTOO_DEBUG" == "1" ]]; then
+  APP_NAME="TooToo-Debug"
+  BUNDLE_IDENTIFIER="com.tootoo.telemetry.debug"
+  UNIVERSAL="${UNIVERSAL:-0}"
+else
+  APP_NAME="TooToo"
+  BUNDLE_IDENTIFIER="com.tootoo.telemetry"
+  UNIVERSAL="${UNIVERSAL:-1}"
+fi
+APP="$DIST/$APP_NAME.app"
+INSTALL_APP="/Applications/$APP_NAME.app"
+CONTENTS="$APP/Contents"
+MACOS="$CONTENTS/MacOS"
+RES="$CONTENTS/Resources"
 
 rm -rf "$APP"
 mkdir -p "$MACOS" "$RES/ui"
 
 echo "==> Generating TooToo bunny app icon..."
 ICONSET="$DIST/AppIcon.iconset"
+if [[ "$TOOTOO_DEBUG" == "1" ]]; then ICONSET="$DIST/TooToo-Debug.iconset"; fi
 rm -rf "$ICONSET"
 swift "$ROOT/macos/gen_icon.swift" "$ICONSET"
 iconutil -c icns "$ICONSET" -o "$RES/TooToo.icns"
@@ -55,14 +65,14 @@ MODE_LABEL="RELEASE"
 
 if [[ "$UNIVERSAL" == "1" ]]; then
   echo "==> Compiling Universal (arm64 + x86_64) Swift macOS binary (${MODE_LABEL}, v${VERSION_CLEAN})..."
-  compile_slice "arm64-apple-macos13.0" "$DIST/TooToo-arm64"
-  compile_slice "x86_64-apple-macos13.0" "$DIST/TooToo-x86_64"
-  lipo -create "$DIST/TooToo-arm64" "$DIST/TooToo-x86_64" -output "$MACOS/TooToo"
-  rm -f "$DIST/TooToo-arm64" "$DIST/TooToo-x86_64"
+  compile_slice "arm64-apple-macos13.0" "$DIST/$APP_NAME-arm64"
+  compile_slice "x86_64-apple-macos13.0" "$DIST/$APP_NAME-x86_64"
+  lipo -create "$DIST/$APP_NAME-arm64" "$DIST/$APP_NAME-x86_64" -output "$MACOS/$APP_NAME"
+  rm -f "$DIST/$APP_NAME-arm64" "$DIST/$APP_NAME-x86_64"
 else
   HOST_ARCH="$(uname -m)"
   echo "==> Compiling native ${HOST_ARCH} Swift macOS binary (${MODE_LABEL}, v${VERSION_CLEAN})..."
-  compile_slice "${HOST_ARCH}-apple-macos13.0" "$MACOS/TooToo"
+  compile_slice "${HOST_ARCH}-apple-macos13.0" "$MACOS/$APP_NAME"
 fi
 
 echo "==> Bundling scanner, pricing, server, CLI, and UI..."
@@ -130,17 +140,17 @@ cat > "$CONTENTS/Info.plist" <<PLIST
     <key>CFBundleDevelopmentRegion</key>
     <string>zh_CN</string>
     <key>CFBundleExecutable</key>
-    <string>TooToo</string>
+    <string>${APP_NAME}</string>
     <key>CFBundleIconFile</key>
     <string>TooToo</string>
     <key>CFBundleIdentifier</key>
-    <string>com.tootoo.telemetry</string>
+    <string>${BUNDLE_IDENTIFIER}</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>TooToo</string>
+    <string>${APP_NAME}</string>
     <key>CFBundleDisplayName</key>
-    <string>TooToo</string>
+    <string>${APP_NAME}</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
@@ -168,7 +178,7 @@ codesign --force --deep --sign - "$APP"
 if [[ "$PACKAGE_ZIP" == "1" ]]; then
   ARCH_TAG="universal"
   [[ "$UNIVERSAL" != "1" ]] && ARCH_TAG="$(uname -m)"
-  ZIP_PATH="$DIST/TooToo-v${VERSION_CLEAN}-macos-${ARCH_TAG}.zip"
+  ZIP_PATH="$DIST/$APP_NAME-v${VERSION_CLEAN}-macos-${ARCH_TAG}.zip"
   rm -f "$ZIP_PATH"
   echo "==> Packaging release archive: $ZIP_PATH"
   ditto -c -k --sequesterRsrc --keepParent "$APP" "$ZIP_PATH"
@@ -178,10 +188,10 @@ if [[ "$PACKAGE_ZIP" == "1" ]]; then
 fi
 
 if [[ "$NO_INSTALL" != "1" ]]; then
-  echo "==> Installing to /Applications/TooToo.app..."
-  rm -rf /Applications/TooToo.app
-  cp -R "$APP" /Applications/TooToo.app
-  echo "✅ Built and installed /Applications/TooToo.app (v${VERSION_CLEAN})"
+  echo "==> Installing to $INSTALL_APP..."
+  rm -rf "$INSTALL_APP"
+  cp -R "$APP" "$INSTALL_APP"
+  echo "✅ Built and installed $INSTALL_APP (v${VERSION_CLEAN})"
 else
   echo "✅ Built $APP (v${VERSION_CLEAN})"
 fi

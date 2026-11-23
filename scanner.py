@@ -32,7 +32,7 @@ from typing import Any
 from pricing import PricingEngine, calibrate_observed_rates, trigger_background_sync_if_stale
 
 HOME = os.path.expanduser("~")
-CACHE_DIR = os.path.join(HOME, ".tootoo")
+CACHE_DIR = os.path.expanduser(os.environ.get("TOOTOO_HOME") or "~/.tootoo")
 CACHE_FILE = os.path.join(CACHE_DIR, "scan_cache_v5.json")
 CONFIG_FILE = os.path.join(CACHE_DIR, "config.json")
 EVO_STATE_FILE = os.path.join(CACHE_DIR, "evo_state.json")
