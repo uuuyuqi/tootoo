@@ -7,18 +7,22 @@ Zero external dependencies (Python 3 stdlib only).
 from __future__ import annotations
 
 import argparse
+import hashlib
+import hmac
 import json
 import os
 import sys
 import threading
 import time
 import urllib.request
+import uuid
 import webbrowser
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
 from pricing import sync_remote_pricing
+from update_check import checker as update_checker
 from scanner import CACHE_DIR, build_telemetry, load_carrot_state, save_carrot_state, save_local_quota_config
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -229,17 +233,36 @@ class TooTooHandler(BaseHTTPRequestHandler):
         # Keep terminal quiet unless error
         pass
 
-    def _send_json(self, payload: dict, status: int = 200) -> None:
+    def _send_json(self, payload: dict, status: int = 200, *, update_challenge: str | None = None) -> None:
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Cache-Control", "no-store")
         self.send_header("Content-Length", str(len(body)))
+        nonce = os.environ.get("TOOTOO_UPDATE_NONCE")
+        if update_challenge and nonce:
+            proof = hmac.new(nonce.encode("utf-8"), update_challenge.encode("ascii") + b"\x00" + body,
+                             hashlib.sha256).hexdigest()
+            self.send_header("X-TooToo-Update-Proof", proof)
         self.end_headers()
         self.wfile.write(body)
 
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
+        if parsed.path == "/api/update":
+            if self.headers.get("Sec-Fetch-Site") == "cross-site":
+                self._send_json({"error": "Cross-site update checks are not allowed."}, status=403)
+                return
+            state = update_checker.check(force=parse_qs(parsed.query).get("force") == ["1"])
+            challenge = self.headers.get("X-TooToo-Update-Challenge", "")
+            try:
+                challenge = challenge if len(challenge) == 36 and str(uuid.UUID(challenge)).upper() == challenge else None
+            except ValueError:
+                challenge = None
+            # The child backend proves its identity without exposing the secret
+            # to a loopback client or a replacement process on the same port.
+            self._send_json(state, update_challenge=challenge)
+            return
         if parsed.path in ("/", "/index.html"):
             try:
                 with open(UI_FILE, "rb") as f:

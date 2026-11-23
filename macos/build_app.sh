@@ -3,9 +3,9 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DIST="$ROOT/dist"
-VERSION="${VERSION:-0.2.3}"
+VERSION="${VERSION:-$(cat "$ROOT/VERSION")}"
 VERSION_CLEAN="${VERSION#v}"
-BUILD_NUMBER="${BUILD_NUMBER:-5}"
+BUILD_NUMBER="${BUILD_NUMBER:-6}"
 TOOTOO_DEBUG="${TOOTOO_DEBUG:-0}"
 NO_INSTALL="${NO_INSTALL:-0}"
 PACKAGE_ZIP="${PACKAGE_ZIP:-0}"
@@ -46,7 +46,7 @@ compile_slice() {
       -framework WebKit \
       -framework IOKit \
       -framework Foundation \
-      "$ROOT/macos/main.swift" \
+      "$ROOT/macos/main.swift" "$ROOT/macos/UpdateController.swift" \
       -o "$out"
   else
     swiftc -O \
@@ -55,7 +55,7 @@ compile_slice() {
       -framework WebKit \
       -framework IOKit \
       -framework Foundation \
-      "$ROOT/macos/main.swift" \
+      "$ROOT/macos/main.swift" "$ROOT/macos/UpdateController.swift" \
       -o "$out"
   fi
 }
@@ -79,6 +79,11 @@ echo "==> Bundling scanner, pricing, server, CLI, and UI..."
 cp "$ROOT/scanner.py" "$RES/scanner.py"
 cp "$ROOT/pricing.py" "$RES/pricing.py"
 cp "$ROOT/server.py" "$RES/server.py"
+cp "$ROOT/update_check.py" "$RES/update_check.py"
+printf '%s\n' "$VERSION_CLEAN" > "$RES/VERSION"
+if [[ "$TOOTOO_DEBUG" != "1" ]]; then
+  cp "$ROOT/macos/update_install.py" "$RES/update_install.py"
+fi
 cp "$ROOT/tootoo" "$RES/tootoo"
 chmod +x "$RES/tootoo"
 cp -R "$ROOT/ui/." "$RES/ui/"

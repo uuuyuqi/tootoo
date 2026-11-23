@@ -106,7 +106,7 @@ brew upgrade --cask tootoo
 
 ### 方式二：下载 GitHub Release 安装包
 
-1. 前往 [**Releases**](https://github.com/uuuyuqi/tootoo/releases) 下载最新版 `TooToo-v0.2.3-macos-universal.zip`。
+1. 前往 [**Releases**](https://github.com/uuuyuqi/tootoo/releases) 下载最新版 `TooToo-v0.2.4-macos-universal.zip`。
 2. 解压后将 `TooToo.app` 拖入 `/Applications`。
 3. 首次打开若遇 macOS 未知开发者提示（开源项目使用 ad-hoc 本地签名），在终端执行一次即可：
    ```bash
@@ -150,6 +150,12 @@ TooToo 启动后自动发现本机已安装工具的会话记录，零配置开�
 - **随时回归极简**：点击面板右下角 ⚙ **设置 → 开启「简洁模式」**，立即隐藏全部养成与游戏入口，回归纯粹的高精度遥测仪表盘。
 
 ---
+
+### 软件更新（macOS）
+
+从 v0.2.4 起，可在「设置 → 软件更新」或菜单栏右键菜单检查；简洁模式仍会提示新版本。正式版可确认后下载、校验并重启更新，设置和存档不会被改动。调试版和纯浏览器只能查看和打开发布页；安装位置不允许替换时也请手动下载。
+
+v0.2.3 及更早版本没有应用内更新入口，请先通过 Homebrew 或 Release 下载升级。应用内更新不修改 Homebrew 的安装记录；希望由 Homebrew 统一管理时，继续使用 `brew upgrade --cask tootoo`。
 
 ### 本地开发调试（macOS）
 

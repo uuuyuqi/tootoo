@@ -1,0 +1,118 @@
+name: TooToo 0.2.4 update verification
+
+on:
+  push:
+    branches: [main, 'feature/tootoo-update-v0.2.4']
+    paths:
+      - .github/workflows/verify-update-v0.2.4.yml
+      - macos/**
+      - tests/**
+      - ui/index.html
+      - server.py
+      - update_check.py
+      - VERSION
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: macos-15
+    timeout-minutes: 18
+    env:
+      ZIP_NAME: TooToo-v0.2.4-macos-universal.zip
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Verify source and all regression tests
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(cat VERSION)" = 0.2.4
+          python3 -m unittest discover -s tests -v
+          node --test tests/*.test.cjs
+          bash -n macos/build_app.sh
+      - name: Verify native URL allowlist and real Keep Awake
+        run: |
+          set -euo pipefail
+          smoke="$(mktemp -d)"
+          trap 'rm -rf "$smoke"' EXIT
+          swiftc -O -framework AppKit macos/UpdateController.swift tests/update_native_contract.swift -o "$smoke/contract"
+          "$smoke/contract"
+          swiftc -O -D TOOTOO_KEEP_AWAKE_SMOKE -framework AppKit -framework WebKit \
+            -framework Foundation -framework IOKit macos/main.swift macos/UpdateController.swift -o "$smoke/TooToo"
+          python3 tests/keep_awake_macos.py "$smoke/TooToo"
+      - name: Build normal Universal ZIP and authoritative checksum
+        env:
+          VERSION: '0.2.4'
+          BUILD_NUMBER: '6'
+          TOOTOO_DEBUG: '0'
+          UNIVERSAL: '1'
+          PACKAGE_ZIP: '1'
+          NO_INSTALL: '1'
+        run: bash macos/build_app.sh
+      - name: Test actual staged ZIP and rollback with disposable apps
+        run: |
+          set -euo pipefail
+          unzip -tq "dist/$ZIP_NAME"
+          (cd dist && shasum -a 256 -c "$ZIP_NAME.sha256")
+          python3 tests/update_install_macos.py "dist/$ZIP_NAME" "dist/$ZIP_NAME.sha256"
+      - name: Verify packaged official configuration and source UI
+        run: |
+          set -euo pipefail
+          fixture="$(mktemp -d)"
+          trap 'rm -rf "$fixture"' EXIT
+          ditto -x -k "dist/$ZIP_NAME" "$fixture"
+          app="$fixture/TooToo.app"
+          plist="$app/Contents/Info.plist"
+          res="$app/Contents/Resources"
+          test "$(find "$fixture" -maxdepth 1 -name '*.app' -print)" = "$app"
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$plist")" = "0.2.4"
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "$plist")" = "6"
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$plist")" = "com.tootoo.telemetry"
+          test -f "$res/.release" && test -f "$res/update_install.py"
+          test "$(cat "$res/VERSION")" = 0.2.4
+          lipo "$app/Contents/MacOS/TooToo" -verify_arch arm64 x86_64
+          codesign --verify --deep --strict "$app"
+          grep -Fq '/*__TOOTOO_DEBUG_FLAG__*/false' "$res/ui/index.html"
+          if grep -q 'id="debugBar"' "$res/ui/index.html"; then exit 1; fi
+          node - "$res/ui/index.html" <<'JS'
+          const fs=require("node:fs"), vm=require("node:vm");
+          const html=fs.readFileSync(process.argv[2],"utf8");
+          let count=0;
+          for (const m of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)) {
+            if (m[1].trim()) new vm.Script(m[1], {filename:"app-inline-" + (++count)});
+          }
+          if (!count) throw new Error("No inline scripts verified");
+          JS
+          mkdir "$fixture/tests" "$fixture/ui"
+          cp "$res/ui/index.html" "$res/ui/tootoo_catalog.js" "$fixture/ui/"
+          cp tests/home_preview_ui.test.cjs tests/update_ui.test.cjs "$fixture/tests/"
+          node --test "$fixture/tests/"*.test.cjs
+          shasum -a 256 "dist/$ZIP_NAME" "dist/$ZIP_NAME.sha256"
+      - name: Verify Debug remains check-only
+        env:
+          VERSION: '0.2.4'
+          BUILD_NUMBER: '6'
+          TOOTOO_DEBUG: '1'
+          UNIVERSAL: '0'
+          PACKAGE_ZIP: '0'
+          NO_INSTALL: '1'
+        run: |
+          set -euo pipefail
+          bash macos/build_app.sh
+          app="dist/TooToo-Debug.app"
+          test -f "$app/Contents/Resources/update_check.py"
+          test ! -e "$app/Contents/Resources/update_install.py"
+          test ! -e "$app/Contents/Resources/.release"
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$app/Contents/Info.plist")" = "com.tootoo.telemetry.debug"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: tootoo-v0.2.4-verified-zip
+          path: |
+            dist/TooToo-v0.2.4-macos-universal.zip
+            dist/TooToo-v0.2.4-macos-universal.zip.sha256
+          if-no-files-found: error
+          compression-level: 0

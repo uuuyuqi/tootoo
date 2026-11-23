@@ -283,12 +283,30 @@ class TelemetryWebViewController: NSViewController, WKScriptMessageHandler, WKNa
         webView?.evaluateJavaScript(js, completionHandler: nil)
     }
 
+    func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction,
+                 decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+        guard let target = navigationAction.request.url else { decisionHandler(.cancel); return }
+        if matchesAppPage(target) {
+            decisionHandler(.allow)
+        } else {
+            decisionHandler(.cancel)
+            if navigationAction.navigationType == .linkActivated, target.scheme == "https" {
+                NSWorkspace.shared.open(target)
+            }
+        }
+    }
+
+    private func matchesAppPage(_ target: URL) -> Bool {
+        target.scheme == url.scheme && target.host == url.host && target.port == url.port
+            && target.path == url.path && target.user == nil && target.password == nil
+    }
+
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         if let dict = message.body as? [String: Any], let action = dict["action"] as? String {
-            if action == "getKeepAwakeState" || action == "setKeepAwake" {
+            let privileged = ["getKeepAwakeState", "setKeepAwake", "getUpdateState", "checkForUpdate", "installUpdate", "openUpdateRelease"]
+            if privileged.contains(action) {
                 guard message.frameInfo.isMainFrame, let frameURL = message.frameInfo.request.url,
-                      frameURL.scheme == url.scheme, frameURL.host == url.host,
-                      frameURL.port == url.port, frameURL.path == url.path else { return }
+                      matchesAppPage(frameURL) else { return }
             }
             DispatchQueue.main.async {
                 self.onAction(action, dict)
@@ -406,6 +424,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private var baseStatusToolTip = variantName
     private var currentTier: BunnyTierInfo = BUNNY_TIERS[0]
     private var lastMetrics: TodayMetrics?
+    private var showUpdateSettingsWhenLoaded = false
+    private lazy var updateController = NativeUpdateController(backendIsRunning: { [weak self] in
+        self?.backendProcess?.isRunning == true
+    }, executable: { [weak self] in
+        self?.findPythonExecutable() ?? "/usr/bin/python3"
+    }, publishState: { [weak self] js in
+        self?.popoverVC?.evalJS(js)
+        self?.fullWindowVC?.evalJS(js)
+    })
     #if TOOTOO_DEBUG
     private var debugTierOverride: Int? = nil
     #endif
@@ -442,6 +469,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         startBackend()
         setupStatusItem()
         setupPopover()
+        updateController.start(port: port)
 
         waitForBackend { [weak self] in
             self?.refreshMenuBarSummary()
@@ -666,6 +694,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         proc.currentDirectoryURL = URL(fileURLWithPath: resPath)
         var env = ProcessInfo.processInfo.environment
         env["PYTHONUNBUFFERED"] = "1"
+        env["PYTHONDONTWRITEBYTECODE"] = "1" // Keep the verified bundle’s resource seal intact.
+        env["TOOTOO_UPDATE_NONCE"] = updateController.backendNonce
         #if TOOTOO_DEBUG
         env["TOOTOO_DEBUG"] = "1"
         if env["TOOTOO_HOME"]?.isEmpty != false {
@@ -792,6 +822,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         modeParent.submenu = modeMenu
         menu.addItem(modeParent)
         menu.addItem(makeKeepAwakeMenu())
+        let version = updateController.availableVersion
+        let updateTitle = version.map { "发现新版本 v\($0) · 立即更新" } ?? "检查更新…"
+        let updateItem = NSMenuItem(title: updateTitle, action: #selector(openUpdatesFromMenu), keyEquivalent: "")
+        updateItem.target = self
+        menu.addItem(updateItem)
 
         menu.addItem(NSMenuItem.separator())
         menu.addItem(withTitle: "退出 \(variantName)", action: #selector(quitApp), keyEquivalent: "q")
@@ -853,6 +888,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             let js = "window.__onMenuBarFields && window.__onMenuBarFields(\(jsonStr), \"\(escapedBar)\");"
             popoverVC?.evalJS(js)
             fullWindowVC?.evalJS(js)
+        }
+    }
+
+    @objc private func openUpdatesFromMenu() {
+        DispatchQueue.main.async {
+            self.showUpdateSettingsWhenLoaded = self.fullWindowVC == nil
+            self.openFullWindow()
+            self.fullWindowVC?.evalJS("window.__openUpdateSettings && window.__openUpdateSettings();")
+            self.updateController.sync()
+            if self.updateController.availableVersion == nil { self.updateController.check(force: true) }
         }
     }
 
@@ -972,6 +1017,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             quitApp()
         case "refreshed":
             refreshMenuBarSummary()
+        case "getUpdateState":
+            updateController.sync()
+            if showUpdateSettingsWhenLoaded, let vc = fullWindowVC {
+                showUpdateSettingsWhenLoaded = false
+                vc.evalJS("window.__openUpdateSettings && window.__openUpdateSettings();")
+            }
+        case "checkForUpdate":
+            updateController.check(force: true)
+        case "installUpdate":
+            updateController.install()
+        case "openUpdateRelease":
+            updateController.openRelease()
         case "getKeepAwakeState":
             syncKeepAwakeToWeb()
         case "setKeepAwake":
