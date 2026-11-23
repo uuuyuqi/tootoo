@@ -30,7 +30,7 @@ jobs:
         run: |
           git merge-base --is-ancestor "$APP_COMMIT" HEAD
           git diff --quiet "$APP_COMMIT" HEAD -- . ':(exclude).github/workflows/release-v0.2.1.yml'
-          git checkout --detach "$APP_COMMIT"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
       - name: Run quota regression tests
         env:
           PYTHONDONTWRITEBYTECODE: '1'
@@ -92,6 +92,6 @@ jobs:
           [[ "$ZIP_SHA256" =~ ^[0-9a-f]{64}$ ]]
           printf '%s  %s\n' "$ZIP_SHA256" "$ZIP_NAME" | sha256sum -c -
           test -z "$(git ls-remote "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git" refs/tags/v0.2.1)"
-          gh release create v0.2.1 "$ZIP_NAME" --target "$APP_COMMIT" --title 'TooToo v0.2.1' --notes '修复 Codex 周额度丢失：忽略空额度记录，修复旧缓存，并兼容 CODEX_HOME。网页和 macOS 菜单栏优先显示 Codex 周额度，未检测到选中的来源时改为显示其他官方额度；关闭设置保持不变。'
-          test "$(gh api "repos/$GH_REPO/git/ref/tags/v0.2.1" --jq '.object.sha')" = "$APP_COMMIT"
+          gh release create v0.2.1 "$ZIP_NAME" --target "$GITHUB_SHA" --title 'TooToo v0.2.1' --notes '修复 Codex 周额度丢失：忽略空额度记录，修复旧缓存，并兼容 CODEX_HOME。网页和 macOS 菜单栏优先显示 Codex 周额度，未检测到选中的来源时改为显示其他官方额度；关闭设置保持不变。'
+          test "$(gh api "repos/$GH_REPO/git/ref/tags/v0.2.1" --jq '.object.sha')" = "$GITHUB_SHA"
           gh release view v0.2.1 --json url,tagName,isDraft,assets
