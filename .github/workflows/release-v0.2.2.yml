@@ -1,0 +1,113 @@
+name: TooToo v0.2.2 macOS release
+on:
+  push:
+    branches: [main, 'feature/keep-awake-v0.2.2']
+    paths: ['.github/workflows/release-v0.2.2.yml']
+
+permissions: {}
+concurrency:
+  group: tootoo-release-v0.2.2
+  cancel-in-progress: false
+
+env:
+  APP_COMMIT: bd950ee357a9e05b717ea49ccd4f6bafe2dcc732
+  ZIP_NAME: TooToo-v0.2.2-macos-universal.zip
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    outputs:
+      sha256: ${{ steps.verify.outputs.sha256 }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Confirm exact source
+        run: |
+          git merge-base --is-ancestor "$APP_COMMIT" HEAD
+          git diff --quiet "$APP_COMMIT" HEAD -- . ':(exclude).github/workflows/release-v0.2.2.yml'
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+      - name: Test quota and Keep Awake UI
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          python3 -m unittest discover -s tests -v
+          node --test tests/*.test.cjs
+      - name: Verify real TooToo assertions on macOS
+        run: |
+          set -euo pipefail
+          smoke="$(mktemp -d)"
+          trap 'rm -rf "$smoke"' EXIT
+          swiftc -O -D TOOTOO_KEEP_AWAKE_SMOKE -framework AppKit -framework WebKit \
+            -framework Foundation -framework IOKit macos/main.swift -o "$smoke/TooToo"
+          python3 tests/keep_awake_macos.py "$smoke/TooToo"
+      - name: Build the official Universal archive
+        env:
+          VERSION: '0.2.2'
+          BUILD_NUMBER: '4'
+          UNIVERSAL: '1'
+          PACKAGE_ZIP: '1'
+          NO_INSTALL: '1'
+        run: bash macos/build_app.sh
+      - name: Verify packaged app
+        id: verify
+        run: |
+          set -euo pipefail
+          temp="$(mktemp -d)"
+          ditto -x -k "dist/$ZIP_NAME" "$temp"
+          app="$temp/TooToo.app"
+          binary="$app/Contents/MacOS/TooToo"
+          lipo "$binary" -verify_arch arm64 x86_64
+          lipo "$binary" -archs
+          plist="$app/Contents/Info.plist"
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$plist")" = "0.2.2"
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "$plist")" = "4"
+          test -f "$app/Contents/Resources/.release"
+          strings "$binary" > "$temp/native-strings.txt"
+          if grep -E 'TOOTOO_KEEP_AWAKE_CI_READY|TOOTOO_KEEP_AWAKE_CI_SUITE|--keep-awake-ci|setDebugTier' "$temp/native-strings.txt"; then
+            echo 'Test/debug controls leaked into the release binary' >&2
+            exit 1
+          fi
+          grep -q 'TooToo Keep Awake (AI Coding)' "$temp/native-strings.txt"
+          grep -q 'id="keepAwakeBtn"' "$app/Contents/Resources/ui/index.html"
+          codesign --verify --deep --strict --verbose=2 "$app"
+          (cd dist && shasum -a 256 -c "$ZIP_NAME.sha256")
+          digest="$(shasum -a 256 "dist/$ZIP_NAME" | awk '{print $1}')"
+          echo "sha256=$digest" | tee -a "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: tootoo-v0.2.2-verified-zip
+          path: dist/${{ env.ZIP_NAME }}
+          if-no-files-found: error
+          compression-level: 0
+
+  publish:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: tootoo-v0.2.2-verified-zip
+      - name: Publish the verified archive and exact source tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          ZIP_SHA256: ${{ needs.build.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = "uuuyuqi/tootoo"
+          test "$(gh api "repos/$GH_REPO/git/ref/heads/main" --jq '.object.sha')" = "$GITHUB_SHA"
+          [[ "$ZIP_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          printf '%s  %s\n' "$ZIP_SHA256" "$ZIP_NAME" | sha256sum -c -
+          test -z "$(git ls-remote "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git" refs/tags/v0.2.2)"
+          gh release create v0.2.2 "$ZIP_NAME" --target "$GITHUB_SHA" --title 'TooToo v0.2.2' --notes '新增 macOS 防休眠：底栏咖啡杯一键开启防休眠并允许息屏，可在设置和右键菜单切换屏幕常亮，也可定时自动关闭。简洁模式同样可用，退出后恢复系统默认，重启不自动开启。'
+          test "$(gh api "repos/$GH_REPO/git/ref/tags/v0.2.2" --jq '.object.sha')" = "$GITHUB_SHA"
+          gh release view v0.2.2 --json url,tagName,isDraft,assets
