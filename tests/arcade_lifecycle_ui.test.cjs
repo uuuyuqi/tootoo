@@ -29,7 +29,7 @@ function harness(active) {
   const tabs = games.map(game => dom(game, game === active ? ["active"] : [], { game }));
   const panes = games.map(game => dom("arcPane-" + game, game === active ? ["active"] : []));
   const nodes = Object.fromEntries([
-    dom("arcadeModal", ["open"]), dom("arcadeBtn"), dom("arcadeCloseBtn"), ...panes,
+    dom("arcadeModal", ["open"]), dom("arcadeBtn"), dom("arcadeCloseBtn"), dom("blEndBtn"), ...panes,
     ...["blAmmo","blFireRate","blRefund","blBest","rainTierLbl","rainSpeedLbl","rainBest"].map(id => dom(id)),
     ...games.flatMap(game => [
       dom(game + "Title"), dom(game + "Desc"), dom(game + "StartBtn"), dom(game + "Overlay"),
@@ -66,7 +66,8 @@ function harness(active) {
     slice("const arcadeStartCopy =", "function getBlasterLoadout()") +
     slice("function refreshArcadeContext()", "// ADVENTURE STAGE BACKDROPS") +
     slice("function stopBlasterGame()", "function spawnSpecialBoss(") +
-    slice("function stopRainGame()", "function startRainGame()"), ctx,
+    slice("function stopRainGame()", "function startRainGame()") +
+    slice("function advanceBlasterHordeWarning(", "function spawnHordeFormation("), ctx,
   );
   return { ctx, nodes, tabs, frames, canceled, tick, round, setNow: value => now = value,
     scheduledGameFrames: () => [...frames].filter(([, fn]) => fn === tick.blaster || fn === tick.rain) };
@@ -145,4 +146,21 @@ test("telemetry refresh does not replace the paused shooter's loadout", () => {
   h.nodes.arcadeCloseBtn.events.click();
   h.ctx.refreshArcadeContext();
   assert.equal(h.nodes.blAmmo.textContent, "50 发");
+});
+
+test("a paused horde neither loses nor duplicates its entrance pickup across repeated resumes", () => {
+  const h = harness("blaster");
+  Object.assign(h.round, { hordeState: "warn", hordeCount: 3, hordeTimer: .04,
+    pickups: [], floats: [], berserkTimer: 0, w: 370, x: 120 });
+  h.ctx.window.__onPopoverClose();
+  assert.equal(h.round.pickups.length, 0);
+  h.ctx.window.__onPopoverOpen();
+  h.ctx.advanceBlasterHordeWarning(h.round, .05);
+  assert.equal(h.round.pickups.length, 1);
+  assert.equal(h.round.pickups[0].kind, "berserk_orb");
+  h.ctx.window.__onPopoverClose();
+  h.ctx.window.__onPopoverOpen();
+  h.ctx.window.__onPopoverOpen();
+  h.ctx.advanceBlasterHordeWarning(h.round, .05);
+  assert.equal(h.round.pickups.length, 1);
 });

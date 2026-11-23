@@ -2737,6 +2737,7 @@
   }
   .blaster-actions {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
     gap: 6px;
@@ -2747,10 +2748,13 @@
   }
   .blaster-btn-group {
     display: flex;
+    flex-wrap: wrap;
+    max-width: 100%;
     align-items: center;
     gap: 5px;
     flex-shrink: 0;
   }
+  #blEndBtn[hidden] { display: none !important; }
   #blBerserkBtn.ready {
     border-color: #f97316;
     background: linear-gradient(135deg, #ea580c, #dc2626);
@@ -7035,6 +7039,22 @@
   }
 
 
+  #settingsBtn {
+    position: relative;
+  }
+  #settingsBtn.update-available::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 1px var(--surface);
+    pointer-events: none;
+  }
+
   #updateNoticeBtn[hidden] { display: none !important; }
   #updateNoticeBtn {
     height: 23px;
@@ -7444,7 +7464,7 @@
       <button type="button" class="btn" id="updateNoticeBtn" hidden><span class="update-notice-dot" aria-hidden="true"></span><span id="updateNoticeLabel"></span></button>
       <button type="button" class="btn btn-ico footer-ico-btn native-only" id="keepAwakeBtn" title="保持电脑唤醒：关闭" aria-label="保持电脑唤醒" aria-pressed="false" disabled><svg aria-hidden="true" width="13.5" height="13.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.25h8v3.5A2.75 2.75 0 0 1 8.25 12.5h-2.5A2.75 2.75 0 0 1 3 9.75zM11 7h1a1.5 1.5 0 0 1 0 3h-1M2 14h10M5.5 4.25v-2M8.5 4.25v-2"/></svg></button>
       <button class="btn btn-ico footer-ico-btn" id="themeBtn" title="切换浅色/深色主题"><span class="ico-theme"><svg width="13.5" height="13.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="5.5"/><path d="M8 2.5a5.5 5.5 0 0 1 0 11Z" fill="currentColor" stroke="none"/></svg></span></button>
-      <button class="btn btn-ico footer-ico-btn" id="settingsBtn" title="设置"><span class="ico-gear"><svg width="13.5" height="13.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2.2"/><path d="M12.9 9.7a1.1 1.1 0 0 0 .22 1.2l.04.04a1.33 1.33 0 1 1-1.88 1.88l-.04-.04a1.1 1.1 0 0 0-1.2-.22 1.1 1.1 0 0 0-.67 1.01v.11a1.33 1.33 0 1 1-2.67 0v-.06a1.1 1.1 0 0 0-.72-1.01 1.1 1.1 0 0 0-1.2.22l-.04.04a1.33 1.33 0 1 1-1.88-1.88l.04-.04a1.1 1.1 0 0 0 .22-1.2 1.1 1.1 0 0 0-1.01-.67h-.11a1.33 1.33 0 1 1 0-2.67h.06a1.1 1.1 0 0 0 1.01-.72 1.1 1.1 0 0 0-.22-1.2l-.04-.04a1.33 1.33 0 1 1 1.88-1.88l.04.04a1.1 1.1 0 0 0 1.2.22h.05a1.1 1.1 0 0 0 .67-1.01v-.11a1.33 1.33 0 1 1 2.67 0v.06a1.1 1.1 0 0 0 .67 1.01 1.1 1.1 0 0 0 1.2-.22l.04-.04a1.33 1.33 0 1 1 1.88 1.88l-.04.04a1.1 1.1 0 0 0-.22 1.2v.05a1.1 1.1 0 0 0 1.01.67h.11a1.33 1.33 0 1 1 0 2.67h-.06a1.1 1.1 0 0 0-1.01.67Z"/></svg></span></button>
+      <button class="btn btn-ico footer-ico-btn" id="settingsBtn" title="设置" aria-label="设置"><span class="ico-gear" aria-hidden="true"><svg width="13.5" height="13.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2.2"/><path d="M12.9 9.7a1.1 1.1 0 0 0 .22 1.2l.04.04a1.33 1.33 0 1 1-1.88 1.88l-.04-.04a1.1 1.1 0 0 0-1.2-.22 1.1 1.1 0 0 0-.67 1.01v.11a1.33 1.33 0 1 1-2.67 0v-.06a1.1 1.1 0 0 0-.72-1.01 1.1 1.1 0 0 0-1.2.22l-.04.04a1.33 1.33 0 1 1-1.88-1.88l.04-.04a1.1 1.1 0 0 0 .22-1.2 1.1 1.1 0 0 0-1.01-.67h-.11a1.33 1.33 0 1 1 0-2.67h.06a1.1 1.1 0 0 0 1.01-.72 1.1 1.1 0 0 0-.22-1.2l-.04-.04a1.33 1.33 0 1 1 1.88-1.88l.04.04a1.1 1.1 0 0 0 1.2.22h.05a1.1 1.1 0 0 0 .67-1.01v-.11a1.33 1.33 0 1 1 2.67 0v.06a1.1 1.1 0 0 0 .67 1.01 1.1 1.1 0 0 0 1.2-.22l.04-.04a1.33 1.33 0 1 1 1.88 1.88l-.04.04a1.1 1.1 0 0 0-.22 1.2v.05a1.1 1.1 0 0 0 1.01.67h.11a1.33 1.33 0 1 1 0 2.67h-.06a1.1 1.1 0 0 0-1.01.67Z"/></svg></span></button>
       <button class="btn btn-quit native-only" id="popQuitLink" title="退出 TooToo">退出</button>
     </span>
   </footer>
@@ -7894,6 +7914,7 @@
         <div class="blaster-btn-group">
           <button class="btn" id="blBerserkBtn" style="padding:3px 9px;font-size:10px" title="怒气满 100% 后变身狂暴形态 6.5s：无敌金身 + 7管穿透烈焰 + 追踪飞弹（快捷键：B / Shift）">🔥 狂暴 0%</button>
           <button class="btn" id="blNovaBtn" style="padding:3px 9px;font-size:10px" title="消耗 25 发 Token 弹药释放全屏清屏激光（快捷键：空格）">⚡ 清屏 (-25弹)</button>
+          <button type="button" class="btn" id="blEndBtn" style="padding:3px 9px;font-size:10px" title="结算当前得分并查看战报" hidden>结束本局</button>
         </div>
       </div>
       <div class="adv-prop-bar" id="blPropBar"></div>
@@ -7935,6 +7956,9 @@
           <p id="rainDesc">新增水果忍者风神道具：❄️冰冻蕉(减速停表)、⚡双倍星蕉(2×得分)、🌊浪潮彩蕉(触发雨水浪潮)、🍉爆汁石榴(全屏收割+弹射宝石籽)、🧲磁铁、🛡️护盾！浪潮福利波期间零炸弹、漏接不扣分不断连击！</p>
           <button class="arc-primary-btn" id="rainStartBtn">▶ 开始 30 秒冲刺</button>
         </div>
+      </div>
+      <div id="rainEndControl" hidden style="text-align:right;margin:5px 0">
+        <button type="button" class="btn" id="rainEndBtn">结束本局</button>
       </div>
       <div class="adv-prop-bar" id="rainPropBar"></div>
       <!-- TOOTOO_DEV_DEBUG_START -->
@@ -8064,7 +8088,7 @@ function postNative(action, extra = {}) {
 const updateUi = Object.fromEntries([
   "updateNoticeBtn", "updateNoticeLabel", "updateCfg", "updateHeading",
   "updateCurrent", "updateStatus", "updateProgress", "updateNotes",
-  "updateActionBtn", "updateReleaseLink",
+  "updateActionBtn", "updateReleaseLink", "settingsBtn",
 ].map((id) => [id, document.getElementById(id)]));
 const updateLabels = {
   idle: "尚未检查更新",
@@ -8082,6 +8106,7 @@ const updateInstallStates = new Set(["downloading", "verifying", "installing"]);
 const updateNative = Boolean(window.webkit?.messageHandlers?.tootoo);
 let updateState = { status: "idle", canInstall: false };
 let updateRequest = 0;
+let knownGearUpdate = "";
 
 function updateVersionLabel(value) {
   if (typeof value !== "string") return "";
@@ -8095,6 +8120,10 @@ function renderUpdateState() {
   const candidate = Boolean(latest && (status === "available" ||
     (status === "error" && latest === updateState.previousCandidate)));
   const installable = updateNative && canInstall === true && candidate;
+  const gearLabel = knownGearUpdate ? "设置 · 有新版本 " + knownGearUpdate : "设置";
+  updateUi.settingsBtn.classList.toggle("update-available", Boolean(knownGearUpdate));
+  updateUi.settingsBtn.title = gearLabel;
+  updateUi.settingsBtn.setAttribute("aria-label", gearLabel);
   updateUi.updateNoticeBtn.hidden = !candidate;
   updateUi.updateNoticeLabel.textContent = candidate ? "有新版本 " + latest : "";
   updateUi.updateCurrent.textContent = "当前版本：" + (current || "—");
@@ -8130,6 +8159,10 @@ function showUpdateState(value, trustedNative = false) {
     next.notes ||= updateState.notes;
     next.previousCandidate = previousCandidate;
   }
+  // Keep a confirmed update visible during a transient check/error or while
+  // installing. Clear it only on a confirmed replacement or a reset state.
+  if (value.status === "available") knownGearUpdate = updateVersionLabel(value.latestVersion);
+  else if (value.status === "current" || value.status === "idle" || value.status === "unsupported") knownGearUpdate = "";
   updateState = next;
   renderUpdateState();
   return true;
@@ -12724,7 +12757,7 @@ window.addEventListener("keydown", (e) => {
   if (!blasterState || !blasterState.running) return;
   if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") blKeys.left = true;
   if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") blKeys.right = true;
-  if (e.code === "Space") {
+  if (e.code === "Space" && e.target?.id !== "blEndBtn") {
     e.preventDefault();
     triggerBlasterNova();
   }
@@ -12826,6 +12859,24 @@ function triggerBlasterHorde(s, wave) {
   playSfx("alarm");
 }
 
+function advanceBlasterHordeWarning(s, dt) {
+  if (s.hordeState !== "warn") return;
+  s.hordeTimer -= dt;
+  if (s.hordeTimer > 0) return;
+  s.hordeState = "active";
+  s.hordeTimer = 9.5;
+  s.hordeWaveAcc = 0.6; // Immediate first formation!
+  // One aid pickup per horde entrance. A core replaces the shield every
+  // third horde unless Berserk is already active.
+  const kind = s.hordeCount % 3 === 0 && s.berserkTimer <= 0 ? "berserk_orb" : "shield_pack";
+  const x = s.x + (s.x <= s.w / 2 ? 48 : -48); // Toward center, just outside automatic catch range.
+  s.pickups.push({ x, y: 32, vy: 100, kind, amt: 1 });
+  s.floats.push({
+    x: s.w / 2, y: 62, txt: kind === "berserk_orb" ? "敌潮补给：狂暴核" : "敌潮补给：护盾",
+    col: kind === "berserk_orb" ? "#F97316" : "#38BDF8", life: 1.2,
+  });
+}
+
 function spawnHordeFormation(s, wave) {
   if (s.enemies.length >= 26) return;
   const pattern = Math.floor(Math.random() * 4);
@@ -12897,6 +12948,7 @@ function stopBlasterGame() {
   if (blasterRaf !== null) cancelAnimationFrame(blasterRaf);
   blasterRaf = null;
   blKeys.left = blKeys.right = false;
+  document.getElementById("blEndBtn").hidden = true;
   if (blasterState?.running || blasterState?.pausedForPopover) resetArcadeStart("blaster");
   blasterState = null;
 }
@@ -12960,12 +13012,15 @@ function handleBlasterEnemyDeath(s, en, wave) {
       playSfx("gold");
     }
   }
-  s.feverCharge = Math.min(100, s.feverCharge + (en.boss ? 36 : 7));
-  if (s.feverCharge >= 100) {
-    s.feverCharge = 0;
-    s.overclockTimer = Math.max(s.overclockTimer, 4.5);
-    s.floats.push({ x: s.w / 2, y: s.h * 0.42, txt: "⚡ 超频满能！5管黄金连射 4.5s!", col: "#F59E0B", life: 1.1 });
-    playSfx("ssr");
+  // Automatic overclock cannot recharge itself while shots are free.
+  if (s.overclockTimer <= 0) {
+    s.feverCharge = Math.min(100, s.feverCharge + (en.boss ? 36 : 7));
+    if (s.feverCharge >= 100) {
+      s.feverCharge = 0;
+      s.overclockTimer = 4.5;
+      s.floats.push({ x: s.w / 2, y: s.h * 0.42, txt: "⚡ 超频满能！5管黄金连射 4.5s!", col: "#F59E0B", life: 1.1 });
+      playSfx("ssr");
+    }
   }
   spawnBlasterParts(en.x, en.y, s.berserkTimer > 0 ? "#F97316" : en.col, en.boss ? 22 : (en.kind === "bomber" ? 16 : 9));
   if (s.floats.length < 24) {
@@ -13001,9 +13056,8 @@ function handleBlasterEnemyDeath(s, en, wave) {
     }
   }
   if (en.kind === "elite") {
-    // Horde Elite Commander ALWAYS drops a blazing Berserk Core + Ammo!
-    s.pickups.push({ x: Math.max(24, en.x - 14), y: en.y, vy: 76, kind: "berserk_orb", amt: 1 });
-    s.pickups.push({ x: Math.min(s.w - 24, en.x + 14), y: en.y - 6, vy: 82, kind: "ammo", amt: 18 });
+    // The horde entrance already grants aid; the elite drops a small ammo pack.
+    s.pickups.push({ x: Math.min(s.w - 24, en.x + 14), y: en.y - 6, vy: 82, kind: "ammo", amt: 8 });
   } else if (en.boss && !en.isDecoy) {
     s.bossKills = (s.bossKills || 0) + 1;
     s.pickups.push({ x: Math.max(24, en.x - 16), y: en.y, vy: 76, kind: "carrot_coin", amt: 1 });
@@ -13016,7 +13070,7 @@ function handleBlasterEnemyDeath(s, en, wave) {
     const dropRoll = Math.random();
     const boxChance = en.split ? 0.055 : 0.022;
     const coinChance = en.split ? 0.06 : 0.032;
-    const berserkChance = en.kind === "tank" ? 0.24 : (en.horde ? 0.045 : 0.022);
+    const berserkChance = en.kind === "tank" ? 0.18 : (en.horde ? 0.035 : 0.018);
     const shieldChance = en.horde ? 0.055 : 0.018;
     if (dropRoll < boxChance) {
       s.pickups.push({ x: en.x, y: en.y, vy: 76, kind: "gacha_box", amt: 1 });
@@ -13026,8 +13080,8 @@ function handleBlasterEnemyDeath(s, en, wave) {
       s.pickups.push({ x: en.x, y: en.y, vy: 82, kind: "berserk_orb", amt: 1 });
     } else if (dropRoll < boxChance + coinChance + berserkChance + shieldChance) {
       s.pickups.push({ x: en.x, y: en.y, vy: 84, kind: "shield_pack", amt: 1 });
-    } else if (dropRoll < boxChance + coinChance + berserkChance + shieldChance + 0.11) {
-      s.pickups.push({ x: en.x, y: en.y, vy: 88, kind: "ammo", amt: 14 });
+    } else if (dropRoll < boxChance + coinChance + berserkChance + shieldChance + 0.07) {
+      s.pickups.push({ x: en.x, y: en.y, vy: 88, kind: "ammo", amt: 8 });
     }
   }
 }
@@ -13154,6 +13208,7 @@ function startBlasterGame() {
   };
 
   document.getElementById("blasterOverlay").classList.add("hidden");
+  document.getElementById("blEndBtn").hidden = false;
   document.getElementById("blScore").textContent = "0";
   document.getElementById("blAmmo").textContent = lo.god ? "♾️ 无限" : `${lo.ammo} 发`;
   document.getElementById("blFireRate").textContent = `${lo.fireHz}/s ×${lo.cannons}管`;
@@ -13297,12 +13352,7 @@ function tickBlasterGame(now) {
     if (s.hordeState === "idle" && !hasActiveBoss && s.elapsed >= s.nextHordeAt) {
       triggerBlasterHorde(s, wave);
     } else if (s.hordeState === "warn") {
-      s.hordeTimer -= dt;
-      if (s.hordeTimer <= 0) {
-        s.hordeState = "active";
-        s.hordeTimer = 9.5;
-        s.hordeWaveAcc = 0.6; // Immediate first formation!
-      }
+      advanceBlasterHordeWarning(s, dt);
     } else if (s.hordeState === "active") {
       s.hordeTimer -= dt;
       s.hordeWaveAcc += dt;
@@ -13310,7 +13360,7 @@ function tickBlasterGame(now) {
         s.hordeWaveAcc = 0;
         spawnHordeFormation(s, wave);
       }
-      // Mid-horde Crowned Elite Commander drops guaranteed Berserk Core!
+      // Mid-horde Crowned Elite Commander drops a small ammo pack.
       if (!s.hordeEliteSpawned && s.hordeTimer <= 5.4 && s.enemies.length < 27) {
         s.hordeEliteSpawned = true;
         const ehp = 7 + Math.min(6, wave);
@@ -13319,7 +13369,7 @@ function tickBlasterGame(now) {
           col: "#EC4899", pts: 150, boss: false, horde: true,
           x: s.w * (0.28 + Math.random() * 0.44), y: -22, atkCd: 1.4, wobble: 0,
         });
-        s.floats.push({ x: s.w / 2, y: 52, txt: "👑 敌潮精英统领现身！击杀必爆🔥狂暴核！", col: "#F472B6", life: 1.3 });
+        s.floats.push({ x: s.w / 2, y: 52, txt: "👑 敌潮精英统领现身！击杀掉落补给弹药。", col: "#F472B6", life: 1.3 });
       }
       if (s.hordeTimer <= 0) {
         s.hordeState = "idle";
@@ -13327,8 +13377,8 @@ function tickBlasterGame(now) {
         if (s.nextBossAt < s.elapsed + 4) s.nextBossAt = s.elapsed + 4;
         if (s.hordeSurvived) {
           s.score += 200;
-          s.ammo += 15;
-          s.bossBanner = { txt: `🏆 第 ${s.hordeCount} 波敌潮守卫成功！+200分 · 补弹 +15！`, col: "#34D399", life: 2.0 };
+          s.ammo += 6;
+          s.bossBanner = { txt: `🏆 第 ${s.hordeCount} 波敌潮守卫成功！+200分 · 补弹 +6！`, col: "#34D399", life: 2.0 };
           playSfx("ssr");
         } else {
           s.bossBanner = { txt: `✅ 第 ${s.hordeCount} 波敌潮退散！共击退 ${s.hordeKills || 0} 只异化Bug`, col: "#38BDF8", life: 1.8 };
@@ -14265,38 +14315,48 @@ function tickBlasterGame(now) {
 
   // End check (never end from 0 ammo while Berserk / Overclock / Free-Ammo is active!)
   if (!isGod && (s.lives <= 0 || (!isBerserk && s.overclockTimer <= 0 && s.freeAmmoTimer <= 0 && s.ammo <= 0 && s.bullets.length === 0))) {
-    s.running = false;
-    blasterRaf = null;
-    let best = 0;
-    try { best = Number(localStorage.getItem("tootoo_blaster_best") || 0) || 0; } catch {}
-    const isNew = !s.debugTainted && s.score > best;
-    const scoreTierCoins = !s.debugTainted ? ((s.score >= 3200 ? 3 : s.score >= 1800 ? 2 : s.score >= 800 ? 1 : 0)) : 0;
-    const milestoneCoins = scoreTierCoins > 0 ? grantAdventureCoins(scoreTierCoins) : 0;
-    const totalCoins = (s.coinsCaught || 0) + milestoneCoins;
-    if (isNew) {
-      best = s.score;
-      try { localStorage.setItem("tootoo_blaster_best", String(best)); } catch {}
-      document.getElementById("blBest").textContent = best;
-      spawnConfettiBurst(document.getElementById("arcadeModal").querySelector(".arcade-dialog"), 26);
-      playSfx("ssr");
-    } else {
-      playSfx("win");
-    }
-    const reason = s.lives <= 0 ? "防线被 Bug 突破！" : "今日 Token 弹药全部倾泻完毕！";
-    const dbgPrefix = s.debugTainted ? "[调试] " : "";
-    const coinTxt = totalCoins > 0 ? ` 🥕 本局共赢 +${totalCoins} 萝卜币！` : "";
-    const lootTxt = s.lootsFound.length ? ` 🎁 神秘宝箱开出：${s.lootsFound.join("、")}` : "";
-    document.getElementById("blasterTitle").textContent = `${dbgPrefix}${isNew ? "🏆 新纪录！" : "🎯 战报"} 得分 ${s.score}`;
-    document.getElementById("blasterDesc").textContent = `${reason} 歼灭 ${s.kills} 只 Bug（斩Boss ${s.bossKills}），白嫖 ${s.refunded} 弹！${coinTxt}${lootTxt}`;
-    document.getElementById("blasterStartBtn").textContent = "↻ 重新装填弹药";
-    document.getElementById("blasterOverlay").classList.remove("hidden");
+    finishBlasterGame(s, s.lives <= 0 ? "防线被 Bug 突破！" : "今日 Token 弹药全部倾泻完毕！");
     return;
   }
 
   blasterRaf = requestAnimationFrame(tickBlasterGame);
 }
 
+function finishBlasterGame(s, reason) {
+  if (!s?.running) return;
+  s.running = false;
+  if (blasterRaf !== null) cancelAnimationFrame(blasterRaf);
+  blasterRaf = null;
+  blKeys.left = blKeys.right = false;
+  document.getElementById("blEndBtn").hidden = true;
+  let best = 0;
+  try { best = Number(localStorage.getItem("tootoo_blaster_best") || 0) || 0; } catch {}
+  const isNew = !s.debugTainted && s.score > best;
+  const scoreTierCoins = !s.debugTainted ? ((s.score >= 3200 ? 3 : s.score >= 1800 ? 2 : s.score >= 800 ? 1 : 0)) : 0;
+  const milestoneCoins = scoreTierCoins > 0 ? grantAdventureCoins(scoreTierCoins) : 0;
+  const totalCoins = (s.coinsCaught || 0) + milestoneCoins;
+  if (isNew) {
+    best = s.score;
+    try { localStorage.setItem("tootoo_blaster_best", String(best)); } catch {}
+    document.getElementById("blBest").textContent = best;
+    spawnConfettiBurst(document.getElementById("arcadeModal").querySelector(".arcade-dialog"), 26);
+    playSfx("ssr");
+  } else {
+    playSfx("win");
+  }
+  const dbgPrefix = s.debugTainted ? "[调试] " : "";
+  const coinTxt = totalCoins > 0 ? ` 🥕 本局共赢 +${totalCoins} 萝卜币！` : "";
+  const lootTxt = s.lootsFound.length ? ` 🎁 神秘宝箱开出：${s.lootsFound.join("、")}` : "";
+  document.getElementById("blasterTitle").textContent = `${dbgPrefix}${isNew ? "🏆 新纪录！" : "🎯 战报"} 得分 ${s.score}`;
+  document.getElementById("blasterDesc").textContent = `${reason} 歼灭 ${s.kills} 只 Bug（斩Boss ${s.bossKills}），白嫖 ${s.refunded} 弹！${coinTxt}${lootTxt}`;
+  document.getElementById("blasterStartBtn").textContent = "↻ 重新装填弹药";
+  document.getElementById("blasterOverlay").classList.remove("hidden");
+}
+
 document.getElementById("blasterStartBtn").addEventListener("click", startBlasterGame);
+document.getElementById("blEndBtn").addEventListener("click", () => {
+  finishBlasterGame(blasterState, "已主动结束本局。");
+});
 
 // ============================================================
 // GAME 1: 🥕 TOKEN RAIN CATCHER (60fps Canvas)
@@ -14311,7 +14371,10 @@ window.addEventListener("keydown", (e) => {
   if (!rainState || !rainState.running) return;
   if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") rainKeys.left = true;
   if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") rainKeys.right = true;
-  if (e.code === "Space") { e.preventDefault(); triggerRainDash(); }
+  if (e.code === "Space" && e.target?.id !== "rainEndBtn") {
+    e.preventDefault();
+    triggerRainDash();
+  }
   const rProps = {
     "1": "rain_magnet", "2": "energy_shield", "3": "slow_mo",
     "4": "orbital_nuke", "5": "homing_drones", "6": "laser_beam", "7": "time_freeze",
@@ -14344,6 +14407,8 @@ function triggerRainDash() {
 }
 
 function stopRainGame() {
+  const endControl = document.getElementById("rainEndControl");
+  if (endControl) endControl.hidden = true;
   if (rainRaf !== null) cancelAnimationFrame(rainRaf);
   rainRaf = null;
   rainKeys.left = rainKeys.right = false;
@@ -14384,6 +14449,7 @@ function startRainGame() {
     iceTimer: 0,
     waveTimer: 0,
     waveMaxDur: 6.0,
+    powerupDropCooldown: 0,
     waveTotalPts: 0,
     waveSideAcc: 0,
     waveBanner: null,
@@ -14414,6 +14480,7 @@ function startRainGame() {
   };
 
   document.getElementById("rainOverlay").classList.add("hidden");
+  document.getElementById("rainEndControl").hidden = false;
   document.getElementById("rainScore").textContent = "0";
   document.getElementById("rainTime").textContent = "30s";
   rainRaf = requestAnimationFrame(tickRainGame);
@@ -14457,6 +14524,52 @@ function spawnRainParticles(x, y, col, n = 10) {
   }
 }
 
+// TOOTOO_RAIN_DROP_START
+const RAIN_POWERUP_DROP_GAP = 1.8;
+const RAIN_STRONG_DROPS = new Set([
+  "wave_banana", "ice_banana", "double_banana", "pomegranate",
+  "magnet_orb", "shield_bubble", "rainbow", "hourglass",
+]);
+
+function rollRainDrop(s, inWave, isRush, roll = Math.random()) {
+  let kind = "token";
+  if (inWave) {
+    if (roll < 0.018) kind = "gacha_box";
+    else if (roll < 0.048) kind = "carrot_coin";
+    else if (roll < 0.076) kind = "pomegranate";
+    else if (roll < 0.108) kind = "double_banana";
+    else if (roll < 0.14) return "token";
+    else if (roll < 0.28) kind = "diamond";
+    else if (roll < 0.46) kind = "gold";
+    else if (roll < 0.70) kind = "cache";
+  } else {
+    if (roll < 0.016) kind = "gacha_box";
+    else if (roll < 0.038) kind = "carrot_coin";
+    else if (roll < 0.058) kind = "wave_banana";
+    else if (roll < 0.083) kind = "ice_banana";
+    else if (roll < 0.109) kind = "double_banana";
+    else if (roll < 0.131) kind = "pomegranate";
+    else if (roll < 0.157) kind = "magnet_orb";
+    else if (roll < 0.180) kind = "shield_bubble";
+    else if (roll < 0.199) kind = "rainbow";
+    else if (roll < 0.218) kind = "hourglass";
+    else if (roll < 0.286) return "token";
+    else if (roll < 0.340) kind = "diamond";
+    else if (roll < (isRush ? 0.44 : 0.39)) kind = "gold";
+    else if (s.freezeTimer <= 0 && s.iceTimer <= 0 && roll < (isRush ? 0.52 : 0.49)) kind = "bomb";
+    else if (roll < 0.49 + s.cacheRate * 0.42) kind = "cache";
+  }
+
+  // Keep the existing hazard/reward slots: only strong drops denied by pacing
+  // turn into ordinary tokens. Do not suppress currency or mystery boxes.
+  if (RAIN_STRONG_DROPS.has(kind)) {
+    if (s.powerupDropCooldown > 0) return "token";
+    s.powerupDropCooldown = RAIN_POWERUP_DROP_GAP;
+  }
+  return kind;
+}
+// TOOTOO_RAIN_DROP_END
+
 function tickRainGame(now) {
   const s = rainState;
   if (!s || !s.running) return;
@@ -14466,6 +14579,7 @@ function tickRainGame(now) {
 
   if (s.freezeTimer > 0) s.freezeTimer = Math.max(0, s.freezeTimer - dt);
   else s.timeLeft = Math.max(0, s.timeLeft - dt);
+  if (s.powerupDropCooldown > 0) s.powerupDropCooldown = Math.max(0, s.powerupDropCooldown - dt);
   if (s.magnetTimer > 0) s.magnetTimer = Math.max(0, s.magnetTimer - dt);
   if (s.feverTimer > 0) s.feverTimer = Math.max(0, s.feverTimer - dt);
   if (s.doubleTimer > 0) s.doubleTimer = Math.max(0, s.doubleTimer - dt);
@@ -14490,11 +14604,11 @@ function tickRainGame(now) {
   // Auto-trigger Mid-Game & Final Reward Token Waves!
   if (!s.midWaveTriggered && s.timeLeft <= 18.0 && s.timeLeft > 12.0) {
     s.midWaveTriggered = true;
-    triggerRainWave(s, 5.5, "🌊 中场雨水浪潮");
+    triggerRainWave(s, 4.5, "🌊 中场雨水浪潮");
   }
-  if (!s.finalWaveTriggered && s.timeLeft <= 6.5 && s.timeLeft > 0.5) {
+  if (!s.finalWaveTriggered && s.timeLeft <= 5.0 && s.timeLeft > 0.5) {
     s.finalWaveTriggered = true;
-    triggerRainWave(s, 6.5, "🌟 终极黄金浪潮");
+    triggerRainWave(s, 5, "🌟 终极黄金浪潮");
   }
   const wasWave = s.waveTimer > 0;
   if (s.waveTimer > 0) {
@@ -14521,34 +14635,7 @@ function tickRainGame(now) {
   while (s.spawnAcc >= spawnInterval) {
     s.spawnAcc -= spawnInterval;
     if (s.items.length >= 42) break;
-    const roll = Math.random();
-    let kind = "token";
-    if (inWave) {
-      // ZERO bombs during Token Wave! Pure lush multi-color token & treasure shower!
-      if (roll < 0.018) kind = "gacha_box";
-      else if (roll < 0.048) kind = "carrot_coin";
-      else if (roll < 0.09) kind = "pomegranate";
-      else if (roll < 0.14) kind = "double_banana";
-      else if (roll < 0.28) kind = "diamond";
-      else if (roll < 0.46) kind = "gold";
-      else if (roll < 0.70) kind = "cache";
-      else kind = "token";
-    } else {
-      if (roll < 0.016) kind = "gacha_box";
-      else if (roll < 0.038) kind = "carrot_coin";
-      else if (roll < 0.068) kind = "wave_banana";
-      else if (roll < 0.102) kind = "ice_banana";
-      else if (roll < 0.138) kind = "double_banana";
-      else if (roll < 0.168) kind = "pomegranate";
-      else if (roll < 0.200) kind = "magnet_orb";
-      else if (roll < 0.228) kind = "shield_bubble";
-      else if (roll < 0.256) kind = "rainbow";
-      else if (roll < 0.286) kind = "hourglass";
-      else if (roll < 0.340) kind = "diamond";
-      else if (roll < (isRush ? 0.44 : 0.39)) kind = "gold";
-      else if (s.freezeTimer <= 0 && s.iceTimer <= 0 && roll < (isRush ? 0.52 : 0.49)) kind = "bomb";
-      else if (roll < 0.49 + s.cacheRate * 0.42) kind = "cache";
-    }
+    const kind = rollRainDrop(s, inWave, isRush);
     const baseVy = 112 + (s.tps / 180) * 108 + Math.random() * 52;
     const isBanana = kind === "ice_banana" || kind === "double_banana" || kind === "wave_banana";
     s.items.push({
@@ -14734,23 +14821,23 @@ function tickRainGame(now) {
         if (inWave) s.waveTotalPts += pts;
 
         if (it.kind === "ice_banana") {
-          s.iceTimer = Math.max(s.iceTimer, 5.0);
-          s.freezeTimer = Math.max(s.freezeTimer, 3.0);
+          s.iceTimer = Math.max(s.iceTimer, 3.5);
+          s.freezeTimer = Math.max(s.freezeTimer, 1.5);
           spawnRainParticles(it.x, it.y, "#38BDF8", 20);
-          s.floats.push({ x: it.x, y: by - 22, txt: `+${pts} ❄️ 冰冻香蕉！减速+停表3s!`, col: "#38BDF8", life: 1.2 });
+          s.floats.push({ x: it.x, y: by - 22, txt: `+${pts} ❄️ 冰冻香蕉！减速+停表1.5s!`, col: "#38BDF8", life: 1.2 });
           playSfx("freeze");
         } else if (it.kind === "double_banana") {
-          s.doubleTimer = Math.max(s.doubleTimer, 6.5);
+          s.doubleTimer = Math.max(s.doubleTimer, 4.5);
           spawnRainParticles(it.x, it.y, "#FACC15", 20);
-          s.floats.push({ x: it.x, y: by - 22, txt: `+${pts} ⚡ 双倍星蕉！6.5s 2×得分!`, col: "#FACC15", life: 1.2 });
+          s.floats.push({ x: it.x, y: by - 22, txt: `+${pts} ⚡ 双倍星蕉！4.5s 2×得分!`, col: "#FACC15", life: 1.2 });
           playSfx("gold");
         } else if (it.kind === "wave_banana") {
           spawnRainParticles(it.x, it.y, "#38BDF8", 22);
-          triggerRainWave(s, 6.5, "🌊 浪潮彩蕉觉醒");
+          triggerRainWave(s, 4.5, "🌊 浪潮彩蕉觉醒");
         } else if (it.kind === "magnet_orb") {
-          s.magnetTimer = Math.max(s.magnetTimer, 5.5);
+          s.magnetTimer = Math.max(s.magnetTimer, 4.0);
           spawnRainParticles(it.x, it.y, "#F97316", 16);
-          s.floats.push({ x: it.x, y: by - 20, txt: `+${pts} 🧲 超级磁铁 5.5s!`, col: "#F97316", life: 1.05 });
+          s.floats.push({ x: it.x, y: by - 20, txt: `+${pts} 🧲 超级磁铁 4s!`, col: "#F97316", life: 1.05 });
           playSfx("gold");
         } else if (it.kind === "shield_bubble") {
           s.shields = Math.min(5, s.shields + 1);
@@ -14762,16 +14849,16 @@ function tickRainGame(now) {
           if (s.floats.length < 24) s.floats.push({ x: it.x, y: by - 16, txt: `+${pts} 💎石榴籽`, col: "#FB7185", life: 0.7 });
           playSfx("token");
         } else if (it.kind === "rainbow") {
-          s.feverTimer = 5.0;
-          s.magnetTimer = Math.max(s.magnetTimer, 5.0);
+          s.feverTimer = Math.max(s.feverTimer, 3.5);
+          s.magnetTimer = Math.max(s.magnetTimer, 3.5);
           s.shields = Math.min(5, s.shields + 1);
           spawnRainParticles(it.x, it.y, "#A78BFA", 22);
           s.floats.push({ x: it.x, y: by - 20, txt: `+${pts} 🌈 彩虹狂热 2× +护盾!`, col: "#A78BFA", life: 1.15 });
           playSfx("ssr");
         } else if (it.kind === "hourglass") {
-          s.timeLeft += 4;
+          s.timeLeft += 2;
           spawnRainParticles(it.x, it.y, "#0284C7", 16);
-          s.floats.push({ x: it.x, y: by - 18, txt: `+${pts} ⏰ 续命 +4s!`, col: "#0284C7", life: 1.0 });
+          s.floats.push({ x: it.x, y: by - 18, txt: `+${pts} ⏰ 续命 +2s!`, col: "#0284C7", life: 1.0 });
           playSfx("cache");
         } else if (it.kind === "diamond") {
           spawnRainParticles(it.x, it.y, "#38BDF8", 16);
@@ -15172,39 +15259,54 @@ function tickRainGame(now) {
   document.getElementById("rainTime").textContent = Math.ceil(s.timeLeft) + "s";
 
   if (s.timeLeft <= 0) {
-    s.running = false;
-    rainRaf = null;
-    let best = 0;
-    try { best = Number(localStorage.getItem("tootoo_rain_best") || 0) || 0; } catch {}
-    const isNewRecord = !s.debugTainted && s.score > best;
-    const scoreTierCoins = !s.debugTainted ? ((s.score >= 2000 ? 3 : s.score >= 1200 ? 2 : s.score >= 600 ? 1 : 0)) : 0;
-    const milestoneCoins = scoreTierCoins > 0 ? grantAdventureCoins(scoreTierCoins) : 0;
-    const totalCoins = (s.coinsCaught || 0) + milestoneCoins;
-    if (isNewRecord) {
-      best = s.score;
-      try { localStorage.setItem("tootoo_rain_best", String(best)); } catch {}
-      document.getElementById("rainBest").textContent = best;
-      spawnConfettiBurst(document.getElementById("arcadeModal").querySelector(".arcade-dialog"), 24);
-      playSfx("ssr");
-    } else {
-      playSfx("win");
-    }
-    const remark = s.score >= 900 ? "神级手速！比 200 tok/s 还能吸！"
-      : s.score >= 450 ? "Token 收割机本机！兔兔吃饱啦！"
-      : "热身完毕！善用闪避冲刺与扭蛋道具冲高分！";
-    const dbgPrefix = s.debugTainted ? "[调试] " : "";
-    const coinTxt = totalCoins > 0 ? ` 🥕 本局共赢 +${totalCoins} 萝卜币！` : "";
-    const lootTxt = s.lootsFound.length ? ` 🎁 神秘宝箱开出：${s.lootsFound.join("、")}` : "";
-    document.getElementById("rainTitle").textContent = `${dbgPrefix}${isNewRecord ? "🏆 新纪录！" : "⏱ 时间到！"} 得分 ${s.score}`;
-    document.getElementById("rainDesc").textContent = `最高连击 ×${s.maxCombo} · ${remark}${coinTxt}${lootTxt}`;
-    document.getElementById("rainStartBtn").textContent = "↻ 再来一局";
-    document.getElementById("rainOverlay").classList.remove("hidden");
+    settleRainRound();
     return;
   }
 
   rainRaf = requestAnimationFrame(tickRainGame);
 }
 
+// TOOTOO_RAIN_SETTLEMENT_START
+function settleRainRound(manual = false) {
+  const s = rainState;
+  if (!s || (!s.running && !s.pausedForPopover)) return;
+  s.running = false;
+  s.pausedForPopover = false;
+  if (rainRaf !== null) cancelAnimationFrame(rainRaf);
+  rainRaf = null;
+  rainKeys.left = rainKeys.right = false;
+  document.getElementById("rainEndControl").hidden = true;
+  document.getElementById("rainScore").textContent = s.score;
+  document.getElementById("rainTime").textContent = Math.ceil(s.timeLeft) + "s";
+  let best = 0;
+  try { best = Number(localStorage.getItem("tootoo_rain_best") || 0) || 0; } catch {}
+  const isNewRecord = !s.debugTainted && s.score > best;
+  const scoreTierCoins = !s.debugTainted ? ((s.score >= 2000 ? 3 : s.score >= 1200 ? 2 : s.score >= 600 ? 1 : 0)) : 0;
+  const milestoneCoins = scoreTierCoins > 0 ? grantAdventureCoins(scoreTierCoins) : 0;
+  const totalCoins = (s.coinsCaught || 0) + milestoneCoins;
+  if (isNewRecord) {
+    best = s.score;
+    try { localStorage.setItem("tootoo_rain_best", String(best)); } catch {}
+    document.getElementById("rainBest").textContent = best;
+    spawnConfettiBurst(document.getElementById("arcadeModal").querySelector(".arcade-dialog"), 24);
+    playSfx("ssr");
+  } else {
+    playSfx("win");
+  }
+  const remark = s.score >= 900 ? "神级手速！比 200 tok/s 还能吸！"
+    : s.score >= 450 ? "Token 收割机本机！兔兔吃饱啦！"
+    : "热身完毕！善用闪避冲刺与扭蛋道具冲高分！";
+  const dbgPrefix = s.debugTainted ? "[调试] " : "";
+  const coinTxt = totalCoins > 0 ? ` 🥕 本局共赢 +${totalCoins} 萝卜币！` : "";
+  const lootTxt = s.lootsFound.length ? ` 🎁 神秘宝箱开出：${s.lootsFound.join("、")}` : "";
+  document.getElementById("rainTitle").textContent = `${dbgPrefix}${isNewRecord ? "🏆 新纪录！" : manual ? "⏹ 本局已结束！" : "⏱ 时间到！"} 得分 ${s.score}`;
+  document.getElementById("rainDesc").textContent = `最高连击 ×${s.maxCombo} · ${remark}${coinTxt}${lootTxt}`;
+  document.getElementById("rainStartBtn").textContent = "↻ 再来一局";
+  document.getElementById("rainOverlay").classList.remove("hidden");
+}
+
+document.getElementById("rainEndBtn").addEventListener("click", () => settleRainRound(true));
+// TOOTOO_RAIN_SETTLEMENT_END
 document.getElementById("rainStartBtn").addEventListener("click", startRainGame);
 
 // ============================================================

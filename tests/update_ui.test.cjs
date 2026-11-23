@@ -9,15 +9,17 @@ const program = html.split("// TOOTOO_UPDATE_UI_START\n")[1].split("// TOOTOO_UP
 const ids = [
   "updateNoticeBtn", "updateNoticeLabel", "updateCfg", "updateHeading",
   "updateCurrent", "updateStatus", "updateProgress", "updateNotes",
-  "updateActionBtn", "updateReleaseLink",
+  "updateActionBtn", "updateReleaseLink", "settingsBtn",
 ];
 
 function harness(native = true) {
   const actions = [], requests = [], routes = [];
+  const classes = new Map(), attributes = new Map();
   const ui = Object.fromEntries(ids.map((id) => [id, {
     events: {},
     hidden: ["updateNoticeBtn", "updateNotes", "updateProgress"].includes(id),
-    classList: { toggle() {} },
+    classList: { toggle(name, enabled) { classes.set(id + ":" + name, enabled); } },
+    setAttribute(name, value) { attributes.set(id + ":" + name, value); },
     set innerHTML(_) { throw new Error("unsafe HTML write"); },
     removeAttribute(name) { delete this[name]; },
     addEventListener(name, fn) { this.events[name] = fn; },
@@ -37,7 +39,7 @@ function harness(native = true) {
     requestAnimationFrame: (fn) => fn(),
     openSettingsModal: () => routes.push("settings"),
   });
-  return { window, ui, actions, requests, routes };
+  return { window, ui, actions, requests, routes, classes, attributes };
 }
 
 const available = {
@@ -130,4 +132,53 @@ test("browser uses GET only, ignores native callbacks, and ignores late old resp
   assert.match(ui.updateStatus.textContent, /更新失败/);
   assert.equal(ui.updateActionBtn.disabled, false);
   assert.deepEqual(actions, []);
+});
+
+
+test("settings gear stays in place and labels a known update without changing its click action", () => {
+  assert.match(html, /id="settingsBtn" title="设置" aria-label="设置"/);
+  assert.match(html, /#settingsBtn\.update-available::after\s*\{[^}]+position: absolute;[^}]+pointer-events: none;/);
+  assert.doesNotMatch(html, /minimal-mode[^\n{]*(?:#settingsBtn|\.pop-footer|\.footer-actions)/);
+  assert.match(html, /getElementById\("settingsBtn"\)\.addEventListener\("click", openSettingsModal\)/);
+
+  const { window, ui, classes, attributes, actions } = harness();
+  const marked = () => classes.get("settingsBtn:update-available");
+  const title = () => ui.settingsBtn.title;
+  const aria = () => attributes.get("settingsBtn:aria-label");
+  window.__onUpdateState({ status: "idle" });
+  assert.equal(marked(), false);
+  assert.equal(aria(), "设置");
+  window.__onUpdateState({ status: "error", latestVersion: "v99.0.0" });
+  assert.equal(marked(), false);
+  window.__onUpdateState(available);
+  assert.equal(marked(), true);
+  assert.equal(title(), "设置 · 有新版本 v0.2.5");
+  assert.equal(aria(), title());
+
+  for (const status of ["checking", "error", "downloading", "verifying", "installing"]) {
+    window.__onUpdateState({ status });
+    assert.equal(title(), "设置 · 有新版本 v0.2.5", status);
+  }
+  window.__onUpdateState({ ...available, status: "current" });
+  assert.equal(marked(), false);
+  assert.equal(title(), "设置");
+  assert.equal(aria(), title());
+  window.__onUpdateState({ ...available, latestVersion: "<img>" });
+  assert.equal(marked(), false);
+  assert.deepEqual(actions, [["getUpdateState"]]);
+});
+
+test("failed browser refresh does not erase the last known gear update", async () => {
+  const { ui, classes, requests } = harness(false);
+  requests[0].reply(available);
+  await settled();
+  ui.updateActionBtn.events.click();
+  assert.equal(classes.get("settingsBtn:update-available"), true);
+  requests[1].reply({}, false);
+  await settled();
+  assert.equal(classes.get("settingsBtn:update-available"), true);
+  ui.updateActionBtn.events.click();
+  requests[2].reply({ status: "current" });
+  await settled();
+  assert.equal(classes.get("settingsBtn:update-available"), false);
 });
