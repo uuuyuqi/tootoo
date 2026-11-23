@@ -188,14 +188,19 @@ final class Harness: NSObject, NSApplicationDelegate, WKNavigationDelegate, NSPo
     }
 }
 
-guard CommandLine.arguments.count == 2,
-      let url = URL(string: CommandLine.arguments[1]),
-      url.scheme == "http", url.host == "127.0.0.1",
-      url.user == nil, url.password == nil else {
-    fatalError("Usage: ArcadePopoverSmoke 'http://127.0.0.1:PORT/?mode=popover'")
+@main
+struct ArcadePopoverSmoke {
+    @MainActor static func main() {
+        guard CommandLine.arguments.count == 2,
+              let url = URL(string: CommandLine.arguments[1]),
+              url.scheme == "http", url.host == "127.0.0.1",
+              url.user == nil, url.password == nil else {
+            fatalError("Usage: ArcadePopoverSmoke 'http://127.0.0.1:PORT/?mode=popover'")
+        }
+        let app = NSApplication.shared
+        app.setActivationPolicy(.regular)
+        let harness = Harness(url)
+        app.delegate = harness
+        app.run()
+    }
 }
-let app = NSApplication.shared
-app.setActivationPolicy(.regular)
-let harness = Harness(url)
-app.delegate = harness
-app.run()

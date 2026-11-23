@@ -109,7 +109,7 @@ jobs:
           set -euo pipefail
           smoke="$(mktemp -d)"
           trap 'if [[ -n "${server_pid:-}" ]]; then kill "$server_pid" 2>/dev/null || true; wait "$server_pid" 2>/dev/null || true; fi; rm -rf "$smoke"' EXIT
-          swiftc -swift-version 5 -framework AppKit -framework WebKit tests/ArcadePopoverSmoke.swift -o "$smoke/arcade-popover-smoke"
+          swiftc -parse-as-library -swift-version 5 -framework AppKit -framework WebKit tests/ArcadePopoverSmoke.swift -o "$smoke/arcade-popover-smoke"
           ditto -x -k "dist/$ZIP_NAME" "$smoke"
           mkdir "$smoke/home" "$smoke/state" "$smoke/codex"
           res="$smoke/TooToo.app/Contents/Resources"
