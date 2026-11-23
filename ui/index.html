@@ -16757,6 +16757,24 @@ const HOME_HOUSES = TOOTOO_REG.houses;
 const HOME_DECORS = TOOTOO_REG.decors;
 const HOME_WEARABLES = TOOTOO_REG.wearables;
 
+function isHomeItemPreviewAllowed(item) {
+  if (!item || item.secret) return false;
+  const order = HOME_GRADE_META[item.grade || "basic"]?.order;
+  const luxuryOrder = HOME_GRADE_META.luxury?.order ?? 3;
+  return Number.isFinite(order) && order < luxuryOrder;
+}
+
+function getHomePreviewItem(kind, id, hState, maxTier) {
+  if (kind !== "decor" && kind !== "wear") return null;
+  const item = kind === "decor" ? TOOTOO_REG.getDecor(id) : TOOTOO_REG.getWearable(id);
+  if (!isHomeItemPreviewAllowed(item)) return null;
+  const owned = kind === "decor" ? hState.owned_decor : hState.owned_wear;
+  if (owned.includes(id) || (kind === "wear" && maxTier < (item.minTier || 0))) return null;
+  if ((item.eventId || item.gachaOnly) && !TOOTOO_REG.isItemAvailable(item, getActiveLiveEvents())) return null;
+  return item;
+}
+
+
 let debugEventMock = null; // null (auto calendar) | "none" | "prog1024" | "blackfriday" | "christmas" | "springfest"
 let debugFridayMock = false;
 
@@ -18933,33 +18951,28 @@ function renderDecorLayerSvg(decor, allowedSlots, freshSlot = null, houseId = nu
 function getEffectiveStageViewState() {
   const real = getActiveHomeState();
   const pv = homeUiState.preview;
-  if (!pv || (pv.kind !== "decor" && pv.kind !== "wear")) {
+  const item = pv && getHomePreviewItem(pv.kind, pv.id, real, debugState.unlockAll ? 10 : getMaxUnlockedLevel());
+  if (!item) {
     return { houseId: real.house, decor: real.decor, wear: real.wear, isPreview: false, previewLabel: "" };
   }
   let houseId = real.house;
   const decor = { ...real.decor };
   const wear = { ...real.wear };
-  let previewLabel = "";
   if (pv.kind === "decor") {
-    const d = HOME_DECORS.find(x => x.id === pv.id);
-    if (d) {
-      decor[d.slot] = d.id;
-      previewLabel = `${d.icon} ${d.name}`;
-      // Only fall back to a house the user already owns or leases (never leak unowned houses!)
-      const curH = TOOTOO_REG.getHouse(houseId);
-      if (!curH || !curH.slots.includes(d.slot)) {
-        const ownedH = HOME_HOUSES.find(x =>
-          (real.owned_houses.includes(x.id) || TOOTOO_REG.isHouseLeased(x.id, real)) &&
-          x.slots && x.slots.includes(d.slot)
-        );
-        if (ownedH) houseId = ownedH.id;
-      }
+    decor[item.slot] = item.id;
+    // Only fall back to a house the user already owns or leases.
+    const curH = TOOTOO_REG.getHouse(houseId);
+    if (!curH || !curH.slots.includes(item.slot)) {
+      const ownedH = HOME_HOUSES.find(x =>
+        (real.owned_houses.includes(x.id) || TOOTOO_REG.isHouseLeased(x.id, real)) &&
+        x.slots && x.slots.includes(item.slot)
+      );
+      if (ownedH) houseId = ownedH.id;
     }
-  } else if (pv.kind === "wear") {
-    const w = HOME_WEARABLES.find(x => x.id === pv.id);
-    if (w) { wear[w.slot] = w.id; previewLabel = `${w.icon} ${w.name}`; }
+  } else {
+    wear[item.slot] = item.id;
   }
-  return { houseId, decor, wear, isPreview: true, previewLabel };
+  return { houseId, decor, wear, isPreview: true, previewLabel: `${item.icon} ${item.name}` };
 }
 
 // ---- Interactive Point-and-Walk Bunny + Side-Scrolling Camera Follow ----
@@ -20527,7 +20540,7 @@ function renderDecorCardHtml(it, hState, cs, maxTier, activeEvents) {
   const curHouse = TOOTOO_REG.getHouse(hState.house) || HOME_HOUSES[0];
   const slotUnlocked = curHouse.slots.includes(it.slot);
   const isPv = !!(homeUiState.preview && homeUiState.preview.kind === "decor" && homeUiState.preview.id === it.id);
-  const pvBtn = !locked && !owned
+  const pvBtn = !locked && !owned && isHomeItemPreviewAllowed(it)
     ? `<button class="hc-btn preview${isPv ? " on" : ""}" data-act="preview-decor" data-id="${it.id}" title="在顶部临时展开舞台预览效果">${isPv ? "收起" : "👁 试摆"}</button>`
     : "";
   const btnHtml = locked
@@ -20565,7 +20578,7 @@ function renderWearCardHtml(it, hState, cs, maxTier, activeEvents) {
   const priceCls = eff.price === 0 ? " free" : (!owned && !canAfford ? " unaffordable" : "");
   const tag = renderGradeBadgeHtml(it, equipped, owned, reqTier, 0, tierLocked);
   const isPv = !!(homeUiState.preview && homeUiState.preview.kind === "wear" && homeUiState.preview.id === it.id);
-  const pvBtn = !locked && !owned
+  const pvBtn = !locked && !owned && isHomeItemPreviewAllowed(it)
     ? `<button class="hc-btn preview${isPv ? " on" : ""}" data-act="preview-wear" data-id="${it.id}" title="在顶部临时展开舞台试穿预览">${isPv ? "收起" : "👁 试穿"}</button>`
     : "";
   const btnHtml = locked
@@ -20597,6 +20610,11 @@ function renderHomeShop() {
   const secStat = countOwnedSecrets(hState);
   const activeEvents = getActiveLiveEvents();
   const isShop = homeUiState.view === "shop";
+  const previewView = homeUiState.preview ? getEffectiveStageViewState() : null;
+  if (previewView && !previewView.isPreview) {
+    homeUiState.preview = null;
+    _lastHomeStageKey = "";
+  }
   const modalEl = document.getElementById("homeModal");
   if (modalEl) {
     modalEl.classList.toggle("is-shop", isShop);
@@ -20607,9 +20625,10 @@ function renderHomeShop() {
     titleEl.textContent = isShop ? "🛒 兔兔商城" : "🏠 TooToo 小家";
   }
   const pvBarLbl = document.getElementById("homePreviewLabel");
-  if (pvBarLbl && homeUiState.preview) {
-    const viewInfo = getEffectiveStageViewState();
-    pvBarLbl.textContent = `✨ 正在${homeUiState.preview.kind === "wear" ? "试穿" : "试摆"}预览：${viewInfo.previewLabel || ""}`;
+  if (pvBarLbl) {
+    pvBarLbl.textContent = homeUiState.preview
+      ? `✨ 正在${homeUiState.preview.kind === "wear" ? "试穿" : "试摆"}预览：${previewView.previewLabel}`
+      : "";
   }
 
   // Friday 14:00-18:00 "辛苦一周" Weekly Rental Coupon info
@@ -21436,6 +21455,15 @@ document.getElementById("homeShopGrid").addEventListener("click", (e) => {
   }
   if (act === "preview-decor" || act === "preview-wear") {
     const kind = act === "preview-decor" ? "decor" : "wear";
+    const maxTier = debugState.unlockAll ? 10 : getMaxUnlockedLevel();
+    if (!getHomePreviewItem(kind, id, getActiveHomeState(), maxTier)) {
+      if (homeUiState.preview) {
+        homeUiState.preview = null;
+        _lastHomeStageKey = "";
+        renderHomeModal();
+      }
+      return;
+    }
     const same = homeUiState.preview && homeUiState.preview.kind === kind && homeUiState.preview.id === id;
     homeUiState.preview = same ? null : { kind, id };
     _lastHomeStageKey = "";
