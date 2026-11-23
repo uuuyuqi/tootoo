@@ -30,8 +30,9 @@ def info(app, name, bundle, debug):
     subprocess.run(["/usr/bin/codesign", "--verify", "--deep", "--strict", app], check=True)
     strings = subprocess.check_output(["/usr/bin/strings", binary])
     html = (app / "Contents/Resources/ui/index.html").read_bytes()
-    for token in (b"setDebugTier", b"TooToo-Debug Keep Awake (AI Coding)"):
-        assert (token in strings) == debug, (token, name)
+    # Swift can encode short string constants as machine instructions.
+    assert (b"TooToo-Debug Keep Awake (AI Coding)" in strings) == debug, name
+    assert (b"TooToo Keep Awake (AI Coding)" in strings) != debug, name
     for token in (b'id="debugBar"', b'/*__TOOTOO_DEBUG_FLAG__*/true'):
         assert (token in html) == debug, (token, name)
     assert (app / "Contents/Resources/.release").exists() != debug
