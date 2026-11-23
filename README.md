@@ -13,7 +13,7 @@
 [![Release](https://img.shields.io/github/v/release/uuuyuqi/tootoo?style=flat-square&color=E54826)](https://github.com/uuuyuqi/tootoo/releases)
 [![Zero Dependencies](https://img.shields.io/badge/Dependencies-0%20(Python%20Stdlib%20%2B%20Swift)-0E8A78?style=flat-square)](#架构说明)
 [![AI Tools](https://img.shields.io/badge/AI%20Tools-16%2B%20Supported-2563EB?style=flat-square)](#支持-16-款本地-ai-编程工具)
-[![License: MIT](https://img.shields.io/badge/License-MIT-D97706?style=flat-square)](LICENSE)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-D97706?style=flat-square)](LICENSE)
 
 ```bash
 brew install --cask uuuyuqi/tap/tootoo
@@ -196,4 +196,4 @@ tootoo/
 
 ## License
 
-[MIT](LICENSE) © 2026 [uuuyuqi](https://github.com/uuuyuqi)
+[Apache License 2.0](LICENSE) © 2026 [uuuyuqi](https://github.com/uuuyuqi)
