@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  APP_COMMIT: a4edf13f6c266955e916fdff581f95403348e2e8
+  APP_COMMIT: 52d4021cd3f5c2abda582d2abe84f7132b85a427
   ZIP_NAME: TooToo-v0.2.1-macos-universal.zip
 
 jobs:
