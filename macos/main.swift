@@ -378,7 +378,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private var menuBarQuotaBar: String = "gem5h"
     private var currentTier: BunnyTierInfo = BUNNY_TIERS[0]
     private var lastMetrics: TodayMetrics?
+    #if TOOTOO_DEBUG
     private var debugTierOverride: Int? = nil
+    #endif
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -441,6 +443,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         proc.currentDirectoryURL = URL(fileURLWithPath: resPath)
         var env = ProcessInfo.processInfo.environment
         env["PYTHONUNBUFFERED"] = "1"
+        #if TOOTOO_DEBUG
+        env["TOOTOO_DEBUG"] = "1"
+        #else
+        env.removeValue(forKey: "TOOTOO_DEBUG")
+        #endif
         proc.environment = env
         proc.standardOutput = FileHandle.nullDevice
         proc.standardError = FileHandle.nullDevice
@@ -746,6 +753,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             if let mode = payload["mode"] as? String {
                 setMenuBarQuotaBar(mode)
             }
+        #if TOOTOO_DEBUG
         case "setDebugTier":
             if let lv = payload["level"] as? Int, (1...10).contains(lv) {
                 debugTierOverride = lv
@@ -760,6 +768,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
                     refreshMenuBarSummary()
                 }
             }
+        #endif
         default:
             break
         }
@@ -887,6 +896,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             guard let button = self.statusItem.button else { return }
             let hasText = !title.isEmpty
             let compactIcon = (!hasText && barPct != nil)
+            #if TOOTOO_DEBUG
             if let dbg = self.debugTierOverride {
                 let dbgTier = BUNNY_TIERS.first(where: { $0.level == dbg }) ?? tier
                 self.currentTier = dbgTier
@@ -895,6 +905,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
                 self.currentTier = tier
                 button.image = makeBunnyMenuBarIcon(tier: tier.level, compactForBar: compactIcon)
             }
+            #else
+            self.currentTier = tier
+            button.image = makeBunnyMenuBarIcon(tier: tier.level, compactForBar: compactIcon)
+            #endif
 
             if let pct = barPct {
                 let attrs: [NSAttributedString.Key: Any] = [

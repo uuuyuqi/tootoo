@@ -7275,6 +7275,7 @@
     </div>
   </section>
 
+  <!-- TOOTOO_DEV_DEBUG_START -->
   <!-- HIDDEN DEVELOPER DEBUG BAR -->
   <div class="dbg-bar" id="debugBar">
     <div class="dbg-head">
@@ -7313,6 +7314,7 @@
       <button class="dbg-mini-btn" id="dbgGodModeBtn" title="无限弹药+三管极速+护盾+无敌（不覆盖真实纪录）">🔥 无双: 关</button>
     </div>
   </div>
+  <!-- TOOTOO_DEV_DEBUG_END -->
 
   <!-- FOOTER -->
   <footer class="pop-footer">
@@ -7458,6 +7460,7 @@
 
     <div class="home-shop-grid" id="homeShopGrid"></div>
 
+    <!-- TOOTOO_DEV_DEBUG_START -->
     <div class="dbg-only dbg-inline" id="dbgHomePanel">
       <div class="dbg-inline-row">
         <span class="dbg-tag">🛠 小家沙盒(不改真实存档)</span>
@@ -7496,6 +7499,7 @@
         <button class="dbg-mini-btn" id="dbgFridayResetBtn">↺ 重置领券</button>
       </div>
     </div>
+    <!-- TOOTOO_DEV_DEBUG_END -->
   </div>
 </div>
 
@@ -7651,6 +7655,7 @@
     </div>
     <div class="gacha-bag-card" id="gachaBagCard"></div>
     <div class="alchemy-grid" id="alchemyGrid" style="margin-top:9px;margin-bottom:0"></div>
+    <!-- TOOTOO_DEV_DEBUG_START -->
     <div class="dbg-only dbg-inline" id="dbgGachaPanel">
       <div class="dbg-inline-row">
         <span class="dbg-tag">🛠 扭蛋沙盒(不扣真实萝卜币)</span>
@@ -7668,6 +7673,7 @@
         <button class="dbg-mini-btn" data-rarity="N">📄 必普通</button>
       </div>
     </div>
+    <!-- TOOTOO_DEV_DEBUG_END -->
   </div>
 </div>
 
@@ -7727,6 +7733,7 @@
         </div>
       </div>
       <div class="adv-prop-bar" id="blPropBar"></div>
+      <!-- TOOTOO_DEV_DEBUG_START -->
       <div class="dbg-only dbg-inline">
         <div class="dbg-inline-row">
           <span class="dbg-tag">🛠 打Bug调试:</span>
@@ -7748,6 +7755,7 @@
           <button class="dbg-mini-btn" id="dbgBlBossPhBtn">👻 幽灵内存体</button>
         </div>
       </div>
+      <!-- TOOTOO_DEV_DEBUG_END -->
     </div>
 
     <!-- GAME 2: TOKEN RAIN CATCHER -->
@@ -7765,6 +7773,7 @@
         </div>
       </div>
       <div class="adv-prop-bar" id="rainPropBar"></div>
+      <!-- TOOTOO_DEV_DEBUG_START -->
       <div class="dbg-only dbg-inline">
         <div class="dbg-inline-row">
           <span class="dbg-tag">🛠 Token雨调试:</span>
@@ -7783,6 +7792,7 @@
           <button class="dbg-mini-btn" id="dbgRainTimeBtn">⏱ +15s</button>
         </div>
       </div>
+      <!-- TOOTOO_DEV_DEBUG_END -->
     </div>
   </div>
 </div>
@@ -7857,6 +7867,8 @@
 <script src="/ui/tootoo_art_items.js"></script>
 <script src="/ui/tootoo_world_engine.js"></script>
 <script>
+const TOOTOO_DEV_DEBUG_BUILD = /*__TOOTOO_DEBUG_FLAG__*/true;
+const DEV_DEBUG_ENABLED = TOOTOO_DEV_DEBUG_BUILD && window.__TOOTOO_DEV_DEBUG__ !== false;
 const params = new URLSearchParams(window.location.search);
 const isPopover = params.get("mode") === "popover";
 if (isPopover) {
@@ -8197,6 +8209,7 @@ const debugState = {
 };
 
 function syncDebugUi() {
+  if (!DEV_DEBUG_ENABLED) return;
   const godTxt = debugState.godMode ? "🔥 无双: 开" : "🔥 无双: 关";
   const b1 = document.getElementById("dbgGodModeBtn");
   const b2 = document.getElementById("dbgBlGodBtn");
@@ -8245,6 +8258,7 @@ function getEffectiveTodayTokens() {
 }
 
 function applyDebugOverride(lv) {
+  if (!DEV_DEBUG_ENABLED) return;
   debugState.simTokens = null;
   debugState.level = (lv >= 1 && lv <= 10) ? lv : null;
   document.querySelectorAll("#dbgLvChips button").forEach(b => {
@@ -11343,6 +11357,7 @@ function resetAllDebugState() {
 }
 
 function toggleDebugBar(forceState) {
+  if (!DEV_DEBUG_ENABLED) return;
   const bar = document.getElementById("debugBar");
   if (!bar) return;
   const open = forceState != null ? forceState : !bar.classList.contains("open");
@@ -11373,28 +11388,32 @@ function toggleDebugBar(forceState) {
   }
 }
 
-// Secret combo only: Control + Option + Command + D (use e.code since Option+D produces '∂' on macOS)
-document.addEventListener("keydown", (e) => {
-  if (e.ctrlKey && e.altKey && e.metaKey && !e.shiftKey && e.code === "KeyD") {
-    e.preventDefault();
-    toggleDebugBar();
-  }
-});
-
-document.querySelectorAll("#dbgLvChips button").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const lv = Number(btn.dataset.lv);
-    applyDebugOverride(lv);
-    if (lv >= 1) hopBunny();
+/* TOOTOO_DEV_DEBUG_JS_START */
+if (DEV_DEBUG_ENABLED) {
+  // Secret combo only: Control + Option + Command + D (use e.code since Option+D produces '∂' on macOS)
+  document.addEventListener("keydown", (e) => {
+    if (e.ctrlKey && e.altKey && e.metaKey && !e.shiftKey && e.code === "KeyD") {
+      e.preventDefault();
+      toggleDebugBar();
+    }
   });
-});
 
-document.getElementById("dbgFxBtn").addEventListener("click", () => hopBunny());
-document.getElementById("dbgFeedBtn").addEventListener("click", () => {
-  if (window.scrollY > 12) window.scrollTo({ top: 0, behavior: "smooth" });
-  setTimeout(() => triggerLiveTokenFeed(248500), window.scrollY > 12 ? 260 : 40);
-});
-document.getElementById("dbgPatrolBtn").addEventListener("click", () => summonBunnyPatrol());
+  document.querySelectorAll("#dbgLvChips button").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const lv = Number(btn.dataset.lv);
+      applyDebugOverride(lv);
+      if (lv >= 1) hopBunny();
+    });
+  });
+
+  document.getElementById("dbgFxBtn")?.addEventListener("click", () => hopBunny());
+  document.getElementById("dbgFeedBtn")?.addEventListener("click", () => {
+    if (window.scrollY > 12) window.scrollTo({ top: 0, behavior: "smooth" });
+    setTimeout(() => triggerLiveTokenFeed(248500), window.scrollY > 12 ? 260 : 40);
+  });
+  document.getElementById("dbgPatrolBtn")?.addEventListener("click", () => summonBunnyPatrol());
+}
+/* TOOTOO_DEV_DEBUG_JS_END */
 
 // ============================================================
 // WAVE 2: PURE SYNTH SFX + CARD EASTER EGGS + STARDUST + PATROL + ARCADE
@@ -16180,71 +16199,17 @@ const gachaDomeSim = (() => {
   return { burstShake, start };
 })();
 
+/* TOOTOO_DEV_DEBUG_JS_START */
 let dbgLevelUpTimer = null;
-document.getElementById("dbgLevelUpBtn").addEventListener("click", () => {
-  if (dbgLevelUpTimer) clearTimeout(dbgLevelUpTimer);
-  const curReal = getBunnyTier((state.data && state.data.today_tokens) || 0);
-  const targetLv = debugState.level != null ? debugState.level : Math.min(10, curReal.level + 1);
-  const prevLv = Math.max(1, targetLv - 1);
-  const targetTier = BUNNY_TIERS.find(t => t.level === targetLv) || BUNNY_TIERS[0];
-
-  // Scroll to top so the user immediately sees the full evolution sequence
-  if (window.scrollY > 12) {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  // Stage 1: show previous tier surging XP bar to 100%, then morph & celebrate!
-  if (targetLv > 1) {
-    applyDebugOverride(prevLv);
-    const xpFill = document.getElementById("xpFill");
-    if (xpFill) xpFill.style.width = "100%";
-  }
-  const delay = window.scrollY > 12 ? 320 : 220;
-  dbgLevelUpTimer = setTimeout(() => {
-    applyDebugOverride(targetLv);
-    const st = getStarRankInfo(getEffectiveTodayTokens());
-    celebrateLevelUp(targetTier, { stars: st.stars });
-    dbgLevelUpTimer = null;
-  }, delay);
-});
-
-document.getElementById("dbgStarUpBtn").addEventListener("click", () => {
-  if (window.scrollY > 12) window.scrollTo({ top: 0, behavior: "smooth" });
-  const curTok = getEffectiveTodayTokens();
-  const nextStars = Math.max(1, getStarRankInfo(curTok).stars + 1);
-  // Advance simulated tokens past the next 5B star threshold so nameplate, XP bar, and gallery ALL update live!
-  const nextTok = nextStars * STAR_STEP_TOKENS + 0.35e9;
-  const nextTier = getBunnyTier(nextTok);
-  debugState.level = nextTier.level;
-  debugState.simTokens = nextTok;
-  document.querySelectorAll("#dbgLvChips button").forEach(b => {
-    b.classList.toggle("on", Number(b.dataset.lv) === nextTier.level);
-  });
-  renderBunnyState(nextTok);
-  if (document.getElementById("evoModal").classList.contains("open")) {
-    renderEvoModal();
-  }
-  postNative("setDebugTier", { level: nextTier.level });
-  celebrateLevelUp(nextTier, { isStarOnly: true, stars: nextStars });
-});
-
-document.getElementById("dbgUnlockBtn").addEventListener("click", (e) => {
-  debugState.unlockAll = !debugState.unlockAll;
-  e.currentTarget.textContent = debugState.unlockAll ? "全解锁: 开" : "全解锁: 关";
-  if (document.getElementById("evoModal").classList.contains("open")) renderEvoModal();
-});
-
-document.getElementById("dbgCloseBtn").addEventListener("click", () => {
-  toggleDebugBar(false);
-});
-
 // ---- Debug Bar: Gacha & Arcade Rare-Item / Sandbox Controls ----
 function addDebugGachaCoins(n = 10) {
+  if (!DEV_DEBUG_ENABLED) return;
   debugState.gachaCoins += n;
   renderGachaMeta();
   playSfx("gold");
 }
 function toggleDebugGodMode() {
+  if (!DEV_DEBUG_ENABLED) return;
   debugState.godMode = !debugState.godMode;
   if (blasterState && blasterState.running && debugState.godMode) {
     blasterState.debugTainted = true;
@@ -16260,41 +16225,8 @@ function toggleDebugGodMode() {
   syncDebugUi();
   playSfx("cache");
 }
-
-document.getElementById("dbgDropEggBtn").addEventListener("click", () => spawnPatrolCapsule());
-document.getElementById("dbgAddCoinsBtn").addEventListener("click", () => addDebugGachaCoins(10));
-document.getElementById("dbgOpenGachaBtn").addEventListener("click", () => openGachaModal());
-document.getElementById("dbgOpenArcadeBtn").addEventListener("click", () => openArcadeModal());
-document.getElementById("dbgGodModeBtn").addEventListener("click", toggleDebugGodMode);
-
-// Gacha modal inline debug controls
-document.getElementById("dbgGachaPlusBtn").addEventListener("click", () => addDebugGachaCoins(10));
-document.getElementById("dbgGachaResetClaimBtn").addEventListener("click", () => {
-  debugState.carrotClaimed = 0;
-  renderGachaMeta();
-  playSfx("token");
-});
-document.getElementById("dbgGachaResetCollBtn").addEventListener("click", () => {
-  debugState.gachaColl = [];
-  if (debugState.active) {
-    const h = cloneHomeState(getActiveHomeState());
-    h.owned_wear = h.owned_wear.filter(id => !GACHA_EXCLUSIVE_IDS.includes(id));
-    h.owned_decor = h.owned_decor.filter(id => !GACHA_EXCLUSIVE_IDS.includes(id));
-    h.owned_backdrops = ["paper"];
-    h.active_backdrop = "paper";
-    saveActiveHomeState(h, 0);
-  }
-  renderGachaMeta();
-  playSfx("token");
-});
-document.querySelectorAll("#dbgGachaForceChips button[data-rarity]").forEach(btn => {
-  btn.addEventListener("click", () => {
-    debugState.gachaForce = btn.dataset.rarity;
-    syncDebugUi();
-  });
-});
-
 function grantDebugAllPropsAndBg(unlockBgOnly = false) {
+  if (!DEV_DEBUG_ENABLED) return;
   const h = cloneHomeState(getActiveHomeState());
   if (unlockBgOnly) {
     h.owned_backdrops = ADVENTURE_BACKDROPS.map(b => b.id);
@@ -16311,144 +16243,237 @@ function grantDebugAllPropsAndBg(unlockBgOnly = false) {
   playSfx("gold");
 }
 
-// Blaster inline debug item & Boss spawners
-document.getElementById("dbgBlGodBtn").addEventListener("click", toggleDebugGodMode);
-document.getElementById("dbgBlHordeBtn")?.addEventListener("click", () => {
-  if (!blasterState || !blasterState.running) startBlasterGame();
-  blasterState.debugTainted = true;
-  triggerBlasterHorde(blasterState, 1 + Math.floor(blasterState.elapsed / 10));
-});
-document.getElementById("dbgBlBerserkBtn")?.addEventListener("click", () => {
-  if (!blasterState || !blasterState.running) startBlasterGame();
-  blasterState.debugTainted = true;
-  triggerBlasterBerserk(true);
-});
-document.getElementById("dbgBlAddPropsBtn")?.addEventListener("click", () => grantDebugAllPropsAndBg(false));
-document.getElementById("dbgBlAllBgBtn")?.addEventListener("click", () => grantDebugAllPropsAndBg(true));
-document.getElementById("dbgBlLootBtn")?.addEventListener("click", () => {
-  if (!blasterState || !blasterState.running) startBlasterGame();
-  const s = blasterState;
-  s.debugTainted = true;
-  s.pickups.push({ x: Math.max(28, Math.min(s.w - 28, s.x)), y: 12, vy: 82, kind: "gacha_box", amt: 1 });
-  playSfx("ssr");
-});
-document.getElementById("dbgBlBossBtn").addEventListener("click", () => {
-  if (!blasterState || !blasterState.running) startBlasterGame();
-  blasterState.debugTainted = true;
-  spawnSpecialBoss(blasterState, "boss_oom", 2);
-});
-document.getElementById("dbgBlBossLoopBtn")?.addEventListener("click", () => {
-  if (!blasterState || !blasterState.running) startBlasterGame();
-  blasterState.debugTainted = true;
-  spawnSpecialBoss(blasterState, "boss_loop", 2);
-});
-document.getElementById("dbgBlBossFwBtn")?.addEventListener("click", () => {
-  if (!blasterState || !blasterState.running) startBlasterGame();
-  blasterState.debugTainted = true;
-  spawnSpecialBoss(blasterState, "boss_firewall", 2);
-});
-document.getElementById("dbgBlBossPhBtn")?.addEventListener("click", () => {
-  if (!blasterState || !blasterState.running) startBlasterGame();
-  blasterState.debugTainted = true;
-  spawnSpecialBoss(blasterState, "boss_phantom", 2);
-});
-document.getElementById("dbgBlAmmoBtn").addEventListener("click", () => {
-  if (!blasterState || !blasterState.running) startBlasterGame();
-  const s = blasterState;
-  s.debugTainted = true;
-  s.pickups.push({ x: Math.max(28, Math.min(s.w - 28, s.x)), y: 12, vy: 110, kind: "ammo", amt: 25 });
-  playSfx("cache");
-});
-document.getElementById("dbgBlOverclockBtn").addEventListener("click", () => {
-  if (!blasterState || !blasterState.running) startBlasterGame();
-  const s = blasterState;
-  s.debugTainted = true;
-  s.pickups.push({ x: Math.max(28, Math.min(s.w - 28, s.x)), y: 12, vy: 110, kind: "overclock", amt: 0 });
-  playSfx("gold");
-});
-document.getElementById("dbgBlNovaBtn").addEventListener("click", () => {
-  if (!blasterState || !blasterState.running) startBlasterGame();
-  triggerBlasterNova(true);
-});
+if (DEV_DEBUG_ENABLED) {
+  document.getElementById("dbgLevelUpBtn")?.addEventListener("click", () => {
+    if (dbgLevelUpTimer) clearTimeout(dbgLevelUpTimer);
+    const curReal = getBunnyTier((state.data && state.data.today_tokens) || 0);
+    const targetLv = debugState.level != null ? debugState.level : Math.min(10, curReal.level + 1);
+    const prevLv = Math.max(1, targetLv - 1);
+    const targetTier = BUNNY_TIERS.find(t => t.level === targetLv) || BUNNY_TIERS[0];
 
-// Rain inline debug item spawners
-document.getElementById("dbgRainWaveBtn")?.addEventListener("click", () => {
-  if (!rainState || !rainState.running) startRainGame();
-  rainState.debugTainted = true;
-  triggerRainWave(rainState, 6.5, "🌊 [调试] 雨水浪潮");
-});
-document.getElementById("dbgRainIceBtn")?.addEventListener("click", () => {
-  if (!rainState || !rainState.running) startRainGame();
-  const s = rainState; s.debugTainted = true;
-  s.items.push({ kind: "ice_banana", x: Math.max(24, Math.min(s.w - 24, s.x)), y: -8, vy: 130, vx: 0, r: 13, rot: 0 });
-  playSfx("freeze");
-});
-document.getElementById("dbgRainDoubleBtn")?.addEventListener("click", () => {
-  if (!rainState || !rainState.running) startRainGame();
-  const s = rainState; s.debugTainted = true;
-  s.items.push({ kind: "double_banana", x: Math.max(24, Math.min(s.w - 24, s.x)), y: -8, vy: 130, vx: 0, r: 13, rot: 0 });
-  playSfx("gold");
-});
-document.getElementById("dbgRainPomBtn")?.addEventListener("click", () => {
-  if (!rainState || !rainState.running) startRainGame();
-  const s = rainState; s.debugTainted = true;
-  s.items.push({ kind: "pomegranate", x: Math.max(24, Math.min(s.w - 24, s.x)), y: -8, vy: 130, vx: 0, r: 13, rot: 0 });
-  playSfx("pomegranate");
-});
-document.getElementById("dbgRainMagBtn")?.addEventListener("click", () => {
-  if (!rainState || !rainState.running) startRainGame();
-  const s = rainState; s.debugTainted = true;
-  s.items.push({ kind: "magnet_orb", x: Math.max(24, Math.min(s.w - 24, s.x)), y: -8, vy: 135, vx: 0, r: 11, rot: 0 });
-  playSfx("gold");
-});
-document.getElementById("dbgRainAddPropsBtn")?.addEventListener("click", () => grantDebugAllPropsAndBg(false));
-document.getElementById("dbgRainAllBgBtn")?.addEventListener("click", () => grantDebugAllPropsAndBg(true));
-document.getElementById("dbgRainLootBtn")?.addEventListener("click", () => {
-  if (!rainState || !rainState.running) startRainGame();
-  const s = rainState;
-  s.debugTainted = true;
-  s.items.push({ kind: "gacha_box", x: Math.max(24, Math.min(s.w - 24, s.x)), y: -8, vy: 135, r: 12.5, rot: 0, vx: 0 });
-  playSfx("ssr");
-});
-document.getElementById("dbgRainShieldBtn").addEventListener("click", () => {
-  if (!rainState || !rainState.running) startRainGame();
-  const s = rainState;
-  s.debugTainted = true;
-  s.shields = Math.min(5, s.shields + 1);
-  s.floats.push({ x: s.x, y: s.h - 46, txt: `🛡️ 护盾 +1 (现有 ×${s.shields})`, col: "#0E8A78", life: 0.9 });
-  playSfx("cache");
-});
-document.getElementById("dbgRainGoldBtn").addEventListener("click", () => {
-  if (!rainState || !rainState.running) startRainGame();
-  const s = rainState;
-  s.debugTainted = true;
-  s.items.push({ kind: "gold", x: Math.max(24, Math.min(s.w - 24, s.x)), y: -8, vy: 165, r: 11, rot: 0 });
-  playSfx("gold");
-});
-document.getElementById("dbgRainRainbowBtn").addEventListener("click", () => {
-  if (!rainState || !rainState.running) startRainGame();
-  const s = rainState;
-  s.debugTainted = true;
-  s.items.push({ kind: "rainbow", x: Math.max(24, Math.min(s.w - 24, s.x)), y: -8, vy: 165, r: 12.5, rot: 0 });
-  playSfx("ssr");
-});
-document.getElementById("dbgRainBombBtn").addEventListener("click", () => {
-  if (!rainState || !rainState.running) startRainGame();
-  const s = rainState;
-  s.debugTainted = true;
-  s.items.push({ kind: "bomb", x: Math.max(24, Math.min(s.w - 24, s.x)), y: -8, vy: 175, r: 11, rot: 0 });
-  playSfx("bomb");
-});
-document.getElementById("dbgRainTimeBtn").addEventListener("click", () => {
-  if (!rainState || !rainState.running) startRainGame();
-  const s = rainState;
-  s.debugTainted = true;
-  s.timeLeft += 15;
-  s.floats.push({ x: s.w / 2, y: 34, txt: "⏱ [调试] 时间 +15s", col: "#0E8A78", life: 0.9 });
-  playSfx("token");
-});
+    // Scroll to top so the user immediately sees the full evolution sequence
+    if (window.scrollY > 12) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
 
-document.getElementById("dbgGachaItemsBtn")?.addEventListener("click", () => grantDebugAllPropsAndBg(false));
+    // Stage 1: show previous tier surging XP bar to 100%, then morph & celebrate!
+    if (targetLv > 1) {
+      applyDebugOverride(prevLv);
+      const xpFill = document.getElementById("xpFill");
+      if (xpFill) xpFill.style.width = "100%";
+    }
+    const delay = window.scrollY > 12 ? 320 : 220;
+    dbgLevelUpTimer = setTimeout(() => {
+      applyDebugOverride(targetLv);
+      const st = getStarRankInfo(getEffectiveTodayTokens());
+      celebrateLevelUp(targetTier, { stars: st.stars });
+      dbgLevelUpTimer = null;
+    }, delay);
+  });
+
+  document.getElementById("dbgStarUpBtn")?.addEventListener("click", () => {
+    if (window.scrollY > 12) window.scrollTo({ top: 0, behavior: "smooth" });
+    const curTok = getEffectiveTodayTokens();
+    const nextStars = Math.max(1, getStarRankInfo(curTok).stars + 1);
+    // Advance simulated tokens past the next 5B star threshold so nameplate, XP bar, and gallery ALL update live!
+    const nextTok = nextStars * STAR_STEP_TOKENS + 0.35e9;
+    const nextTier = getBunnyTier(nextTok);
+    debugState.level = nextTier.level;
+    debugState.simTokens = nextTok;
+    document.querySelectorAll("#dbgLvChips button").forEach(b => {
+      b.classList.toggle("on", Number(b.dataset.lv) === nextTier.level);
+    });
+    renderBunnyState(nextTok);
+    if (document.getElementById("evoModal").classList.contains("open")) {
+      renderEvoModal();
+    }
+    postNative("setDebugTier", { level: nextTier.level });
+    celebrateLevelUp(nextTier, { isStarOnly: true, stars: nextStars });
+  });
+
+  document.getElementById("dbgUnlockBtn")?.addEventListener("click", (e) => {
+    debugState.unlockAll = !debugState.unlockAll;
+    e.currentTarget.textContent = debugState.unlockAll ? "全解锁: 开" : "全解锁: 关";
+    if (document.getElementById("evoModal").classList.contains("open")) renderEvoModal();
+  });
+
+  document.getElementById("dbgCloseBtn")?.addEventListener("click", () => {
+    toggleDebugBar(false);
+  });
+
+  document.getElementById("dbgDropEggBtn")?.addEventListener("click", () => spawnPatrolCapsule());
+  document.getElementById("dbgAddCoinsBtn")?.addEventListener("click", () => addDebugGachaCoins(10));
+  document.getElementById("dbgOpenGachaBtn")?.addEventListener("click", () => openGachaModal());
+  document.getElementById("dbgOpenArcadeBtn")?.addEventListener("click", () => openArcadeModal());
+  document.getElementById("dbgGodModeBtn")?.addEventListener("click", toggleDebugGodMode);
+
+  // Gacha modal inline debug controls
+  document.getElementById("dbgGachaPlusBtn")?.addEventListener("click", () => addDebugGachaCoins(10));
+  document.getElementById("dbgGachaResetClaimBtn")?.addEventListener("click", () => {
+    debugState.carrotClaimed = 0;
+    renderGachaMeta();
+    playSfx("token");
+  });
+  document.getElementById("dbgGachaResetCollBtn")?.addEventListener("click", () => {
+    debugState.gachaColl = [];
+    if (debugState.active) {
+      const h = cloneHomeState(getActiveHomeState());
+      h.owned_wear = h.owned_wear.filter(id => !GACHA_EXCLUSIVE_IDS.includes(id));
+      h.owned_decor = h.owned_decor.filter(id => !GACHA_EXCLUSIVE_IDS.includes(id));
+      h.owned_backdrops = ["paper"];
+      h.active_backdrop = "paper";
+      saveActiveHomeState(h, 0);
+    }
+    renderGachaMeta();
+    playSfx("token");
+  });
+  document.querySelectorAll("#dbgGachaForceChips button[data-rarity]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      debugState.gachaForce = btn.dataset.rarity;
+      syncDebugUi();
+    });
+  });
+
+  // Blaster inline debug item & Boss spawners
+  document.getElementById("dbgBlGodBtn")?.addEventListener("click", toggleDebugGodMode);
+  document.getElementById("dbgBlHordeBtn")?.addEventListener("click", () => {
+    if (!blasterState || !blasterState.running) startBlasterGame();
+    blasterState.debugTainted = true;
+    triggerBlasterHorde(blasterState, 1 + Math.floor(blasterState.elapsed / 10));
+  });
+  document.getElementById("dbgBlBerserkBtn")?.addEventListener("click", () => {
+    if (!blasterState || !blasterState.running) startBlasterGame();
+    blasterState.debugTainted = true;
+    triggerBlasterBerserk(true);
+  });
+  document.getElementById("dbgBlAddPropsBtn")?.addEventListener("click", () => grantDebugAllPropsAndBg(false));
+  document.getElementById("dbgBlAllBgBtn")?.addEventListener("click", () => grantDebugAllPropsAndBg(true));
+  document.getElementById("dbgBlLootBtn")?.addEventListener("click", () => {
+    if (!blasterState || !blasterState.running) startBlasterGame();
+    const s = blasterState;
+    s.debugTainted = true;
+    s.pickups.push({ x: Math.max(28, Math.min(s.w - 28, s.x)), y: 12, vy: 82, kind: "gacha_box", amt: 1 });
+    playSfx("ssr");
+  });
+  document.getElementById("dbgBlBossBtn")?.addEventListener("click", () => {
+    if (!blasterState || !blasterState.running) startBlasterGame();
+    blasterState.debugTainted = true;
+    spawnSpecialBoss(blasterState, "boss_oom", 2);
+  });
+  document.getElementById("dbgBlBossLoopBtn")?.addEventListener("click", () => {
+    if (!blasterState || !blasterState.running) startBlasterGame();
+    blasterState.debugTainted = true;
+    spawnSpecialBoss(blasterState, "boss_loop", 2);
+  });
+  document.getElementById("dbgBlBossFwBtn")?.addEventListener("click", () => {
+    if (!blasterState || !blasterState.running) startBlasterGame();
+    blasterState.debugTainted = true;
+    spawnSpecialBoss(blasterState, "boss_firewall", 2);
+  });
+  document.getElementById("dbgBlBossPhBtn")?.addEventListener("click", () => {
+    if (!blasterState || !blasterState.running) startBlasterGame();
+    blasterState.debugTainted = true;
+    spawnSpecialBoss(blasterState, "boss_phantom", 2);
+  });
+  document.getElementById("dbgBlAmmoBtn")?.addEventListener("click", () => {
+    if (!blasterState || !blasterState.running) startBlasterGame();
+    const s = blasterState;
+    s.debugTainted = true;
+    s.pickups.push({ x: Math.max(28, Math.min(s.w - 28, s.x)), y: 12, vy: 110, kind: "ammo", amt: 25 });
+    playSfx("cache");
+  });
+  document.getElementById("dbgBlOverclockBtn")?.addEventListener("click", () => {
+    if (!blasterState || !blasterState.running) startBlasterGame();
+    const s = blasterState;
+    s.debugTainted = true;
+    s.pickups.push({ x: Math.max(28, Math.min(s.w - 28, s.x)), y: 12, vy: 110, kind: "overclock", amt: 0 });
+    playSfx("gold");
+  });
+  document.getElementById("dbgBlNovaBtn")?.addEventListener("click", () => {
+    if (!blasterState || !blasterState.running) startBlasterGame();
+    triggerBlasterNova(true);
+  });
+
+  // Rain inline debug item spawners
+  document.getElementById("dbgRainWaveBtn")?.addEventListener("click", () => {
+    if (!rainState || !rainState.running) startRainGame();
+    rainState.debugTainted = true;
+    triggerRainWave(rainState, 6.5, "🌊 [调试] 雨水浪潮");
+  });
+  document.getElementById("dbgRainIceBtn")?.addEventListener("click", () => {
+    if (!rainState || !rainState.running) startRainGame();
+    const s = rainState; s.debugTainted = true;
+    s.items.push({ kind: "ice_banana", x: Math.max(24, Math.min(s.w - 24, s.x)), y: -8, vy: 130, vx: 0, r: 13, rot: 0 });
+    playSfx("freeze");
+  });
+  document.getElementById("dbgRainDoubleBtn")?.addEventListener("click", () => {
+    if (!rainState || !rainState.running) startRainGame();
+    const s = rainState; s.debugTainted = true;
+    s.items.push({ kind: "double_banana", x: Math.max(24, Math.min(s.w - 24, s.x)), y: -8, vy: 130, vx: 0, r: 13, rot: 0 });
+    playSfx("gold");
+  });
+  document.getElementById("dbgRainPomBtn")?.addEventListener("click", () => {
+    if (!rainState || !rainState.running) startRainGame();
+    const s = rainState; s.debugTainted = true;
+    s.items.push({ kind: "pomegranate", x: Math.max(24, Math.min(s.w - 24, s.x)), y: -8, vy: 130, vx: 0, r: 13, rot: 0 });
+    playSfx("pomegranate");
+  });
+  document.getElementById("dbgRainMagBtn")?.addEventListener("click", () => {
+    if (!rainState || !rainState.running) startRainGame();
+    const s = rainState; s.debugTainted = true;
+    s.items.push({ kind: "magnet_orb", x: Math.max(24, Math.min(s.w - 24, s.x)), y: -8, vy: 135, vx: 0, r: 11, rot: 0 });
+    playSfx("gold");
+  });
+  document.getElementById("dbgRainAddPropsBtn")?.addEventListener("click", () => grantDebugAllPropsAndBg(false));
+  document.getElementById("dbgRainAllBgBtn")?.addEventListener("click", () => grantDebugAllPropsAndBg(true));
+  document.getElementById("dbgRainLootBtn")?.addEventListener("click", () => {
+    if (!rainState || !rainState.running) startRainGame();
+    const s = rainState;
+    s.debugTainted = true;
+    s.items.push({ kind: "gacha_box", x: Math.max(24, Math.min(s.w - 24, s.x)), y: -8, vy: 135, r: 12.5, rot: 0, vx: 0 });
+    playSfx("ssr");
+  });
+  document.getElementById("dbgRainShieldBtn")?.addEventListener("click", () => {
+    if (!rainState || !rainState.running) startRainGame();
+    const s = rainState;
+    s.debugTainted = true;
+    s.shields = Math.min(5, s.shields + 1);
+    s.floats.push({ x: s.x, y: s.h - 46, txt: `🛡️ 护盾 +1 (现有 ×${s.shields})`, col: "#0E8A78", life: 0.9 });
+    playSfx("cache");
+  });
+  document.getElementById("dbgRainGoldBtn")?.addEventListener("click", () => {
+    if (!rainState || !rainState.running) startRainGame();
+    const s = rainState;
+    s.debugTainted = true;
+    s.items.push({ kind: "gold", x: Math.max(24, Math.min(s.w - 24, s.x)), y: -8, vy: 165, r: 11, rot: 0 });
+    playSfx("gold");
+  });
+  document.getElementById("dbgRainRainbowBtn")?.addEventListener("click", () => {
+    if (!rainState || !rainState.running) startRainGame();
+    const s = rainState;
+    s.debugTainted = true;
+    s.items.push({ kind: "rainbow", x: Math.max(24, Math.min(s.w - 24, s.x)), y: -8, vy: 165, r: 12.5, rot: 0 });
+    playSfx("ssr");
+  });
+  document.getElementById("dbgRainBombBtn")?.addEventListener("click", () => {
+    if (!rainState || !rainState.running) startRainGame();
+    const s = rainState;
+    s.debugTainted = true;
+    s.items.push({ kind: "bomb", x: Math.max(24, Math.min(s.w - 24, s.x)), y: -8, vy: 175, r: 11, rot: 0 });
+    playSfx("bomb");
+  });
+  document.getElementById("dbgRainTimeBtn")?.addEventListener("click", () => {
+    if (!rainState || !rainState.running) startRainGame();
+    const s = rainState;
+    s.debugTainted = true;
+    s.timeLeft += 15;
+    s.floats.push({ x: s.w / 2, y: 34, txt: "⏱ [调试] 时间 +15s", col: "#0E8A78", life: 0.9 });
+    playSfx("token");
+  });
+
+  document.getElementById("dbgGachaItemsBtn")?.addEventListener("click", () => grantDebugAllPropsAndBg(false));
+}
+/* TOOTOO_DEV_DEBUG_JS_END */
 
 // ============================================================
 // DAILY CHECK-IN (+1 🥕) + TOOTOO COZY HOME STUDIO (HOUSES / DECOR / WARDROBE / HIDDEN EDITIONS)
@@ -21416,77 +21441,81 @@ document.getElementById("homeShopGrid").addEventListener("click", (e) => {
   }
 });
 
+/* TOOTOO_DEV_DEBUG_JS_START */
 // Debug shortcuts for Home Studio
-document.getElementById("dbgAddBigCoinsBtn").addEventListener("click", () => addDebugGachaCoins(2000));
-document.getElementById("dbgOpenHomeBtn").addEventListener("click", openHomeModal);
-document.getElementById("dbgHomePlus500Btn").addEventListener("click", () => {
-  addDebugGachaCoins(2000);
-  renderHomeShop();
-});
-document.getElementById("dbgHomePlus3000Btn").addEventListener("click", () => {
-  addDebugGachaCoins(20000);
-  renderHomeShop();
-});
-document.getElementById("dbgHomeUnlockAllBtn").addEventListener("click", () => {
-  debugState.unlockAll = true;
-  const ub = document.getElementById("dbgUnlockBtn");
-  if (ub) ub.textContent = "全解锁: 开";
-  const h = cloneHomeState(getActiveHomeState());
-  h.owned_houses = HOME_HOUSES.map(x => x.id);
-  h.owned_decor = HOME_DECORS.map(x => x.id);
-  h.owned_wear = HOME_WEARABLES.map(x => x.id);
-  saveActiveHomeState(h, 0);
-  renderHomeModal();
-  showStageBanner("✦ 沙盒全房/全装潢/全衣橱+9款隐藏+节日限定已解锁！", true);
-  playSfx("mythic");
-});
-document.getElementById("dbgHomeResetCheckinBtn").addEventListener("click", () => {
-  debugState.checkinDay = "";
-  renderCheckinUi();
-  playSfx("token");
-});
-document.querySelectorAll("#dbgEventChips button[data-ev]").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const ev = btn.dataset.ev;
-    debugEventMock = ev === "auto" ? null : ev;
-    document.querySelectorAll("#dbgEventChips button[data-ev]").forEach(b => b.classList.toggle("on", b === btn));
+if (DEV_DEBUG_ENABLED) {
+  document.getElementById("dbgAddBigCoinsBtn")?.addEventListener("click", () => addDebugGachaCoins(2000));
+  document.getElementById("dbgOpenHomeBtn")?.addEventListener("click", openHomeModal);
+  document.getElementById("dbgHomePlus500Btn")?.addEventListener("click", () => {
+    addDebugGachaCoins(2000);
+    renderHomeShop();
+  });
+  document.getElementById("dbgHomePlus3000Btn")?.addEventListener("click", () => {
+    addDebugGachaCoins(20000);
+    renderHomeShop();
+  });
+  document.getElementById("dbgHomeUnlockAllBtn")?.addEventListener("click", () => {
+    debugState.unlockAll = true;
+    const ub = document.getElementById("dbgUnlockBtn");
+    if (ub) ub.textContent = "全解锁: 开";
+    const h = cloneHomeState(getActiveHomeState());
+    h.owned_houses = HOME_HOUSES.map(x => x.id);
+    h.owned_decor = HOME_DECORS.map(x => x.id);
+    h.owned_wear = HOME_WEARABLES.map(x => x.id);
+    saveActiveHomeState(h, 0);
+    renderHomeModal();
+    showStageBanner("✦ 沙盒全房/全装潢/全衣橱+9款隐藏+节日限定已解锁！", true);
+    playSfx("mythic");
+  });
+  document.getElementById("dbgHomeResetCheckinBtn")?.addEventListener("click", () => {
+    debugState.checkinDay = "";
     renderCheckinUi();
+    playSfx("token");
+  });
+  document.querySelectorAll("#dbgEventChips button[data-ev]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const ev = btn.dataset.ev;
+      debugEventMock = ev === "auto" ? null : ev;
+      document.querySelectorAll("#dbgEventChips button[data-ev]").forEach(b => b.classList.toggle("on", b === btn));
+      renderCheckinUi();
+      renderHomeShop();
+      playSfx("token");
+    });
+  });
+  document.getElementById("dbgFridayToggleBtn")?.addEventListener("click", (e) => {
+    debugFridayMock = !debugFridayMock;
+    e.currentTarget.classList.toggle("on", debugFridayMock);
+    e.currentTarget.textContent = debugFridayMock ? "🏷️ 模拟周五领券: 开" : "🏷️ 模拟周五领券: 关";
     renderHomeShop();
     playSfx("token");
   });
-});
-document.getElementById("dbgFridayToggleBtn")?.addEventListener("click", (e) => {
-  debugFridayMock = !debugFridayMock;
-  e.currentTarget.classList.toggle("on", debugFridayMock);
-  e.currentTarget.textContent = debugFridayMock ? "🏷️ 模拟周五领券: 开" : "🏷️ 模拟周五领券: 关";
-  renderHomeShop();
-  playSfx("token");
-});
-document.getElementById("dbgFridayResetBtn")?.addEventListener("click", () => {
-  const h = cloneHomeState(getActiveHomeState());
-  h.friday_claim_week = "";
-  saveActiveHomeState(h, 0);
-  renderHomeShop();
-  playSfx("token");
-});
-document.querySelectorAll("#dbgWeatherChips button[data-w]").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const w = btn.dataset.w;
-    debugWeatherMock = w === "real" ? null : w;
-    document.querySelectorAll("#dbgWeatherChips button[data-w]").forEach(b => b.classList.toggle("on", b === btn));
-    renderHomeStage();
+  document.getElementById("dbgFridayResetBtn")?.addEventListener("click", () => {
+    const h = cloneHomeState(getActiveHomeState());
+    h.friday_claim_week = "";
+    saveActiveHomeState(h, 0);
+    renderHomeShop();
     playSfx("token");
   });
-});
-document.querySelectorAll("#dbgTimeChips button[data-t]").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const t = btn.dataset.t;
-    debugTimePhaseMock = t === "real" ? null : t;
-    document.querySelectorAll("#dbgTimeChips button[data-t]").forEach(b => b.classList.toggle("on", b === btn));
-    renderHomeStage();
-    playSfx("token");
+  document.querySelectorAll("#dbgWeatherChips button[data-w]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const w = btn.dataset.w;
+      debugWeatherMock = w === "real" ? null : w;
+      document.querySelectorAll("#dbgWeatherChips button[data-w]").forEach(b => b.classList.toggle("on", b === btn));
+      renderHomeStage();
+      playSfx("token");
+    });
   });
-});
+  document.querySelectorAll("#dbgTimeChips button[data-t]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const t = btn.dataset.t;
+      debugTimePhaseMock = t === "real" ? null : t;
+      document.querySelectorAll("#dbgTimeChips button[data-t]").forEach(b => b.classList.toggle("on", b === btn));
+      renderHomeStage();
+      playSfx("token");
+    });
+  });
+}
+/* TOOTOO_DEV_DEBUG_JS_END */
 
 initTheme();
 requestAnimationFrame(() => {

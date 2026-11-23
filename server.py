@@ -26,6 +26,21 @@ UI_FILE = os.path.join(BASE_DIR, "ui", "index.html")
 BUNNY_LINES_FILE = os.path.join(BASE_DIR, "ui", "bunny_lines.json")
 WEATHER_CACHE_FILE = os.path.join(CACHE_DIR, "weather_cache.json")
 
+
+def _is_dev_debug_enabled() -> bool:
+    """Enable dev debug tools only in source development mode (or explicit TOOTOO_DEBUG=1)."""
+    if os.path.exists(os.path.join(BASE_DIR, ".release")):
+        return False
+    env_val = os.environ.get("TOOTOO_DEBUG")
+    if env_val is not None:
+        return env_val.strip().lower() in ("1", "true", "yes", "on")
+    if ".app/Contents/Resources" in BASE_DIR.replace("\\", "/"):
+        return False
+    return True
+
+
+DEV_DEBUG_ENABLED = _is_dev_debug_enabled()
+
 _WEATHER_LOCK = threading.Lock()
 _WEATHER_CACHE: dict | None = None
 _WEATHER_NEXT_TS = 0.0
@@ -229,6 +244,12 @@ class TooTooHandler(BaseHTTPRequestHandler):
             try:
                 with open(UI_FILE, "rb") as f:
                     html = f.read()
+                flag_js = (
+                    b"<script>window.__TOOTOO_DEV_DEBUG__="
+                    + (b"true" if DEV_DEBUG_ENABLED else b"false")
+                    + b";</script></head>"
+                )
+                html = html.replace(b"</head>", flag_js, 1)
                 self.send_response(HTTPStatus.OK)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
                 self.send_header("Cache-Control", "no-store")
