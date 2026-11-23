@@ -24,11 +24,12 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          fetch-depth: 2
+          fetch-depth: 0
           persist-credentials: false
       - name: Confirm exact source
         run: |
-          test "$(git rev-parse HEAD^)" = "$APP_COMMIT"
+          git merge-base --is-ancestor "$APP_COMMIT" HEAD
+          git diff --quiet "$APP_COMMIT" HEAD -- . ':(exclude).github/workflows/release-v0.2.1.yml'
           git checkout --detach "$APP_COMMIT"
       - name: Run quota regression tests
         env:
@@ -52,8 +53,8 @@ jobs:
           ditto -x -k "dist/$ZIP_NAME" "$temp"
           app="$temp/TooToo.app"
           binary="$app/Contents/MacOS/TooToo"
-          lipo -verify_arch arm64 x86_64 "$binary"
-          lipo -archs "$binary"
+          lipo "$binary" -verify_arch arm64 x86_64
+          lipo "$binary" -archs
           plist="$app/Contents/Info.plist"
           test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$plist")" = "0.2.1"
           test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "$plist")" = "3"
