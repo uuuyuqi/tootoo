@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import IOKit.pwr_mgt
 import WebKit
 
 // MARK: - 9-Tier Bunny Evolution Helper
@@ -284,6 +285,11 @@ class TelemetryWebViewController: NSViewController, WKScriptMessageHandler, WKNa
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         if let dict = message.body as? [String: Any], let action = dict["action"] as? String {
+            if action == "getKeepAwakeState" || action == "setKeepAwake" {
+                guard message.frameInfo.isMainFrame, let frameURL = message.frameInfo.request.url,
+                      frameURL.scheme == url.scheme, frameURL.host == url.host,
+                      frameURL.port == url.port, frameURL.path == url.path else { return }
+            }
             DispatchQueue.main.async {
                 self.onAction(action, dict)
             }
@@ -377,6 +383,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private var eventMonitor: Any?
     private var menuBarFields: [String] = ["tokens", "cost"]
     private var menuBarQuotaBar: String = "gem5h"
+    private let keepAwakeDurations = [0, 60, 120, 240, 480]
+    private var keepAwakeMode = "off"
+    private var preferredKeepAwakeMode = "system"
+    private var keepAwakeDurationMin = 0
+    private var keepAwakeExpiresAt: Date?
+    private var keepAwakeAssertionID: IOPMAssertionID?
+    private var keepAwakeTimer: Timer?
+    private var keepAwakeError: String?
+    private var baseStatusToolTip = "TooToo"
     private var currentTier: BunnyTierInfo = BUNNY_TIERS[0]
     private var lastMetrics: TodayMetrics?
     #if TOOTOO_DEBUG
@@ -397,6 +412,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             menuBarQuotaBar = "gem5h"
         }
 
+        let defaults = keepAwakeDefaults
+        if let savedMode = defaults.string(forKey: "tootoo_keep_awake_mode"),
+           ["system", "display"].contains(savedMode) {
+            preferredKeepAwakeMode = savedMode
+        }
+        let savedDuration = defaults.integer(forKey: "tootoo_keep_awake_duration")
+        if keepAwakeDurations.contains(savedDuration) { keepAwakeDurationMin = savedDuration }
+        #if TOOTOO_KEEP_AWAKE_SMOKE
+        if ProcessInfo.processInfo.arguments.contains("--keep-awake-ci") {
+            startKeepAwakeSmoke()
+            return
+        }
+        #endif
+
         port = findFreePort(preferred: 17891)
         startBackend()
         setupStatusItem()
@@ -413,8 +442,189 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        keepAwakeTimer?.invalidate()
+        _ = releaseKeepAwakeAssertion()
         stopBackend()
     }
+
+    // MARK: Keep Awake
+
+    private var keepAwakeDefaults: UserDefaults {
+        #if TOOTOO_KEEP_AWAKE_SMOKE
+        if ProcessInfo.processInfo.arguments.contains("--keep-awake-ci"),
+           let suite = ProcessInfo.processInfo.environment["TOOTOO_KEEP_AWAKE_CI_SUITE"],
+           let defaults = UserDefaults(suiteName: suite) { return defaults }
+        #endif
+        return .standard
+    }
+
+    /// Keep the tracked ID if IOKit ever refuses to release it. Never create a
+    /// second assertion while the old one might still be held.
+    @discardableResult
+    private func releaseKeepAwakeAssertion() -> Bool {
+        guard let id = keepAwakeAssertionID else { return true }
+        guard IOPMAssertionRelease(id) == kIOReturnSuccess else { return false }
+        keepAwakeAssertionID = nil
+        return true
+    }
+
+    private func applyKeepAwake(mode: String, durationMin: Int, persist: Bool) {
+        guard ["off", "system", "display"].contains(mode),
+              keepAwakeDurations.contains(durationMin) else { return }
+
+        keepAwakeError = nil
+        guard releaseKeepAwakeAssertion() else {
+            keepAwakeError = "未能关闭防休眠，请重试或退出 TooToo。"
+            syncKeepAwakeToWeb()
+            return
+        }
+        keepAwakeTimer?.invalidate()
+        keepAwakeTimer = nil
+        keepAwakeExpiresAt = nil
+        keepAwakeMode = "off"
+        keepAwakeDurationMin = durationMin
+        if persist {
+            let defaults = keepAwakeDefaults
+            defaults.set(durationMin, forKey: "tootoo_keep_awake_duration")
+            if mode != "off" {
+                preferredKeepAwakeMode = mode
+                defaults.set(mode, forKey: "tootoo_keep_awake_mode")
+            }
+        }
+        defer { syncKeepAwakeToWeb() }
+        guard mode != "off" else { return }
+
+        let assertionType = mode == "system"
+            ? kIOPMAssertionTypePreventUserIdleSystemSleep
+            : kIOPMAssertionTypePreventUserIdleDisplaySleep
+        var id: IOPMAssertionID = 0
+        let result = IOPMAssertionCreateWithName(assertionType as CFString,
+                                                IOPMAssertionLevel(kIOPMAssertionLevelOn),
+                                                "TooToo Keep Awake (AI Coding)" as CFString, &id)
+        guard result == kIOReturnSuccess else {
+            keepAwakeError = "macOS 未能开启防休眠，请重试。"
+            return
+        }
+        keepAwakeAssertionID = id
+        keepAwakeMode = mode
+        if durationMin > 0 {
+            var seconds = Double(durationMin) * 60
+            #if TOOTOO_KEEP_AWAKE_SMOKE
+            if ProcessInfo.processInfo.arguments.contains("--keep-awake-ci") { seconds = 5 }
+            #endif
+            let expiry = Date().addingTimeInterval(seconds)
+            keepAwakeExpiresAt = expiry
+            scheduleKeepAwakeExpiry(at: expiry, durationMin: durationMin, retries: 3)
+        }
+    }
+
+    private func scheduleKeepAwakeExpiry(at date: Date, durationMin: Int, retries: Int) {
+        let timer = Timer(fire: date, interval: 0, repeats: false) { [weak self] fired in
+            guard let self = self, self.keepAwakeTimer === fired else { return }
+            self.applyKeepAwake(mode: "off", durationMin: durationMin, persist: false)
+            // A failed release keeps the tracked ID, never creates another,
+            // and only retries a few times after the deadline.
+            if self.keepAwakeAssertionID != nil, retries > 0 {
+                self.scheduleKeepAwakeExpiry(at: Date().addingTimeInterval(15),
+                                             durationMin: durationMin, retries: retries - 1)
+            }
+        }
+        keepAwakeTimer = timer
+        RunLoop.main.add(timer, forMode: .common)
+    }
+
+    private func keepAwakeRemainingText() -> String {
+        guard let expiry = keepAwakeExpiresAt else { return "" }
+        let mins = max(0, Int(ceil(expiry.timeIntervalSinceNow / 60)))
+        return " · 剩 " + (mins >= 60 ? "\(mins / 60) 小时 \(mins % 60) 分钟" : "\(mins) 分钟")
+    }
+
+    private func updateKeepAwakeToolTip() {
+        let suffix = keepAwakeMode == "off" ? "" : " · ☕ 防休眠中" + keepAwakeRemainingText()
+        statusItem?.button?.toolTip = baseStatusToolTip + suffix
+    }
+
+    private func syncKeepAwakeToWeb() {
+        updateKeepAwakeToolTip()
+        let state: [String: Any] = [
+            "mode": keepAwakeMode,
+            "preferredMode": preferredKeepAwakeMode,
+            "durationMin": keepAwakeDurationMin,
+            "expiresAt": keepAwakeExpiresAt.map { $0.timeIntervalSince1970 * 1000 } as Any? ?? NSNull(),
+            "error": keepAwakeError as Any? ?? NSNull(),
+        ]
+        guard let data = try? JSONSerialization.data(withJSONObject: state),
+              let json = String(data: data, encoding: .utf8) else { return }
+        let js = "window.__onKeepAwakeState && window.__onKeepAwakeState(\(json));"
+        popoverVC?.evalJS(js)
+        fullWindowVC?.evalJS(js)
+    }
+
+    private func makeKeepAwakeMenu() -> NSMenuItem {
+        let submenu = NSMenu()
+        let label = ["off": "关闭", "system": "防休眠（可息屏）", "display": "屏幕常亮"][keepAwakeMode] ?? "关闭"
+        let status = NSMenuItem(title: "当前：\(label)\(keepAwakeRemainingText())", action: nil, keyEquivalent: "")
+        status.isEnabled = false
+        submenu.addItem(status)
+        if let error = keepAwakeError {
+            let item = NSMenuItem(title: error, action: nil, keyEquivalent: "")
+            item.isEnabled = false
+            submenu.addItem(item)
+        }
+        submenu.addItem(.separator())
+        for (mode, title) in [("off", "关闭"), ("system", "开启：系统不休眠（允许息屏）"), ("display", "开启：保持屏幕常亮")] {
+            let item = NSMenuItem(title: title, action: #selector(selectKeepAwakeMode(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = mode
+            item.state = mode == keepAwakeMode ? .on : .off
+            submenu.addItem(item)
+        }
+        submenu.addItem(.separator())
+        for minutes in keepAwakeDurations {
+            let item = NSMenuItem(title: minutes == 0 ? "不限时" : "\(minutes / 60) 小时",
+                                  action: #selector(selectKeepAwakeDuration(_:)), keyEquivalent: "")
+            item.target = self
+            item.tag = minutes
+            item.state = minutes == keepAwakeDurationMin ? .on : .off
+            submenu.addItem(item)
+        }
+        let parent = NSMenuItem(title: "☕ 保持电脑唤醒", action: nil, keyEquivalent: "")
+        parent.submenu = submenu
+        return parent
+    }
+
+    @objc private func selectKeepAwakeMode(_ item: NSMenuItem) {
+        guard let mode = item.representedObject as? String else { return }
+        applyKeepAwake(mode: mode, durationMin: keepAwakeDurationMin, persist: true)
+    }
+
+    @objc private func selectKeepAwakeDuration(_ item: NSMenuItem) {
+        applyKeepAwake(mode: keepAwakeMode, durationMin: item.tag, persist: true)
+    }
+
+    #if TOOTOO_KEEP_AWAKE_SMOKE
+    private func startKeepAwakeSmoke() {
+        print("TOOTOO_KEEP_AWAKE_CI_READY"); fflush(stdout)
+        DispatchQueue.global(qos: .utility).async { [weak self] in
+            while let line = readLine() {
+                DispatchQueue.main.async {
+                    guard let self = self else { return }
+                    let parts = line.split(separator: " ")
+                    switch parts.first.map(String.init) {
+                    case "quit": NSApp.terminate(nil)
+                    case "state": break
+                    default:
+                        if parts.count == 2, let minutes = Int(parts[1]) {
+                            self.applyKeepAwake(mode: String(parts[0]), durationMin: minutes, persist: true)
+                        }
+                    }
+                    print("mode=\(self.keepAwakeMode) preferred=\(self.preferredKeepAwakeMode) duration=\(self.keepAwakeDurationMin)")
+                    fflush(stdout)
+                }
+            }
+        }
+    }
+    #endif
 
     // MARK: Backend Lifecycle
 
@@ -564,6 +774,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         let modeParent = NSMenuItem(title: "菜单栏显示配置", action: nil, keyEquivalent: "")
         modeParent.submenu = modeMenu
         menu.addItem(modeParent)
+        menu.addItem(makeKeepAwakeMenu())
 
         menu.addItem(NSMenuItem.separator())
         menu.addItem(withTitle: "退出 TooToo", action: #selector(quitApp), keyEquivalent: "q")
@@ -744,6 +955,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             quitApp()
         case "refreshed":
             refreshMenuBarSummary()
+        case "getKeepAwakeState":
+            syncKeepAwakeToWeb()
+        case "setKeepAwake":
+            if let mode = payload["mode"] as? String, let duration = payload["durationMin"] as? Int {
+                applyKeepAwake(mode: mode, durationMin: duration, persist: true)
+            }
         case "getMenuBarFields":
             syncFieldsToWeb()
         case "setMenuBarFields":
@@ -930,7 +1147,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
                 ]
                 let attrStr = NSAttributedString(string: title, attributes: attrs)
                 button.attributedTitle = attrStr
-                button.toolTip = "TooToo · \(barName) 剩余 \(pct)%"
+                self.baseStatusToolTip = "TooToo · \(barName) 剩余 \(pct)%"
 
                 let positionBar = {
                     guard let btn = self.statusItem.button,
@@ -975,10 +1192,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
                     string: title,
                     attributes: [.font: NSFont.monospacedDigitSystemFont(ofSize: 11.5, weight: .medium)]
                 )
-                button.toolTip = "TooToo"
+                self.baseStatusToolTip = "TooToo"
                 self.quotaBarView?.percent = nil
                 self.quotaBarView?.isHidden = true
             }
+            self.updateKeepAwakeToolTip()
         }
     }
 }

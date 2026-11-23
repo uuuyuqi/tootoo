@@ -79,6 +79,12 @@ brew install --cask uuuyuqi/tap/tootoo
 
 ---
 
+### ☕ 保持电脑唤醒（macOS）
+
+TooToo 底栏的咖啡杯一键开启防休眠，默认允许屏幕息屏。需要屏幕持续点亮时，可在设置或菜单栏右键菜单里选「屏幕常亮」。可选择不限时、1、2、4 或 8 小时；到期自动关闭。退出或重启 TooToo 后不会继续保持唤醒，但上次选的模式与时长会保留。简洁模式同样可用，浏览器模式不显示此功能。
+
+这只防止空闲休眠，不会阻止合盖、手动休眠或低电量导致的休眠，也不会唤醒已熄灭的屏幕。接电运行长任务时仍建议选定时长。
+
 ## 安装方式
 
 ### 方式一：Homebrew 一键安装（推荐）
@@ -100,7 +106,7 @@ brew upgrade --cask tootoo
 
 ### 方式二：下载 GitHub Release 安装包
 
-1. 前往 [**Releases**](https://github.com/uuuyuqi/tootoo/releases) 下载最新版 `TooToo-v0.2.1-macos-universal.zip`。
+1. 前往 [**Releases**](https://github.com/uuuyuqi/tootoo/releases) 下载最新版 `TooToo-v0.2.2-macos-universal.zip`。
 2. 解压后将 `TooToo.app` 拖入 `/Applications`。
 3. 首次打开若遇 macOS 未知开发者提示（开源项目使用 ad-hoc 本地签名），在终端执行一次即可：
    ```bash

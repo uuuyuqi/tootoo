@@ -8,9 +8,9 @@ CONTENTS="$APP/Contents"
 MACOS="$CONTENTS/MacOS"
 RES="$CONTENTS/Resources"
 
-VERSION="${VERSION:-0.2.1}"
+VERSION="${VERSION:-0.2.2}"
 VERSION_CLEAN="${VERSION#v}"
-BUILD_NUMBER="${BUILD_NUMBER:-3}"
+BUILD_NUMBER="${BUILD_NUMBER:-4}"
 TOOTOO_DEBUG="${TOOTOO_DEBUG:-0}"
 UNIVERSAL="${UNIVERSAL:-1}"
 NO_INSTALL="${NO_INSTALL:-0}"
@@ -34,6 +34,7 @@ compile_slice() {
       -target "$target" \
       -framework AppKit \
       -framework WebKit \
+      -framework IOKit \
       -framework Foundation \
       "$ROOT/macos/main.swift" \
       -o "$out"
@@ -42,6 +43,7 @@ compile_slice() {
       -target "$target" \
       -framework AppKit \
       -framework WebKit \
+      -framework IOKit \
       -framework Foundation \
       "$ROOT/macos/main.swift" \
       -o "$out"
