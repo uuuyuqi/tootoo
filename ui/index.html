@@ -10397,6 +10397,7 @@ function disconnectStream() {
 
 window.__onPopoverOpen = () => {
   popoverVisible = true;
+  resumePopoverArcade();
   requestAnimationFrame(() => {
     syncSlidePill("rangeSeg", true);
     syncSlidePill("popTabs", true);
@@ -10418,8 +10419,7 @@ window.__onPopoverClose = () => {
   popoverVisible = false;
   if (typeof stopQuotaSiphon === "function") stopQuotaSiphon();
   if (typeof clearBunnySpeech === "function") clearBunnySpeech();
-  if (typeof stopBlasterGame === "function") stopBlasterGame();
-  if (typeof stopRainGame === "function") stopRainGame();
+  pausePopoverArcade();
   if (typeof cancelBunnyPatrol === "function") cancelBunnyPatrol();
   disconnectStream();
 };
@@ -11842,30 +11842,77 @@ if (DEV_DEBUG_ENABLED) {
 let sfxEnabled = false;
 try { sfxEnabled = localStorage.getItem("tootoo_sfx") === "1"; } catch {}
 let audioCtx = null;
+let audioResume = null;
+let sfxToggleGeneration = 0;
+
+function getSfxContext() {
+  if (!sfxEnabled) return null;
+  if (audioCtx && audioCtx.state !== "closed") return audioCtx;
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    audioCtx = AC ? new AC() : null;
+    return audioCtx;
+  } catch {
+    return null;
+  }
+}
+
+function resumeSfxContext(ctx, userGesture = false) {
+  if (ctx.state === "running") return Promise.resolve(true);
+  if (ctx.state === "closed") return Promise.resolve(false);
+  if (!userGesture && audioResume?.ctx === ctx) return audioResume.promise;
+  // AudioContext.resume must be invoked during the gesture, not deferred.
+  // Retry on trusted input even if an earlier background resume is still pending.
+  try {
+    const promise = Promise.resolve(ctx.resume()).then(
+      () => ctx.state === "running", () => false
+    ).finally(() => {
+      if (audioResume?.promise === promise) audioResume = null;
+    });
+    audioResume = { ctx, promise };
+    return promise;
+  } catch {
+    return Promise.resolve(false);
+  }
+}
+
+function unlockSfxOnInput(event) {
+  if (!event.isTrusted || event.repeat) return;
+  const ctx = getSfxContext();
+  if (ctx && ctx.state !== "running") void resumeSfxContext(ctx, true);
+}
+document.addEventListener("click", unlockSfxOnInput, true);
+document.addEventListener("keydown", unlockSfxOnInput, true);
 
 function updateSfxBtn() {
   const b = document.getElementById("arcSfxBtn");
-  if (b) b.textContent = sfxEnabled ? "🔊 音效" : "🔇 静音";
+  if (!b) return;
+  b.textContent = sfxEnabled ? "🔊 音效" : "🔇 静音";
+  b.title = sfxEnabled ? "音效已开启，点击静音" : "音效已静音，点击开启并试听";
+  b.setAttribute("aria-pressed", String(sfxEnabled));
 }
 updateSfxBtn();
 
 function playTone(freq, dur, type = "triangle", gainVal = 0.08, delay = 0) {
   if (!sfxEnabled) return;
   try {
-    const AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) return;
-    if (!audioCtx) audioCtx = new AC();
-    if (audioCtx.state === "suspended") audioCtx.resume();
-    const t0 = audioCtx.currentTime + delay;
-    const osc = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
+    const ctx = getSfxContext();
+    if (!ctx) return;
+    if (ctx.state !== "running") {
+      // Skip stale sounds while audio is unavailable instead of amassing a queue.
+      void resumeSfxContext(ctx);
+      return;
+    }
+    const t0 = ctx.currentTime + delay;
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
     osc.type = type;
     osc.frequency.setValueAtTime(freq, t0);
     g.gain.setValueAtTime(0.0001, t0);
     g.gain.exponentialRampToValueAtTime(gainVal, t0 + 0.012);
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
     osc.connect(g);
-    g.connect(audioCtx.destination);
+    g.connect(ctx.destination);
     osc.start(t0);
     osc.stop(t0 + dur + 0.02);
   } catch {}
@@ -11908,7 +11955,17 @@ document.getElementById("arcSfxBtn").addEventListener("click", () => {
   sfxEnabled = !sfxEnabled;
   try { localStorage.setItem("tootoo_sfx", sfxEnabled ? "1" : "0"); } catch {}
   updateSfxBtn();
-  if (sfxEnabled) playSfx("cache");
+  const generation = ++sfxToggleGeneration;
+  const ctx = getSfxContext();
+  if (!ctx) return;
+  if (ctx.state === "running") playSfx("cache");
+  else {
+    const started = performance.now();
+    void resumeSfxContext(ctx, true).then((ready) => {
+      if (ready && audioCtx === ctx && generation === sfxToggleGeneration &&
+          performance.now() - started < 400) playSfx("cache");
+    });
+  }
 });
 
 // ---- 5-Second Stardust Cursor Trail ----
@@ -12282,6 +12339,56 @@ document.getElementById("gachaModal").addEventListener("click", (e) => {
 });
 
 // ---- More Arcade Modal Open/Close & Tab Switching ----
+const arcadeStartCopy = Object.fromEntries([
+  "blasterTitle", "blasterDesc", "blasterStartBtn", "rainTitle", "rainDesc", "rainStartBtn",
+].map(id => [id, document.getElementById(id).textContent]));
+
+function resetArcadeStart(game) {
+  for (const suffix of ["Title", "Desc", "StartBtn"]) {
+    const id = game + suffix;
+    document.getElementById(id).textContent = arcadeStartCopy[id];
+  }
+  document.getElementById(game + "Overlay").classList.remove("hidden");
+}
+
+function clearArcadeKeys() {
+  blKeys.left = blKeys.right = false;
+  rainKeys.left = rainKeys.right = false;
+}
+
+function pauseArcadeRound(round, frame) {
+  if (!round?.running) return frame;
+  round.running = false;
+  round.pausedForPopover = true;
+  if (frame !== null) cancelAnimationFrame(frame);
+  return null;
+}
+
+function resumeArcadeRound(round, frame, tick) {
+  if (!round?.pausedForPopover || frame !== null) return frame;
+  round.pausedForPopover = false;
+  round.running = true;
+  round.lastTs = performance.now();
+  return requestAnimationFrame(tick);
+}
+
+function pausePopoverArcade() {
+  clearArcadeKeys();
+  blasterRaf = pauseArcadeRound(blasterState, blasterRaf);
+  rainRaf = pauseArcadeRound(rainState, rainRaf);
+}
+
+function resumePopoverArcade() {
+  if (!document.getElementById("arcadeModal").classList.contains("open")) return;
+  if (document.getElementById("arcPane-blaster").classList.contains("active")) {
+    blasterRaf = resumeArcadeRound(blasterState, blasterRaf, tickBlasterGame);
+  }
+  if (document.getElementById("arcPane-rain").classList.contains("active")) {
+    rainRaf = resumeArcadeRound(rainState, rainRaf, tickRainGame);
+  }
+}
+
+
 function openArcadeModal() {
   if (minimalMode) return;
   document.getElementById("arcadeModal").classList.add("open");
@@ -12336,7 +12443,7 @@ function refreshArcadeContext() {
 
   // Blaster loadout HUD
   const lo = getBlasterLoadout();
-  if (!blasterState || !blasterState.running) {
+  if (!blasterState?.running && !blasterState?.pausedForPopover) {
     document.getElementById("blAmmo").textContent = lo.god ? "♾️ 无限" : `${lo.ammo} 发`;
     document.getElementById("blFireRate").textContent = `${lo.fireHz}/s ×${lo.cannons}管`;
     document.getElementById("blRefund").textContent = `${Math.round(lo.refundProb * 100)}%`;
@@ -12652,8 +12759,7 @@ document.getElementById("blBerserkBtn")?.addEventListener("click", () => {
 
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
-    blKeys.left = blKeys.right = false;
-    rainKeys.left = rainKeys.right = false;
+    clearArcadeKeys();
   } else {
     const now = performance.now();
     if (blasterState && blasterState.running) blasterState.lastTs = now;
@@ -12788,11 +12894,11 @@ function spawnHordeFormation(s, wave) {
 }
 
 function stopBlasterGame() {
-  if (blasterRaf) {
-    cancelAnimationFrame(blasterRaf);
-    blasterRaf = null;
-  }
-  if (blasterState) blasterState.running = false;
+  if (blasterRaf !== null) cancelAnimationFrame(blasterRaf);
+  blasterRaf = null;
+  blKeys.left = blKeys.right = false;
+  if (blasterState?.running || blasterState?.pausedForPopover) resetArcadeStart("blaster");
+  blasterState = null;
 }
 
 function spawnSpecialBoss(s, kind, wave = 1) {
@@ -13060,6 +13166,7 @@ function startBlasterGame() {
 function tickBlasterGame(now) {
   const s = blasterState;
   if (!s || !s.running) return;
+  now = Math.max(now, s.lastTs);
   const dt = Math.min(0.05, (now - s.lastTs) / 1000);
   s.lastTs = now;
   s.elapsed += dt;
@@ -14159,6 +14266,7 @@ function tickBlasterGame(now) {
   // End check (never end from 0 ammo while Berserk / Overclock / Free-Ammo is active!)
   if (!isGod && (s.lives <= 0 || (!isBerserk && s.overclockTimer <= 0 && s.freeAmmoTimer <= 0 && s.ammo <= 0 && s.bullets.length === 0))) {
     s.running = false;
+    blasterRaf = null;
     let best = 0;
     try { best = Number(localStorage.getItem("tootoo_blaster_best") || 0) || 0; } catch {}
     const isNew = !s.debugTainted && s.score > best;
@@ -14236,11 +14344,11 @@ function triggerRainDash() {
 }
 
 function stopRainGame() {
-  if (rainRaf) {
-    cancelAnimationFrame(rainRaf);
-    rainRaf = null;
-  }
-  if (rainState) rainState.running = false;
+  if (rainRaf !== null) cancelAnimationFrame(rainRaf);
+  rainRaf = null;
+  rainKeys.left = rainKeys.right = false;
+  if (rainState?.running || rainState?.pausedForPopover) resetArcadeStart("rain");
+  rainState = null;
 }
 
 function startRainGame() {
@@ -14352,6 +14460,7 @@ function spawnRainParticles(x, y, col, n = 10) {
 function tickRainGame(now) {
   const s = rainState;
   if (!s || !s.running) return;
+  now = Math.max(now, s.lastTs);
   const dt = Math.min(0.05, (now - s.lastTs) / 1000);
   s.lastTs = now;
 
@@ -15064,6 +15173,7 @@ function tickRainGame(now) {
 
   if (s.timeLeft <= 0) {
     s.running = false;
+    rainRaf = null;
     let best = 0;
     try { best = Number(localStorage.getItem("tootoo_rain_best") || 0) || 0; } catch {}
     const isNewRecord = !s.debugTainted && s.score > best;
