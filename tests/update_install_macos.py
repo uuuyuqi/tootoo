@@ -224,7 +224,9 @@ def exercise(workspace, healthy_binary, candidate_binary, mode):
 
 def smoke(archive, checksum):
     assert sys.platform == "darwin" and os.getuid() != 0
-    filename = updater.release_asset_urls("0.2.4")[0]
+    version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
+    filename = updater.release_asset_urls(version)[0]
+    assert archive.name == filename and checksum.name == filename + ".sha256"
     with tempfile.TemporaryDirectory(prefix="tootoo-updater-") as tmp:
         workspace = Path(tmp).resolve()
         built = workspace / "official-package"
@@ -232,8 +234,8 @@ def smoke(archive, checksum):
         expected = updater.parse_checksum(checksum.read_bytes(), filename)
         updater.verify_sha256(archive, expected)
         candidate = updater.extract_release(archive, built)
-        updater.verify_candidate(candidate, "0.2.4")
-        print("PASS native updater validates exact official ZIP, version, both architectures and signature", flush=True)
+        updater.verify_candidate(candidate, version)
+        print(f"PASS native updater validates exact official v{version} ZIP, both architectures and signature", flush=True)
         healthy, crashing = build_fixtures(workspace)
         # Capture target and old/app PID independently; no repository or installed bundle is changed.
         for mode, executable in (
