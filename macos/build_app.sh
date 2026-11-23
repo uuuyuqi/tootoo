@@ -7,7 +7,14 @@ APP="$DIST/TooToo.app"
 CONTENTS="$APP/Contents"
 MACOS="$CONTENTS/MacOS"
 RES="$CONTENTS/Resources"
+
+VERSION="${VERSION:-0.2.0}"
+VERSION_CLEAN="${VERSION#v}"
+BUILD_NUMBER="${BUILD_NUMBER:-2}"
 TOOTOO_DEBUG="${TOOTOO_DEBUG:-0}"
+UNIVERSAL="${UNIVERSAL:-1}"
+NO_INSTALL="${NO_INSTALL:-0}"
+PACKAGE_ZIP="${PACKAGE_ZIP:-0}"
 
 rm -rf "$APP"
 mkdir -p "$MACOS" "$RES/ui"
@@ -19,28 +26,49 @@ swift "$ROOT/macos/gen_icon.swift" "$ICONSET"
 iconutil -c icns "$ICONSET" -o "$RES/TooToo.icns"
 rm -rf "$ICONSET"
 
-if [[ "$TOOTOO_DEBUG" == "1" ]]; then
-  echo "==> Compiling native Swift macOS menu bar binary (DEBUG mode)..."
-  swiftc -O -D TOOTOO_DEBUG \
-    -framework AppKit \
-    -framework WebKit \
-    -framework Foundation \
-    "$ROOT/macos/main.swift" \
-    -o "$MACOS/TooToo"
+compile_slice() {
+  local target="$1"
+  local out="$2"
+  if [[ "$TOOTOO_DEBUG" == "1" ]]; then
+    swiftc -O -D TOOTOO_DEBUG \
+      -target "$target" \
+      -framework AppKit \
+      -framework WebKit \
+      -framework Foundation \
+      "$ROOT/macos/main.swift" \
+      -o "$out"
+  else
+    swiftc -O \
+      -target "$target" \
+      -framework AppKit \
+      -framework WebKit \
+      -framework Foundation \
+      "$ROOT/macos/main.swift" \
+      -o "$out"
+  fi
+}
+
+MODE_LABEL="RELEASE"
+[[ "$TOOTOO_DEBUG" == "1" ]] && MODE_LABEL="DEBUG"
+
+if [[ "$UNIVERSAL" == "1" ]]; then
+  echo "==> Compiling Universal (arm64 + x86_64) Swift macOS binary (${MODE_LABEL}, v${VERSION_CLEAN})..."
+  compile_slice "arm64-apple-macos13.0" "$DIST/TooToo-arm64"
+  compile_slice "x86_64-apple-macos13.0" "$DIST/TooToo-x86_64"
+  lipo -create "$DIST/TooToo-arm64" "$DIST/TooToo-x86_64" -output "$MACOS/TooToo"
+  rm -f "$DIST/TooToo-arm64" "$DIST/TooToo-x86_64"
 else
-  echo "==> Compiling native Swift macOS menu bar binary (RELEASE mode)..."
-  swiftc -O \
-    -framework AppKit \
-    -framework WebKit \
-    -framework Foundation \
-    "$ROOT/macos/main.swift" \
-    -o "$MACOS/TooToo"
+  HOST_ARCH="$(uname -m)"
+  echo "==> Compiling native ${HOST_ARCH} Swift macOS binary (${MODE_LABEL}, v${VERSION_CLEAN})..."
+  compile_slice "${HOST_ARCH}-apple-macos13.0" "$MACOS/TooToo"
 fi
 
-echo "==> Bundling scanner, pricing, server, and UI..."
+echo "==> Bundling scanner, pricing, server, CLI, and UI..."
 cp "$ROOT/scanner.py" "$RES/scanner.py"
 cp "$ROOT/pricing.py" "$RES/pricing.py"
 cp "$ROOT/server.py" "$RES/server.py"
+cp "$ROOT/tootoo" "$RES/tootoo"
+chmod +x "$RES/tootoo"
 cp -R "$ROOT/ui/." "$RES/ui/"
 
 if [[ "$TOOTOO_DEBUG" != "1" ]]; then
@@ -92,7 +120,7 @@ else
   echo "==> Keeping dev debug panels & shortcuts in bundle (TOOTOO_DEBUG=1)."
 fi
 
-cat > "$CONTENTS/Info.plist" <<'PLIST'
+cat > "$CONTENTS/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -114,9 +142,9 @@ cat > "$CONTENTS/Info.plist" <<'PLIST'
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>0.1.0</string>
+    <string>${VERSION_CLEAN}</string>
     <key>CFBundleVersion</key>
-    <string>1</string>
+    <string>${BUILD_NUMBER}</string>
     <key>LSMinimumSystemVersion</key>
     <string>13.0</string>
     <key>LSUIElement</key>
@@ -135,8 +163,23 @@ PLIST
 echo "==> Ad-hoc code signing..."
 codesign --force --deep --sign - "$APP"
 
-echo "==> Installing to /Applications/TooToo.app..."
-rm -rf /Applications/TooToo.app
-cp -R "$APP" /Applications/TooToo.app
+if [[ "$PACKAGE_ZIP" == "1" ]]; then
+  ARCH_TAG="universal"
+  [[ "$UNIVERSAL" != "1" ]] && ARCH_TAG="$(uname -m)"
+  ZIP_PATH="$DIST/TooToo-v${VERSION_CLEAN}-macos-${ARCH_TAG}.zip"
+  rm -f "$ZIP_PATH"
+  echo "==> Packaging release archive: $ZIP_PATH"
+  ditto -c -k --sequesterRsrc --keepParent "$APP" "$ZIP_PATH"
+  SHA256="$(shasum -a 256 "$ZIP_PATH" | awk '{print $1}')"
+  echo "    SHA256: $SHA256"
+  echo "$SHA256  $(basename "$ZIP_PATH")" > "${ZIP_PATH}.sha256"
+fi
 
-echo "✅ Built and installed /Applications/TooToo.app"
+if [[ "$NO_INSTALL" != "1" ]]; then
+  echo "==> Installing to /Applications/TooToo.app..."
+  rm -rf /Applications/TooToo.app
+  cp -R "$APP" /Applications/TooToo.app
+  echo "✅ Built and installed /Applications/TooToo.app (v${VERSION_CLEAN})"
+else
+  echo "✅ Built $APP (v${VERSION_CLEAN})"
+fi

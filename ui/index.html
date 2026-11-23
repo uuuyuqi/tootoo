@@ -7006,6 +7006,73 @@
     color: var(--muted);
     opacity: 0.85;
   }
+
+  /* Minimal Mode (hides Home, Gacha, Arcade & Carrot Coin prompts; keeps telemetry + bunny evolution & interactive FX) */
+  body.minimal-mode #homeBtn,
+  body.minimal-mode #gachaBtn,
+  body.minimal-mode #arcadeBtn,
+  body.minimal-mode #tokenCarrotHover,
+  body.minimal-mode .patrol-capsule {
+    display: none !important;
+  }
+
+  .settings-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    background: var(--bg-subtle);
+  }
+  .settings-toggle-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+  .settings-toggle-title {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .settings-toggle-desc {
+    font-size: 10px;
+    color: var(--muted);
+    line-height: 1.38;
+  }
+  .settings-switch {
+    position: relative;
+    flex: 0 0 auto;
+    width: 36px;
+    height: 20px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--border);
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+    padding: 0;
+  }
+  .settings-switch::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.22);
+    transition: transform 0.2s cubic-bezier(0.34, 1.4, 0.64, 1);
+  }
+  .settings-switch.on {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .settings-switch.on::after {
+    transform: translateX(16px);
+  }
 </style>
 </head>
 <body data-pop-tab="overview" class="is-booting">
@@ -7357,6 +7424,17 @@
         <button data-qbar="gem7d">Gemini 周</button>
         <button data-qbar="cg5h">C/G 5h</button>
         <button data-qbar="codex">Codex</button>
+      </div>
+    </div>
+
+    <div class="qcfg-row" style="padding-top:8px;border-top:1px dashed var(--border)">
+      <label>界面模式</label>
+      <div class="settings-toggle-row">
+        <div class="settings-toggle-meta">
+          <span class="settings-toggle-title">简洁模式</span>
+          <span class="settings-toggle-desc">隐藏小家、扭蛋、大冒险与萝卜币兑换，保留实用遥测与兔兔互动特效</span>
+        </div>
+        <button type="button" class="settings-switch" id="minimalModeSwitch" role="switch" aria-checked="false" title="开启或关闭简洁模式"></button>
       </div>
     </div>
 
@@ -7870,6 +7948,14 @@
 const TOOTOO_DEV_DEBUG_BUILD = /*__TOOTOO_DEBUG_FLAG__*/true;
 const DEV_DEBUG_ENABLED = TOOTOO_DEV_DEBUG_BUILD && window.__TOOTOO_DEV_DEBUG__ !== false;
 const params = new URLSearchParams(window.location.search);
+let minimalMode = false;
+try {
+  const qMin = params.get("minimal");
+  minimalMode = qMin === "1" ? true : (qMin === "0" ? false : localStorage.getItem("tootoo_minimal_mode") === "1");
+} catch {}
+if (minimalMode) {
+  document.body.classList.add("minimal-mode");
+}
 const isPopover = params.get("mode") === "popover";
 if (isPopover) {
   document.body.classList.add("popover-mode");
@@ -8233,6 +8319,7 @@ function syncDebugUi() {
 }
 
 function getTodayXpBoostTokens() {
+  if (minimalMode) return 0;
   try {
     const h = typeof getActiveHomeState === "function" ? getActiveHomeState() : null;
     if (!h || !h.xp_boost || !h.xp_boost.tokens) return 0;
@@ -11334,6 +11421,44 @@ document.getElementById("popQuitLink").addEventListener("click", (e) => {
   postNative("quit");
 });
 
+function applyMinimalMode(enabled, persist = true) {
+  minimalMode = !!enabled;
+  document.body.classList.toggle("minimal-mode", minimalMode);
+  if (persist) {
+    try { localStorage.setItem("tootoo_minimal_mode", minimalMode ? "1" : "0"); } catch {}
+  }
+  const sw = document.getElementById("minimalModeSwitch");
+  if (sw) {
+    sw.classList.toggle("on", minimalMode);
+    sw.setAttribute("aria-checked", minimalMode ? "true" : "false");
+  }
+  const pBtn = document.getElementById("patrolBtn");
+  if (pBtn) {
+    pBtn.title = minimalMode ? "召唤小兔兔巡逻" : "召唤小兔兔巡逻（偶尔能捡到算力扭蛋）";
+  }
+  if (minimalMode) {
+    document.querySelectorAll(".patrol-capsule").forEach(n => n.remove());
+    if (typeof closeHomeModal === "function" && document.getElementById("homeModal")?.classList.contains("open")) closeHomeModal();
+    if (typeof closeGachaModal === "function" && document.getElementById("gachaModal")?.classList.contains("open")) closeGachaModal();
+    if (typeof closeArcadeModal === "function" && document.getElementById("arcadeModal")?.classList.contains("open")) closeArcadeModal();
+  }
+  if (typeof renderBunnyState === "function" && typeof getEffectiveTodayTokens === "function") {
+    renderBunnyState(getEffectiveTodayTokens());
+  }
+  if (typeof renderEvoModal === "function" && document.getElementById("evoModal")?.classList.contains("open")) {
+    renderEvoModal();
+  }
+}
+
+document.getElementById("minimalModeSwitch")?.addEventListener("click", () => {
+  applyMinimalMode(!minimalMode, true);
+});
+window.addEventListener("storage", (e) => {
+  if (e.key === "tootoo_minimal_mode") {
+    applyMinimalMode(e.newValue === "1", false);
+  }
+});
+
 // ---- Hidden Developer Debug Mode Controls ----
 function resetAllDebugState() {
   debugState.active = false;
@@ -11517,6 +11642,7 @@ document.addEventListener("mousemove", (e) => {
 
 // ---- Full Clockwise Perimeter Patrol from Avatar (Avatar stays blank while away!) + Surprise Capsule ----
 function spawnPatrolCapsule() {
+  if (minimalMode) return;
   document.querySelectorAll(".patrol-capsule").forEach(n => n.remove());
   const cap = document.createElement("div");
   cap.className = "patrol-capsule";
@@ -11844,6 +11970,7 @@ document.querySelectorAll(".hero-grid .card[data-kpi]").forEach(card => {
 
 // ---- Core Gacha Modal Open/Close ----
 function openGachaModal() {
+  if (minimalMode) return;
   document.getElementById("gachaModal").classList.add("open");
   renderAlchemyStats();
   renderGachaMeta();
@@ -11859,6 +11986,7 @@ document.getElementById("gachaModal").addEventListener("click", (e) => {
 
 // ---- More Arcade Modal Open/Close & Tab Switching ----
 function openArcadeModal() {
+  if (minimalMode) return;
   document.getElementById("arcadeModal").classList.add("open");
   refreshArcadeContext();
   if (typeof renderBackdropBar === "function") renderBackdropBar();
@@ -17143,11 +17271,12 @@ function getWearOverlaySvgFor(wear, pfx = "st") {
 function getAvatarWearSig(level = 0) {
   const h = getActiveHomeState();
   const inFlag = (level >= 4 && isTierInnateVisible(level)) ? `in${level}` : "in0";
-  if (!h.show_on_avatar) return `off|${inFlag}`;
+  if (minimalMode || !h.show_on_avatar) return `off|${inFlag}`;
   return `${h.wear.hat || ""}|${h.wear.outfit || ""}|${h.wear.acc || ""}|${inFlag}`;
 }
 
 function getAvatarWearOverlaySvg(pfx = "av") {
+  if (minimalMode) return "";
   const h = getActiveHomeState();
   if (!h.show_on_avatar) return "";
   return getWearOverlaySvgFor(h.wear, pfx);
@@ -20806,6 +20935,7 @@ function renderHomeModal(freshDecorSlot = null, twirlBunny = false) {
 }
 
 function openHomeModal() {
+  if (minimalMode) return;
   homeUiState.view = "home";
   homeUiState.preview = null;
   homeUiState.pageLimit = 24;
@@ -21518,6 +21648,7 @@ if (DEV_DEBUG_ENABLED) {
 /* TOOTOO_DEV_DEBUG_JS_END */
 
 initTheme();
+applyMinimalMode(minimalMode, false);
 requestAnimationFrame(() => {
   syncSlidePill("rangeSeg", true);
   syncSlidePill("popTabs", true);

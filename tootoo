@@ -1,4 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SOURCE="${BASH_SOURCE[0]}"
+while [[ -L "$SOURCE" ]]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  TARGET="$(readlink "$SOURCE")"
+  [[ "$TARGET" == /* ]] && SOURCE="$TARGET" || SOURCE="$DIR/$TARGET"
+done
+DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
 exec python3 "$DIR/server.py" "$@"
