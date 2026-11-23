@@ -3123,6 +3123,9 @@
   .gacha-result.pop { animation: modalPopIn 0.34s cubic-bezier(0.22, 1.35, 0.36, 1); }
 
   /* N (普通): Clean calm warm stationery card */
+  .gacha-result.tier-MISS { color: var(--muted); }
+  .gacha-result.tier-MISS strong { font-size: 12px; }
+  .gacha-miss-quote { font-size: 11px; line-height: 1.45; }
   .gacha-result.tier-N {
     background: linear-gradient(180deg, var(--surface), color-mix(in srgb, var(--surface-2) 60%, var(--surface)));
     border: 1.5px dashed color-mix(in srgb, var(--border) 90%, var(--muted));
@@ -7831,6 +7834,7 @@
         <button class="dbg-mini-btn" data-rarity="SR">★ 必SR</button>
         <button class="dbg-mini-btn" data-rarity="R">◆ 必R</button>
         <button class="dbg-mini-btn" data-rarity="N">📄 必普通</button>
+        <button class="dbg-mini-btn" data-rarity="MISS">必空包</button>
       </div>
     </div>
     <!-- TOOTOO_DEV_DEBUG_END -->
@@ -8575,7 +8579,7 @@ const debugState = {
   checkinDay: null,  // sandbox check-in day override
   checkinStreak: null,// sandbox check-in streak override
   homeSandbox: null, // deep-cloned home state while debug is active
-  gachaForce: "auto",// "auto" | "SSR" | "SR" | "R"
+  gachaForce: "auto",// "auto" | "MISS" | "N" | "R" | "SR" | "SSR"
   gachaColl: null,   // memory-only gacha collection clone while debug is active
   godMode: false,    // games: infinite ammo, max fire rate/cannons, shields, invincible, no real best overwrite
   reflexFast: false, // reflex: 0.4s fast trigger
@@ -11875,6 +11879,7 @@ function playSfx(kind) {
   else if (kind === "bomb") { playTone(165, 0.22, "sawtooth", 0.08); playTone(110, 0.26, "sawtooth", 0.07, 0.07); }
   else if (kind === "go") { playTone(880, 0.12, "sine", 0.08); }
   else if (kind === "win") { [523, 659, 784].forEach((f, i) => playTone(f, 0.13, "triangle", 0.07, i * 0.07)); }
+  else if (kind === "gachaMiss") { playTone(262, 0.12, "sine", 0.025); }
   else if (kind === "gacha") { [392, 440, 494, 587].forEach((f, i) => playTone(f, 0.07, "square", 0.03, i * 0.09)); }
   else if (kind === "ssr" || kind === "levelUp") {
     [523, 659, 784, 1046, 1318].forEach((f, i) => playTone(f, 0.18, "triangle", 0.075, i * 0.075));
@@ -15256,7 +15261,7 @@ function grantDailyAdventureBonusCoin() {
 }
 
 // ============================================================
-// GAME 3: 🎰 REAL-REWARD GACHA MACHINE (Economic System: N 60% / R 28% / SR 10% / SSR 2%)
+// GAME 3: 🎰 REAL-REWARD GACHA MACHINE (MISS 30% / N 40% / R 20% / SR 8% / SSR 2%)
 // ============================================================
 const GACHA_EXCLUSIVE_IDS = [
   "gacha_clover_clip", "gacha_capsule_bag", "gacha_ribbon_cape", "gacha_star_wand", "gacha_prism_crown",
@@ -15264,7 +15269,7 @@ const GACHA_EXCLUSIVE_IDS = [
   "cyber_neon", "starry_nebula", "sakura_zen", "matrix_core", "golden_citadel",
 ];
 const GACHA_POOL = [
-  // ---- N (普通 · 60% 权重) ----
+  // ---- N (普通 · 40% 胶囊机概率) ----
   { id: 101, r: "N", w: 10, type: "coins",   amount: 1,                  icon: "🥕", name: "萝卜币返本 +1",     desc: "返还 1 枚萝卜币，不亏不赚再来一发！" },
   { id: 102, r: "N", w: 12, type: "xp",      tokens: 5e6,                icon: "⚡", name: "迷你算力经验包 +5M", desc: "今日进化经验 +5M Token，加速兔兔升级！" },
   { id: 103, r: "N", w: 9,  type: "weather", tier: "h2",                 icon: "🌦️", name: "呼风唤雨卡 · 2小时", desc: "存入背包，随时自由切换小家晴/雨/雪/风 2 小时！" },
@@ -15274,7 +15279,7 @@ const GACHA_POOL = [
   { id: 107, r: "N", w: 11, type: "prop",    propId: "rain_magnet",      icon: "🧲", name: "强力吸金磁铁",      desc: "大冒险道具：接Token雨 开启 8 秒超大范围磁铁！" },
   { id: 108, r: "N", w: 9,  type: "prop",    propId: "slow_mo",          icon: "⏱️", name: "时光缓滞沙漏",      desc: "大冒险通用：打Bug 敌群减速 / Token雨 +10s 缓雷！" },
 
-  // ---- R (稀有 · 28% 权重) ----
+  // ---- R (稀有 · 20% 胶囊机概率) ----
   { id: 201, r: "R", w: 8,  type: "coins",    amount: 2,                  icon: "🥕", name: "小袋萝卜币 +2",     desc: "净赚翻倍！+2 枚萝卜币已存入钱包！" },
   { id: 202, r: "R", w: 8,  type: "xp",       tokens: 20e6,               icon: "⚡", name: "进阶算力经验包 +20M", desc: "今日进化经验 +20M Token，战力直冲！" },
   { id: 203, r: "R", w: 6,  type: "weather",  tier: "d1",                 icon: "⛈️", name: "呼风唤雨卡 · 1天",   desc: "存入背包，随时掌控小家天气一整天（24小时）！" },
@@ -15291,7 +15296,7 @@ const GACHA_POOL = [
   { id: 214, r: "R", w: 6,  type: "backdrop", bgId: "cyber_neon",         refund: 2, icon: "🌆", name: "背景板·赛博霓虹城", desc: "大冒险动态舞台背景：赛博霓虹透视网格夜空（重复折返 +2 币）" },
   { id: 215, r: "R", w: 6,  type: "backdrop", bgId: "starry_nebula",      refund: 2, icon: "🌌", name: "背景板·深空星云",   desc: "大冒险动态舞台背景：双层视差星空与旋转星云（重复折返 +2 币）" },
 
-  // ---- SR (超稀有 · 10% 权重) ----
+  // ---- SR (超稀有 · 8% 胶囊机概率) ----
   { id: 301, r: "SR", w: 9,  type: "coins",    amount: 5,                  icon: "💰", name: "丰厚萝卜礼袋 +5",   desc: "5 倍回报！+5 枚萝卜币直接到账！" },
   { id: 302, r: "SR", w: 9,  type: "xp",       tokens: 60e6,               icon: "🔥", name: "高能算力经验包 +60M", desc: "今日进化经验暴涨 +60M Token，直逼下一阶级！" },
   { id: 303, r: "SR", w: 7,  type: "lease",    houses: ["moganshan_cabin", "sunflower_glasshouse", "windmill_mill"], days: 7, refund: 4, icon: "🔑", name: "林间美宅 7天租房卡", desc: "免费入住 T4 精致林间美宅 7 天（已永久拥有自动返 +4 币）" },
@@ -15829,7 +15834,7 @@ function renderGachaBag() {
 
   bagEl.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;margin-bottom:6px">
-      <span style="font-size:10.5px;font-weight:700;color:var(--ink)">🎒 扭蛋战利品背包 <span style="font-weight:400;color:var(--muted)">(概率: N 60% · R 28% · SR 10% · SSR 2%)</span></span>
+      <span style="font-size:10.5px;font-weight:700;color:var(--ink)">🎒 扭蛋战利品背包 <span style="font-weight:400;color:var(--muted)">(概率: MISS 30% · N 40% · R 20% · SR 8% · SSR 2%)</span></span>
       ${activeWeatherTxt}
     </div>
     <div style="display:flex;flex-wrap:wrap;gap:5px">${chips.join("")}</div>
@@ -16051,6 +16056,38 @@ document.getElementById("arcWalletBtn").addEventListener("click", () => {
   openGachaModal();
 });
 
+// TOOTOO_GACHA_PULL_START
+const GACHA_MISS_QUOTES = [
+  "这颗扭蛋只装了点空气。",
+  "兔兔把耳朵贴上去听了听：空的。",
+  "壳倒是挺圆，里面什么也没有。",
+  "今天的欧气还在路上。",
+  "机器咔哒一声，送了你一声咔哒。",
+  "打开前摇过了，确实没声音。",
+  "兔兔检查了两遍，没漏掉什么。",
+  "一颗空扭蛋，没有隐藏夹层。",
+  "这次没装奖品，只有一声叹气。",
+  "这颗连兔兔都摇不出东西。",
+  "扭蛋机今天也有发呆的时候。",
+  "兔兔把空壳收走了，替你节省背包空间。",
+  "这颗扭蛋空得很坦荡。",
+  "扭蛋打开了，背包原封不动。",
+];
+let lastGachaMissQuote = -1;
+
+function rollMachineGachaTier(roll, forced) {
+  if (["MISS", "N", "R", "SR", "SSR"].includes(forced)) return forced;
+  return roll < 0.02 ? "SSR" : roll < 0.10 ? "SR" : roll < 0.30 ? "R"
+    : roll < 0.70 ? "N" : "MISS";
+}
+
+function nextGachaMissQuote(roll = Math.random()) {
+  const hasPrevious = lastGachaMissQuote >= 0;
+  const slot = Math.floor(roll * (GACHA_MISS_QUOTES.length - Number(hasPrevious)));
+  lastGachaMissQuote = hasPrevious && slot >= lastGachaMissQuote ? slot + 1 : slot;
+  return GACHA_MISS_QUOTES[lastGachaMissQuote];
+}
+
 let gachaBusy = false;
 document.getElementById("gachaPullBtn").addEventListener("click", () => {
   if (gachaBusy) return;
@@ -16091,16 +16128,25 @@ document.getElementById("gachaPullBtn").addEventListener("click", () => {
   void mac.offsetWidth;
   mac.classList.add("shaking");
   if (typeof gachaDomeSim !== "undefined") gachaDomeSim.burstShake(650);
-  playSfx("gacha");
+  const forced = DEV_DEBUG_ENABLED && debugState.active ? debugState.gachaForce : null;
+  const tier = rollMachineGachaTier(Math.random(), forced);
+  if (tier !== "MISS") playSfx("gacha");
   res.className = "gacha-result";
   res.innerHTML = `<span style="font-size:11px;color:var(--muted)">🎲 扭蛋机咔哒转动中… 正在注入今日算力欧气…</span>`;
 
   setTimeout(() => {
     gachaBusy = false;
-    const roll = Math.random();
-    const forced = debugState.active && debugState.gachaForce !== "auto" ? debugState.gachaForce : null;
-    // Economic drop table: SSR 2% | SR 10% | R 28% | N 60%
-    const tier = forced || (roll < 0.02 ? "SSR" : roll < 0.12 ? "SR" : roll < 0.40 ? "R" : "N");
+    if (tier === "MISS") {
+      const title = document.createElement("strong");
+      title.textContent = debugState.active ? "沙盒 · MISS · 空包" : "MISS · 空包";
+      const quote = document.createElement("div");
+      quote.className = "gacha-miss-quote";
+      quote.textContent = nextGachaMissQuote();
+      res.className = "gacha-result pop tier-MISS";
+      res.replaceChildren(title, quote);
+      playSfx("gachaMiss");
+      return;
+    }
     const pick = pickWeightedGacha(tier);
     const granted = grantGachaReward(pick);
     const displayPick = { ...pick, name: granted.actualName, desc: granted.actualDesc };
@@ -16144,6 +16190,7 @@ document.getElementById("gachaPullBtn").addEventListener("click", () => {
     }
   }, 480);
 });
+// TOOTOO_GACHA_PULL_END
 document.getElementById("gachaMachine")?.addEventListener("click", () => {
   const btn = document.getElementById("gachaPullBtn");
   if (btn && !btn.disabled) btn.click();

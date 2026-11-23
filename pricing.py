@@ -4,10 +4,10 @@ tootoo Dynamic Pricing Engine — Zero-release model pricing & cost calibration.
 
 4-layer waterfall (highest priority first):
   1. User local overrides     (~/.tootoo/pricing_overrides.json)
-  2. Live remote catalogs     (~/.tootoo/pricing_remote.json, auto-synced every 24h
-                               from OpenRouter API + LiteLLM catalog + optional custom URL)
-  3. Local observed rates     (derived automatically from local logs that carry native
+  2. Local observed rates     (derived automatically from local logs that carry native
                                provider cost breakdowns, e.g. OMP / OpenCode)
+  3. Live remote catalogs     (~/.tootoo/pricing_remote.json, auto-synced every 24h
+                               from OpenRouter API + LiteLLM catalog + optional custom URL)
   4. Built-in family fallback (offline tier-aware defaults: flash/mini/pro/opus)
 
 All rates are normalized to USD per 1,000,000 tokens:
@@ -16,9 +16,12 @@ All rates are normalized to USD per 1,000,000 tokens:
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 import json
+import math
 import os
 import re
+import tempfile
 import threading
 import time
 import urllib.request
@@ -30,9 +33,29 @@ REMOTE_CACHE_FILE = os.path.join(TOOTOO_DIR, "pricing_remote.json")
 OVERRIDES_FILE = os.path.join(TOOTOO_DIR, "pricing_overrides.json")
 CONFIG_FILE = os.path.join(TOOTOO_DIR, "config.json")
 
+REMOTE_CACHE_VERSION = 2
 REMOTE_TTL_SECONDS = 24 * 3600
+REMOTE_RETRY_SECONDS = 5 * 60
 OPENROUTER_URL = "https://openrouter.ai/api/v1/models"
 LITELLM_URL = "https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json"
+
+# Gemini AI Studio Standard paid rates, not Batch/Flex/Priority or plan billing.
+# https://aistudio.google.com/docs/pricing
+# Estimates use the current rate at calculation time, not a historical invoice.
+_GEMINI_4_INTRO_END = datetime(2026, 12, 1, tzinfo=timezone.utc).timestamp()
+_GEMINI_4_INTRO_RATE = {"in": 2.0, "out": 10.0, "cr": 0.10, "cw": 0.0}
+_GEMINI_4_STANDARD_RATE = {"in": 4.0, "out": 20.0, "cr": 0.20, "cw": 0.0}
+_GEMINI_4_NEON_RATE = {"in": 3.0, "out": 15.0, "cr": 0.15, "cw": 0.0}
+_GEMINI_PRO_TIER_RATE = {"in": 2.0, "out": 12.0, "cr": 0.20, "cw": 0.0}
+
+# Official CLI selector slugs. An Orchestrator also uses Hydrogen for execution;
+# if the log only identifies the Orchestrator, its planner rate is an estimate.
+# https://antigravity.google/docs/cli/headless/
+_GEMINI_PLANNER_ALIASES = {
+    "gemini-pro-orchestrator": "gemini-4-carbon",
+    "gemini-pro-orchestrator-argon": "gemini-4-argon",
+    "gemini-pro-orchestrator-neon": "gemini-4-neon",
+}
 
 # Offline fallback tiers (USD / 1M tokens: in, out, cache_read, cache_write)
 BUILTIN_TIERS: list[tuple[str, dict[str, float]]] = [
@@ -52,11 +75,19 @@ BUILTIN_TIERS: list[tuple[str, dict[str, float]]] = [
     ("gemini-flash",       {"in": 0.30, "out": 2.50, "cr": 0.03,  "cw": 0.0}),
     ("gemini-2.5-flash",   {"in": 0.30, "out": 2.50, "cr": 0.03,  "cw": 0.0}),
     ("gemini-2.0-flash",   {"in": 0.10, "out": 0.40, "cr": 0.01,  "cw": 0.0}),
-    ("gemini-4",           {"in": 1.25, "out": 10.0, "cr": 0.125, "cw": 0.0}),
-    ("gemini-3.5-pro",     {"in": 1.25, "out": 10.0, "cr": 0.125, "cw": 0.0}),
-    ("gemini-3-pro",       {"in": 1.25, "out": 10.0, "cr": 0.125, "cw": 0.0}),
+    ("gemini-4-carbon",    _GEMINI_4_STANDARD_RATE),
+    ("gemini-4-argon",     _GEMINI_4_STANDARD_RATE),
+    ("gemini-4-neon",      _GEMINI_4_NEON_RATE),
+    ("gemini-4-hydrogen",  {"in": 1.50, "out": 7.50, "cr": 0.075, "cw": 0.0}),
+    # Generic family with no model identifier: use Neon as a representative baseline.
+    ("gemini-4",           _GEMINI_4_NEON_RATE),
+    ("gemini-3.5-flash-lite", {"in": 0.30, "out": 2.50, "cr": 0.03, "cw": 0.0}),
+    ("gemini-3.1-pro",     _GEMINI_PRO_TIER_RATE),
+    # 3.5 Pro is an estimate for logs labeled as a 3.x Pro tier, not a quoted model.
+    ("gemini-3.5-pro",     _GEMINI_PRO_TIER_RATE),
+    ("gemini-3-pro",       _GEMINI_PRO_TIER_RATE),
     ("gemini-2.5-pro",     {"in": 1.25, "out": 10.0, "cr": 0.125, "cw": 0.0}),
-    ("gemini-pro",         {"in": 1.25, "out": 10.0, "cr": 0.125, "cw": 0.0}),
+    ("gemini-pro",         _GEMINI_PRO_TIER_RATE),
     ("gemini",             {"in": 0.50, "out": 3.00, "cr": 0.05,  "cw": 0.0}),
     # OpenAI / Codex
     ("gpt-6",              {"in": 2.00, "out": 12.0, "cr": 0.20,  "cw": 0.0}),
@@ -87,7 +118,15 @@ _SUFFIX_RE = re.compile(
 )
 
 _refresh_lock = threading.Lock()
+_sync_lock = threading.Lock()
 _refresh_in_flight = False
+_retry_after = 0.0
+
+_NON_STANDARD_TIERS = frozenset({
+    "batch", "flex", "priority", "free", "floor", "nitro", "extended", "exacto", "async",
+})
+_AZURE_REGIONS = frozenset({"eu", "us", "apac", "us-gov"})
+_NATIVE_PROVIDERS = frozenset({"openai", "anthropic", "gemini", "google", "vertex_ai"})
 
 
 def normalize_model_key(model: str | None) -> str:
@@ -105,7 +144,10 @@ def model_lookup_candidates(model: str | None) -> list[str]:
     base = normalize_model_key(model)
     cands = [base]
     cur = base
-    for _ in range(4):
+    for _ in range(5):
+        if cur in _GEMINI_PLANNER_ALIASES:
+            cands.append(_GEMINI_PLANNER_ALIASES[cur])
+            break
         nxt = _SUFFIX_RE.sub("", cur)
         if nxt == cur or not nxt:
             break
@@ -131,6 +173,8 @@ def _clean_rate_dict(obj: Any) -> dict[str, float] | None:
         r_out = float(obj.get("out", obj.get("output", 0.0)) or 0.0)
         r_cr = float(obj.get("cr", obj.get("cache_read", r_in * 0.1)) or 0.0)
         r_cw = float(obj.get("cw", obj.get("cache_write", 0.0)) or 0.0)
+        if not all(map(math.isfinite, (r_in, r_out, r_cr, r_cw))):
+            return None
         if r_in < 0 or r_out < 0 or r_in > 500 or r_out > 2000:
             return None
         if r_in == 0 and r_out == 0:
@@ -156,13 +200,14 @@ def _http_get_json(url: str, timeout: float = 8.0) -> Any:
 
 def _fetch_openrouter_models() -> dict[str, dict[str, float]]:
     data = _http_get_json(OPENROUTER_URL, timeout=8.0)
-    models: dict[str, dict[str, float]] = {}
-    for item in data.get("data") or []:
+    selected = {}
+    items = data.get("data") if isinstance(data, dict) else None
+    for item in items if isinstance(items, list) else []:
         if not isinstance(item, dict):
             continue
         mid = item.get("id")
         pr = item.get("pricing")
-        if not mid or not isinstance(pr, dict):
+        if not isinstance(mid, str) or not mid.strip() or ":" in mid or not isinstance(pr, dict):
             continue
         try:
             p_in = float(pr.get("prompt") or 0) * 1e6
@@ -173,17 +218,40 @@ def _fetch_openrouter_models() -> dict[str, dict[str, float]]:
             continue
         rate = _clean_rate_dict({"in": p_in, "out": p_out, "cr": p_cr, "cw": p_cw})
         if rate:
-            models[normalize_model_key(mid)] = rate
-    return models
+            _choose_standard_rate(selected, mid, rate,
+                                  pr.get("input_cache_read") is not None, pr.get("input_cache_write") is not None)
+    return {key: rate for key, (_, rate) in selected.items()}
+
+
+def _litellm_nonstandard(model_id: str) -> bool:
+    path = model_id.strip().lower().split("/")
+    if not all(path):
+        return True
+    if (len(path) >= 3 and path[0] in {"azure", "azure_ai"} and path[1] in _AZURE_REGIONS):
+        return True
+    # Match tokens, not substrings: e.g. "vertex_ai" and "freeform" are ordinary IDs.
+    return bool(_NON_STANDARD_TIERS.intersection(re.split(r"[/._:\-]", model_id.lower())))
+
+
+def _choose_standard_rate(selected, raw_id, rate, explicit_read, explicit_write):
+    raw = raw_id.strip().lower()
+    path = raw.split("/")
+    rank = 0 if len(path) == 1 else 1 if len(path) == 2 and path[0] in _NATIVE_PROVIDERS else 2
+    # Source class wins over completeness; otherwise use explicit cache pricing,
+    # then stable lexical/value ordering, never whichever item arrived last.
+    order = (rank, not explicit_read, not explicit_write, raw, tuple(rate[k] for k in ("in", "out", "cr", "cw")))
+    key = normalize_model_key(raw)
+    if key != "unknown" and (key not in selected or order < selected[key][0]):
+        selected[key] = (order, rate)
 
 
 def _fetch_litellm_models() -> dict[str, dict[str, float]]:
     data = _http_get_json(LITELLM_URL, timeout=10.0)
-    models: dict[str, dict[str, float]] = {}
     if not isinstance(data, dict):
-        return models
+        return {}
+    selected = {}
     for mid, spec in data.items():
-        if not isinstance(spec, dict) or mid == "sample_spec":
+        if not isinstance(mid, str) or mid == "sample_spec" or not isinstance(spec, dict) or _litellm_nonstandard(mid):
             continue
         if spec.get("mode") not in (None, "chat", "responses", "completion"):
             continue
@@ -198,11 +266,8 @@ def _fetch_litellm_models() -> dict[str, dict[str, float]]:
             continue
         rate = _clean_rate_dict({"in": p_in, "out": p_out, "cr": p_cr, "cw": p_cw})
         if rate:
-            key = normalize_model_key(mid)
-            # Prefer entries with explicit cache pricing over generic ones
-            if key not in models or p_cr_raw is not None:
-                models[key] = rate
-    return models
+            _choose_standard_rate(selected, mid, rate, p_cr_raw is not None, p_cw_raw is not None)
+    return {key: rate for key, (_, rate) in selected.items()}
 
 
 def _fetch_custom_url() -> dict[str, dict[str, float]]:
@@ -227,9 +292,20 @@ def _fetch_custom_url() -> dict[str, dict[str, float]]:
 
 def sync_remote_pricing(force: bool = False) -> dict[str, Any]:
     """Synchronously fetch latest remote catalogs and persist to ~/.tootoo/pricing_remote.json."""
+    with _sync_lock:
+        return _sync_remote_pricing(force)
+
+
+def _is_fresh(cache: dict[str, Any]) -> bool:
+    updated = cache.get("updated_at")
+    return isinstance(updated, (int, float)) and not isinstance(updated, bool) and (
+        0 <= time.time() - updated < REMOTE_TTL_SECONDS
+    )
+
+
+def _sync_remote_pricing(force: bool) -> dict[str, Any]:
     existing = load_remote_cache()
-    now = time.time()
-    if not force and existing.get("updated_at") and (now - float(existing["updated_at"])) < REMOTE_TTL_SECONDS:
+    if not force and _is_fresh(existing):
         return existing
 
     merged: dict[str, dict[str, float]] = {}
@@ -266,54 +342,64 @@ def sync_remote_pricing(force: bool = False) -> dict[str, Any]:
         return existing
 
     payload = {
-        "version": 1,
-        "updated_at": round(now, 1),
+        "version": REMOTE_CACHE_VERSION,
+        "updated_at": time.time(),
         "sources": sources_ok,
         "count": len(merged),
         "models": merged,
     }
+    tmp = None
     try:
         os.makedirs(TOOTOO_DIR, exist_ok=True)
-        tmp = REMOTE_CACHE_FILE + ".tmp"
-        with open(tmp, "w", encoding="utf-8") as f:
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", prefix=".pricing_remote-",
+                                         dir=TOOTOO_DIR, delete=False) as f:
+            tmp = f.name
             json.dump(payload, f, separators=(",", ":"))
         os.replace(tmp, REMOTE_CACHE_FILE)
     except OSError:
         pass
+    finally:
+        if tmp:
+            try:
+                os.unlink(tmp)
+            except OSError:
+                pass
     return payload
 
 
 def trigger_background_sync_if_stale() -> None:
     global _refresh_in_flight
-    existing = load_remote_cache()
-    now = time.time()
-    if existing.get("updated_at") and (now - float(existing["updated_at"])) < REMOTE_TTL_SECONDS:
-        return
     with _refresh_lock:
-        if _refresh_in_flight:
+        if _refresh_in_flight or time.monotonic() < _retry_after or _is_fresh(load_remote_cache()):
             return
         _refresh_in_flight = True
 
     def _run():
-        global _refresh_in_flight
+        global _refresh_in_flight, _retry_after
         try:
-            sync_remote_pricing(force=True)
+            sync_remote_pricing()
         finally:
             with _refresh_lock:
+                _retry_after = 0.0 if _is_fresh(load_remote_cache()) else time.monotonic() + REMOTE_RETRY_SECONDS
                 _refresh_in_flight = False
 
-    threading.Thread(target=_run, daemon=True).start()
+    try:
+        threading.Thread(target=_run, daemon=True).start()
+    except RuntimeError:
+        with _refresh_lock:
+            _refresh_in_flight = False
 
 
 def load_remote_cache() -> dict[str, Any]:
     try:
         with open(REMOTE_CACHE_FILE, "r", encoding="utf-8") as f:
             d = json.load(f)
-            if isinstance(d, dict) and isinstance(d.get("models"), dict):
+            if (isinstance(d, dict) and d.get("version") == REMOTE_CACHE_VERSION
+                    and isinstance(d.get("models"), dict)):
                 return d
     except Exception:
         pass
-    return {"version": 1, "updated_at": None, "sources": [], "count": 0, "models": {}}
+    return {"version": REMOTE_CACHE_VERSION, "updated_at": None, "sources": [], "count": 0, "models": {}}
 
 
 def ensure_overrides_template() -> None:
@@ -359,6 +445,7 @@ class PricingEngine:
         self.remote: dict[str, dict[str, float]] = self.remote_meta.get("models") or {}
         self.observed: dict[str, dict[str, float]] = observed_rates or {}
         self._cache: dict[str, tuple[dict[str, float], str]] = {}
+        self._estimate_time = time.time()
 
     def resolve(self, model: str | None) -> tuple[dict[str, float], str]:
         key = normalize_model_key(model)
@@ -390,7 +477,16 @@ class PricingEngine:
 
         # 4. Built-in family fallback
         for prefix, rates in BUILTIN_TIERS:
-            if prefix in key:
+            if prefix.startswith("gemini"):
+                matches = any(c == prefix or c.startswith(prefix + "-") for c in cands)
+            else:
+                matches = prefix in key
+            if matches:
+                # The later price is the default; the launch promotion expires at
+                # the documented calendar date (UTC for a repeatable estimate).
+                if (prefix in {"gemini-4-carbon", "gemini-4-argon"} and prefix in cands
+                        and self._estimate_time < _GEMINI_4_INTRO_END):
+                    rates = _GEMINI_4_INTRO_RATE
                 res = (rates, "fallback")
                 self._cache[key] = res
                 return res

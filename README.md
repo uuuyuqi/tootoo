@@ -106,7 +106,7 @@ brew upgrade --cask tootoo
 
 ### 方式二：下载 GitHub Release 安装包
 
-1. 前往 [**Releases**](https://github.com/uuuyuqi/tootoo/releases) 下载最新版 `TooToo-v0.2.4-macos-universal.zip`。
+1. 前往 [**Releases**](https://github.com/uuuyuqi/tootoo/releases) 下载最新版 `TooToo-v0.2.5-macos-universal.zip`。
 2. 解压后将 `TooToo.app` 拖入 `/Applications`。
 3. 首次打开若遇 macOS 未知开发者提示（开源项目使用 ad-hoc 本地签名），在终端执行一次即可：
    ```bash
@@ -150,6 +150,12 @@ TooToo 启动后自动发现本机已安装工具的会话记录，零配置开�
 - **随时回归极简**：点击面板右下角 ⚙ **设置 → 开启「简洁模式」**，立即隐藏全部养成与游戏入口，回归纯粹的高精度遥测仪表盘。
 
 ---
+
+### v0.2.5 更新
+
+- 算力扭蛋机新增 30% 的空包结果：仍消耗 1 枚萝卜币但不发奖励；其余概率为 N 40%、R 20%、SR 8%、SSR 2%。游戏中捡到的神秘扭蛋不变。
+- 在线价目同步过滤 OpenRouter 的特殊后缀条目，优先保留实际模型对应的 LiteLLM 价目；旧缓存会自动刷新。
+
 
 ### 软件更新（macOS）
 
