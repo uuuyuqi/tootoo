@@ -308,8 +308,7 @@ class TelemetryWebViewController: NSViewController, WKScriptMessageHandler, WKNa
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         if let dict = message.body as? [String: Any], let action = dict["action"] as? String {
-            let privileged = ["getKeepAwakeState", "setKeepAwake", "getUpdateState", "checkForUpdate", "installUpdate", "openUpdateRelease",
-                              "getAgyQuotaControl", "setAgyQuotaControl"]
+            let privileged = ["getKeepAwakeState", "setKeepAwake", "getUpdateState", "checkForUpdate", "installUpdate", "openUpdateRelease"]
             if privileged.contains(action) {
                 guard message.frameInfo.isMainFrame, let frameURL = message.frameInfo.request.url,
                       matchesAppPage(frameURL) else { return }
@@ -422,8 +421,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private var popoverVC: TelemetryWebViewController?
     private var fullWindow: NSWindow?
     private var fullWindowVC: TelemetryWebViewController?
-    private var agyQuotaEnabled = !UserDefaults.standard.bool(forKey: "agyQuotaAutoDisabled")
-    private var changingAgyQuota = false
     private var backendProcess: Process?
     private var port: UInt16 = variantPreferredPort
     private var statusTimer: Timer?
@@ -697,30 +694,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         return "/usr/bin/python3"
     }
 
-    private func syncAgyQuotaControl(refresh: Bool = false) {
-        let js = "window.__onAgyQuotaControl && window.__onAgyQuotaControl({enabled:\(agyQuotaEnabled),busy:\(changingAgyQuota),refresh:\(refresh)});"
-        popoverVC?.evalJS(js)
-        fullWindowVC?.evalJS(js)
-    }
-
-    private func setAgyQuotaControl(_ enabled: Bool) {
-        guard !changingAgyQuota, enabled != agyQuotaEnabled else { return }
-        agyQuotaEnabled = enabled
-        changingAgyQuota = true
-        UserDefaults.standard.set(!enabled, forKey: "agyQuotaAutoDisabled")
-        syncAgyQuotaControl()
-        // Only restart the backend owned by this app. This also drops its
-        // in-flight probe and memory-only quota sample when switched off.
-        stopBackend()
-        startBackend()
-        waitForBackend { [weak self] in
-            guard let self = self else { return }
-            self.changingAgyQuota = false
-            self.syncAgyQuotaControl(refresh: true)
-            self.refreshMenuBarSummary()
-        }
-    }
-
     private func startBackend() {
         guard let resPath = Bundle.main.resourcePath else { return }
         let serverScript = (resPath as NSString).appendingPathComponent("server.py")
@@ -736,7 +709,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         var env = ProcessInfo.processInfo.environment
         env["PYTHONUNBUFFERED"] = "1"
         env["PYTHONDONTWRITEBYTECODE"] = "1" // Keep the verified bundle’s resource seal intact.
-        env["TOOTOO_AGY_CLI"] = agyQuotaEnabled ? "auto" : "off"
+        // New installs read automatically only after backend eligibility checks.
+        // Respect an existing explicit AGY opt-out and administrator overrides.
+        let agyOff = env["TOOTOO_AGY_CLI"] == "off" || UserDefaults.standard.bool(forKey: "agyQuotaAutoDisabled")
+        env["TOOTOO_AGY_CLI"] = agyOff ? "off" : "auto"
+        env["TOOTOO_CODEX_QUOTA_AUTO"] = env["TOOTOO_CODEX_QUOTA_AUTO"] == "off" ? "off" : "auto"
         env["TOOTOO_UPDATE_NONCE"] = updateController.backendNonce
         #if TOOTOO_DEBUG
         env["TOOTOO_DEBUG"] = "1"
@@ -1093,10 +1070,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             updateController.install()
         case "openUpdateRelease":
             updateController.openRelease()
-        case "getAgyQuotaControl":
-            syncAgyQuotaControl()
-        case "setAgyQuotaControl":
-            if let enabled = payload["enabled"] as? Bool { setAgyQuotaControl(enabled) }
         case "getKeepAwakeState":
             syncKeepAwakeToWeb()
         case "setKeepAwake":

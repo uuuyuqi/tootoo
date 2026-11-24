@@ -24,9 +24,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
 from agy_cli_quota import stop_agy_cli_quota
+from codex_app_quota import stop_codex_cli_quota
 from pricing import sync_remote_pricing
 from update_check import checker as update_checker
-from scanner import CACHE_DIR, build_telemetry, load_carrot_state, save_carrot_state, save_local_quota_config
+from scanner import CACHE_DIR, build_telemetry, refresh_native_codex_quota, load_carrot_state, save_carrot_state, save_local_quota_config
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UI_FILE = os.path.join(BASE_DIR, "ui", "index.html")
@@ -476,12 +477,27 @@ def main() -> None:
     # Native Off and Quit terminate this owned backend. Give its AGY worker
     # the same cancellation path as a normal shutdown so no child survives.
     agy_auto = os.environ.get("TOOTOO_AGY_CLI") == "auto"
+    codex_auto = os.environ.get("TOOTOO_CODEX_QUOTA_AUTO") == "auto"
+    codex_closing = threading.Event()
+    codex_gate = threading.Lock()
+
+    def _codex_tick():
+        while not codex_closing.is_set():
+            try:
+                refresh_native_codex_quota(codex_closing, codex_gate)
+            except (OSError, ValueError, RuntimeError):
+                pass
+            codex_closing.wait(28)
+
     try:
-        if agy_auto:
+        if agy_auto or codex_auto:
             def stop_requested(*_):
                 raise KeyboardInterrupt
             signal.signal(signal.SIGTERM, stop_requested)
         threading.Thread(target=_warmup, daemon=True).start()
+        if codex_auto:
+            # Run on an independent native-owned clock, never on HTTP/SSE input.
+            threading.Thread(target=_codex_tick, daemon=True, name="codex-quota-schedule").start()
 
         if not args.no_open:
             threading.Timer(0.35, lambda: webbrowser.open(url)).start()
@@ -490,6 +506,10 @@ def main() -> None:
     except KeyboardInterrupt:
         print("\ntootoo stopped.")
     finally:
+        if codex_auto:
+            codex_closing.set()
+            with codex_gate:
+                stop_codex_cli_quota()
         if agy_auto:
             stop_agy_cli_quota()
         server.server_close()

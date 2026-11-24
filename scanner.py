@@ -30,6 +30,7 @@ from pathlib import Path
 from typing import Any
 
 from agy_cli_quota import fetch_agy_cli_quota
+from codex_app_quota import codex_cli_home, fetch_codex_cli_quota, peek_codex_app_quota
 from pricing import PricingEngine, calibrate_observed_rates, trigger_background_sync_if_stale
 
 HOME = os.path.expanduser("~")
@@ -1841,6 +1842,7 @@ _MEM_FILE_CACHE: dict[str, Any] | None = None
 _MEM_SCAN_TS: float = 0.0
 _MEM_SCAN_EVENTS: list[dict[str, Any]] | None = None
 _MEM_SCAN_QUOTAS: dict[str, Any] = {}
+_MEM_CODEX_ACTIVITY: float = 0.0
 _MEM_OBSERVED_TS: float = -1.0
 _MEM_OBSERVED_RATES: dict[str, dict[str, float]] = {}
 _MEM_SCAN_TTL = 5.0
@@ -1965,7 +1967,7 @@ def _hydrate_parsed(tool: str, path: str, parsed: dict[str, Any], fallback_proj:
 
 
 def scan_all_events(force: bool = False, rebuild: bool = False) -> tuple[list[dict[str, Any]], dict[str, Any], float]:
-    global _MEM_FILE_CACHE, _MEM_SCAN_TS, _MEM_SCAN_EVENTS, _MEM_SCAN_QUOTAS
+    global _MEM_FILE_CACHE, _MEM_SCAN_TS, _MEM_SCAN_EVENTS, _MEM_SCAN_QUOTAS, _MEM_CODEX_ACTIVITY
     t0 = time.perf_counter()
     with _SCAN_LOCK:
         now_mono = time.monotonic()
@@ -2140,6 +2142,8 @@ def scan_all_events(force: bool = False, rebuild: bool = False) -> tuple[list[di
         all_events: list[dict[str, Any]] = []
         quotas: dict[str, Any] = {}
         agy_ws: dict[str, str] | None = None
+        active_codex = codex_cli_home() if os.environ.get("TOOTOO_CODEX_QUOTA_AUTO") == "auto" else None
+        codex_activity = 0.0
         for tool, path, key in valid_sources:
             entry = fcache.get(key)
             if not entry:
@@ -2165,6 +2169,14 @@ def scan_all_events(force: bool = False, rebuild: bool = False) -> tuple[list[di
             evs = parsed.get("events")
             if evs:
                 all_events.extend(evs)
+                # Only the matching CLI profile can trigger an automatic probe.
+                # Other profiles still retain their normal log-based telemetry.
+                if tool == "codex" and active_codex is not None:
+                    try:
+                        if Path(path).resolve().is_relative_to(active_codex):
+                            codex_activity = max(codex_activity, max(ev["ts"] for ev in evs))
+                    except (OSError, RuntimeError):
+                        pass
 
         if dirty:
             _CACHE_NEEDS_SAVE = True
@@ -2172,6 +2184,7 @@ def scan_all_events(force: bool = False, rebuild: bool = False) -> tuple[list[di
 
         _MEM_SCAN_EVENTS = all_events
         _MEM_SCAN_QUOTAS = quotas
+        _MEM_CODEX_ACTIVITY = codex_activity
         _MEM_SCAN_TS = time.monotonic()
 
         elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 1)
@@ -2666,6 +2679,50 @@ def _compute_local_rolling_quotas(
     return out
 
 
+def _codex_working_log(quota, now):
+    if not isinstance(quota, dict):
+        return False
+    for slot in ("primary", "secondary"):
+        bucket = quota.get(slot)
+        if not isinstance(bucket, dict):
+            continue
+        used, reset = bucket.get("used_percent"), bucket.get("resets_at")
+        if type(used) not in (int, float) or not 0 <= used <= 100:
+            continue
+        if reset is None or (type(reset) in (int, float) and reset > now):
+            return True
+    return False
+
+
+def _codex_recent_activity(now):
+    return now - 7 * 86400 <= _MEM_CODEX_ACTIVITY <= now + 300 and _MEM_CODEX_ACTIVITY > 0
+
+
+def refresh_native_codex_quota(closing, gate):
+    """Only the owned native backend scheduler can call this launch function."""
+    _events, quotas, _elapsed = scan_all_events()
+    now = time.time()
+    enabled = _codex_recent_activity(now) and not _codex_working_log(quotas.get("codex"), now)
+    with gate:
+        if not closing.is_set():
+            fetch_codex_cli_quota(enabled=enabled)
+
+
+def select_codex_quota(log):
+    """Telemetry/SSE only view an already available sample; never launch Codex."""
+    now = time.time()
+    log = {**log, "source": "session_log", "account_scope": "unknown"} if _has_valid_quota(log) else None
+    mode = os.environ.get("TOOTOO_CODEX_QUOTA_AUTO")
+    if _codex_working_log(log, now):
+        return log, {"state": "log"}
+    if mode != "auto":
+        return log, {"state": "disabled"}
+    if not _codex_recent_activity(now):
+        return log, {"state": "inactive"}
+    result = peek_codex_app_quota()
+    return (result["quota"] or log), result["status"]
+
+
 def select_antigravity_quota(events: list[dict[str, Any]], *, force: bool = False):
     """Select exactly one source. Do not mask a CLI failure with another account."""
     def legacy():
@@ -2709,6 +2766,9 @@ def build_telemetry(
     ag_quota = ag_result["quota"]
     if ag_quota:
         quotas = {**quotas, "antigravity": ag_quota}
+    codex_quota, codex_status = select_codex_quota(quotas.get("codex"))
+    if codex_quota:
+        quotas = {**quotas, "codex": codex_quota}
 
     # Dynamic 4-layer pricing (overrides -> locally calibrated native logs -> remote OpenRouter/LiteLLM -> fallback)
     if _MEM_OBSERVED_TS != _MEM_SCAN_TS or force:
@@ -3138,7 +3198,7 @@ def build_telemetry(
             for h in range(24)
         ],
         "quotas": quotas,
-        "quota_status": {"antigravity": ag_result["status"]},
+        "quota_status": {"antigravity": ag_result["status"], "codex": codex_status},
         "tools": tools_out,
         "models": models_out,
         "projects": projects_out,

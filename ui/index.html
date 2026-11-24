@@ -6385,6 +6385,24 @@
     margin-bottom: 11px;
     font-size: 11px;
   }
+  .quota-source-settings {
+    padding-top: 8px;
+    border-top: 1px dashed var(--border);
+  }
+
+  .quota-source-setting {
+    display: grid;
+    grid-template-columns: 4.6em minmax(0, 1fr);
+    gap: 8px;
+    align-items: baseline;
+  }
+
+  .quota-source-setting span:last-child {
+    min-width: 0;
+    color: var(--muted);
+    overflow-wrap: anywhere;
+  }
+
   .qcfg-row label {
     color: var(--ink-soft);
     font-weight: 600;
@@ -7575,14 +7593,11 @@
       </div>
     </div>
 
-    <div class="qcfg-row" style="padding-top:8px;border-top:1px dashed var(--border)">
-      <label>AGY 额度</label>
-      <span id="quotaSourceAgy" style="color:var(--muted)">Antigravity：尚未读取</span>
-      <div id="agyQuotaControlRow" style="display:none">
-        <button id="agyQuotaControlBtn" class="btn" type="button">开启 AGY 额度自动读取</button>
-      </div>
-      <ul id="agyQuotaGroups" aria-label="AGY CLI 额度组" style="display:none;margin:0;padding-left:18px"></ul>
-    </div>
+    <section class="qcfg-row quota-source-settings" aria-labelledby="quotaSourceHeading">
+      <label id="quotaSourceHeading">额度来源</label>
+      <div class="quota-source-setting"><span>Codex</span><span id="quotaSourceCodex">尚未读取</span></div>
+      <div class="quota-source-setting"><span>AGY</span><span id="quotaSourceAgy">尚未读取</span></div>
+    </section>
 
     <div class="qcfg-row" style="padding-top:8px;border-top:1px dashed var(--border);margin-bottom:0">
       <label>数据与窗口</label>
@@ -8124,30 +8139,6 @@ function postNative(action, extra = {}) {
   } catch {}
   return false;
 }
-
-// TOOTOO_AGY_CONTROL_START
-const agyQuotaControlRow = document.getElementById("agyQuotaControlRow");
-const agyQuotaControlBtn = document.getElementById("agyQuotaControlBtn");
-const agyQuotaNativeBridge = Boolean(window.webkit?.messageHandlers?.tootoo);
-if (agyQuotaNativeBridge) {
-  let enabled = null;
-  window.__onAgyQuotaControl = state => {
-    if (typeof state?.enabled !== "boolean" || typeof state?.busy !== "boolean") return;
-    enabled = state.enabled;
-    agyQuotaControlRow.style.display = "";
-    agyQuotaControlBtn.disabled = state.busy;
-    agyQuotaControlBtn.textContent = state.busy ? "正在切换…" : enabled
-      ? "关闭 AGY 额度自动读取" : "开启 AGY 额度自动读取";
-    if (state.refresh) void fetchTelemetry(true);
-  };
-  agyQuotaControlBtn.addEventListener("click", event => {
-    if (event.isTrusted && enabled !== null && !agyQuotaControlBtn.disabled) {
-      postNative("setAgyQuotaControl", {enabled: !enabled});
-    }
-  });
-  postNative("getAgyQuotaControl");
-}
-// TOOTOO_AGY_CONTROL_END
 
 // TOOTOO_UPDATE_UI_START
 const updateUi = Object.fromEntries([
@@ -10649,8 +10640,16 @@ function pickCodexQuotaBucket(cx) {
   return buckets.find(b => Number(b.window_minutes) === 10080) ?? buckets[0];
 }
 
+function codexQuotaDiagnostic(status, quota) {
+  if (quota?.source === "app_server") return "当前 Codex CLI 账号 · 最近读取";
+  if (quota?.source === "session_log") return "本地日志 · 账号未核实";
+  if (status?.state === "inactive") return "未检测到近期 Codex 使用";
+  if (status?.state === "loading") return "正在读取 Codex CLI 额度…";
+  if (status?.state === "no_data") return "当前 Codex CLI 没有返回额度";
+  return "暂未读到官方额度";
+}
+
 function agyQuotaDiagnostic(status) {
-  if (status?.state === "disabled") return "自动读取已关闭";
   if (status?.selected_source === "cli") {
     if (status.state === "loading") return "正在查询 AGY CLI 额度…";
     if (status.state === "live" || status.state === "cached") return "来自 AGY CLI · 最近读取";
@@ -10668,29 +10667,11 @@ function agyQuotaDiagnostic(status) {
   return "暂未读到官方额度";
 }
 
-function renderAgyQuotaGroups(d) {
-  const list = document.getElementById("agyQuotaGroups");
-  if (!list) return;
-  const quota = d?.quotas?.antigravity;
-  const valid = quota?.source === "cli" ||
-    (quota?.source === "cli_cached" && d?.quota_status?.antigravity?.state === "cached");
-  const buckets = valid && Array.isArray(quota.buckets) ? quota.buckets : [];
-  const rows = buckets.filter(b => typeof b.label === "string" && Number.isFinite(b.used_percent) && b.used_percent >= 0 && b.used_percent <= 100).map(b => {
-    const item = document.createElement("li");
-    const remaining = Number((100 - b.used_percent).toFixed(2));
-    const reset = Number.isFinite(b.resets_at) && b.resets_at > 0
-      ? " · " + new Date(b.resets_at * 1000).toLocaleString() + " 重置" : "";
-    item.textContent = b.label + "：剩余 " + remaining + "%" + reset;
-    return item;
-  });
-  list.replaceChildren(...rows);
-  list.style.display = rows.length ? "" : "none";
-}
-
 function renderTopQuota(d) {
+  const codexSource = document.getElementById("quotaSourceCodex");
+  if (codexSource) codexSource.textContent = codexQuotaDiagnostic(d?.quota_status?.codex, d?.quotas?.codex);
   const agySource = document.getElementById("quotaSourceAgy");
-  if (agySource) agySource.textContent = "Antigravity：" + agyQuotaDiagnostic(d?.quota_status?.antigravity);
-  renderAgyQuotaGroups(d);
+  if (agySource) agySource.textContent = agyQuotaDiagnostic(d?.quota_status?.antigravity);
   const box = document.getElementById("topQuota");
   if (!box) return;
   const mode = menuBarQuotaBar;
@@ -11252,6 +11233,8 @@ function renderAgents(d) {
         let quotaHtml = "";
         if (t.quota && (t.quota.primary || t.quota.secondary || (t.quota.buckets && t.quota.buckets.length))) {
           const isLocal = t.quota.source === "local";
+          const quotaSourceLabel = t.tool !== "codex" ? "" : t.quota.source === "session_log"
+            ? "本地日志" : t.quota.source === "app_server" ? "当前 CLI 账号" : "";
           const quotaLabel = (obj, fallback) => {
             if (obj && obj.label) return obj.label;
             const wm = Number(obj && obj.window_minutes);
@@ -11312,7 +11295,7 @@ function renderAgents(d) {
             const worstCol = worstRem <= 15 ? "var(--bad)" : worstRem <= 30 ? "var(--warn)" : "var(--teal)";
             const badgeHtml = isLocal
               ? `<span class="quota-badge">${t.quota.is_custom ? "自定义" : "本地估算"}</span>`
-              : "";
+              : quotaSourceLabel ? `<span class="quota-badge">${esc(quotaSourceLabel)}</span>` : "";
             const summaryTxt = rawBuckets.length > 1
               ? `<span class="quota-collapsed-sum" style="color:var(--muted);font-size:9.5px">${esc(quotaLabel(worst, ""))} <strong style="color:${worstCol}">剩 ${worstRem}%</strong></span>`
               : `<span class="quota-collapsed-sum" style="color:${worstCol};font-weight:700;font-size:10px">剩 ${worstRem}%</span>`;

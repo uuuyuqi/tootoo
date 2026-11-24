@@ -106,7 +106,7 @@ brew upgrade --cask tootoo
 
 ### 方式二：下载 GitHub Release 安装包
 
-1. 前往 [**Releases**](https://github.com/uuuyuqi/tootoo/releases) 下载最新版 `TooToo-v0.2.9-macos-universal.zip`。
+1. 前往 [**Releases**](https://github.com/uuuyuqi/tootoo/releases) 下载最新版 `TooToo-v0.2.10-macos-universal.zip`。
 2. 解压后将 `TooToo.app` 拖入 `/Applications`。
 3. 此安装包使用 ad-hoc 签名，未经过 Apple 公证。首次安装或手动替换时，macOS 仍可能提示无法验证开发者。
 
@@ -147,9 +147,19 @@ TooToo 启动后自动发现本机已安装工具的会话记录，零配置开�
 
 ---
 
+### 额度来源
+
+- Codex 优先保留本地日志已有的有效额度。近期使用过且日志没有可用额度时，macOS 应用才会从标准 Homebrew 位置启动 Codex，后台只向当前 Codex CLI 账号读取额度，不合并不同来源的窗口。
+- Codex 和 AGY 都默认按条件自动读取；设置仅显示来源，不重复显示额度列表。旧版明确保存的 AGY 关闭状态会保留。管理员可为应用进程设置 `TOOTOO_AGY_CLI=off` 或 `TOOTOO_CODEX_QUOTA_AUTO=off`，禁用新的后台读取。
+
+### v0.2.10 更新
+
+- Codex 本地日志没有可用额度时，后台通过官方 Codex App Server 读取当前 CLI 账号的剩余额度。已有可用日志仍然优先。
+- 对齐 AGY 额度卡片的进度条、剩余百分比和重置时间。设置只保留来源说明，不再显示自动读取开关或重复的额度列表。
+
 ### v0.2.9 更新
 
-- 近期使用过 Antigravity 时，TooToo 在后台用新版 AGY CLI 的官方 `/usage` 查询剩余额度，并分开显示 Gemini、Claude/GPT 和 Argon（若有返回）。在「设置 → AGY 额度」可关闭自动读取。
+- 近期使用过 Antigravity 时，TooToo 在后台用新版 AGY CLI 的官方 `/usage` 查询剩余额度，并分开显示 Gemini、Claude/GPT 和 Argon（若有返回）。详细额度显示在工具卡片；在「设置 → 额度来源」可查看当前来源。
 - 新方式要求 AGY CLI 1.1.11 以上的 1.x 版本、默认安装位置以及允许斜杠命令的现有设置。TooToo 不读取登录凭据、不修改 AGY 设置，保留旧版桌面读取方式。
 
 ### v0.2.8 更新
