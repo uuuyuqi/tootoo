@@ -224,8 +224,14 @@ def _probe(binary, cwd, env, cancelled, timeout=TIMEOUT):
                 proc.stdin.close()
             # No wait/poll before this signal: the owned group leader cannot
             # have its PID recycled into an unrelated process group.
-            with suppress(ProcessLookupError):
+            try:
                 os.killpg(proc.pid, signal.SIGKILL)
+            except OSError:
+                # A process may already have exited or Darwin may reject the
+                # group operation. Fall back to the still-owned direct child,
+                # without discarding already validated server data.
+                with suppress(OSError):
+                    proc.kill()
             with suppress(OSError, subprocess.TimeoutExpired):
                 proc.wait(timeout=.25)
             with suppress(OSError):

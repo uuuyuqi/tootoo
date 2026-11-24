@@ -87,6 +87,22 @@ write({{"id": 2, "result": {{"rateLimits": {{
             quota.fetch_codex_cli_quota(False)
             self.assertIsNone(quota.peek_codex_app_quota()["quota"])
 
+    def test_group_cleanup_failure_does_not_discard_valid_quota(self):
+        exe = self.fake('''import json, sys
+def send(x):
+    print(json.dumps(x), flush=True)
+json.loads(sys.stdin.readline())
+send({"id":1,"result":{}})
+json.loads(sys.stdin.readline())
+json.loads(sys.stdin.readline())
+send({"id":2,"result":{"rateLimits":{"limitId":"codex","primary":None,
+      "secondary":{"usedPercent":5,"windowDurationMins":10080,"resetsAt":None}}}})
+''')
+        with patch.object(quota.os, "killpg", side_effect=PermissionError(1, "group cleanup denied")):
+            result = quota._probe(exe, str(self.dir), {}, threading.Event(), timeout=2)
+        self.assertEqual(result["status"]["state"], "live")
+        self.assertEqual(result["quota"]["secondary"]["used_percent"], 5)
+
     def test_resolve_homebrew_cask_and_reject_external_symlink_or_wrapper(self):
         prefix = self.dir / "homebrew"
         bin_dir = prefix / "bin"
