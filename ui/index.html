@@ -5587,6 +5587,36 @@
 
   .xp-text strong { color: var(--ink-soft); font-weight: 600; }
 
+  .xp-wrap.has-xp-boost { min-width: 0; }
+  .has-xp-boost .xp-text {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    min-width: 0;
+  }
+  .xp-value {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .xp-boost-tag {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+    padding: 0 3px;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--amber) 18%, var(--surface));
+    color: var(--ink);
+    font-size: 8.5px;
+    line-height: 1.25;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .xp-boost-icon { display: none; }
+
+
   .controls {
     display: flex;
     flex-wrap: wrap;
@@ -6765,6 +6795,14 @@
   body.popover-mode .brand-title { font-size: 13px; }
   body.popover-mode .brand-sub { display: none; }
   body.popover-mode .xp-track { width: 52px; }
+  body.popover-mode .xp-wrap.has-xp-boost { gap: 5px; }
+  body.popover-mode .brand.has-xp-boost .mood-tag { min-width: 0; white-space: nowrap; }
+  body.popover-mode .xp-wrap.has-xp-boost .xp-track { width: 36px; }
+  @media (max-width: 500px) {
+    body.popover-mode .xp-boost-tag.star-rank .xp-boost-amount { display: none; }
+    body.popover-mode .xp-boost-tag.star-rank .xp-boost-icon { display: inline; }
+  }
+
   body.popover-mode .xp-text { font-size: 9.5px; }
   body.popover-mode .scan-badge { display: none; }
   body.popover-mode .pop-only { display: inline-flex; }
@@ -8720,6 +8758,35 @@ function getTodayXpBoostTokens({ includeSandbox = true } = {}) {
   } catch { return 0; }
 }
 
+function getVisibleTodayXpBoostTokens() {
+  if (debugState.active || debugState.simTokens != null || debugState.level != null) return 0;
+  const tokens = getTodayXpBoostTokens({ includeSandbox: false });
+  return Number.isFinite(tokens) && tokens > 0 ? tokens : 0;
+}
+
+function formatXpBoostTokens(tokens) {
+  return fmtNum(tokens).replace(/\.00([BMK])$/, "$1").replace(/(\.\d)0([BMK])$/, "$1$2");
+}
+
+function renderTodayXpText(html, starRank, realToday, todayXp) {
+  const row = document.getElementById("xpWrap");
+  const text = document.getElementById("xpText");
+  if (!row || !text) return;
+  row.classList.toggle("has-xp-boost", todayXp > 0);
+  row.closest(".brand")?.classList.toggle("has-xp-boost", todayXp > 0);
+  if (todayXp <= 0) {
+    row.title = "点击查看九阶战力进化图鉴";
+    text.removeAttribute("title");
+    text.innerHTML = html;
+    return;
+  }
+  const amount = formatXpBoostTokens(todayXp);
+  const info = `今日战力经验 ${fmtNum(realToday + todayXp)} = 真实 Token ${fmtNum(realToday)} + 扭蛋/宝箱经验包 ${amount}（仅今日生效，不计入真实用量与费用）`;
+  row.title = info;
+  text.title = info;
+  text.innerHTML = `<span class="xp-value">${html}</span><span class="xp-boost-tag${starRank ? " star-rank" : ""}" aria-label="经验包 +${amount}"><span class="xp-boost-amount">+${amount}</span><span class="xp-boost-icon" aria-hidden="true">⚡</span></span>`;
+}
+
 function getEffectiveTodayTokens() {
   if (debugState.active && debugState.simTokens != null) {
     return debugState.simTokens;
@@ -9120,7 +9187,8 @@ function renderBunnyState(tokens) {
   const svg = document.getElementById("bunnySvg");
   const mood = document.getElementById("bunnyMood");
   const xpFill = document.getElementById("xpFill");
-  const xpText = document.getElementById("xpText");
+  const todayXp = getVisibleTodayXpBoostTokens();
+  const realToday = Number(state.data?.today_tokens) || 0;
 
   // Real level-up & 5B Star-Ascension detection (Lv.4+ queues for first panel open if hidden!)
   if (!debugState.active && state.data) {
@@ -9188,17 +9256,15 @@ function renderBunnyState(tokens) {
     if (xpFill) xpFill.style.width = starInfo.pct + "%";
     const starTag = starInfo.stars > 0 ? `${renderStarSvg(12)}×${starInfo.stars}` : "冲刺首星";
     const nextStarLbl = `${renderStarSvg(12)}×${starInfo.stars + 1}`;
-    if (xpText) {
-      xpText.innerHTML = `<strong>${fmtNum(val)}</strong> · ${starTag} · 距 ${nextStarLbl} ${fmtNum(starInfo.remain)}`;
-    }
+    renderTodayXpText(`<strong>${fmtNum(val)}</strong> · ${starTag} · 距 ${nextStarLbl} ${fmtNum(starInfo.remain)}`, true, realToday, todayXp);
   } else if (next) {
     const pct = Math.max(3, Math.min(100, Math.round((val / next.min) * 100)));
     const nextLbl = fmtNum(next.min).replace(/\.00([BMK])$/, "$1");
     if (xpFill) xpFill.style.width = pct + "%";
-    if (xpText) xpText.innerHTML = `<strong>${fmtNum(val)}</strong> / ${nextLbl}`;
+    renderTodayXpText(`<strong>${fmtNum(val)}</strong> / ${nextLbl}`, false, realToday, todayXp);
   } else {
     if (xpFill) xpFill.style.width = "100%";
-    if (xpText) xpText.innerHTML = `<strong>${fmtNum(val)}</strong> · 今日已满阶 ✨`;
+    renderTodayXpText(`<strong>${fmtNum(val)}</strong> · 今日已满阶 ✨`, false, realToday, todayXp);
   }
 }
 
@@ -9781,6 +9847,8 @@ let evoProgTimer = null;
 
 function renderEvoModal() {
   const tokens = getEffectiveTodayTokens();
+  const todayXp = getVisibleTodayXpBoostTokens();
+  const tokenLabel = todayXp > 0 ? `${fmtNum(tokens)} · 含经验包 +${formatXpBoostTokens(todayXp)}` : fmtNum(tokens);
   const cur = getBunnyTier(tokens);
   const starInfo = getStarRankInfo(tokens);
   const maxUnlockedLv = getMaxUnlockedLevel();
@@ -9823,7 +9891,7 @@ function renderEvoModal() {
       : `距「${nextName}」还差 ${fmtNum(remain)}`;
     box.innerHTML = `
       <div class="evo-prog-head">
-        <span>今日：<strong>${curLabel} ${cur.name}</strong>${starPill} <span style="color:var(--muted)">(${fmtNum(tokens)})</span></span>
+        <span>今日：<strong>${curLabel} ${cur.name}</strong>${starPill} <span style="color:var(--muted)">(${tokenLabel})</span></span>
         <span class="evo-prog-rem${remain > 0 ? " is-waiting" : ""}" id="evoProgRem">${rightTxt}</span>
       </div>
       <div class="evo-prog-track">
@@ -9856,7 +9924,7 @@ function renderEvoModal() {
     const starPill = starInfo.stars > 0 ? `<span class="evo-star-pill">${renderStarSvg(13)}×${starInfo.stars}</span>` : "";
     box.innerHTML = `
       <div class="evo-prog-head">
-        <span>今日：<strong>${isSecretNow ? "EX" : `Lv.${cur.level}`} ${cur.name}</strong>${starPill} <span style="color:var(--muted)">(${fmtNum(tokens)})</span></span>
+        <span>今日：<strong>${isSecretNow ? "EX" : `Lv.${cur.level}`} ${cur.name}</strong>${starPill} <span style="color:var(--muted)">(${tokenLabel})</span></span>
         <span class="evo-prog-rem">${isSecretNow ? "50B 究极隐藏款已觉醒 ✦" : "今日已达满阶巅峰 ✨"}</span>
       </div>
       <div class="evo-prog-track">
@@ -9962,10 +10030,7 @@ function renderEvoModal() {
 
   const hintEl = document.getElementById("evoHint");
   if (hintEl) {
-    const maxLbl = maxUnlockedLv >= 10 ? "EX 究极隐藏款" : `Lv.${maxUnlockedLv}`;
-    hintEl.textContent = maxUnlockedLv > cur.level
-      ? `历史最高已永久解锁至 ${maxLbl} · 点击任意已解锁形态可重温专属动效`
-      : "已解锁形态永久保留 · 点击可触发专属动效 · 更高阶形态达成后自动揭晓";
+    hintEl.textContent = "战力经验 = 今日 Token + 扭蛋/宝箱经验包 · 已解锁形态永久保留 · 点击可触发专属动效";
   }
   grid.querySelectorAll(".evo-card").forEach(card => {
     const wrap = card.querySelector(".bunny-wrap");
