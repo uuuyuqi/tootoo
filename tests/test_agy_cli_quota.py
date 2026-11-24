@@ -1,0 +1,106 @@
+import json
+import os
+import sys
+import tempfile
+import time
+import unittest
+from pathlib import Path
+from unittest.mock import patch
+
+import agy_cli_quota as cli
+
+
+def report():
+    def group(name, *rows):
+        return {"name": name, "buckets": [{"id": key, "window": window,
+                "remaining_fraction": value} for key, window, value in rows]}
+    return {"status": "SUCCESS", "num_turns": 0, "usage": {"total_tokens": 0},
+            "command": {"name": "usage", "data": {"groups": [
+                group("Claude and GPT models", ("3p-5h", "5h", 0), ("3p-weekly", "weekly", 1)),
+                group("Gemini Models", ("gemini-5h", "5h", 0.89), ("gemini-weekly", "weekly", 0.81)),
+                group("Gemini 4 Argon", ("gemini-argon-wtu-weekly", "weekly", 0.53)),
+            ]}}}
+
+
+class AgyCliQuotaTest(unittest.TestCase):
+    def setUp(self):
+        cli.fetch_agy_cli_quota(False)
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.home = Path(self.tmp.name)
+        self.settings = self.home / ".gemini/antigravity-cli/settings.json"
+        self.settings.parent.mkdir(parents=True)
+        self.mock_home = patch.object(cli.Path, "home", return_value=self.home)
+        self.mock_home.start()
+        self.addCleanup(self.mock_home.stop)
+
+    def test_exact_groups_zero_and_missing_gemini(self):
+        raw = report()
+        groups = raw["command"]["data"]["groups"]
+        data = cli.parse_usage(json.dumps(raw).encode(), time.time())
+        buckets = {b["id"]: b for b in data["buckets"]}
+        self.assertEqual(set(buckets), {"gemini_5h", "gemini_7d", "cg_5h", "cg_7d", "argon_7d"})
+        self.assertEqual(buckets["cg_5h"]["used_percent"], 100)
+        self.assertEqual(buckets["cg_7d"]["used_percent"], 0)
+        self.assertEqual(buckets["argon_7d"]["group_id"], "argon")
+        self.assertEqual(buckets["gemini_5h"]["used_percent"], 11)
+        groups.pop(1)
+        self.assertFalse(any(x["group_id"] == "gemini" for x in cli.parse_usage(json.dumps(raw).encode(), 0)["buckets"]))
+
+    def test_one_turn_wrong_command_and_duplicate_ids_fail_closed(self):
+        raw = report()
+        for change in ({"num_turns": 1}, {"num_turns": False}, {"usage": {"input_tokens": 1}},
+                       {"status": "ERROR"}, {"command": {"name": "model"}}, {"error": "failure"}):
+            self.assertIsNone(cli.parse_usage(json.dumps({**raw, **change}).encode(), 0), change)
+        groups = raw["command"]["data"]["groups"]
+        groups.append(groups[0])
+        self.assertIsNone(cli.parse_usage(json.dumps(raw).encode(), 0))
+
+    def test_settings_preflight_blocks_both_unknown_and_disabled(self):
+        with patch.object(cli, "_exec") as launch:
+            for payload in ('{"disableSlashCommands":true}', '{"disableSlashCommands":"false"}',
+                            '{"disableSlashCommands":true,"disableSlashCommands":false}', '{"broken"'):
+                self.settings.write_text(payload)
+                status = cli.fetch_agy_cli_quota(True)["status"]
+                self.assertEqual(status["reason"], "cli_settings")
+            self.assertEqual(cli.fetch_agy_cli_quota(False)["status"]["state"], "disabled")
+            launch.assert_not_called()
+
+    def test_check_effective_settings_again_before_usage(self):
+        def changed(*args):
+            self.settings.write_text('{"disableSlashCommands":true}')
+            return b"v1.5.15\n"
+        with patch.object(cli, "_find_agy", return_value=Path(sys.executable)), patch.object(cli, "_exec", side_effect=changed) as launch:
+            self.assertEqual(cli.fetch_agy_cli_quota(True)["status"]["reason"], "cli_settings")
+            self.assertEqual(launch.call_count, 1)
+            self.assertEqual(launch.call_args.args[1], ["--version"])
+
+    def test_no_shell_or_old_build_and_cache_is_labeled(self):
+        loc = self.home / ".local/bin/agy"
+        loc.parent.mkdir(parents=True)
+        loc.write_text("#!/bin/sh\necho v1.5.15\n")
+        loc.chmod(0o755)
+        self.assertIsNone(cli._find_agy(self.home))
+        with patch.object(cli, "_find_agy", return_value=Path(sys.executable)), patch.object(cli, "_exec", return_value=b"1.1.10") as old:
+            self.assertEqual(cli.fetch_agy_cli_quota(True)["status"]["reason"], "cli_version")
+            self.assertEqual(old.call_count, 1)
+        cli.fetch_agy_cli_quota(False)
+        def fake(exe, args, cwd, env, *_):
+            self.assertTrue(Path(cwd).is_dir())
+            self.assertFalse(list(Path(cwd).iterdir()))
+            self.assertEqual(set(env), {"HOME", "PATH", "LANG"})
+            if args == ["--version"]:
+                return b"agy 1.5.15\n"
+            self.assertEqual(args, ["-p", "/usage", "--output-format", "json"])
+            return json.dumps(report()).encode()
+        with patch.object(cli, "_find_agy", return_value=Path(sys.executable)), patch.object(cli, "_exec", side_effect=fake) as launch:
+            self.assertEqual(cli.fetch_agy_cli_quota(True)["status"]["state"], "live")
+            self.assertEqual(cli.fetch_agy_cli_quota(True)["quota"]["source"], "cli_cached")
+            self.assertEqual(launch.call_count, 2)
+
+    def test_transport_timeout_cap_and_exit(self):
+        for code in ("import time; time.sleep(30)", "print('x'*1000000)", "raise SystemExit(1)"):
+            start = time.monotonic()
+            self.assertIsNone(cli._exec(sys.executable, ["-c", code], self.home, os.environ, .15, 2048))
+            self.assertLess(time.monotonic() - start, 1.25)
+        self.assertEqual(cli._exec(sys.executable, ["-c", "print('ok')"], self.home, os.environ, 2, 2048), b"ok\n")

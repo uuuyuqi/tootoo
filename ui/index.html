@@ -7550,6 +7550,12 @@
         <button id="codexQuotaControlBtn" class="btn" type="button">启用 Codex 实时读取（仅本次）</button>
       </div>
       <span id="quotaSourceAgy" style="color:var(--muted)">Antigravity：尚未读取</span>
+      <!-- TOOTOO_DEV_DEBUG_START -->
+      <div id="agyQuotaControlRow" style="display:none">
+        <button id="agyQuotaControlBtn" class="btn" type="button">开启 AGY 额度自动读取</button>
+      </div>
+      <ul id="agyQuotaGroups" aria-label="AGY CLI 额度组" style="display:none;margin:0;padding-left:18px"></ul>
+      <!-- TOOTOO_DEV_DEBUG_END -->
     </div>
 
     <div class="qcfg-row" style="padding-top:8px;border-top:1px dashed var(--border);margin-bottom:0">
@@ -8116,6 +8122,32 @@ if (DEV_DEBUG_ENABLED && codexQuotaNativeBridge) {
   postNative("getCodexQuotaControl");
 }
 // TOOTOO_CODEX_CONTROL_END
+
+// TOOTOO_AGY_CONTROL_START
+/* TOOTOO_DEV_DEBUG_JS_START */
+const agyQuotaControlRow = document.getElementById("agyQuotaControlRow");
+const agyQuotaControlBtn = document.getElementById("agyQuotaControlBtn");
+const agyQuotaNativeBridge = Boolean(window.webkit?.messageHandlers?.tootoo);
+if (DEV_DEBUG_ENABLED && agyQuotaNativeBridge) {
+  let enabled = null;
+  window.__onAgyQuotaControl = state => {
+    if (typeof state?.enabled !== "boolean" || typeof state?.busy !== "boolean") return;
+    enabled = state.enabled;
+    agyQuotaControlRow.style.display = "";
+    agyQuotaControlBtn.disabled = state.busy;
+    agyQuotaControlBtn.textContent = state.busy ? "正在切换…" : enabled
+      ? "关闭 AGY 额度自动读取" : "开启 AGY 额度自动读取";
+    if (state.refresh) void fetchTelemetry(true);
+  };
+  agyQuotaControlBtn.addEventListener("click", event => {
+    if (event.isTrusted && enabled !== null && !agyQuotaControlBtn.disabled) {
+      postNative("setAgyQuotaControl", {enabled: !enabled});
+    }
+  });
+  postNative("getAgyQuotaControl");
+}
+/* TOOTOO_DEV_DEBUG_JS_END */
+// TOOTOO_AGY_CONTROL_END
 
 // TOOTOO_UPDATE_UI_START
 const updateUi = Object.fromEntries([
@@ -10639,13 +10671,18 @@ function quotaDiagnostics(d) {
   if (cx?.source === "session_log") codexText += "；仅有历史日志，账号未核实";
   const ag = qs.antigravity || {};
   const reasons = {discovery:"未找到已运行的额度来源",connect_tls:"本地连接失败",
-    http_status:"本地请求未成功",response_shape:"未返回可用的额度数据"};
+    http_status:"本地请求未成功",response_shape:"未返回可用的额度数据",
+    cli_missing:"未找到 AGY CLI",cli_version:"AGY CLI 版本暂不支持",cli_settings:"当前 CLI 设置不允许查询 /usage",
+    cli_execution:"AGY CLI 未能返回 /usage（也请检查是否已登录）",cli_shape:"CLI 返回中没有可识别的额度数据"};
   const status = ag.http_status;
   const statusSuffix = ag.reason === "http_status" && Number.isInteger(status) && status >= 100 && status <= 599
     ? "（HTTP " + status + "）" : "";
   const why = (reasons[ag.reason] || "") + statusSuffix;
   let agyText = "未读到当前额度";
-  if (ag.state === "live") agyText = "来自运行中的 Antigravity";
+  if (ag.state === "disabled") agyText = "自动读取已关闭";
+  else if (ag.selected_source === "cli") agyText = ag.state === "live" ? "来自当前已登录的 AGY CLI"
+    : isRecentAgyQuota(ag) ? "来自当前 AGY CLI · 最近读取" : why || "AGY CLI 暂未返回额度";
+  else if (ag.state === "live") agyText = "来自运行中的 Antigravity 桌面版";
   else if (isRecentAgyQuota(ag)) agyText = "运行中 · 最近读取";
   else if (ag.state === "cached") agyText = (why ? why + "；" : "") +
     (ag.cache_state === "partial" ? "仅部分上次记录仍有效" : "仅显示上次记录");
@@ -10654,8 +10691,28 @@ function quotaDiagnostics(d) {
   return { codex: "Codex：" + codexText, agy: "Antigravity：" + agyText };
 }
 
+function renderAgyQuotaGroups(d) {
+  const list = document.getElementById("agyQuotaGroups");
+  if (!list) return;
+  const quota = d?.quotas?.antigravity;
+  const valid = quota?.source === "cli" ||
+    (quota?.source === "cli_cached" && isRecentAgyQuota(d?.quota_status?.antigravity));
+  const buckets = valid && Array.isArray(quota.buckets) ? quota.buckets : [];
+  const rows = buckets.filter(b => typeof b.label === "string" && quotaBucketIsUsable(b)).map(b => {
+    const item = document.createElement("li");
+    const remaining = Number((100 - b.used_percent).toFixed(2));
+    const reset = Number.isFinite(b.resets_at) && b.resets_at > 0
+      ? " · " + new Date(b.resets_at * 1000).toLocaleString() + " 重置" : "";
+    item.textContent = b.label + "：剩余 " + remaining + "%" + reset;
+    return item;
+  });
+  list.replaceChildren(...rows);
+  list.style.display = rows.length ? "" : "none";
+}
+
 function renderTopQuota(d) {
   const details = quotaDiagnostics(d);
+  renderAgyQuotaGroups(d);
   const codexSource = document.getElementById("quotaSourceCodex");
   const agySource = document.getElementById("quotaSourceAgy");
   if (codexSource) codexSource.textContent = details.codex;
@@ -10674,8 +10731,8 @@ function renderTopQuota(d) {
     cg5h:  ["antigravity:cg_5h", "C/G 5h"],
   };
   const agySourceName = quotas.antigravity?.source;
-  const recentAgy = agySourceName === "provider_cached" && isRecentAgyQuota(d.quota_status?.antigravity);
-  const buckets = agySourceName === "provider" || recentAgy ? quotas.antigravity.buckets || [] : [];
+  const recentAgy = ["provider_cached", "cli_cached"].includes(agySourceName) && isRecentAgyQuota(d.quota_status?.antigravity);
+  const buckets = agySourceName === "provider" || agySourceName === "cli" || recentAgy ? quotas.antigravity.buckets || [] : [];
   let selected = null;
   for (const source of new Set([mode, "gem5h", "gem7d", "cg5h", "codex"])) {
     if (source === "codex") {
@@ -11223,7 +11280,8 @@ function renderAgents(d) {
           const isLocal = t.quota.source === "local";
           const isHistorical = ["session_log", "provider_cached"].includes(t.quota.source);
           const sourceLabel = t.quota.source === "session_log" ? "日志记录 · 账号未核实"
-            : t.quota.source === "provider_cached" ? "上次读取" : t.quota.source === "app_server" ? "当前 CLI 账号" : "";
+            : t.quota.source === "provider_cached" ? "上次读取" : t.quota.source === "cli_cached" ? "当前 AGY CLI · 最近读取"
+            : ["app_server", "cli"].includes(t.quota.source) ? "当前 CLI 账号" : "";
           const quotaLabel = (obj, fallback) => {
             if (obj && obj.label) return obj.label;
             const wm = Number(obj && obj.window_minutes);

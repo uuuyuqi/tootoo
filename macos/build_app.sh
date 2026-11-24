@@ -78,6 +78,7 @@ fi
 echo "==> Bundling scanner, pricing, server, CLI, and UI..."
 cp "$ROOT/scanner.py" "$RES/scanner.py"
 cp "$ROOT/codex_app_quota.py" "$RES/codex_app_quota.py"
+cp "$ROOT/agy_cli_quota.py" "$RES/agy_cli_quota.py"
 cp "$ROOT/pricing.py" "$RES/pricing.py"
 cp "$ROOT/server.py" "$RES/server.py"
 cp "$ROOT/update_check.py" "$RES/update_check.py"
@@ -113,8 +114,8 @@ text, n_js = re.subn(
 )
 flag_target = "/*__TOOTOO_DEBUG_FLAG__*/true"
 n_flag = text.count(flag_target)
-assert n_html == 5, f"Expected 5 HTML debug blocks, stripped {n_html}"
-assert n_js == 3, f"Expected 3 JS debug blocks, stripped {n_js}"
+assert n_html == 6, f"Expected 6 HTML debug blocks, stripped {n_html}"
+assert n_js == 4, f"Expected 4 JS debug blocks, stripped {n_js}"
 assert n_flag == 1, f"Expected 1 debug flag marker, found {n_flag}"
 text = text.replace(flag_target, "/*__TOOTOO_DEBUG_FLAG__*/false", 1)
 
@@ -124,6 +125,8 @@ forbidden = [
     'id="dbgGachaPanel"',
     'id="dbgBlGodBtn"',
     'id="dbgRainWaveBtn"',
+    'id="agyQuotaControlRow"',
+    'setAgyQuotaControl',
     "TOOTOO_DEV_DEBUG_START",
     "TOOTOO_DEV_DEBUG_JS_START",
 ]

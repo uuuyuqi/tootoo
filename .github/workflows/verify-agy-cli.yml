@@ -1,0 +1,59 @@
+name: TooToo AGY quota trial
+on:
+  push:
+    branches: ['test/agy-cli-read']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: macos-15-intel
+    timeout-minutes: 15
+    env:
+      TOOTOO_CODEX_APP_SERVER: '0'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Regression tests (offline fixtures)
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(cat VERSION)" = 0.2.8
+          python3 -m unittest discover -s tests -v
+          node --test tests/*.test.cjs
+          bash -n macos/build_app.sh
+      - name: Build isolated Universal Debug bundle
+        env:
+          TOOTOO_DEBUG: '1'
+          UNIVERSAL: '1'
+          PACKAGE_ZIP: '1'
+          NO_INSTALL: '1'
+        run: bash macos/build_app.sh
+      - name: Verify exact archive, then launch via macOS with a synthetic AGY
+        run: |
+          set -euo pipefail
+          zip=TooToo-Debug-v0.2.8-macos-universal.zip
+          (cd dist && shasum -a 256 -c "$zip.sha256")
+          fixture=$(mktemp -d)
+          trap 'rm -rf "$fixture"' EXIT
+          ditto -x -k "dist/$zip" "$fixture"
+          app="$fixture/TooToo-Debug.app"
+          res="$app/Contents/Resources"
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$app/Contents/Info.plist")" = com.tootoo.telemetry.debug
+          test ! -e "$res/.release" && test ! -e "$res/update_install.py"
+          for path in agy_cli_quota.py codex_app_quota.py scanner.py server.py ui/index.html; do cmp "$path" "$res/$path"; done
+          codesign --verify --strict --deep "$app"
+          lipo "$app/Contents/MacOS/TooToo-Debug" -verify_arch arm64 x86_64
+          shasum -a 256 "dist/$zip" "dist/$zip.sha256"
+          swiftc -swift-version 5 -framework AppKit tests/LaunchQuotaTrial.swift -o "$fixture/launch"
+          python3 tests/agy_native_quota_macos.py "$app" "$fixture/launch"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: tootoo-agy-quota-trial-debug-universal
+          path: |
+            dist/TooToo-Debug-v0.2.8-macos-universal.zip
+            dist/TooToo-Debug-v0.2.8-macos-universal.zip.sha256
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0

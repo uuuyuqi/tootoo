@@ -32,6 +32,8 @@ from typing import Any
 from pricing import PricingEngine, calibrate_observed_rates, trigger_background_sync_if_stale
 from codex_app_quota import TTL as CODEX_QUOTA_TTL, reader as codex_quota_reader
 
+from agy_cli_quota import fetch_agy_cli_quota
+
 HOME = os.path.expanduser("~")
 CACHE_DIR = os.path.expanduser(os.environ.get("TOOTOO_HOME") or "~/.tootoo")
 CACHE_FILE = os.path.join(CACHE_DIR, "scan_cache_v5.json")
@@ -2740,6 +2742,32 @@ def _compute_local_rolling_quotas(
     return out
 
 
+def select_antigravity_quota(events: list[dict[str, Any]], *, force: bool = False):
+    """Select exactly one source. Do not mask a CLI failure with another account."""
+    legacy = lambda: fetch_antigravity_quota(force=force) or {}
+    if os.environ.get("TOOTOO_DEBUG") != "1":
+        return legacy(), False
+    mode = os.environ.get("TOOTOO_AGY_CLI")
+    if mode == "off":
+        return {"quota": None, "status": {"state": "disabled", "selected_source": "off"}}, True
+    now = time.time()
+    recently_used = any(ev.get("tool") == "antigravity" and now - 7 * 86400 <= ev.get("ts", 0) <= now + 300
+                        for ev in events)
+    if mode != "auto" or not recently_used:
+        return legacy(), False
+    result = fetch_agy_cli_quota(enabled=True)
+    status = result["status"]
+    if status.get("reason") in {"cli_missing", "cli_version"}:
+        old = legacy()
+        if old.get("quota"):
+            return old, True
+    quota = result.get("quota")
+    if quota is not None:
+        quota = {**quota, "buckets": [{**bucket, "key": "antigravity:" + bucket["id"] }
+                                     for bucket in quota["buckets"]]}
+    return {"quota": quota, "status": {**status, "selected_source": "cli"}}, True
+
+
 def build_telemetry(
     range_key: str = "7d",
     tool_filter: str = "all",
@@ -2750,7 +2778,9 @@ def build_telemetry(
     trigger_background_sync_if_stale()
     events, quotas, scan_ms = scan_all_events(force=force, rebuild=rebuild)
     # Provider quotas refresh independently of unchanged local log signatures.
-    ag_result = fetch_antigravity_quota(force=force or rebuild) or {}
+    ag_result, hide_log_quota = select_antigravity_quota(events, force=force or rebuild)
+    if hide_log_quota and "antigravity" in quotas:
+        quotas = {key: value for key, value in quotas.items() if key != "antigravity"}
     ag_quota = ag_result.get("quota")
     if ag_quota:
         quotas = {**quotas, "antigravity": ag_quota}

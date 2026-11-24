@@ -309,7 +309,8 @@ class TelemetryWebViewController: NSViewController, WKScriptMessageHandler, WKNa
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         if let dict = message.body as? [String: Any], let action = dict["action"] as? String {
             let privileged = ["getKeepAwakeState", "setKeepAwake", "getUpdateState", "checkForUpdate", "installUpdate", "openUpdateRelease",
-                              "getCodexQuotaControl", "setCodexQuotaControl"]
+                              "getCodexQuotaControl", "setCodexQuotaControl",
+                              "getAgyQuotaControl", "setAgyQuotaControl"]
             if privileged.contains(action) {
                 guard message.frameInfo.isMainFrame, let frameURL = message.frameInfo.request.url,
                       matchesAppPage(frameURL) else { return }
@@ -433,7 +434,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private var keepAwakeError: String?
     #if TOOTOO_DEBUG
     private var codexQuotaEnabled = ProcessInfo.processInfo.environment["TOOTOO_CODEX_APP_SERVER"] == "1"
-    private var changingCodexQuota = false
+    private var agyQuotaEnabled = !UserDefaults.standard.bool(forKey: "agyQuotaAutoDisabled")
+    private var changingQuotaSource = false
     #endif
     private var baseStatusToolTip = variantName
     private var currentTier: BunnyTierInfo = BUNNY_TIERS[0]
@@ -696,16 +698,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
 
     #if TOOTOO_DEBUG
     private func syncCodexQuotaControl(refresh: Bool = false) {
-        let js = "window.__onCodexQuotaControl && window.__onCodexQuotaControl({enabled:\(codexQuotaEnabled),busy:\(changingCodexQuota),refresh:\(refresh)});"
-        popoverVC?.evalJS(js)
-        fullWindowVC?.evalJS(js)
+        let js = "window.__onCodexQuotaControl && window.__onCodexQuotaControl({enabled:\(codexQuotaEnabled),busy:\(changingQuotaSource),refresh:\(refresh)});"
+        let agyJS = "window.__onAgyQuotaControl && window.__onAgyQuotaControl({enabled:\(agyQuotaEnabled),busy:\(changingQuotaSource),refresh:false});"
+        popoverVC?.evalJS(agyJS + js)
+        fullWindowVC?.evalJS(agyJS + js)
     }
 
-    private func setCodexQuotaControl(_ enabled: Bool) {
-        guard !changingCodexQuota, enabled != codexQuotaEnabled else { return }
-        changingCodexQuota = true
+    private func setQuotaControl(_ enabled: Bool, agy: Bool = false) {
+        guard !changingQuotaSource, enabled != (agy ? agyQuotaEnabled : codexQuotaEnabled) else { return }
+        changingQuotaSource = true
         syncCodexQuotaControl()
-        if enabled {
+        if enabled && !agy {
             let alert = NSAlert()
             alert.messageText = "读取当前 Codex CLI 的额度？"
             alert.informativeText = "仅本次试验运行。TooToo 会用本机 Codex 命令的当前登录状态查询额度，不会要求登录、换账号或读取凭据。"
@@ -713,19 +716,24 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             alert.addButton(withTitle: "取消")
             NSApp.activate(ignoringOtherApps: true)
             guard alert.runModal() == .alertFirstButtonReturn else {
-                changingCodexQuota = false
+                changingQuotaSource = false
                 syncCodexQuotaControl()
                 return
             }
         }
-        codexQuotaEnabled = enabled
+        if agy {
+            agyQuotaEnabled = enabled
+            UserDefaults.standard.set(!enabled, forKey: "agyQuotaAutoDisabled")
+        } else {
+            codexQuotaEnabled = enabled
+        }
         // Only stop and restart the Python process this Debug instance owns.
         // Off clears the old process and its account-scoped cache immediately.
         stopBackend()
         startBackend()
         waitForBackend { [weak self] in
             guard let self = self else { return }
-            self.changingCodexQuota = false
+            self.changingQuotaSource = false
             self.syncCodexQuotaControl(refresh: true)
             self.refreshMenuBarSummary()
         }
@@ -750,6 +758,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         env["TOOTOO_UPDATE_NONCE"] = updateController.backendNonce
         #if TOOTOO_DEBUG
         env["TOOTOO_DEBUG"] = "1"
+        env["TOOTOO_AGY_CLI"] = agyQuotaEnabled ? "auto" : "off"
         env["TOOTOO_CODEX_APP_SERVER"] = codexQuotaEnabled ? "1" : "0"
         if env["TOOTOO_HOME"]?.isEmpty != false {
             let home = env["HOME"].flatMap { $0.isEmpty ? nil : $0 } ?? NSHomeDirectory()
@@ -757,6 +766,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         }
         #else
         env.removeValue(forKey: "TOOTOO_DEBUG")
+        env.removeValue(forKey: "TOOTOO_AGY_CLI")
         #endif
         proc.environment = env
         proc.standardOutput = FileHandle.nullDevice
@@ -1121,10 +1131,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
                 setMenuBarQuotaBar(mode)
             }
         #if TOOTOO_DEBUG
-        case "getCodexQuotaControl":
+        case "getCodexQuotaControl", "getAgyQuotaControl":
             syncCodexQuotaControl()
-        case "setCodexQuotaControl":
-            if let enabled = payload["enabled"] as? Bool { setCodexQuotaControl(enabled) }
+        case "setCodexQuotaControl", "setAgyQuotaControl":
+            if let enabled = payload["enabled"] as? Bool { setQuotaControl(enabled, agy: action == "setAgyQuotaControl") }
         case "setDebugTier":
             if let lv = payload["level"] as? Int, (1...10).contains(lv) {
                 debugTierOverride = lv
@@ -1211,11 +1221,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             let statuses = obj["quota_status"] as? [String: Any]
             let agyStatus = statuses?["antigravity"] as? [String: Any]
             let agySource = (quotas["antigravity"] as? [String: Any])?["source"] as? String
-            let agyRecent = agySource == "provider_cached" &&
+            let agyRecent = (agySource == "provider_cached" || agySource == "cli_cached") &&
                 agyStatus?["state"] as? String == "cached" &&
                 agyStatus?["reason"] is NSNull && agyStatus?["cache_state"] as? String == "fresh"
             if let agy = quotas["antigravity"] as? [String: Any],
-               agySource == "provider" || agyRecent,
+               agySource == "provider" || agySource == "cli" || agyRecent,
                let buckets = agy["buckets"] as? [[String: Any]] {
                 for b in buckets {
                     let key = (b["key"] as? String) ?? ""
