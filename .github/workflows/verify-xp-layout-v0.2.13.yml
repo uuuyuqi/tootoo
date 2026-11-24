@@ -63,11 +63,20 @@ jobs:
         run: |
           set -euo pipefail
           fixture="$(mktemp -d)"
-          trap 'rm -rf "$fixture"' EXIT
+          pid=
+          trap 'if [ -n "$pid" ]; then kill "$pid" 2>/dev/null || true; fi; rm -rf "$fixture"' EXIT
           ditto -x -k "dist/$ZIP_NAME" "$fixture"
           res="$fixture/TooToo.app/Contents/Resources"
           xcrun swiftc -parse-as-library -swift-version 5 -framework AppKit -framework WebKit tests/xp_boost_layout.swift -o "$fixture/xp-boost-layout"
-          "$fixture/xp-boost-layout" "$res/ui/index.html"
+          python3 tests/xp_boost_layout_server.py "$res" "$fixture/port" &
+          pid=$!
+          for attempt in {1..50}; do
+            [ -s "$fixture/port" ] && break
+            kill -0 "$pid"
+            sleep 0.1
+          done
+          port="$(cat "$fixture/port")"
+          "$fixture/xp-boost-layout" "http://127.0.0.1:$port/?mode=popover"
       - name: Read Homebrew and npm-native Codex on the packaged app via LaunchServices
         run: |
           set -euo pipefail

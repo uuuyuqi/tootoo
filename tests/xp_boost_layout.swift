@@ -1,6 +1,5 @@
 // Renders the exact packaged HTML/CSS/JS in a nonpersistent WKWebView.
-// The scheme serves only those files. All API requests are stubbed and never
-// touch the running main app, telemetry, configuration, or network.
+// Request URLs are loopback only; API/storage state belongs to the fixture.
 import AppKit
 import Foundation
 import WebKit
@@ -10,70 +9,30 @@ struct LayoutError: Error, CustomStringConvertible {
     init(_ message: String) { description = message }
 }
 
-final class FixtureScheme: NSObject, WKURLSchemeHandler {
-    let index: URL
-    init(_ index: URL) { self.index = index }
-
-    func webView(_ webView: WKWebView, start task: any WKURLSchemeTask) {
-        guard let url = task.request.url else {
-            task.didFailWithError(LayoutError("missing fixture URL")); return
-        }
-        do {
-            let path = url.path
-            let file: URL
-            let mime: String
-            if path == "/index.html" {
-                file = index
-                mime = "text/html"
-            } else if path.range(of: #"^/ui/tootoo_[a-z_]+\.js$"#, options: .regularExpression) != nil {
-                file = index.deletingLastPathComponent().appendingPathComponent(url.lastPathComponent)
-                mime = "text/javascript"
-            } else {
-                throw LayoutError("unexpected fixture resource: \(path)")
-            }
-            let data = try Data(contentsOf: file)
-            task.didReceive(URLResponse(url: url, mimeType: mime, expectedContentLength: data.count, textEncodingName: "utf-8"))
-            task.didReceive(data)
-            task.didFinish()
-        } catch { task.didFailWithError(error) }
-    }
-
-    func webView(_ webView: WKWebView, stop task: any WKURLSchemeTask) {}
-}
-
 @MainActor
 final class LayoutHarness: NSObject, NSApplicationDelegate, WKNavigationDelegate {
-    let scheme: FixtureScheme
+    let url: URL
     let window = NSWindow(contentRect: NSRect(x: 60, y: 60, width: 452, height: 620),
                           styleMask: [.titled, .closable], backing: .buffered, defer: false)
     var running = false
     lazy var web: WKWebView = {
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .nonPersistent()
-        configuration.setURLSchemeHandler(scheme, forURLScheme: "tootoo-fixture")
         configuration.userContentController.addUserScript(WKUserScript(source: """
             window.fetch = async () => ({ ok: false, status: 503, json: async () => ({ fixture: true }) });
             window.EventSource = class { close() {} };
-            // WKWebView may deny storage to a custom scheme. Simulate an
-            // initially empty, throwaway profile without changing the UI code.
-            const saved = new Map();
-            Object.defineProperty(window, 'localStorage', { configurable: true, value: {
-                getItem: key => saved.get(String(key)) ?? null,
-                setItem: (key, value) => saved.set(String(key), String(value)),
-                removeItem: key => saved.delete(String(key)),
-            }});
             """, injectionTime: .atDocumentStart, forMainFrameOnly: true))
         return WKWebView(frame: NSRect(x: 0, y: 0, width: 452, height: 620), configuration: configuration)
     }()
 
-    init(_ index: URL) { scheme = FixtureScheme(index) }
+    init(_ url: URL) { self.url = url }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         window.title = "TooToo 452pt isolated WKWebView"
         window.contentView = web
         window.makeKeyAndOrderFront(nil)
         web.navigationDelegate = self
-        web.load(URLRequest(url: URL(string: "tootoo-fixture://packaged/index.html?mode=popover")!))
+        web.load(URLRequest(url: url))
         DispatchQueue.main.asyncAfter(deadline: .now() + 25) { self.fail(LayoutError("WKWebView timeout")) }
     }
 
@@ -120,10 +79,11 @@ final class LayoutHarness: NSObject, NSApplicationDelegate, WKNavigationDelegate
              const quota = id('topQuota'), row = id('xpWrap'), text = id('xpText'), rail = row.querySelector('.xp-track');
              const title = document.querySelector('.brand-title'), mood = id('bunnyMood'), logo = id('brandLogo');
              const brandRow = document.querySelector('.brand-row'), controls = document.querySelector('.topbar .controls');
-             quota.classList.add('show');
-             id('tqName').textContent = 'Gemini Models · Weekly 剩';
-             id('tqPct').textContent = '84%';
-             id('tqRst').textContent = '16 小时后重置';
+             menuBarQuotaBar = 'gem7d';
+             renderTopQuota({ quotas: { antigravity: { buckets: [{
+                key: 'antigravity:gemini_7d', label: 'Gemini Models · Weekly', used_percent: 16,
+                resets_at: Math.floor(Date.now() / 1000) + 16 * 3600,
+             }] }} });
              state.data = { today_tokens: ACTUAL, evo_peak_tokens: ACTUAL };
              carrotDiskState.home = cloneHomeState({xp_boost: {day: getTodayKey(), tokens: XP}});
              minimalMode = SIMPLE;
@@ -134,9 +94,15 @@ final class LayoutHarness: NSObject, NSApplicationDelegate, WKNavigationDelegate
              const badge = text.querySelector('.xp-boost-tag');
              check(innerWidth === WIDTH, 'viewport', {innerWidth});
              check(document.body.classList.contains('popover-mode') === POPOVER, 'popover CSS mode');
-             check(rect(rail).width === RAIL, 'rail width', {actual: rect(rail).width});
-             check(!!badge === BADGE, 'badge visibility');
+             check(!!badge === BADGE, 'badge visibility', {case:'CASE', tokens:getEffectiveTodayTokens()});
              check(row.classList.contains('has-xp-boost') === BADGE, 'boost layout class');
+             const styleRules = [...document.styleSheets].flatMap(sheet => [...sheet.cssRules])
+                .filter(rule => rule.selectorText?.includes('.xp-track'))
+                .map(rule => ({name:rule.selectorText, css:rule.style.width, matches:rail.matches(rule.selectorText)}));
+             check(Math.abs(rect(rail).width - RAIL) < 0.5, 'rail width', {
+                case:'CASE', expected:RAIL, actual:rect(rail).width, computed:getComputedStyle(rail).width,
+                body:document.body.className, row:row.className, styleRules,
+             });
              if (BADGE) {
                 const amount = badge.querySelector('.xp-boost-amount');
                 const icon = badge.querySelector('.xp-boost-icon');
@@ -152,7 +118,7 @@ final class LayoutHarness: NSObject, NSApplicationDelegate, WKNavigationDelegate
                       'no XP/quota collision or horizontal overflow', {xp: xp.right, text: tp.right, badge: bp.right, quota: q.left, edge: q.right, page: document.documentElement.scrollWidth});
                 const value = text.querySelector('.xp-value');
                 const quotaTop = quota.querySelector('.tq-top');
-                check(id('tqName').textContent === 'Gemini Models · Weekly 剩' && id('tqPct').textContent === '84%' &&
+                check(id('tqName').textContent === 'Gemini Models · Weekly' && id('tqPct').textContent === '剩 84%' &&
                       rect(id('tqName')).right <= rect(id('tqPct')).left + 0.5 &&
                       quotaTop.scrollWidth <= quotaTop.clientWidth + 1, 'quota copy must remain intact');
                 if (POPOVER) check(rect(brandRow).bottom <= rect(controls).top + 0.5, 'brand must not cross the controls row');
@@ -202,13 +168,14 @@ final class LayoutHarness: NSObject, NSApplicationDelegate, WKNavigationDelegate
 @main
 struct QuotaLayoutSmoke {
     @MainActor static func main() {
-        guard CommandLine.arguments.count == 2 else {
-            FileHandle.standardError.write(Data("usage: xp-boost-layout <packaged index.html>\n".utf8))
+        guard CommandLine.arguments.count == 2, let url = URL(string: CommandLine.arguments[1]),
+              url.scheme == "http", url.host == "127.0.0.1", url.user == nil, url.password == nil else {
+            FileHandle.standardError.write(Data("usage: xp-boost-layout <loopback fixture URL>\n".utf8))
             exit(2)
         }
         let app = NSApplication.shared
         app.setActivationPolicy(.regular)
-        let harness = LayoutHarness(URL(fileURLWithPath: CommandLine.arguments[1]).standardizedFileURL)
+        let harness = LayoutHarness(url)
         app.delegate = harness
         app.run()
     }
