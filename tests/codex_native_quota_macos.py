@@ -47,29 +47,40 @@ def stop_process(p):
             p.kill()
             p.wait(timeout=5)
 
-def find_backend(p, backend, timeout=20):
+def listeners(pid):
+    process = subprocess.run(["/usr/sbin/lsof", "-nP", "-a", "-p", str(pid),
+                              "-iTCP", "-sTCP:LISTEN", "-Fn"],
+                             capture_output=True, text=True)
+    for line in process.stdout.splitlines():
+        if line.startswith("n127.0.0.1:") and line.rsplit(":", 1)[1].isdigit():
+            yield int(line.rsplit(":", 1)[1])
+
+def read_local(port, path, timeout=12):
+    with opener.open(f"http://127.0.0.1:{port}{path}",timeout=timeout) as response:
+        return json.load(response)
+
+def find_backend(p, expected_balance, timeout=32):
     timestamp = time.monotonic() + timeout
-    relative = os.fsencode(backend)
+    observed = {}
     while time.monotonic() < timestamp and p.poll() is None:
         for pid, (ppid, uid) in darwin.table().items():
             if (ppid, uid) != (p.pid, os.getuid()):
                 continue
-            args = darwin.argv(pid)
-            if not args or len(args) < 4 or args[1] != relative or b"--port" not in args:
-                continue
-            port = int(args[args.index(b"--port")+1])
-            check = subprocess.run(["/usr/sbin/lsof", "-nP", "-a", "-p", str(pid),
-                                    f"-iTCP:{port}", "-sTCP:LISTEN"],
-                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            if check.returncode == 0:
-                print(f"Exact app {p.pid} owns bundled backend {pid} and port {port}", flush=True)
-                return pid, port
-        time.sleep(.15)
-    raise AssertionError(f"packaged Debug backend never listened (app exit: {p.poll()})")
+            ports = list(listeners(pid))
+            executable = darwin.path(pid)
+            observed[pid] = (os.path.basename(os.fsdecode(executable)) if executable else None, ports)
+            for port in ports:
+                try:
+                    if read_local(port, "/api/carrot", timeout=1).get("balance") == expected_balance:
+                        print(f"Exact app {p.pid} owns backend {pid} and port {port}; isolated state verified", flush=True)
+                        return pid, port
+                except (OSError, ValueError):
+                    continue
+        time.sleep(.2)
+    raise AssertionError(f"packaged Debug backend not found (app exit={p.poll()}; direct children={observed})")
 
-def stop_backend(pid, parent, path):
-    argv = darwin.argv(pid) if darwin.table().get(pid) == (parent, os.getuid()) else None
-    if argv and len(argv) > 1 and argv[1] == os.fsencode(path):
+def stop_backend(pid, parent):
+    if darwin.table().get(pid) == (parent, os.getuid()):
         try:
             os.kill(pid, 15)
         except ProcessLookupError:
@@ -77,11 +88,12 @@ def stop_backend(pid, parent, path):
 
 def start(app, scenario, home, bin_path, cleanup):
     binary = app / "Contents/MacOS/TooToo-Debug"
-    backend = app / "Contents/Resources/server.py"
+    expected_balance = 271 if scenario == "explicit" else 193
     paths = {key: home / name for key, name in [("CODEX_HOME",".codex"),("TOOTOO_HOME","trial-state")]}
     home.mkdir()
     for dest in paths.values():
         dest.mkdir()
+    (paths["TOOTOO_HOME"] / "carrot_state.json").write_text(json.dumps({"balance":expected_balance}))
     env = {**os.environ, "HOME": str(home), "PATH": str(bin_path) + ":/usr/bin:/bin:/usr/sbin:/sbin",
            **{key:str(dest) for key,dest in paths.items()}}
     env.pop("TOOTOO_CODEX_APP_SERVER", None)
@@ -90,14 +102,12 @@ def start(app, scenario, home, bin_path, cleanup):
     env["PYTHONDONTWRITEBYTECODE"] = "1"
     p = subprocess.Popen([str(binary)], env=env, stdout=subprocess.DEVNULL)
     cleanup.callback(stop_process,p)
-    child, port = find_backend(p,backend)
-    cleanup.callback(stop_backend,child,p.pid,backend)
+    child, port = find_backend(p,expected_balance)
+    cleanup.callback(stop_backend,child,p.pid)
     return port
 
 def snapshot(port):
-    url = f"http://127.0.0.1:{port}/api/telemetry?range=today&tool=all"
-    with opener.open(url,timeout=12) as response:
-        return json.load(response)
+    return read_local(port, "/api/telemetry?range=today&tool=all")
 
 def main(app, phase):
     with TemporaryDirectory(prefix="tootoo-codex-native-") as tmp, ExitStack() as cleanup:
