@@ -74,7 +74,8 @@ final class LayoutHarness: NSObject, NSApplicationDelegate, WKNavigationDelegate
             (() => {
              const id = s => document.getElementById(s);
              const rect = n => n.getBoundingClientRect();
-             const check = (ok, label, extra = {}) => { if (!ok) throw Error(label + ' ' + JSON.stringify(extra)); };
+             const errors = [];
+             const check = (ok, label, extra = {}) => { if (!ok) errors.push(label + ' ' + JSON.stringify(extra)); };
              const visible = n => n && getComputedStyle(n).display !== 'none' && rect(n).width > 0;
              const quota = id('topQuota'), row = id('xpWrap'), text = id('xpText'), rail = row.querySelector('.xp-track');
              const title = document.querySelector('.brand-title'), mood = id('bunnyMood'), logo = id('brandLogo');
@@ -104,7 +105,7 @@ final class LayoutHarness: NSObject, NSApplicationDelegate, WKNavigationDelegate
              check(Math.abs(rect(rail).width - RAIL) < 0.5, 'rail width', {
                 case:'CASE', expected:RAIL, actual:rect(rail).width, computed:getComputedStyle(rail).width,
                 body:document.body.className, row:row.className,
-                variable:getComputedStyle(rail).getPropertyValue('--xp-track-width'),
+                basis:getComputedStyle(rail).flexBasis, maxWidth:getComputedStyle(rail).maxWidth,
                 minWidth:getComputedStyle(rail).minWidth, inline:rail.style.cssText, styleRules,
              });
              if (BADGE) {
@@ -139,6 +140,7 @@ final class LayoutHarness: NSObject, NSApplicationDelegate, WKNavigationDelegate
                       !id('evoProgressBox').textContent.includes('含经验包'), 'legacy text and tooltip restored');
              }
              check(id('evoHint').textContent.includes('战力经验 = 今日 Token + 扭蛋/宝箱经验包'), 'evolution footer');
+             if (errors.length) throw Error('CASE: ' + errors.join(' | '));
              return 'PASS: WKWebView CASE (' + (badge ? (ICON ? '⚡' : '+95M') : text.textContent) + ')';
              };
             })()
