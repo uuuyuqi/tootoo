@@ -16,6 +16,7 @@ FAKE_AGY = r'''
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 int main(int argc, char **argv) {
   const char *home = getenv("HOME");
   if (!home) return 5;
@@ -28,12 +29,19 @@ int main(int argc, char **argv) {
       && !strcmp(argv[3],"--output-format") && !strcmp(argv[4],"json");
   fprintf(log,"%s\n", version ? "version" : usage ? "usage" : "unexpected");
   fclose(log);
-  if (version) puts("1.1.11");
-  else if (usage) puts("{\"status\":\"SUCCESS\",\"num_turns\":0,\"command\":{\"name\":\"usage\",\"data\":{\"groups\":["
+  if (version) puts("1.5.15");
+  else if (usage) {
+    if (snprintf(file,sizeof file,"%s/agy_pid",home) >= sizeof file) return 6;
+    FILE *marker = fopen(file,"w");
+    if (!marker) return 8;
+    fprintf(marker,"%d\n",getpid());
+    fclose(marker);
+    sleep(7);
+    puts("{\"status\":\"SUCCESS\",\"num_turns\":0,\"command\":{\"name\":\"usage\",\"data\":{\"groups\":["
     "{\"name\":\"Gemini Models\",\"buckets\":[{\"id\":\"gemini-5h\",\"window\":\"5h\",\"remaining_fraction\":0.75}]},"
     "{\"name\":\"Claude and GPT models\",\"buckets\":[{\"id\":\"3p-weekly\",\"window\":\"weekly\",\"remaining_fraction\":0.0}]},"
     "{\"name\":\"Gemini 4 Argon\",\"buckets\":[{\"id\":\"gemini-argon-wtu-weekly\",\"window\":\"weekly\",\"remaining_fraction\":0.42}]}]}}}");
-  else return 99;
+  } else return 99;
   return 0;
 }
 '''
@@ -82,7 +90,7 @@ def main(app, launcher):
         src.write_text(FAKE_AGY)
         fake = root / "agy"
         subprocess.run(["/usr/bin/clang", str(src), "-o", str(fake)], check=True, timeout=30)
-        for balance, case in enumerate(("inactive", "off", "auto"), 231):
+        for balance, case in enumerate(("inactive", "off", "auto", "cancel"), 231):
             with ExitStack() as cleanup:
                 home = root / case
                 (home / ".local/bin").mkdir(parents=True)
@@ -100,8 +108,32 @@ def main(app, launcher):
                 cleanup.callback(process.stop)
                 child, port = find_backend(process, balance)
                 cleanup.callback(stop_backend, child, pid)
+                started = time.monotonic()
                 data = snapshot(port)
                 state = data["quota_status"]["antigravity"]
+                if case in ("auto", "cancel"):
+                    assert state["state"] == "loading", state
+                    assert time.monotonic() - started < 4, "telemetry blocked on CLI"
+                if case == "cancel":
+                    marker = home / "agy_pid"
+                    deadline = time.monotonic() + 3
+                    while not marker.exists() and time.monotonic() < deadline:
+                        time.sleep(.05)
+                    agy_pid = int(marker.read_text())
+                    assert darwin.table()[agy_pid] == (child, os.getuid())
+                    os.kill(child, signal.SIGTERM)  # Swift Process.terminate() on Off/Quit.
+                    deadline = time.monotonic() + 2
+                    while agy_pid in darwin.table() and time.monotonic() < deadline:
+                        time.sleep(.05)
+                    assert agy_pid not in darwin.table(), "owned AGY outlived native backend stop"
+                    print("PASS packaged LaunchServices cancel: pending CLI process terminated", flush=True)
+                    continue
+                if case == "auto":
+                    deadline = time.monotonic() + 22
+                    while state["state"] == "loading" and time.monotonic() < deadline:
+                        time.sleep(.25)
+                        data = snapshot(port)
+                        state = data["quota_status"]["antigravity"]
                 quota = data["quotas"].get("antigravity")
                 activity = any(x["tool"] == "antigravity" for x in data["tools"])
                 assert activity == (case != "inactive"), (activity, case)

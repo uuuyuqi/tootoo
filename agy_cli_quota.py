@@ -4,6 +4,7 @@ from __future__ import annotations
 import copy
 import json
 import os
+import pwd
 import re
 import selectors
 import signal
@@ -17,7 +18,8 @@ from pathlib import Path
 
 _TTL = 60
 _MAX_CONFIG = 256 * 1024
-_MAX_RESPONSE = 256 * 1024
+_MAX_RESPONSE = 512 * 1024
+_USAGE_TIMEOUT = 20.0
 _NATIVE_MAGIC = {b"\x7fELF", b"\xcf\xfa\xed\xfe", b"\xfe\xed\xfa\xcf",
                  b"\xca\xfe\xba\xbe", b"\xca\xfe\xba\xbf"}
 _BUCKETS = {
@@ -31,6 +33,7 @@ _LOCK = threading.Lock()
 _cache_key = None
 _cache_result = None
 _cache_until = 0.0
+_pending = None
 
 
 def _result(state, reason=None, quota=None):
@@ -154,26 +157,39 @@ def _safe_settings(home):
         return False
 
 
-def _exec(exe, args, cwd, env, timeout, cap):
+def _exec(exe, args, cwd, env, timeout, cap, cancelled=None):
     deadline = time.monotonic() + timeout
     proc = None
     try:
+        if cancelled is not None and cancelled.is_set():
+            return None, "cli_cancelled"
         proc = subprocess.Popen([str(exe), *args], cwd=cwd, env=env, stdin=subprocess.DEVNULL,
                                 stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, start_new_session=True)
         data = bytearray()
+        eof = False
         with selectors.DefaultSelector() as sel:
             sel.register(proc.stdout, selectors.EVENT_READ)
-            while (remain := deadline - time.monotonic()) > 0 and sel.select(remain):
+            while (remain := deadline - time.monotonic()) > 0:
+                if cancelled is not None and cancelled.is_set():
+                    return None, "cli_cancelled"
+                if eof:
+                    if (status := proc.poll()) is not None:
+                        return (bytes(data), None) if status == 0 else (None, "cli_exit")
+                    time.sleep(min(.05, remain))
+                    continue
+                if not sel.select(min(.1, remain)):
+                    continue
                 block = os.read(proc.stdout.fileno(), 8192)
                 if not block:
-                    if proc.wait(timeout=max(0.01, deadline - time.monotonic())) == 0:
-                        return bytes(data)
-                    return None
+                    eof = True
+                    sel.unregister(proc.stdout)
+                    continue
                 data.extend(block)
                 if len(data) > cap:
-                    return None
-    except (OSError, ValueError, subprocess.TimeoutExpired):
-        return None
+                    return None, "cli_output_limit"
+        return None, "cli_timeout"
+    except (OSError, ValueError):
+        return None, "cli_execution"
     finally:
         if proc is not None:
             if proc.returncode is None:
@@ -186,7 +202,6 @@ def _exec(exe, args, cwd, env, timeout, cap):
                 proc.wait(timeout=.25)
             except subprocess.TimeoutExpired:
                 pass
-    return None
 
 
 def _version_ok(raw):
@@ -194,44 +209,92 @@ def _version_ok(raw):
     return bool(match and (1, 1, 11) <= tuple(map(int, match.groups())) < (2, 0, 0))
 
 
-def fetch_agy_cli_quota(enabled: bool):
+def _snapshot_key(home, binary):
+    info = binary.stat()
+    return home, binary, info.st_dev, info.st_ino, info.st_mtime_ns, info.st_size
+
+
+def _cancel():
     global _cache_key, _cache_result, _cache_until
+    _cache_key, _cache_result, _cache_until = None, None, 0
+    if _pending is not None:
+        _pending[1].set()
+    return _pending
+
+
+def stop_agy_cli_quota():
+    """Stop/reap an owned probe before a live Debug backend exits or restarts."""
+    with _LOCK:
+        work = _cancel()
+    if work is not None:
+        work[2].join(timeout=.8)
+
+
+def _collect(home, binary, key, cancelled):
+    global _pending, _cache_key, _cache_result, _cache_until
+    result = _result("unavailable", "cli_execution")
+    try:
+        username = pwd.getpwuid(os.getuid()).pw_name
+        env = {"HOME": str(home), "USER": username, "LOGNAME": username,
+               "PATH": "/usr/bin:/bin:/usr/sbin:/sbin", "LANG": "en_US.UTF-8", "NO_COLOR": "1"}
+        with tempfile.TemporaryDirectory(prefix="tootoo-agy-") as cwd:
+            version, reason = _exec(binary, ["--version"], cwd, env, 2.0, 2048, cancelled)
+            if reason is not None:
+                result = _result("unavailable", reason)
+            elif not _version_ok(version):
+                result = _result("unavailable", "cli_version")
+            elif not _safe_settings(home):
+                result = _result("unavailable", "cli_settings")
+            elif _find_agy(home) == binary and _snapshot_key(home, binary) == key:
+                raw, reason = _exec(binary, ["-p", "/usage", "--output-format", "json"], cwd, env,
+                                    _USAGE_TIMEOUT, _MAX_RESPONSE, cancelled)
+                quota = parse_usage(raw, time.time()) if raw is not None else None
+                result = (_result("live", quota=quota) if quota else
+                          _result("unavailable", reason or "cli_shape"))
+    except (OSError, KeyError):
+        pass
+    finally:
+        with _LOCK:
+            _pending = None
+            if not cancelled.is_set():
+                _cache_key, _cache_result, _cache_until = key, result, time.monotonic() + _TTL
+                if result["quota"] is not None:
+                    resets = [b["resets_at"] for b in result["quota"]["buckets"] if b["resets_at"] is not None]
+                    if resets:
+                        _cache_until = min(_cache_until, time.monotonic() + max(0, min(resets) - time.time()))
+
+
+def fetch_agy_cli_quota(enabled: bool):
+    """Return promptly; concurrent telemetry calls join one background read."""
+    global _pending
     with _LOCK:
         if enabled is not True:
-            _cache_key, _cache_result, _cache_until = None, None, 0
+            _cancel()
             return _result("disabled")
         home = Path.home()
         if not _safe_settings(home):
-            _cache_key, _cache_result, _cache_until = None, None, 0
+            _cancel()
             return _result("unavailable", "cli_settings")
         binary = _find_agy(home)
         if binary is None:
+            _cancel()
             return _result("unavailable", "cli_missing")
         try:
-            info = binary.stat()
-            key = (home, binary, info.st_dev, info.st_ino, info.st_mtime_ns, info.st_size)
-            if key == _cache_key and time.monotonic() < _cache_until:
-                result = copy.deepcopy(_cache_result)
-                if result["quota"] is not None:
-                    result["quota"]["source"], result["status"]["state"] = "cli_cached", "cached"
-                return result
-            env = {"HOME": str(home), "PATH": "/usr/bin:/bin", "LANG": "en_US.UTF-8"}
-            with tempfile.TemporaryDirectory(prefix="tootoo-agy-") as cwd:
-                version = _exec(binary, ["--version"], cwd, env, 2.0, 2048)
-                if not _version_ok(version):
-                    result = _result("unavailable", "cli_version")
-                elif not _safe_settings(home):
-                    result = _result("unavailable", "cli_settings")
-                else:
-                    raw = _exec(binary, ["-p", "/usage", "--output-format", "json"], cwd, env, 6.0, _MAX_RESPONSE)
-                    quota = parse_usage(raw, time.time()) if raw is not None else None
-                    result = (_result("live", quota=quota) if quota else
-                              _result("unavailable", "cli_execution" if raw is None else "cli_shape"))
+            key = _snapshot_key(home, binary)
         except OSError:
+            _cancel()
             return _result("unavailable", "cli_execution")
-        _cache_key, _cache_result, _cache_until = key, copy.deepcopy(result), time.monotonic() + _TTL
-        if result["quota"] is not None:
-            resets = [b["resets_at"] for b in result["quota"]["buckets"] if b["resets_at"] is not None]
-            if resets:
-                _cache_until = min(_cache_until, time.monotonic() + max(0, min(resets) - time.time()))
-        return result
+        if key == _cache_key and time.monotonic() < _cache_until:
+            result = copy.deepcopy(_cache_result)
+            if result["quota"] is not None:
+                result["quota"]["source"], result["status"]["state"] = "cli_cached", "cached"
+            return result
+        if _pending is None:
+            cancelled = threading.Event()
+            thread = threading.Thread(target=_collect, args=(home, binary, key, cancelled),
+                                      name="agy-quota", daemon=True)
+            _pending = (key, cancelled, thread)
+            thread.start()
+        elif _pending[0] != key:
+            _cancel()
+        return _result("loading")

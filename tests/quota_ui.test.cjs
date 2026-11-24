@@ -96,3 +96,17 @@ test('AGY diagnostics show only a valid numeric HTTP status for the matching err
   for(const invalid of ['401',0,600,1.5,null]) assert.doesNotMatch(diag('http_status',invalid),/HTTP/);
   assert.doesNotMatch(diag('connect_tls',401),/HTTP/);
 });
+
+test('AGY reports background progress and precise safe failure categories', () => {
+  const diag = (state, reason) => render('none', {}, {
+    antigravity: {selected_source: 'cli', state, reason, detail: 'SECRET localhost token and path'},
+  }).agy;
+  assert.match(diag('loading'), /正在查询/);
+  for (const [reason, wording] of [
+    ['cli_timeout', /超时/], ['cli_exit', /查询失败/], ['cli_output_limit', /数据过大/],
+    ['cli_execution', /没能完成/], ['cli_shape', /没有可识别/],
+  ]) {
+    assert.match(diag('unavailable', reason), wording);
+    assert.doesNotMatch(diag('unavailable', reason), /SECRET|token|登录/);
+  }
+});

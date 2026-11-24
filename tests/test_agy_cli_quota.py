@@ -2,6 +2,7 @@ import json
 import os
 import sys
 import tempfile
+import threading
 import time
 import unittest
 from pathlib import Path
@@ -24,7 +25,8 @@ def report():
 
 class AgyCliQuotaTest(unittest.TestCase):
     def setUp(self):
-        cli.fetch_agy_cli_quota(False)
+        cli.stop_agy_cli_quota()
+        self.addCleanup(cli.stop_agy_cli_quota)
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         self.home = Path(self.tmp.name)
@@ -33,6 +35,15 @@ class AgyCliQuotaTest(unittest.TestCase):
         self.mock_home = patch.object(cli.Path, "home", return_value=self.home)
         self.mock_home.start()
         self.addCleanup(self.mock_home.stop)
+
+    def read_until_settled(self, timeout=2):
+        deadline = time.monotonic() + timeout
+        result = cli.fetch_agy_cli_quota(True)
+        while result["status"]["state"] == "loading" and time.monotonic() < deadline:
+            time.sleep(.01)
+            result = cli.fetch_agy_cli_quota(True)
+        self.assertNotEqual(result["status"]["state"], "loading")
+        return result
 
     def test_exact_groups_zero_and_missing_gemini(self):
         raw = report()
@@ -69,9 +80,9 @@ class AgyCliQuotaTest(unittest.TestCase):
     def test_check_effective_settings_again_before_usage(self):
         def changed(*args):
             self.settings.write_text('{"disableSlashCommands":true}')
-            return b"v1.5.15\n"
+            return b"v1.5.15\n", None
         with patch.object(cli, "_find_agy", return_value=Path(sys.executable)), patch.object(cli, "_exec", side_effect=changed) as launch:
-            self.assertEqual(cli.fetch_agy_cli_quota(True)["status"]["reason"], "cli_settings")
+            self.assertEqual(self.read_until_settled()["status"]["reason"], "cli_settings")
             self.assertEqual(launch.call_count, 1)
             self.assertEqual(launch.call_args.args[1], ["--version"])
 
@@ -81,26 +92,73 @@ class AgyCliQuotaTest(unittest.TestCase):
         loc.write_text("#!/bin/sh\necho v1.5.15\n")
         loc.chmod(0o755)
         self.assertIsNone(cli._find_agy(self.home))
-        with patch.object(cli, "_find_agy", return_value=Path(sys.executable)), patch.object(cli, "_exec", return_value=b"1.1.10") as old:
-            self.assertEqual(cli.fetch_agy_cli_quota(True)["status"]["reason"], "cli_version")
+        with patch.object(cli, "_find_agy", return_value=Path(sys.executable)), patch.object(cli, "_exec", return_value=(b"1.1.10", None)) as old:
+            self.assertEqual(self.read_until_settled()["status"]["reason"], "cli_version")
             self.assertEqual(old.call_count, 1)
         cli.fetch_agy_cli_quota(False)
         def fake(exe, args, cwd, env, *_):
             self.assertTrue(Path(cwd).is_dir())
             self.assertFalse(list(Path(cwd).iterdir()))
-            self.assertEqual(set(env), {"HOME", "PATH", "LANG"})
+            self.assertEqual(set(env), {"HOME", "USER", "LOGNAME", "PATH", "LANG", "NO_COLOR"})
             if args == ["--version"]:
-                return b"agy 1.5.15\n"
+                return b"agy 1.5.15\n", None
             self.assertEqual(args, ["-p", "/usage", "--output-format", "json"])
-            return json.dumps(report()).encode()
+            return json.dumps(report()).encode(), None
         with patch.object(cli, "_find_agy", return_value=Path(sys.executable)), patch.object(cli, "_exec", side_effect=fake) as launch:
-            self.assertEqual(cli.fetch_agy_cli_quota(True)["status"]["state"], "live")
+            self.assertEqual(self.read_until_settled()["status"]["state"], "cached")
             self.assertEqual(cli.fetch_agy_cli_quota(True)["quota"]["source"], "cli_cached")
             self.assertEqual(launch.call_count, 2)
 
     def test_transport_timeout_cap_and_exit(self):
-        for code in ("import time; time.sleep(30)", "print('x'*1000000)", "raise SystemExit(1)"):
+        for code, reason in (("import time; time.sleep(30)", "cli_timeout"),
+                             ("print('x'*1000000)", "cli_output_limit"),
+                             ("print('looks valid'); raise SystemExit(1)", "cli_exit")):
             start = time.monotonic()
-            self.assertIsNone(cli._exec(sys.executable, ["-c", code], self.home, os.environ, .15, 2048))
+            self.assertEqual(cli._exec(sys.executable, ["-c", code], self.home, os.environ, .5, 2048),
+                             (None, reason))
             self.assertLess(time.monotonic() - start, 1.25)
-        self.assertEqual(cli._exec(sys.executable, ["-c", "print('ok')"], self.home, os.environ, 2, 2048), b"ok\n")
+        self.assertEqual(cli._exec(sys.executable, ["-c", "print('ok')"], self.home, os.environ, 2, 2048),
+                         (b"ok\n", None))
+
+    def test_background_singleflight_accepts_response_after_old_deadline(self):
+        launched = threading.Event()
+        original = cli._exec
+
+        def slow(exe, args, cwd, env, timeout, cap, cancelled):
+            if args == ["--version"]:
+                return b"1.5.15", None
+            launched.set()
+            self.assertEqual(timeout, 20)
+            self.assertEqual(cap, 512 * 1024)
+            body = json.dumps(report())
+            code = f"import time; time.sleep(7); print({body!r})"
+            return original(sys.executable, ["-c", code], cwd, env, timeout, cap, cancelled)
+
+        with patch.object(cli, "_find_agy", return_value=Path(sys.executable)), patch.object(cli, "_exec", side_effect=slow) as launch:
+            self.assertEqual(cli.fetch_agy_cli_quota(True)["status"]["state"], "loading")
+            self.assertTrue(launched.wait(1))
+            start = time.monotonic()
+            for _ in range(10):
+                self.assertEqual(cli.fetch_agy_cli_quota(True)["status"]["state"], "loading")
+            self.assertLess(time.monotonic() - start, 1)
+            self.assertEqual(self.read_until_settled(timeout=12)["quota"]["source"], "cli_cached")
+            self.assertEqual(launch.call_count, 2)
+
+    def test_stop_cancels_child_and_drops_pending_value(self):
+        working = threading.Event()
+        actual = cli._exec
+
+        def wait(exe, args, cwd, env, timeout, cap, cancelled):
+            if args == ["--version"]:
+                return b"1.5.15", None
+            working.set()
+            return actual(sys.executable, ["-c", "import time; time.sleep(30)"], cwd, env, timeout, cap, cancelled)
+
+        with patch.object(cli, "_find_agy", return_value=Path(sys.executable)), patch.object(cli, "_exec", side_effect=wait):
+            self.assertEqual(cli.fetch_agy_cli_quota(True)["status"]["state"], "loading")
+            self.assertTrue(working.wait(1))
+            start = time.monotonic()
+            cli.stop_agy_cli_quota()
+            self.assertLess(time.monotonic() - start, 1)
+            self.assertIsNone(cli._pending)
+            self.assertIsNone(cli._cache_result)
