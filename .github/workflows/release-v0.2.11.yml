@@ -1,0 +1,82 @@
+name: Publish verified TooToo v0.2.11
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/release-v0.2.11.yml']
+permissions: {}
+concurrency:
+  group: tootoo-release-v0.2.11
+  cancel-in-progress: false
+env:
+  VERIFIED_SHA: 'aa0713e736db614b27ab0be1ff84a3b91615c2a5'
+  VERIFIED_RUN: '45395517865'
+  VERIFIED_ARTIFACT: '14921226507'
+  VERIFIED_ARTIFACT_DIGEST: 'sha256:91d8bf23f550867e18b3a8ce5495dbaf4ce4b371ef24b7b3135e02f41ad47b03'
+  ARTIFACT_NAME: tootoo-v0.2.11-verified-zip
+  EXPECTED_SHA256: '46600e090565b38ddea2f535b31c5f5eec7f7e1a80dc221efd613af0e134f7d0'
+  ZIP_NAME: TooToo-v0.2.11-macos-universal.zip
+  TAG: v0.2.11
+jobs:
+  publish:
+    if: github.repository == 'uuuyuqi/tootoo' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Confirm exact source, successful verification and immutable artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git rev-parse HEAD^)" = "$VERIFIED_SHA"
+          git diff --exit-code "$VERIFIED_SHA" HEAD -- . ':(exclude).github/workflows/release-v0.2.11.yml'
+          gh api "repos/$GH_REPO/actions/runs/$VERIFIED_RUN" | jq -e \
+            --arg sha "$VERIFIED_SHA" \
+            '.head_sha == $sha and .head_branch == "verification/tootoo-v0.2.11" and
+             (.path | split("@")[0]) == ".github/workflows/verify-quota-v0.2.11.yml" and
+             .event == "push" and .status == "completed" and .conclusion == "success"'
+          gh api "repos/$GH_REPO/actions/artifacts/$VERIFIED_ARTIFACT" | jq -e \
+            --arg sha "$VERIFIED_SHA" --arg name "$ARTIFACT_NAME" \
+            --arg digest "$VERIFIED_ARTIFACT_DIGEST" --argjson run "$VERIFIED_RUN" \
+            '.digest == $digest and .name == $name and .expired == false
+             and .workflow_run.id == $run and .workflow_run.head_sha == $sha'
+          test "$(gh api "repos/$GH_REPO/git/ref/heads/main" --jq '.object.sha')" = "$GITHUB_SHA"
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ env.VERIFIED_RUN }}
+          path: verified
+      - name: Publish the verified ZIP and checksum
+        env:
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cd verified
+          [[ "$EXPECTED_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          cmp "$ZIP_NAME.sha256" <(printf '%s  %s\n' "$EXPECTED_SHA256" "$ZIP_NAME")
+          sha256sum --strict -c "$ZIP_NAME.sha256"
+          test "$(gh api "repos/$GH_REPO/git/ref/heads/main" --jq '.object.sha')" = "$GITHUB_SHA"
+          test -z "$(git ls-remote "$GITHUB_SERVER_URL/$GH_REPO.git" "refs/tags/$TAG")"
+          gh release create "$TAG" "$ZIP_NAME" "$ZIP_NAME.sha256" --draft --target "$GITHUB_SHA" \
+            --title 'TooToo v0.2.11' \
+            --notes '修复 npm 全局安装的 Codex 额度读取，不执行外层脚本，保留 Homebrew 支持。AGY 满额且尚未计时的 Claude/GPT 窗口保留 100%。顶部固定额度不再自动切换来源，明确标注 Gemini 4 Argon 周额度。此安装包使用 ad-hoc 签名，未经过 Apple 公证。'
+          check_dir="$(mktemp -d)"
+          trap 'rm -rf "$check_dir"' EXIT
+          gh release download "$TAG" -p "$ZIP_NAME" -p "$ZIP_NAME.sha256" -D "$check_dir"
+          cmp "$ZIP_NAME" "$check_dir/$ZIP_NAME"
+          cmp "$ZIP_NAME.sha256" "$check_dir/$ZIP_NAME.sha256"
+          test "$(gh api "repos/$GH_REPO/git/ref/heads/main" --jq '.object.sha')" = "$GITHUB_SHA"
+          gh release edit "$TAG" --draft=false --latest
+          test "$(gh api "repos/$GH_REPO/git/ref/tags/$TAG" --jq '.object.sha')" = "$GITHUB_SHA"
+          gh release view "$TAG" --json url,tagName,isDraft,assets
