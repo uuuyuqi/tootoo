@@ -104,12 +104,14 @@ final class LayoutHarness: NSObject, NSApplicationDelegate, WKNavigationDelegate
                 .filter(rule => rule.style && rule.selectorText &&
                     (rule.style.width || rule.style.maxWidth || rule.style.flexBasis) && rail.matches(rule.selectorText))
                 .map(rule => ({name:rule.selectorText, css:rule.style.width, priority:rule.style.getPropertyPriority('width')}));
+             check(getComputedStyle(rail).transitionProperty === 'none', 'rail sizing must not transition');
              check(Math.abs(rect(rail).width - RAIL) < 0.5, 'rail width', {
                 case:'CASE', expected:RAIL, actual:rect(rail).width, computed:getComputedStyle(rail).width,
                 body:document.body.className, row:row.className,
                 basis:getComputedStyle(rail).flexBasis, maxWidth:getComputedStyle(rail).maxWidth,
                 minWidth:getComputedStyle(rail).minWidth, inline:rail.style.cssText,
-                animations:rail.getAnimations().map(a => a.constructor.name), styleRules,
+                animations:rail.getAnimations().map(a => a.constructor.name),
+                reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches, styleRules,
              });
              if (BADGE) {
                 const amount = badge.querySelector('.xp-boost-amount');

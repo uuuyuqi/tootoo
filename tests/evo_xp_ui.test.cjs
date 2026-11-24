@@ -15,14 +15,8 @@ function uiFunction(name) {
 
 function harness() {
   const boostClasses = new Set();
-  const rail = { dimensions: new Map(), style: {
-    setProperty(key, value, priority) { rail.dimensions.set(key, [value, priority]); },
-    removeProperty(key) { rail.dimensions.delete(key); },
-  } };
   const nodes = {
-    xpWrap: { closest: selector => selector === "body.popover-mode" ? {} : null,
-      querySelector: selector => selector === ".xp-track" ? rail : null,
-      classList: { toggle(name, on) { if (on) boostClasses.add(name); else boostClasses.delete(name); } } },
+    xpWrap: { closest: () => null, classList: { toggle(name, on) { if (on) boostClasses.add(name); else boostClasses.delete(name); } } },
     xpText: { removeAttribute(name) { delete this[name]; } },
     evoModal: { classList: { contains: key => key === "open" } },
     evoProgressBox: {},
@@ -76,7 +70,7 @@ function harness() {
     function renderBunnyState(tokens) { ephTokens = tokens; }
   `, scope);
   return {
-    nodes, scope, writes, boostClasses, rail,
+    nodes, scope, writes, boostClasses,
     card: lv => nodes.evoGrid.innerHTML.match(new RegExp(`<div class="evo-card[^"]*"[^>]*data-lv="${lv}">`))?.[0],
     wearCard: () => scope.renderWearCardHtml(
       scope.TOOTOO_REG.getWearable("tier6_collar"), scope.getActiveHomeState(),
@@ -170,7 +164,7 @@ test("simulated progress without a debug level does not write the real seen-rank
 });
 
 test("real XP header annotates source, offers a narrow star icon, then restores legacy text cleanly", () => {
-  const { nodes, scope, boostClasses, rail } = harness();
+  const { nodes, scope, boostClasses } = harness();
   const normal = "<strong>675.86M</strong> / 1B";
   const progress = (text, star = false) =>
     scope.renderTodayXpText(text, star, scope.state.data.today_tokens, scope.getVisibleTodayXpBoostTokens());
@@ -182,10 +176,6 @@ test("real XP header annotates source, offers a narrow star icon, then restores 
   scope.carrotDiskState.home.xp_boost = { day: scope.today, tokens: 95e6 };
   progress("<strong>770.86M</strong> / 1B");
   assert.ok(boostClasses.has("has-xp-boost"));
-  assert.deepEqual([...rail.dimensions], [
-    ["width", ["36px", "important"]], ["max-width", ["36px", "important"]],
-    ["flex-basis", ["36px", "important"]],
-  ]);
   assert.match(nodes.xpText.innerHTML, /class="xp-boost-amount">\+95M</);
   assert.doesNotMatch(nodes.xpText.innerHTML, /star-rank/);
   assert.equal(nodes.xpText.title, nodes.xpWrap.title);
@@ -203,6 +193,5 @@ test("real XP header annotates source, offers a narrow star icon, then restores 
     assert.equal(nodes.xpText.title, undefined, context);
     assert.equal(nodes.xpWrap.title, "点击查看九阶战力进化图鉴", context);
     assert.equal(boostClasses.has("has-xp-boost"), false, context);
-    assert.equal(rail.dimensions.size, 0, context);
   }
 });
