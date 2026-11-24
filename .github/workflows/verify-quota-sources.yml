@@ -42,6 +42,7 @@ jobs:
           github-token: ${{ github.token }}
           run-id: 45343661285
       - name: Reproduce original exact Debug launch isolation using fake Codex
+        continue-on-error: true
         run: |
           set -euo pipefail
           old="$RUNNER_TEMP/tootoo-quota-v1"

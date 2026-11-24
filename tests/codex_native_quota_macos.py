@@ -66,15 +66,21 @@ def find_backend(p, expected_balance, timeout=32):
         for pid, (ppid, uid) in darwin.table().items():
             if (ppid, uid) != (p.pid, os.getuid()):
                 continue
-            ports = list(listeners(pid))
+            ports = set(listeners(pid))
+            args = darwin.argv(pid) or []
+            if b"--port" in args:
+                i = args.index(b"--port")
+                if i+1 < len(args) and args[i+1].isdigit():
+                    ports.add(int(args[i+1]))
             executable = darwin.path(pid)
-            observed[pid] = (os.path.basename(os.fsdecode(executable)) if executable else None, ports)
+            observed[pid] = (os.path.basename(os.fsdecode(executable)) if executable else None, len(args), sorted(ports))
             for port in ports:
                 try:
                     if read_local(port, "/api/carrot", timeout=1).get("balance") == expected_balance:
                         print(f"Exact app {p.pid} owns backend {pid} and port {port}; isolated state verified", flush=True)
                         return pid, port
-                except (OSError, ValueError):
+                except (OSError, ValueError) as error:
+                    observed[pid] = (*observed[pid], type(error).__name__)
                     continue
         time.sleep(.2)
     raise AssertionError(f"packaged Debug backend not found (app exit={p.poll()}; direct children={observed})")
