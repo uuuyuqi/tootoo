@@ -8710,10 +8710,10 @@ function syncDebugUi() {
   if (typeof refreshArcadeContext === "function") refreshArcadeContext();
 }
 
-function getTodayXpBoostTokens() {
+function getTodayXpBoostTokens({ includeSandbox = true } = {}) {
   if (minimalMode) return 0;
   try {
-    const h = typeof getActiveHomeState === "function" ? getActiveHomeState() : null;
+    const h = includeSandbox ? getActiveHomeState() : getRealHomeState();
     if (!h || !h.xp_boost || !h.xp_boost.tokens) return 0;
     const todayKey = typeof getTodayKey === "function" ? getTodayKey() : "";
     return h.xp_boost.day === todayKey ? Number(h.xp_boost.tokens || 0) : 0;
@@ -8721,10 +8721,10 @@ function getTodayXpBoostTokens() {
 }
 
 function getEffectiveTodayTokens() {
-  if (debugState.simTokens != null) {
+  if (debugState.active && debugState.simTokens != null) {
     return debugState.simTokens;
   }
-  if (debugState.level != null) {
+  if (debugState.active && debugState.level != null) {
     const t = BUNNY_TIERS.find(x => x.level === debugState.level);
     if (t) {
       const next = BUNNY_TIERS.find(x => x.level === t.level + 1);
@@ -8758,8 +8758,13 @@ try { localStorage.removeItem("tootoo_max_unlocked_lv"); } catch {}
 function getMaxUnlockedLevel() {
   const peakTok = (state.data && state.data.evo_peak_tokens != null) ? state.data.evo_peak_tokens : 0;
   const realTodayTok = (state.data && state.data.today_tokens != null) ? state.data.today_tokens : 0;
-  const realMax = getBunnyTier(Math.max(peakTok, realTodayTok)).level;
-  return debugState.level != null ? Math.max(realMax, debugState.level) : realMax;
+  // The durable peak is supplied by telemetry. Bridge the interval before
+  // it arrives with the real same-day boost, never a simulated value.
+  const realEffectiveTok = realTodayTok + getTodayXpBoostTokens({ includeSandbox: false });
+  const realMax = getBunnyTier(Math.max(peakTok, realEffectiveTok)).level;
+  if (!debugState.active) return realMax;
+  // Debug can preview higher cards and shop tiers; this calculation never saves them.
+  return Math.max(realMax, getBunnyTier(getEffectiveTodayTokens()).level);
 }
 
 function spawnConfettiBurst(originEl, count = 26) {
@@ -9117,12 +9122,8 @@ function renderBunnyState(tokens) {
   const xpFill = document.getElementById("xpFill");
   const xpText = document.getElementById("xpText");
 
-  if (debugState.level == null && state.data) {
-    getMaxUnlockedLevel();
-  }
-
   // Real level-up & 5B Star-Ascension detection (Lv.4+ queues for first panel open if hidden!)
-  if (debugState.level == null && state.data) {
+  if (!debugState.active && state.data) {
     const seen = readTodaySeenRank();
     if (!seen) {
       // First sight today on this machine: baseline current rank so no spurious level-up on cold start
@@ -16132,6 +16133,9 @@ function grantGachaReward(pick) {
   }
 
   saveActiveHomeState(h, 0, bonusCoins);
+  if (pick.type === "xp" && document.getElementById("evoModal")?.classList.contains("open")) {
+    renderEvoModal();
+  }
   if (typeof renderHomeModal === "function" && document.getElementById("homeModal")?.classList.contains("open")) {
     renderHomeModal();
   }

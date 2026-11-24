@@ -12,6 +12,7 @@ Reads local session logs & SQLite stores directly (no hooks, no proxy required):
 from __future__ import annotations
 
 import atexit
+import fcntl
 import glob
 import hashlib
 import http.client
@@ -22,9 +23,11 @@ import re
 import sqlite3
 import ssl
 import subprocess
+import tempfile
 import threading
 import time
 from collections import defaultdict
+from contextlib import contextmanager
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -38,57 +41,123 @@ CACHE_DIR = os.path.expanduser(os.environ.get("TOOTOO_HOME") or "~/.tootoo")
 CACHE_FILE = os.path.join(CACHE_DIR, "scan_cache_v5.json")
 CONFIG_FILE = os.path.join(CACHE_DIR, "config.json")
 EVO_STATE_FILE = os.path.join(CACHE_DIR, "evo_state.json")
+# Separate from the scanner lock. Never hold this while scanning logs or
+# consulting a remote source. flock also serializes CLI/native instances
+# intentionally sharing the same TOOTOO_HOME.
+_EVO_LOCK = threading.Lock()
 _MEM_EVO_STATE: dict[str, Any] | None = None
+_REAL_DAY_TOTAL: tuple[str, int, float] | None = None
+_REAL_DAY_TTL = 15.0
+_XP_BOOST_MAX = 2_000_000_000
 
 
-def _update_evo_peak_tokens(today_iso: str, today_tokens: int) -> int:
-    """Track highest single-day tokens achieved since TooToo was first enabled.
-
-    Never backfills pre-install historical logs so higher evolution tiers keep
-    their mystery until earned live, while preserving unlocks across days.
-    """
-    global _MEM_EVO_STATE
-    if _MEM_EVO_STATE is None:
-        loaded: dict[str, Any] | None = None
-        try:
-            if os.path.exists(EVO_STATE_FILE):
-                with open(EVO_STATE_FILE, "r", encoding="utf-8") as f:
-                    obj = json.load(f)
-                if isinstance(obj, dict) and isinstance(obj.get("peak_daily_tokens"), (int, float)):
-                    loaded = {
-                        "since": str(obj.get("since") or today_iso),
-                        "peak_daily_tokens": int(obj["peak_daily_tokens"]),
-                        "peak_day": str(obj.get("peak_day") or today_iso),
-                    }
-        except Exception:
-            loaded = None
-        if loaded is None:
-            loaded = {
-                "since": today_iso,
-                "peak_daily_tokens": int(today_tokens),
-                "peak_day": today_iso,
-            }
-            _MEM_EVO_STATE = loaded
-            _save_evo_state(loaded)
-        else:
-            _MEM_EVO_STATE = loaded
-
-    if today_tokens > int(_MEM_EVO_STATE.get("peak_daily_tokens", 0)):
-        _MEM_EVO_STATE["peak_daily_tokens"] = int(today_tokens)
-        _MEM_EVO_STATE["peak_day"] = today_iso
-        _save_evo_state(_MEM_EVO_STATE)
-    return int(_MEM_EVO_STATE.get("peak_daily_tokens", today_tokens))
+def _local_day():
+    return datetime.now().astimezone().date().isoformat()
 
 
-def _save_evo_state(state: dict[str, Any]) -> None:
-    try:
+@contextmanager
+def _game_state_lock():
+    with _EVO_LOCK:
         os.makedirs(CACHE_DIR, exist_ok=True)
-        tmp = EVO_STATE_FILE + ".tmp"
-        with open(tmp, "w", encoding="utf-8") as f:
-            json.dump(state, f, ensure_ascii=False, indent=2)
-        os.replace(tmp, EVO_STATE_FILE)
+        lock = os.open(os.path.join(CACHE_DIR, ".game-state.lock"),
+                       os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            yield
+        finally:
+            os.close(lock)
+
+
+def _atomic_game_json(path: str, data: dict[str, Any]) -> None:
+    # Unique temporary files avoid colliding with another app instance or a
+    # leftover temporary file from a previous interrupted write.
+    fd, tmp = tempfile.mkstemp(prefix=f".{Path(path).name}.", dir=Path(path).parent)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as file:
+            json.dump(data, file, ensure_ascii=False, indent=2)
+            file.flush()
+            os.fsync(file.fileno())
+        os.replace(tmp, path)
+        # Replacement is the commit point. A directory-sync error must
+        # not turn an already-visible state change into an HTTP rejection.
+        try:
+            parent_fd = os.open(Path(path).parent, os.O_RDONLY | os.O_DIRECTORY)
+            try:
+                os.fsync(parent_fd)
+            finally:
+                os.close(parent_fd)
+        except OSError:
+            pass
+    finally:
+        if os.path.exists(tmp):
+            os.unlink(tmp)
+
+
+def _validated_xp_boost(value, today_iso: str) -> int:
+    if not isinstance(value, dict) or value.get("day") != today_iso:
+        return 0
+    amount = value.get("tokens")
+    return min(_XP_BOOST_MAX, amount) if type(amount) is int and amount > 0 else 0
+
+
+def _update_evo_peak_locked(today_iso: str, effective_today: int) -> int:
+    """Observe today's XP only; historical logs cannot unlock earlier days."""
+    global _MEM_EVO_STATE
+    try:
+        with open(EVO_STATE_FILE, "r", encoding="utf-8") as file:
+            raw = json.load(file)
+        if not isinstance(raw, dict) or type(raw.get("peak_daily_tokens")) not in (int, float):
+            raise ValueError("invalid state")
+        prior = max(0, int(raw["peak_daily_tokens"]))
+        state = {"since": str(raw.get("since") or today_iso), "peak_daily_tokens": prior,
+                 "peak_day": str(raw.get("peak_day") or today_iso)}
+        store = False
+    except (FileNotFoundError, ValueError, TypeError, OverflowError):
+        prior = 0
+        state = {"since": today_iso, "peak_daily_tokens": prior, "peak_day": today_iso}
+        store = True
+    if effective_today > prior:
+        state.update(peak_daily_tokens=effective_today, peak_day=today_iso)
+        store = True
+    if store:
+        _atomic_game_json(EVO_STATE_FILE, state)
+    _MEM_EVO_STATE = state
+    return state["peak_daily_tokens"]
+
+
+def _record_evo_telemetry(today_iso: str, today_tokens: int, observed: float) -> int:
+    global _REAL_DAY_TOTAL
+    try:
+        with _game_state_lock():
+            if _local_day() != today_iso:
+                return _update_evo_peak_locked(_local_day(), 0)
+            if _REAL_DAY_TOTAL is None or observed >= _REAL_DAY_TOTAL[2]:
+                _REAL_DAY_TOTAL = (today_iso, today_tokens, observed)
+            boost = _validated_xp_boost(load_carrot_state()["home"].get("xp_boost"), today_iso)
+            return _update_evo_peak_locked(today_iso, today_tokens + boost)
     except OSError:
-        pass
+        # A read-only/missing data directory should not break raw telemetry.
+        return max(today_tokens, int((_MEM_EVO_STATE or {}).get("peak_daily_tokens", 0)))
+
+
+def _real_tokens_for_xp_post(today_iso: str) -> int:
+    global _REAL_DAY_TOTAL
+    with _EVO_LOCK:
+        cached = _REAL_DAY_TOTAL
+        if cached and cached[0] == today_iso and 0 <= time.monotonic() - cached[2] <= _REAL_DAY_TTL:
+            return cached[1]
+    # Local event scan only: don't run build_telemetry or trigger downloads.
+    events, _, _ = scan_all_events()
+    observed = time.monotonic()
+    real = sum(ev["in"] + ev["out"] + ev["cr"] + ev["cw"] + ev.get("reason", 0)
+               for ev in events if ev["day"] == today_iso)
+    with _EVO_LOCK:
+        if _local_day() != today_iso:
+            return 0
+        if _REAL_DAY_TOTAL is None or observed >= _REAL_DAY_TOTAL[2]:
+            _REAL_DAY_TOTAL = (today_iso, real, observed)
+            return real
+        return _REAL_DAY_TOTAL[1] if _REAL_DAY_TOTAL[0] == today_iso else real
 
 
 CARROT_STATE_FILE = os.path.join(CACHE_DIR, "carrot_state.json")
@@ -221,12 +290,10 @@ def _sanitize_home_state(raw: Any) -> dict[str, Any]:
         wexp = wo.get("expires_at")
         if wkind in ("sunny", "cloudy", "overcast", "windy", "rain", "snow") and isinstance(wexp, (int, float)) and wexp > 0:
             h["weather_override"] = {"kind": wkind, "expires_at": int(wexp)}
-    if isinstance(raw.get("xp_boost"), dict):
-        xb = raw["xp_boost"]
-        xday = str(xb.get("day") or "").strip()[:10]
-        xtok = xb.get("tokens")
-        if len(xday) == 10 and isinstance(xtok, (int, float)) and xtok > 0:
-            h["xp_boost"] = {"day": xday, "tokens": min(2_000_000_000, int(xtok))}
+    today = _local_day()
+    boost = _validated_xp_boost(raw.get("xp_boost"), today)
+    if boost:
+        h["xp_boost"] = {"day": today, "tokens": boost}
     if isinstance(raw.get("arcade_items"), dict):
         ai = raw["arcade_items"]
         for k in (
@@ -299,7 +366,20 @@ def load_carrot_state() -> dict[str, Any]:
 
 
 def save_carrot_state(patch: dict[str, Any]) -> dict[str, Any]:
+    today = _local_day()
+    home = patch.get("home")
+    valid_xp = _validated_xp_boost(home.get("xp_boost"), today) if isinstance(home, dict) else 0
+    real = _real_tokens_for_xp_post(today) if valid_xp else 0
+    with _game_state_lock():
+        return _save_carrot_state_locked(patch, today, real)
+
+
+def _save_carrot_state_locked(patch: dict[str, Any], request_day: str, real: int) -> dict[str, Any]:
     cur = load_carrot_state()
+    previous = load_carrot_state() if isinstance(patch.get("home"), dict) else None
+    today = _local_day()
+    existing_xp = _validated_xp_boost(cur["home"].get("xp_boost"), today)
+    accepted_xp = 0
     if "balance" in patch and patch["balance"] is not None:
         try:
             cur["balance"] = max(0, int(patch["balance"]))
@@ -318,6 +398,9 @@ def save_carrot_state(patch: dict[str, Any]) -> dict[str, Any]:
         cur["secret_skin"] = patch["secret_skin"]
     if "home" in patch and isinstance(patch["home"], dict):
         cur["home"] = _sanitize_home_state(patch["home"])
+        accepted_xp = _validated_xp_boost(cur["home"].get("xp_boost"), today) if request_day == today else 0
+        merged_xp = max(existing_xp, accepted_xp)
+        cur["home"]["xp_boost"] = {"day": today if merged_xp else "", "tokens": merged_xp}
     day = str(patch.get("day") or "").strip()
     if len(day) == 10 and day[4] == "-" and day[7] == "-":
         d_ent = cur["days"].get(day)
@@ -339,14 +422,21 @@ def save_carrot_state(patch: dict[str, Any]) -> dict[str, Any]:
             if isinstance(x, (int, float)):
                 merged.add(int(x))
         cur["collection"] = sorted(merged)
-    try:
-        os.makedirs(CACHE_DIR, exist_ok=True)
-        tmp = CARROT_STATE_FILE + ".tmp"
-        with open(tmp, "w", encoding="utf-8") as f:
-            json.dump(cur, f, ensure_ascii=False, indent=2)
-        os.replace(tmp, CARROT_STATE_FILE)
-    except OSError:
-        pass
+    _atomic_game_json(CARROT_STATE_FILE, cur)
+    if accepted_xp:
+        # Do not acknowledge the accepted reward until the peak is durable.
+        # Concurrent telemetry may have observed a fresher local total.
+        latest = _REAL_DAY_TOTAL
+        if latest is not None and latest[0] == today:
+            real = latest[1]
+        try:
+            _update_evo_peak_locked(today, real + merged_xp)
+        except OSError:
+            # A failed peak write must not leave an unacknowledged boost
+            # available for the next telemetry tick to award.
+            assert previous is not None
+            _atomic_game_json(CARROT_STATE_FILE, previous)
+            raise
     return cur
 
 # Performance outlier guards & TTFT log-histogram parameters
@@ -2759,6 +2849,7 @@ def build_telemetry(
     global _MEM_OBSERVED_TS, _MEM_OBSERVED_RATES
     trigger_background_sync_if_stale()
     events, quotas, scan_ms = scan_all_events(force=force, rebuild=rebuild)
+    real_observed = time.monotonic()
     # Provider quotas refresh independently of unchanged local log signatures.
     ag_result, hide_log_quota = select_antigravity_quota(events, force=force or rebuild)
     if hide_log_quota and "antigravity" in quotas:
@@ -2824,7 +2915,7 @@ def build_telemetry(
             continue
         filtered.append(ev)
 
-    evo_peak_tokens = _update_evo_peak_tokens(today_iso, today_tokens)
+    evo_peak_tokens = _record_evo_telemetry(today_iso, today_tokens, real_observed)
 
     # Aggregations
     totals = {"in": 0, "out": 0, "cr": 0, "cw": 0, "reason": 0, "cost": 0.0, "requests": 0}

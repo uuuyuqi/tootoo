@@ -1,0 +1,169 @@
+name: TooToo v0.2.12 XP boost candidate verification
+
+on:
+  push:
+    branches: ['verification/tootoo-v0.2.12']
+    paths:
+      - .github/workflows/verify-xp-boost-v0.2.12.yml
+      - macos/**
+      - tests/**
+      - ui/**
+      - agy_cli_quota.py
+      - codex_app_quota.py
+      - pricing.py
+      - scanner.py
+      - server.py
+      - update_check.py
+      - VERSION
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: macos-15-intel
+    timeout-minutes: 20
+    env:
+      ZIP_NAME: TooToo-v0.2.12-macos-universal.zip
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Verify source and all regression tests
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          git merge-base --is-ancestor 302ae7139e84d466adfce57bc5c599f1cdb3e778 HEAD
+          test "$(cat VERSION)" = 0.2.12
+          python3 -m unittest discover -s tests -v
+          node --test tests/*.test.cjs
+          bash -n macos/build_app.sh
+      - name: Verify actual native quota-selection helper
+        run: |
+          set -euo pipefail
+          fixture="$(mktemp -d)"
+          trap 'rm -rf "$fixture"' EXIT
+          sed -n '/^func selectQuotaBar(/,/^}$/p' macos/main.swift > "$fixture/main.swift"
+          test -s "$fixture/main.swift"
+          cat tests/quota_bar_native_contract.swift >> "$fixture/main.swift"
+          swiftc "$fixture/main.swift" -o "$fixture/quota-contract"
+          "$fixture/quota-contract"
+      - name: Build normal Universal ZIP and authoritative checksum
+        env:
+          VERSION: '0.2.12'
+          BUILD_NUMBER: '14'
+          TOOTOO_DEBUG: '0'
+          UNIVERSAL: '1'
+          PACKAGE_ZIP: '1'
+          NO_INSTALL: '1'
+        run: bash macos/build_app.sh
+      - name: Read Homebrew and npm-native Codex on the packaged app via LaunchServices
+        run: |
+          set -euo pipefail
+          smoke="$(mktemp -d)"
+          trap 'rm -rf "$smoke"' EXIT
+          ditto -x -k "dist/$ZIP_NAME" "$smoke"
+          swiftc -swift-version 5 -framework AppKit tests/LaunchQuotaTrial.swift -o "$smoke/launch"
+          python3 tests/codex_background_native_macos.py "$smoke/TooToo.app" "$smoke/launch"
+          python3 tests/codex_background_native_macos.py "$smoke/TooToo.app" "$smoke/launch" --npm
+      - name: Verify native URL allowlist and real Keep Awake
+        run: |
+          set -euo pipefail
+          smoke="$(mktemp -d)"
+          trap 'rm -rf "$smoke"' EXIT
+          swiftc -O -framework AppKit macos/UpdateController.swift tests/update_native_contract.swift -o "$smoke/contract"
+          "$smoke/contract"
+          swiftc -O -D TOOTOO_KEEP_AWAKE_SMOKE -framework AppKit -framework WebKit \
+            -framework Foundation -framework IOKit macos/main.swift macos/UpdateController.swift macos/PopoverLifecycle.swift -o "$smoke/TooToo"
+          python3 tests/keep_awake_macos.py "$smoke/TooToo"
+      - name: Test actual staged ZIP and rollback with disposable apps
+        run: |
+          set -euo pipefail
+          unzip -tq "dist/$ZIP_NAME"
+          (cd dist && shasum -a 256 -c "$ZIP_NAME.sha256")
+          python3 tests/update_install_macos.py "dist/$ZIP_NAME" "dist/$ZIP_NAME.sha256"
+      - name: Verify packaged official configuration and source UI
+        run: |
+          set -euo pipefail
+          fixture="$(mktemp -d)"
+          trap 'rm -rf "$fixture"' EXIT
+          ditto -x -k "dist/$ZIP_NAME" "$fixture"
+          app="$fixture/TooToo.app"
+          plist="$app/Contents/Info.plist"
+          res="$app/Contents/Resources"
+          test "$(find "$fixture" -maxdepth 1 -name '*.app' -print)" = "$app"
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$plist")" = "0.2.12"
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "$plist")" = "14"
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$plist")" = "com.tootoo.telemetry"
+          test -f "$res/.release" && test -f "$res/update_install.py"
+          cmp codex_app_quota.py "$res/codex_app_quota.py"
+          cmp agy_cli_quota.py "$res/agy_cli_quota.py"
+          cmp scanner.py "$res/scanner.py"
+          cmp server.py "$res/server.py"
+          python3 tests/xp_boost_packaged_http.py "$res"
+          test "$(cat "$res/VERSION")" = 0.2.12
+          lipo "$app/Contents/MacOS/TooToo" -verify_arch arm64 x86_64
+          codesign --verify --deep --strict --all-architectures -R '=identifier "com.tootoo.telemetry"' "$app"
+          grep -Fq '/*__TOOTOO_DEBUG_FLAG__*/false' "$res/ui/index.html"
+          if grep -Eq 'id="debugBar"|TOOTOO_DEV_DEBUG_(START|END)|TOOTOO_DEV_DEBUG_JS_(START|END)|setCodexQuotaControl|setAgyQuotaControl|id="agyQuotaGroups"' "$res/ui/index.html"; then
+            echo 'Development-only UI leaked into release HTML' >&2
+            exit 1
+          fi
+          strings "$app/Contents/MacOS/TooToo" > "$fixture/bin-strings"
+          if grep -Eq 'TOOTOO_KEEP_AWAKE_CI_READY|--keep-awake-ci|setDebugTier|TOOTOO_CODEX_APP_SERVER|setAgyQuotaControl|setCodexQuotaControl' "$fixture/bin-strings"; then
+            echo 'Development/test entry point leaked into release executable' >&2
+            exit 1
+          fi
+          node - "$res/ui/index.html" <<'JS'
+          const fs=require("node:fs"), vm=require("node:vm");
+          const html=fs.readFileSync(process.argv[2],"utf8");
+          let count=0;
+          for (const m of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)) {
+            if (m[1].trim()) new vm.Script(m[1], {filename:"app-inline-" + (++count)});
+          }
+          if (!count) throw new Error("No inline scripts verified");
+          JS
+          mkdir "$fixture/tests" "$fixture/ui"
+          cp "$res/ui/index.html" "$res/ui/tootoo_catalog.js" "$fixture/ui/"
+          cp tests/*.test.cjs "$fixture/tests/"
+          node --test "$fixture/tests/"*.test.cjs
+          shasum -a 256 "dist/$ZIP_NAME" "dist/$ZIP_NAME.sha256"
+      - name: Packaged app preserves 100-percent AGY no-reset windows and cancels on stop
+        run: |
+          set -euo pipefail
+          smoke="$(mktemp -d)"
+          trap 'rm -rf "$smoke"' EXIT
+          ditto -x -k "dist/$ZIP_NAME" "$smoke"
+          swiftc -swift-version 5 -framework AppKit tests/LaunchQuotaTrial.swift -o "$smoke/launch"
+          python3 tests/agy_native_quota_macos.py "$smoke/TooToo.app" "$smoke/launch"
+      - name: Verify Debug remains check-only
+        env:
+          VERSION: '0.2.12'
+          BUILD_NUMBER: '14'
+          TOOTOO_DEBUG: '1'
+          UNIVERSAL: '0'
+          PACKAGE_ZIP: '0'
+          NO_INSTALL: '1'
+        run: |
+          set -euo pipefail
+          bash macos/build_app.sh
+          app="dist/TooToo-Debug.app"
+          test -f "$app/Contents/Resources/update_check.py"
+          test ! -e "$app/Contents/Resources/update_install.py"
+          test ! -e "$app/Contents/Resources/.release"
+          if grep -Eq 'setCodexQuotaControl|setAgyQuotaControl|id="agyQuotaGroups"' "$app/Contents/Resources/ui/index.html"; then
+            echo 'Debug restored quota control or duplicate list' >&2
+            exit 1
+          fi
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$app/Contents/Info.plist")" = "com.tootoo.telemetry.debug"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: tootoo-v0.2.12-verified-zip
+          path: |
+            dist/TooToo-v0.2.12-macos-universal.zip
+            dist/TooToo-v0.2.12-macos-universal.zip.sha256
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
