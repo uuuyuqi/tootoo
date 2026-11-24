@@ -70,7 +70,7 @@ jobs:
           xcrun swiftc -parse-as-library -swift-version 5 -framework AppKit -framework WebKit tests/xp_boost_layout.swift -o "$fixture/xp-boost-layout"
           python3 tests/xp_boost_layout_server.py "$res" "$fixture/port" &
           pid=$!
-          for attempt in {1..50}; do
+          for attempt in {1..100}; do
             [ -s "$fixture/port" ] && break
             kill -0 "$pid"
             sleep 0.1
