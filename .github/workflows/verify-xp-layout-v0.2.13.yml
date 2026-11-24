@@ -59,6 +59,15 @@ jobs:
           PACKAGE_ZIP: '1'
           NO_INSTALL: '1'
         run: bash macos/build_app.sh
+      - name: Verify 452pt and wide XP boost layout in WKWebView using packaged UI
+        run: |
+          set -euo pipefail
+          fixture="$(mktemp -d)"
+          trap 'rm -rf "$fixture"' EXIT
+          ditto -x -k "dist/$ZIP_NAME" "$fixture"
+          res="$fixture/TooToo.app/Contents/Resources"
+          xcrun swiftc -parse-as-library -swift-version 5 -framework AppKit -framework WebKit tests/xp_boost_layout.swift -o "$fixture/xp-boost-layout"
+          "$fixture/xp-boost-layout" "$res/ui/index.html"
       - name: Read Homebrew and npm-native Codex on the packaged app via LaunchServices
         run: |
           set -euo pipefail
@@ -103,7 +112,6 @@ jobs:
           cmp scanner.py "$res/scanner.py"
           cmp server.py "$res/server.py"
           python3 tests/xp_boost_packaged_http.py "$res"
-          xcrun swift tests/xp_boost_layout.swift "$res/ui/index.html"
           test "$(cat "$res/VERSION")" = 0.2.13
           lipo "$app/Contents/MacOS/TooToo" -verify_arch arm64 x86_64
           codesign --verify --deep --strict --all-architectures -R '=identifier "com.tootoo.telemetry"' "$app"

@@ -54,6 +54,14 @@ final class LayoutHarness: NSObject, NSApplicationDelegate, WKNavigationDelegate
         configuration.userContentController.addUserScript(WKUserScript(source: """
             window.fetch = async () => ({ ok: false, status: 503, json: async () => ({ fixture: true }) });
             window.EventSource = class { close() {} };
+            // WKWebView may deny storage to a custom scheme. Simulate an
+            // initially empty, throwaway profile without changing the UI code.
+            const saved = new Map();
+            Object.defineProperty(window, 'localStorage', { configurable: true, value: {
+                getItem: key => saved.get(String(key)) ?? null,
+                setItem: (key, value) => saved.set(String(key), String(value)),
+                removeItem: key => saved.delete(String(key)),
+            }});
             """, injectionTime: .atDocumentStart, forMainFrameOnly: true))
         return WKWebView(frame: NSRect(x: 0, y: 0, width: 452, height: 620), configuration: configuration)
     }()
@@ -191,11 +199,17 @@ final class LayoutHarness: NSObject, NSApplicationDelegate, WKNavigationDelegate
     }
 }
 
-guard CommandLine.arguments.count == 2 else {
-    FileHandle.standardError.write(Data("usage: xcrun swift tests/xp_boost_layout.swift <packaged index.html>\n".utf8))
-    exit(2)
+@main
+struct QuotaLayoutSmoke {
+    @MainActor static func main() {
+        guard CommandLine.arguments.count == 2 else {
+            FileHandle.standardError.write(Data("usage: xp-boost-layout <packaged index.html>\n".utf8))
+            exit(2)
+        }
+        let app = NSApplication.shared
+        app.setActivationPolicy(.regular)
+        let harness = LayoutHarness(URL(fileURLWithPath: CommandLine.arguments[1]).standardizedFileURL)
+        app.delegate = harness
+        app.run()
+    }
 }
-let app = NSApplication.shared
-let harness = LayoutHarness(URL(fileURLWithPath: CommandLine.arguments[1]).standardizedFileURL)
-app.delegate = harness
-app.run()
