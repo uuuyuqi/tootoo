@@ -1888,8 +1888,11 @@
     cursor: pointer;
   }
 
+  body.popover-mode .xp-wrap { --xp-track-width: 52px; }
+  body.popover-mode .xp-wrap.has-xp-boost { --xp-track-width: 36px; }
+
   .xp-track {
-    width: 78px;
+    width: var(--xp-track-width, 78px);
     height: 5px;
     border-radius: 3px;
     background: var(--surface-2);
@@ -6794,10 +6797,8 @@
   body.popover-mode .brand .bunny-wrap[data-lv="10"] .bunny-svg { width: 42px; height: 42px; }
   body.popover-mode .brand-title { font-size: 13px; }
   body.popover-mode .brand-sub { display: none; }
-  body.popover-mode .xp-track { width: 52px; }
   body.popover-mode .xp-wrap.has-xp-boost { gap: 5px; }
   body.popover-mode .brand.has-xp-boost .mood-tag { min-width: 0; white-space: nowrap; }
-  body.popover-mode .xp-wrap.has-xp-boost .xp-track { width: 36px; }
   @media (max-width: 500px) {
     body.popover-mode .xp-boost-tag.star-rank .xp-boost-amount { display: none; }
     body.popover-mode .xp-boost-tag.star-rank .xp-boost-icon { display: inline; }

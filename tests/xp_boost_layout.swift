@@ -89,8 +89,10 @@ final class LayoutHarness: NSObject, NSApplicationDelegate, WKNavigationDelegate
              minimalMode = SIMPLE;
              debugState.active = DEBUG;
              debugState.simTokens = DEBUG ? 3.1e9 : null;
+             finishBoot();
              renderBunnyState(getEffectiveTodayTokens());
              renderEvoModal();
+             return () => {
              const badge = text.querySelector('.xp-boost-tag');
              check(innerWidth === WIDTH, 'viewport', {innerWidth});
              check(document.body.classList.contains('popover-mode') === POPOVER, 'popover CSS mode');
@@ -101,7 +103,9 @@ final class LayoutHarness: NSObject, NSApplicationDelegate, WKNavigationDelegate
                 .map(rule => ({name:rule.selectorText, css:rule.style.width, matches:rail.matches(rule.selectorText)}));
              check(Math.abs(rect(rail).width - RAIL) < 0.5, 'rail width', {
                 case:'CASE', expected:RAIL, actual:rect(rail).width, computed:getComputedStyle(rail).width,
-                body:document.body.className, row:row.className, styleRules,
+                body:document.body.className, row:row.className,
+                variable:getComputedStyle(rail).getPropertyValue('--xp-track-width'),
+                minWidth:getComputedStyle(rail).minWidth, inline:rail.style.cssText, styleRules,
              });
              if (BADGE) {
                 const amount = badge.querySelector('.xp-boost-amount');
@@ -136,6 +140,7 @@ final class LayoutHarness: NSObject, NSApplicationDelegate, WKNavigationDelegate
              }
              check(id('evoHint').textContent.includes('战力经验 = 今日 Token + 扭蛋/宝箱经验包'), 'evolution footer');
              return 'PASS: WKWebView CASE (' + (badge ? (ICON ? '⚡' : '+95M') : text.textContent) + ')';
+             };
             })()
             """
         func check(_ name: String, actual: String, xp: String = "95e6",
@@ -150,7 +155,11 @@ final class LayoutHarness: NSObject, NSApplicationDelegate, WKNavigationDelegate
             // rewrite the production strings/JavaScript such as XP captions.
             var js = harness
             for (key, value) in replacements { js = js.replacingOccurrences(of: "\\b" + key + "\\b", with: value, options: .regularExpression) }
-            try await verify(name, js)
+            // The live popover is measured after WebKit has committed the
+            // rendered state, not while the update mutates layout classes.
+            _ = try await eval("window.__tootooLayoutFixtureCheck = (" + js + "); true")
+            try await Task.sleep(nanoseconds: 100_000_000)
+            try await verify(name, "window.__tootooLayoutFixtureCheck()")
         }
         try await check("452 Lv6", actual: "675.86e6")
         try await check("452 Lv9 star", actual: "4.975e9", icon: true)
