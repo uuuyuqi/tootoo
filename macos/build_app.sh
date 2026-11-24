@@ -5,7 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DIST="$ROOT/dist"
 VERSION="${VERSION:-$(cat "$ROOT/VERSION")}"
 VERSION_CLEAN="${VERSION#v}"
-BUILD_NUMBER="${BUILD_NUMBER:-9}"
+BUILD_NUMBER="${BUILD_NUMBER:-10}"
 TOOTOO_DEBUG="${TOOTOO_DEBUG:-0}"
 NO_INSTALL="${NO_INSTALL:-0}"
 PACKAGE_ZIP="${PACKAGE_ZIP:-0}"
@@ -46,7 +46,7 @@ compile_slice() {
       -framework WebKit \
       -framework IOKit \
       -framework Foundation \
-      "$ROOT/macos/main.swift" "$ROOT/macos/UpdateController.swift" \
+      "$ROOT/macos/main.swift" "$ROOT/macos/UpdateController.swift" "$ROOT/macos/PopoverLifecycle.swift" \
       -o "$out"
   else
     swiftc -O \
@@ -55,7 +55,7 @@ compile_slice() {
       -framework WebKit \
       -framework IOKit \
       -framework Foundation \
-      "$ROOT/macos/main.swift" "$ROOT/macos/UpdateController.swift" \
+      "$ROOT/macos/main.swift" "$ROOT/macos/UpdateController.swift" "$ROOT/macos/PopoverLifecycle.swift" \
       -o "$out"
   fi
 }

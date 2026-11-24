@@ -22,6 +22,7 @@ function harness(active) {
         remove: key => set.delete(key),
         toggle: (key, enabled) => enabled ? set.add(key) : set.delete(key),
       },
+      querySelector: () => ({}),
       addEventListener(key, fn) { this.events[key] = fn; },
     };
   }
@@ -29,27 +30,37 @@ function harness(active) {
   const tabs = games.map(game => dom(game, game === active ? ["active"] : [], { game }));
   const panes = games.map(game => dom("arcPane-" + game, game === active ? ["active"] : []));
   const nodes = Object.fromEntries([
-    dom("arcadeModal", ["open"]), dom("arcadeBtn"), dom("arcadeCloseBtn"), dom("blEndBtn"), ...panes,
+    dom("arcadeModal", ["open"]), dom("arcadeBtn"), dom("arcadeCloseBtn"), dom("blEndBtn"), dom("blNovaBtn"), dom("blBerserkBtn"), dom("rainEndBtn"), ...panes,
     ...["blAmmo","blFireRate","blRefund","blBest","rainTierLbl","rainSpeedLbl","rainBest"].map(id => dom(id)),
     ...games.flatMap(game => [
-      dom(game + "Title"), dom(game + "Desc"), dom(game + "StartBtn"), dom(game + "Overlay"),
+      dom(game + "Title"), dom(game + "Desc"), dom(game + "StartBtn"), dom(game + "Overlay"), dom(game + "Canvas"),
     ]),
   ].map(node => [node.id, node]));
   nodes[active + "Overlay"].classList.add("hidden");
 
-  const frames = new Map(), canceled = [];
-  const round = { running: true, score: 1065, elapsed: 16.6, hordeTimer: 6.6, lastTs: 22, lives: 3 };
+  const frames = new Map(), canceled = [], awarded = [], writes = [];
+  const windowEvents = {}, documentEvents = {};
+  const actions = {blaster: 0, rain: 0};
+  const round = { running: true, score: 1065, elapsed: 16.6, hordeTimer: 6.6, lastTs: 22, lives: 3,
+    kills: 12, bossKills: 1, refunded: 2, coinsCaught: 1, lootsFound: ["珍宝"] };
   const tick = { blaster: () => {}, rain: () => {} };
   frames.set(0, tick[active]);  // requestAnimationFrame IDs may be zero.
   let seq = 0, now = 9999;
   const ctx = {
-    window: {}, nodes, state: {data: null}, popoverVisible: true, minimalMode: false,
+    window: {addEventListener(key, fn) { (windowEvents[key] ??= []).push(fn); }},
+    nodes, state: {data: null}, isPopover: true, popoverVisible: true, minimalMode: false,
+    blasterCanvas: nodes.blasterCanvas, rainCanvas: nodes.rainCanvas,
+    triggerBlasterNova: () => actions.blaster++, triggerRainDash: () => actions.rain++,
+    startBlasterGame() {}, spawnConfettiBurst() {}, playSfx() {},
+    grantAdventureCoins: n => (awarded.push(n), n),
     performance: {now: () => now}, disconnectStream() {}, syncSlidePill() {},
     debugState: {}, renderAdventurePropBars() {}, renderBackdropBar() {}, renderAlchemyStats() {}, renderGachaMeta() {},
     getBlasterLoadout: () => ({ammo:50, fireHz:4, cannons:1, refundProb:0.05}),
     getBunnyTier: () => ({level:1, name:"test"}), getEffectiveTodayTokens: () => 5,
-    localStorage: {getItem: () => null},
+    localStorage: {getItem: () => null, setItem: (...x) => writes.push(x)},
     document: {
+      hidden: false,
+      addEventListener(key, fn) { (documentEvents[key] ??= []).push(fn); },
       getElementById: id => nodes[id],
       querySelectorAll: sel => sel === ".arcade-pane" ? panes : tabs,
     },
@@ -64,12 +75,24 @@ function harness(active) {
   vm.runInContext(
     slice("window.__onPopoverOpen =", 'document.addEventListener("visibilitychange"') +
     slice("const arcadeStartCopy =", "function getBlasterLoadout()") +
-    slice("function refreshArcadeContext()", "// ADVENTURE STAGE BACKDROPS") +
+    slice("function refreshArcadeContext()", "// ADVENTURE STAGE BACKDROPS"), ctx
+  );
+  // Feed the exact registered game input handlers and settlement callback,
+  // not a reimplementation of how a keyboard or canvas event is processed.
+  const input = (game, end) => {
+    const gameSource = html.slice(html.indexOf("const " + (game === "blaster" ? "blKeys" : "rainKeys") + " ="));
+    return gameSource.slice(gameSource.indexOf('window.addEventListener("keydown"'), gameSource.indexOf(end));
+  };
+  vm.runInContext(
+    input("blaster", "function triggerBlasterBerserk(") + input("rain", "function triggerRainDash(") +
+    slice("function finishBlasterGame(", "// GAME 1: 🥕 TOKEN RAIN CATCHER") +
     slice("function stopBlasterGame()", "function spawnSpecialBoss(") +
     slice("function stopRainGame()", "function startRainGame()") +
     slice("function advanceBlasterHordeWarning(", "function spawnHordeFormation("), ctx,
   );
-  return { ctx, nodes, tabs, frames, canceled, tick, round, setNow: value => now = value,
+  return { ctx, nodes, tabs, frames, canceled, tick, round, actions, awarded, writes, setNow: value => now = value,
+    keydown: event => windowEvents.keydown.forEach(fn => fn(event)),
+    visibilityChanged: () => documentEvents.visibilitychange.forEach(fn => fn()),
     scheduledGameFrames: () => [...frames].filter(([, fn]) => fn === tick.blaster || fn === tick.rain) };
 }
 
@@ -163,4 +186,104 @@ test("a paused horde neither loses nor duplicates its entrance pickup across rep
   h.ctx.window.__onPopoverOpen();
   h.ctx.advanceBlasterHordeWarning(h.round, .05);
   assert.equal(h.round.pickups.length, 1);
+});
+
+for (const game of ["blaster", "rain"]) {
+  for (const input of ["pointer", "keyboard"]) {
+    test(game + ": only trusted " + input + " recovers the visible selected paused round", () => {
+      const h = harness(game);
+      const {ctx, nodes, round} = h;
+      const action = trust => {
+        const event = {isTrusted: trust, key: "ArrowLeft"};
+        if (input === "pointer") nodes[game+"Canvas"].events.pointerdown(event);
+        else h.keydown(event);
+      };
+      ctx.window.__onPopoverVisibility({generation: 1, visible: false});
+      action(true);
+      ctx.resumePopoverArcade();
+      assert.equal(round.pausedForPopover, true, "native closed");
+
+      ctx.document.hidden = true;
+      ctx.window.__onPopoverVisibility({generation: 2, visible: true});
+      action(true);
+      ctx.resumePopoverArcade();
+      assert.equal(round.pausedForPopover, true, "hidden page");
+
+      ctx.document.hidden = false;
+      nodes.arcadeModal.classList.remove("open");
+      action(true);
+      assert.equal(round.pausedForPopover, true, "closed arcade");
+      nodes.arcadeModal.classList.add("open");
+      nodes["arcPane-"+game].classList.remove("active");
+      action(true);
+      assert.equal(round.pausedForPopover, true, "wrong pane");
+      nodes["arcPane-"+game].classList.add("active");
+
+      action(false);
+      assert.equal(round.pausedForPopover, true, "untrusted event");
+      assert.equal(h.scheduledGameFrames().length, 0);
+      assert.equal(h.actions[game], 0);
+      action(true);
+      assert.equal(round.pausedForPopover, false);
+      assert.equal(round.running, true);
+      assert.equal(round.lastTs, 9999);
+      assert.equal(h.scheduledGameFrames().length, 1);
+      if (input === "pointer") assert.equal(h.actions[game], 1);
+      else assert.equal(ctx[game === "blaster" ? "blKeys" : "rainKeys"].left, true);
+      action(true);
+      assert.equal(h.scheduledGameFrames().length, 1);
+    });
+  }
+}
+
+test("newer native open wins over a late or contradictory close; visible page can retry recovery", () => {
+  const h = harness("blaster");
+  const bridge = h.ctx.window.__onPopoverVisibility;
+  bridge({generation: 10, visible: false});
+  h.ctx.document.hidden = true;
+  bridge({generation: 11, visible: true});
+  assert.equal(h.round.pausedForPopover, true);
+  h.ctx.document.hidden = false;
+  bridge({generation: 10, visible: false});
+  bridge({generation: 11, visible: false});
+  assert.equal(h.ctx.popoverVisible, true);
+  h.visibilityChanged();
+  assert.equal(h.round.running, true);
+  const id = h.ctx.blasterRaf;
+  bridge({generation: 11, visible: true});
+  bridge({generation: 9, visible: false});
+  assert.equal(h.ctx.blasterRaf, id);
+  assert.equal(h.scheduledGameFrames().length, 1);
+  bridge({generation: 12, visible: false});
+  assert.equal(h.round.pausedForPopover, true);
+  h.ctx.isPopover = false;
+  bridge({generation: 13, visible: true});
+  assert.equal(h.ctx.popoverVisible, false);
+  assert.equal(h.round.pausedForPopover, true);
+});
+
+test("End Round while Blaster is paused settles exactly once and cannot be resumed", () => {
+  const h = harness("blaster");
+  const {ctx, nodes, round} = h;
+  ctx.window.__onPopoverVisibility({generation: 1, visible: false});
+  assert.equal(round.pausedForPopover, true);
+  ctx.document.hidden = true;
+  ctx.window.__onPopoverVisibility({generation: 2, visible: true});
+  ctx.document.hidden = false;
+  h.keydown({isTrusted:true, target:nodes.blEndBtn, code:"Space"});
+  assert.equal(h.scheduledGameFrames().length, 0);
+  nodes.blEndBtn.events.click();
+  nodes.blEndBtn.events.click();
+  ctx.finishBlasterGame(round, "also finished");
+  ctx.window.__onPopoverVisibility({generation: 2, visible: true});
+  nodes.blasterCanvas.events.pointerdown({isTrusted:true});
+  assert.equal(round.running, false);
+  assert.equal(round.pausedForPopover, false);
+  assert.equal(nodes.blEndBtn.hidden, true);
+  assert(!nodes.blasterOverlay.classList.contains("hidden"));
+  assert.match(nodes.blasterDesc.textContent, /已主动结束本局.*珍宝/);
+  assert.deepEqual(h.awarded, [1]);
+  assert.deepEqual(h.writes, [["tootoo_blaster_best", "1065"]]);
+  assert.deepEqual(h.canceled, [0]);
+  assert.equal(h.scheduledGameFrames().length, 0);
 });

@@ -10460,6 +10460,27 @@ window.__onPopoverClose = () => {
   disconnectStream();
 };
 
+// Native visibility is ordered even when callback delivery crosses an animation
+// or a page reload. Repeated didShow/didFinish snapshots can retry arcade resume
+// without restarting the telemetry stream.
+let nativePopoverGeneration = -1;
+window.__onPopoverVisibility = (snapshot) => {
+  const {generation, visible} = snapshot || {};
+  if (!isPopover || !Number.isSafeInteger(generation) || generation < 0 ||
+      typeof visible !== "boolean" || generation < nativePopoverGeneration) return;
+  if (generation === nativePopoverGeneration) {
+    if (visible && popoverVisible) resumePopoverArcade();
+    return;
+  }
+  nativePopoverGeneration = generation;
+  if (visible === popoverVisible) {
+    if (visible) resumePopoverArcade();
+    return;
+  }
+  if (visible) window.__onPopoverOpen();
+  else window.__onPopoverClose();
+};
+
 document.addEventListener("visibilitychange", () => {
   if (isPopover) return;
   if (document.hidden) {
@@ -12401,7 +12422,7 @@ function pauseArcadeRound(round, frame) {
 }
 
 function resumeArcadeRound(round, frame, tick) {
-  if (!round?.pausedForPopover || frame !== null) return frame;
+  if (round?.pausedForPopover !== true || frame !== null) return frame;
   round.pausedForPopover = false;
   round.running = true;
   round.lastTs = performance.now();
@@ -12414,14 +12435,19 @@ function pausePopoverArcade() {
   rainRaf = pauseArcadeRound(rainState, rainRaf);
 }
 
-function resumePopoverArcade() {
-  if (!document.getElementById("arcadeModal").classList.contains("open")) return;
-  if (document.getElementById("arcPane-blaster").classList.contains("active")) {
+function resumePopoverArcade(game) {
+  if (!popoverVisible || document.hidden ||
+      !document.getElementById("arcadeModal").classList.contains("open")) return;
+  if ((!game || game === "blaster") && document.getElementById("arcPane-blaster").classList.contains("active")) {
     blasterRaf = resumeArcadeRound(blasterState, blasterRaf, tickBlasterGame);
   }
-  if (document.getElementById("arcPane-rain").classList.contains("active")) {
+  if ((!game || game === "rain") && document.getElementById("arcPane-rain").classList.contains("active")) {
     rainRaf = resumeArcadeRound(rainState, rainRaf, tickRainGame);
   }
+}
+
+function recoverPopoverArcadeFromInput(e, game, round) {
+  if (e.isTrusted && round?.pausedForPopover === true) resumePopoverArcade(game);
 }
 
 
@@ -12757,6 +12783,7 @@ let blasterState = null;
 const blKeys = { left: false, right: false };
 
 window.addEventListener("keydown", (e) => {
+  if (e.target?.id !== "blEndBtn" && blasterState?.pausedForPopover) recoverPopoverArcadeFromInput(e, "blaster", blasterState);
   if (!blasterState || !blasterState.running) return;
   if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") blKeys.left = true;
   if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") blKeys.right = true;
@@ -12783,7 +12810,8 @@ blasterCanvas.addEventListener("pointermove", (e) => {
   const r = blasterCanvas.getBoundingClientRect();
   blasterState.targetX = ((e.clientX - r.left) / r.width) * blasterState.w;
 });
-blasterCanvas.addEventListener("pointerdown", () => {
+blasterCanvas.addEventListener("pointerdown", (e) => {
+  if (blasterState?.pausedForPopover) recoverPopoverArcadeFromInput(e, "blaster", blasterState);
   if (blasterState && blasterState.running) triggerBlasterNova();
 });
 document.getElementById("blNovaBtn").addEventListener("click", () => {
@@ -12797,6 +12825,7 @@ document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
     clearArcadeKeys();
   } else {
+    resumePopoverArcade();
     const now = performance.now();
     if (blasterState && blasterState.running) blasterState.lastTs = now;
     if (rainState && rainState.running) rainState.lastTs = now;
@@ -14338,8 +14367,9 @@ function tickBlasterGame(now) {
 }
 
 function finishBlasterGame(s, reason) {
-  if (!s?.running) return;
+  if (!s || (!s.running && !s.pausedForPopover)) return;
   s.running = false;
+  s.pausedForPopover = false;
   if (blasterRaf !== null) cancelAnimationFrame(blasterRaf);
   blasterRaf = null;
   blKeys.left = blKeys.right = false;
@@ -14383,6 +14413,7 @@ let rainState = null;
 const rainKeys = { left: false, right: false };
 
 window.addEventListener("keydown", (e) => {
+  if (e.target?.id !== "rainEndBtn" && rainState?.pausedForPopover) recoverPopoverArcadeFromInput(e, "rain", rainState);
   if (!rainState || !rainState.running) return;
   if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") rainKeys.left = true;
   if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") rainKeys.right = true;
@@ -14405,7 +14436,8 @@ rainCanvas.addEventListener("pointermove", (e) => {
   const r = rainCanvas.getBoundingClientRect();
   rainState.targetX = ((e.clientX - r.left) / r.width) * rainState.w;
 });
-rainCanvas.addEventListener("pointerdown", () => {
+rainCanvas.addEventListener("pointerdown", (e) => {
+  if (rainState?.pausedForPopover) recoverPopoverArcadeFromInput(e, "rain", rainState);
   if (rainState && rainState.running) triggerRainDash();
 });
 

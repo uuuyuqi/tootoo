@@ -26,7 +26,13 @@ final class Harness: NSObject, NSApplicationDelegate, WKNavigationDelegate, NSPo
     }()
     var started = false
     var closeCount = 0
-    var closeError: Error?
+    var lifecycleError: Error?
+    lazy var lifecycle = PopoverLifecycle { [weak self] snapshot in
+        guard let self = self, self.started else { return }
+        self.web.evaluateJavaScript(snapshot.javaScript + " true") { [weak self] _, error in
+            if let error = error { self?.lifecycleError = error }
+        }
+    }
 
     init(_ url: URL) { self.url = url }
 
@@ -41,10 +47,10 @@ final class Harness: NSObject, NSApplicationDelegate, WKNavigationDelegate, NSPo
         vc.preferredContentSize = NSSize(width: 452, height: 640)
         popover.contentViewController = vc
         popover.behavior = .transient
-        popover.animates = false
+        popover.animates = true
         popover.delegate = self
         web.navigationDelegate = self
-        popover.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: .minY)
+        requestOpen()
         web.load(URLRequest(url: url))
         DispatchQueue.main.asyncAfter(deadline: .now() + 34) {
             self.fail(SmokeError("global timeout"))
@@ -54,10 +60,11 @@ final class Harness: NSObject, NSApplicationDelegate, WKNavigationDelegate, NSPo
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         guard !started else { return }
         started = true
+        lifecycle.sync()
         Task { @MainActor in
             do {
                 try await self.run()
-                print("PASS: WKWebView/NSPopover: both games pause, preserve, resume, and intentionally reset")
+                print("PASS: WKWebView/NSPopover: both games pause, preserve, resume after animated close/immediate reopen, and intentionally reset")
                 print("PASS: WKWebView OfflineAudioContext: production tone renders a non-silent buffer; mute renders silence (no audible-output check)")
                 exit(0)
             } catch { self.fail(error) }
@@ -68,11 +75,23 @@ final class Harness: NSObject, NSApplicationDelegate, WKNavigationDelegate, NSPo
         fail(error)
     }
 
+    private func requestOpen() {
+        lifecycle.openRequested()
+        showPopover()
+    }
+
+    private func showPopover() {
+        popover.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: .minY)
+    }
+
+    func popoverWillClose(_ notification: Notification) { lifecycle.willClose() }
+
+    func popoverDidShow(_ notification: Notification) { lifecycle.didShow() }
+
     func popoverDidClose(_ notification: Notification) {
-        web.evaluateJavaScript("window.__onPopoverClose()") { _, error in
-            if let error = error { self.closeError = error }
-            self.closeCount += 1
-        }
+        guard !popover.isShown else { return }
+        closeCount += 1
+        if lifecycle.didClose(isShown: false) { showPopover() }
     }
 
     private func fail(_ error: Error) -> Never {
@@ -105,8 +124,8 @@ final class Harness: NSObject, NSApplicationDelegate, WKNavigationDelegate, NSPo
     }
 
     private func run() async throws {
-        try await assertJS("typeof window.__onPopoverOpen === 'function' && typeof window.__onPopoverClose === 'function'", "app JS bootstrap")
-        _ = try await evalJS("sfxEnabled = false; window.__onPopoverOpen(); true")
+        try await assertJS("typeof window.__onPopoverVisibility === 'function'", "app JS bootstrap")
+        _ = try await evalJS("sfxEnabled = false; true")
         for game in ["blaster", "rain"] {
             let prop = game + "State"
             let raf = game + "Raf"
@@ -123,7 +142,7 @@ final class Harness: NSObject, NSApplicationDelegate, WKNavigationDelegate, NSPo
             _ = try await evalJS("\(keys).left = true; true")
             popover.performClose(nil)
             try await waitFor(game + " native close callback") { self.closeCount >= nextClose }
-            if let closeError = closeError { throw closeError }
+            if let lifecycleError = lifecycleError { throw lifecycleError }
             try await assertJS("""
                 \(prop) === window.__qaArcadeRound && \(prop).pausedForPopover &&
                 !\(prop).running && \(raf) === null && !\(keys).left && !\(keys).right &&
@@ -132,12 +151,36 @@ final class Harness: NSObject, NSApplicationDelegate, WKNavigationDelegate, NSPo
             _ = try await evalJS("window.__qaArcadeTick = \(prop).lastTs; true")
             try await Task.sleep(nanoseconds: 250_000_000)
             try await assertJS("\(prop).lastTs === window.__qaArcadeTick", game + " no ticks while hidden")
-            popover.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: .minY)
-            _ = try await evalJS("window.__onPopoverOpen(); true")
-            try await assertJS("""
-                \(prop) === window.__qaArcadeRound && \(prop).running && !\(prop).pausedForPopover &&
-                \(raf) !== null && \(prop).lastTs > window.__qaArcadeTick
-                """, game + " same round resumed")
+            requestOpen()
+            try await waitFor(game + " same round resumed after normal reopen") {
+                try await self.resumed(prop: prop, raf: raf)
+            }
+
+            // Real animated AppKit close and immediate reopen in the same turn:
+            // do not wait for didClose, WebKit, or any animation timer first.
+            _ = try await evalJS("window.__qaArcadeTick = \(prop).lastTs; true")
+            let rapidCloseCount = closeCount
+            lifecycle.willClose()
+            popover.performClose(nil)
+            let stale = lifecycle.snapshot
+            guard !stale.visible else { throw SmokeError(game + " native close request did not advance lifecycle") }
+            requestOpen()
+            try await waitFor(game + " shown and advancing after immediate reopen") {
+                guard self.popover.isShown else { return false }
+                return try await self.resumed(prop: prop, raf: raf)
+            }
+            // Some AppKit versions deliver didClose inline or cancel it during
+            // reopen. Re-deliver the captured pre-reopen snapshot to exercise
+            // WebKit's out-of-order guard on all supported runners.
+            _ = try await evalJS(stale.javaScript + " true")
+            _ = try await evalJS("window.__qaArcadeTick = \(prop).lastTs; true")
+            try await Task.sleep(nanoseconds: 500_000_000)
+            guard popover.isShown, lifecycle.visible else {
+                throw SmokeError(game + " popover did not stay open")
+            }
+            try await assertJS("!!\(prop)?.running && !\(prop).pausedForPopover && \(raf) !== null && \(prop).lastTs > window.__qaArcadeTick && \(prop) === window.__qaArcadeRound", game + " survives stale close")
+            if let lifecycleError = lifecycleError { throw lifecycleError }
+            print("AppKit rapid close callbacks for \(game): \(closeCount - rapidCloseCount)")
             _ = try await evalJS("document.getElementById('arcadeCloseBtn').click(); true")
             try await assertJS("""
                 !\(prop) && \(raf) === null &&
@@ -145,6 +188,14 @@ final class Harness: NSObject, NSApplicationDelegate, WKNavigationDelegate, NSPo
                 """, game + " intentional exit resets")
         }
         try await testOfflineSound()
+    }
+
+    private func resumed(prop: String, raf: String) async throws -> Bool {
+        let result = try await evalJS("""
+            \(prop) === window.__qaArcadeRound && \(prop).running && !\(prop).pausedForPopover &&
+            \(raf) !== null && \(prop).lastTs > window.__qaArcadeTick
+            """)
+        return (result as? NSNumber)?.boolValue == true
     }
 
     // This exercises real WebKit oscillators, gain envelopes and PCM rendering

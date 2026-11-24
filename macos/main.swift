@@ -253,6 +253,7 @@ func findFreePort(preferred: UInt16 = 17891) -> UInt16 {
 class TelemetryWebViewController: NSViewController, WKScriptMessageHandler, WKNavigationDelegate {
     let url: URL
     let onAction: (String, [String: Any]) -> Void
+    var onPageReady: (() -> Void)?
     private var webView: WKWebView!
 
     init(url: URL, size: NSSize, onAction: @escaping (String, [String: Any]) -> Void) {
@@ -281,6 +282,10 @@ class TelemetryWebViewController: NSViewController, WKScriptMessageHandler, WKNa
 
     func evalJS(_ js: String) {
         webView?.evaluateJavaScript(js, completionHandler: nil)
+    }
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        onPageReady?()
     }
 
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction,
@@ -404,6 +409,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private var statusItem: NSStatusItem!
     private var quotaBarView: MenuBarQuotaBarView?
     private var popover: NSPopover!
+    private lazy var popoverLifecycle = PopoverLifecycle { [weak self] snapshot in
+        self?.popoverVC?.evalJS(snapshot.javaScript)
+    }
     private var popoverVC: TelemetryWebViewController?
     private var fullWindow: NSWindow?
     private var fullWindowVC: TelemetryWebViewController?
@@ -908,7 +916,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     }
 
     @objc private func openInBrowser() {
-        popover.performClose(nil)
+        closePopover()
         if let url = URL(string: "http://127.0.0.1:\(port)/") {
             NSWorkspace.shared.open(url)
         }
@@ -933,6 +941,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         let vc = TelemetryWebViewController(url: url, size: NSSize(width: 452, height: 640)) { [weak self] action, payload in
             self?.handleWebAction(action, payload: payload)
         }
+        vc.onPageReady = { [weak self] in self?.popoverLifecycle.sync() }
         popoverVC = vc
         return vc
     }
@@ -943,27 +952,34 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     }
 
     private func togglePopover() {
-        guard let button = statusItem.button else { return }
-        if popover.isShown {
-            popover.performClose(nil)
-            stopOutsideClickMonitor()
+        if popoverLifecycle.visible {
+            closePopover()
         } else {
-            let vc = ensurePopoverVC()
-            popover.contentViewController = vc
-            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-            NSApp.activate(ignoringOtherApps: true)
-            vc.evalJS("window.__onPopoverOpen && window.__onPopoverOpen();")
-            startOutsideClickMonitor()
+            guard statusItem.button != nil else { return }
+            popoverLifecycle.openRequested()
+            showPopover()
         }
+    }
+
+    private func showPopover() {
+        guard let button = statusItem.button else { return }
+        let vc = ensurePopoverVC()
+        if popover.contentViewController !== vc { popover.contentViewController = vc }
+        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    private func closePopover() {
+        // Also cancel an open request AppKit has not finished showing yet.
+        popoverLifecycle.willClose()
+        stopOutsideClickMonitor()
+        popover.performClose(nil)
     }
 
     private func startOutsideClickMonitor() {
         stopOutsideClickMonitor()
         eventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
-            if let pop = self?.popover, pop.isShown {
-                pop.performClose(nil)
-                self?.stopOutsideClickMonitor()
-            }
+            if self?.popoverLifecycle.visible == true { self?.closePopover() }
         }
     }
 
@@ -974,13 +990,27 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         }
     }
 
-    func popoverDidClose(_ notification: Notification) {
+    func popoverWillClose(_ notification: Notification) {
+        popoverLifecycle.willClose()
         stopOutsideClickMonitor()
-        popoverVC?.evalJS("window.__onPopoverClose && window.__onPopoverClose();")
+    }
+
+    func popoverDidShow(_ notification: Notification) {
+        guard popoverLifecycle.visible else {
+            popover.performClose(nil)
+            return
+        }
+        popoverLifecycle.didShow()
+        startOutsideClickMonitor()
+    }
+
+    func popoverDidClose(_ notification: Notification) {
+        guard !popover.isShown else { return }
+        if popoverLifecycle.didClose(isShown: false) { showPopover() }
     }
 
     @objc func openFullWindow() {
-        popover.performClose(nil)
+        closePopover()
         if let win = fullWindow {
             win.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
