@@ -1,10 +1,10 @@
-name: TooToo v0.2.10 npm Codex and AGY quota candidate verification
+name: TooToo v0.2.11 pinned quota selector candidate verification
 
 on:
   push:
-    branches: ['test/quota-discovery-0210']
+    branches: ['verification/tootoo-v0.2.11']
     paths:
-      - .github/workflows/verify-quota-discovery-0210.yml
+      - .github/workflows/verify-quota-v0.2.11.yml
       - macos/**
       - tests/**
       - ui/**
@@ -24,7 +24,7 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 20
     env:
-      ZIP_NAME: TooToo-v0.2.10-macos-universal.zip
+      ZIP_NAME: TooToo-v0.2.11-macos-universal.zip
       PYTHONDONTWRITEBYTECODE: '1'
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -35,15 +35,25 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-          git merge-base --is-ancestor bd1544b6e426d07f217fa1ee72f2b1d19c061c45 HEAD
-          test "$(cat VERSION)" = 0.2.10
+          git merge-base --is-ancestor 55bd38307f8af76b4d98abb3efcbce4fe5dfb6fd HEAD
+          test "$(cat VERSION)" = 0.2.11
           python3 -m unittest discover -s tests -v
           node --test tests/*.test.cjs
           bash -n macos/build_app.sh
+      - name: Verify actual native quota-selection helper
+        run: |
+          set -euo pipefail
+          fixture="$(mktemp -d)"
+          trap 'rm -rf "$fixture"' EXIT
+          sed -n '/^func selectQuotaBar(/,/^}$/p' macos/main.swift > "$fixture/main.swift"
+          test -s "$fixture/main.swift"
+          cat tests/quota_bar_native_contract.swift >> "$fixture/main.swift"
+          swiftc "$fixture/main.swift" -o "$fixture/quota-contract"
+          "$fixture/quota-contract"
       - name: Build normal Universal ZIP and authoritative checksum
         env:
-          VERSION: '0.2.10'
-          BUILD_NUMBER: '12'
+          VERSION: '0.2.11'
+          BUILD_NUMBER: '13'
           TOOTOO_DEBUG: '0'
           UNIVERSAL: '1'
           PACKAGE_ZIP: '1'
@@ -84,15 +94,15 @@ jobs:
           plist="$app/Contents/Info.plist"
           res="$app/Contents/Resources"
           test "$(find "$fixture" -maxdepth 1 -name '*.app' -print)" = "$app"
-          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$plist")" = "0.2.10"
-          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "$plist")" = "12"
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$plist")" = "0.2.11"
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "$plist")" = "13"
           test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$plist")" = "com.tootoo.telemetry"
           test -f "$res/.release" && test -f "$res/update_install.py"
           cmp codex_app_quota.py "$res/codex_app_quota.py"
           cmp agy_cli_quota.py "$res/agy_cli_quota.py"
           cmp scanner.py "$res/scanner.py"
           cmp server.py "$res/server.py"
-          test "$(cat "$res/VERSION")" = 0.2.10
+          test "$(cat "$res/VERSION")" = 0.2.11
           lipo "$app/Contents/MacOS/TooToo" -verify_arch arm64 x86_64
           codesign --verify --deep --strict --all-architectures -R '=identifier "com.tootoo.telemetry"' "$app"
           grep -Fq '/*__TOOTOO_DEBUG_FLAG__*/false' "$res/ui/index.html"
@@ -129,8 +139,8 @@ jobs:
           python3 tests/agy_native_quota_macos.py "$smoke/TooToo.app" "$smoke/launch"
       - name: Verify Debug remains check-only
         env:
-          VERSION: '0.2.10'
-          BUILD_NUMBER: '12'
+          VERSION: '0.2.11'
+          BUILD_NUMBER: '13'
           TOOTOO_DEBUG: '1'
           UNIVERSAL: '0'
           PACKAGE_ZIP: '0'
@@ -149,10 +159,10 @@ jobs:
           test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$app/Contents/Info.plist")" = "com.tootoo.telemetry.debug"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: tootoo-v0.2.10-quota-fix-test-only
+          name: tootoo-v0.2.11-verified-zip
           path: |
-            dist/TooToo-v0.2.10-macos-universal.zip
-            dist/TooToo-v0.2.10-macos-universal.zip.sha256
+            dist/TooToo-v0.2.11-macos-universal.zip
+            dist/TooToo-v0.2.11-macos-universal.zip.sha256
           if-no-files-found: error
           retention-days: 14
           compression-level: 0
