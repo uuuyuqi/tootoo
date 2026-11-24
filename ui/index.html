@@ -1894,12 +1894,6 @@
     min-width: 0;
     flex: 0 0 52px;
   }
-  body.popover-mode #xpWrap.has-xp-boost > .xp-track {
-    width: 36px;
-    max-width: 36px;
-    flex-basis: 36px;
-  }
-
   .xp-track {
     width: 78px;
     height: 5px;
@@ -8784,6 +8778,15 @@ function renderTodayXpText(html, starRank, realToday, todayXp) {
   if (!row || !text) return;
   row.classList.toggle("has-xp-boost", todayXp > 0);
   row.closest(".brand")?.classList.toggle("has-xp-boost", todayXp > 0);
+  const rail = row.querySelector(".xp-track");
+  if (rail) {
+    // The active badge and rail size change together, including inside WebKit's popover flex layout.
+    // Clearing these transient dimensions restores the original 52px/78px styling.
+    const compact = todayXp > 0 && row.closest("body.popover-mode") ? "36px" : "";
+    rail.style.width = compact;
+    rail.style.maxWidth = compact;
+    rail.style.flexBasis = compact;
+  }
   if (todayXp <= 0) {
     row.title = "点击查看九阶战力进化图鉴";
     text.removeAttribute("title");

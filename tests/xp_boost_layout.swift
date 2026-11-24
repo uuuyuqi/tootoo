@@ -128,7 +128,8 @@ final class LayoutHarness: NSObject, NSApplicationDelegate, WKNavigationDelegate
                       quotaTop.scrollWidth <= quotaTop.clientWidth + 1, 'quota copy must remain intact');
                 if (POPOVER) check(rect(brandRow).bottom <= rect(controls).top + 0.5, 'brand must not cross the controls row');
                 if (!ICON && WIDTH === 452) check(value.scrollWidth <= value.clientWidth + 1 &&
-                      value.textContent === '770.86M / 1B', 'Lv6 progress remains fully visible');
+                      value.textContent === '770.86M / 1B', 'Lv6 progress remains fully visible',
+                      {text:value.textContent, available:value.clientWidth, used:value.scrollWidth});
                 check(rect(value).right <= bp.left + 0.5 && bp.top >= xp.top - 0.5 &&
                       bp.bottom <= xp.bottom + 0.5 && rect(title).bottom <= xp.top + 0.5 &&
                       rect(mood).right <= q.left + 0.5 && rect(logo).right <= rect(mood).left + 0.5 &&
