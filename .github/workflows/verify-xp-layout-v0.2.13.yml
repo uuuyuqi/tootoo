@@ -50,6 +50,23 @@ jobs:
           cat tests/quota_bar_native_contract.swift >> "$fixture/main.swift"
           swiftc "$fixture/main.swift" -o "$fixture/quota-contract"
           "$fixture/quota-contract"
+      - name: Verify 452pt and wide XP boost layout in WKWebView using source UI
+        run: |
+          set -euo pipefail
+          fixture="$(mktemp -d)"
+          pid=
+          trap 'if [ -n "$pid" ]; then kill "$pid" 2>/dev/null || true; fi; rm -rf "$fixture"' EXIT
+          res="$PWD"
+          xcrun swiftc -parse-as-library -swift-version 5 -framework AppKit -framework WebKit tests/xp_boost_layout.swift -o "$fixture/xp-boost-layout"
+          python3 tests/xp_boost_layout_server.py "$res" "$fixture/port" &
+          pid=$!
+          for attempt in {1..100}; do
+            [ -s "$fixture/port" ] && break
+            kill -0 "$pid"
+            sleep 0.1
+          done
+          port="$(cat "$fixture/port")"
+          "$fixture/xp-boost-layout" "http://127.0.0.1:$port/?mode=popover"
       - name: Build normal Universal ZIP and authoritative checksum
         env:
           VERSION: '0.2.13'

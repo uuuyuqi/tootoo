@@ -30,6 +30,7 @@ final class LayoutHarness: NSObject, NSApplicationDelegate, WKNavigationDelegate
     func applicationDidFinishLaunching(_ notification: Notification) {
         window.title = "TooToo 452pt isolated WKWebView"
         window.contentView = web
+        NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
         web.navigationDelegate = self
         web.load(URLRequest(url: url))
@@ -100,13 +101,15 @@ final class LayoutHarness: NSObject, NSApplicationDelegate, WKNavigationDelegate
              check(!!badge === BADGE, 'badge visibility', {case:'CASE', tokens:getEffectiveTodayTokens()});
              check(row.classList.contains('has-xp-boost') === BADGE, 'boost layout class');
              const styleRules = [...document.styleSheets].flatMap(sheet => [...sheet.cssRules])
-                .filter(rule => rule.selectorText?.includes('.xp-track'))
-                .map(rule => ({name:rule.selectorText, css:rule.style.width, matches:rail.matches(rule.selectorText)}));
+                .filter(rule => rule.style && rule.selectorText &&
+                    (rule.style.width || rule.style.maxWidth || rule.style.flexBasis) && rail.matches(rule.selectorText))
+                .map(rule => ({name:rule.selectorText, css:rule.style.width, priority:rule.style.getPropertyPriority('width')}));
              check(Math.abs(rect(rail).width - RAIL) < 0.5, 'rail width', {
                 case:'CASE', expected:RAIL, actual:rect(rail).width, computed:getComputedStyle(rail).width,
                 body:document.body.className, row:row.className,
                 basis:getComputedStyle(rail).flexBasis, maxWidth:getComputedStyle(rail).maxWidth,
-                minWidth:getComputedStyle(rail).minWidth, inline:rail.style.cssText, styleRules,
+                minWidth:getComputedStyle(rail).minWidth, inline:rail.style.cssText,
+                animations:rail.getAnimations().map(a => a.constructor.name), styleRules,
              });
              if (BADGE) {
                 const amount = badge.querySelector('.xp-boost-amount');
@@ -161,7 +164,7 @@ final class LayoutHarness: NSObject, NSApplicationDelegate, WKNavigationDelegate
             // The live popover is measured after WebKit has committed the
             // rendered state, not while the update mutates layout classes.
             _ = try await eval("window.__tootooLayoutFixtureCheck = (" + js + "); true")
-            try await Task.sleep(nanoseconds: 100_000_000)
+            try await Task.sleep(nanoseconds: 220_000_000)
             try await verify(name, "window.__tootooLayoutFixtureCheck()")
         }
         try await check("452 Lv6", actual: "675.86e6")

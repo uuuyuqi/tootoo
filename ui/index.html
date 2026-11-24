@@ -8783,9 +8783,10 @@ function renderTodayXpText(html, starRank, realToday, todayXp) {
     // The active badge and rail size change together, including inside WebKit's popover flex layout.
     // Clearing these transient dimensions restores the original 52px/78px styling.
     const compact = todayXp > 0 && row.closest("body.popover-mode") ? "36px" : "";
-    rail.style.width = compact;
-    rail.style.maxWidth = compact;
-    rail.style.flexBasis = compact;
+    for (const property of ["width", "max-width", "flex-basis"]) {
+      if (compact) rail.style.setProperty(property, compact, "important");
+      else rail.style.removeProperty(property);
+    }
   }
   if (todayXp <= 0) {
     row.title = "点击查看九阶战力进化图鉴";

@@ -15,7 +15,10 @@ function uiFunction(name) {
 
 function harness() {
   const boostClasses = new Set();
-  const rail = { style: {} };
+  const rail = { dimensions: new Map(), style: {
+    setProperty(key, value, priority) { rail.dimensions.set(key, [value, priority]); },
+    removeProperty(key) { rail.dimensions.delete(key); },
+  } };
   const nodes = {
     xpWrap: { closest: selector => selector === "body.popover-mode" ? {} : null,
       querySelector: selector => selector === ".xp-track" ? rail : null,
@@ -179,7 +182,10 @@ test("real XP header annotates source, offers a narrow star icon, then restores 
   scope.carrotDiskState.home.xp_boost = { day: scope.today, tokens: 95e6 };
   progress("<strong>770.86M</strong> / 1B");
   assert.ok(boostClasses.has("has-xp-boost"));
-  assert.deepEqual(rail.style, {width:"36px", maxWidth:"36px", flexBasis:"36px"});
+  assert.deepEqual([...rail.dimensions], [
+    ["width", ["36px", "important"]], ["max-width", ["36px", "important"]],
+    ["flex-basis", ["36px", "important"]],
+  ]);
   assert.match(nodes.xpText.innerHTML, /class="xp-boost-amount">\+95M</);
   assert.doesNotMatch(nodes.xpText.innerHTML, /star-rank/);
   assert.equal(nodes.xpText.title, nodes.xpWrap.title);
@@ -197,6 +203,6 @@ test("real XP header annotates source, offers a narrow star icon, then restores 
     assert.equal(nodes.xpText.title, undefined, context);
     assert.equal(nodes.xpWrap.title, "点击查看九阶战力进化图鉴", context);
     assert.equal(boostClasses.has("has-xp-boost"), false, context);
-    assert.deepEqual(rail.style, {width:"", maxWidth:"", flexBasis:""}, context);
+    assert.equal(rail.dimensions.size, 0, context);
   }
 });
