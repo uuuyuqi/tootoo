@@ -1,0 +1,33 @@
+name: AGY quota columns WebKit preview
+on:
+  push:
+    branches: ['verification/tootoo-agy-layout']
+permissions:
+  contents: read
+jobs:
+  geometry:
+    runs-on: macos-15-intel
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Verify renderer then measure real WebKit geometry
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          fixture="$RUNNER_TEMP/agy-layout"
+          mkdir "$fixture"
+          node --test tests/*.test.cjs
+          git show fffc27dab3609a0c7df8c795706d263071c73cbb:ui/index.html > "$fixture/baseline.html"
+          node tests/agy_layout_fixture.cjs "$fixture/baseline.html" "$fixture/before.html"
+          node tests/agy_layout_fixture.cjs ui/index.html "$fixture/after.html"
+          swiftc -parse-as-library -swift-version 5 -framework AppKit -framework WebKit tests/AgyQuotaLayoutSmoke.swift -o "$fixture/smoke"
+          "$fixture/smoke" "$fixture"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: AGY-quota-layout-WebKit-preview
+          path: ${{ runner.temp }}/agy-layout/*.png
+          if-no-files-found: error
+          retention-days: 7
