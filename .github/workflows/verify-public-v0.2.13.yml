@@ -1,0 +1,29 @@
+name: Check public TooToo v0.2.13 downloads
+on:
+  push:
+    branches: ['verification/tootoo-v0.2.13']
+    paths: ['.github/workflows/verify-public-v0.2.13.yml']
+permissions: {}
+jobs:
+  public-download:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - name: Verify latest, public tag, public ZIP and public SHA256 sidecar
+        run: |
+          set -euo pipefail
+          zip=TooToo-v0.2.13-macos-universal.zip
+          sha=35be921242f9a0ebd0f8efff4b823b9bb0b5afa20ea8c48006a17796227d9335
+          sidecar=33f0198b601c67683daf5dcaf7affd937be5d78f0140765209c44ae03c4e76a0
+          target=471b1dc1fa66e066c786a3b04227444c013c9c40
+          base=https://github.com/uuuyuqi/tootoo/releases/download/v0.2.13
+          api=https://api.github.com/repos/uuuyuqi/tootoo
+          fetch() { curl --fail --silent --show-error --location --max-time 30 --retry 2 "$@"; }
+          fetch "$api/releases/latest" | jq -e --arg zip "$zip" --arg sha "sha256:$sha" --arg side "sha256:$sidecar" '.tag_name=="v0.2.13" and (.draft|not) and (.prerelease|not) and (.assets|length)==2 and any(.assets[]; .name==$zip and .digest==$sha) and any(.assets[]; .name==($zip+".sha256") and .digest==$side)'
+          fetch "$api/git/ref/tags/v0.2.13" | jq -e --arg sha "$target" '.object.type=="commit" and .object.sha==$sha'
+          fetch "$base/$zip" -o "$zip"
+          fetch "$base/$zip.sha256" -o "$zip.sha256"
+          cmp "$zip.sha256" <(printf '%s  %s\n' "$sha" "$zip")
+          sha256sum --strict -c "$zip.sha256"
+          printf '%s  %s\n' "$sidecar" "$zip.sha256" | sha256sum --strict -c -
+          unzip -tq "$zip"
