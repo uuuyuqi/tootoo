@@ -78,6 +78,7 @@ fi
 echo "==> Bundling scanner, pricing, server, CLI, and UI..."
 cp "$ROOT/scanner.py" "$RES/scanner.py"
 cp "$ROOT/agy_cli_quota.py" "$RES/agy_cli_quota.py"
+cp "$ROOT/codex_app_quota.py" "$RES/codex_app_quota.py"
 cp "$ROOT/pricing.py" "$RES/pricing.py"
 cp "$ROOT/server.py" "$RES/server.py"
 cp "$ROOT/update_check.py" "$RES/update_check.py"

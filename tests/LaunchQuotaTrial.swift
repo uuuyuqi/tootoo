@@ -7,6 +7,12 @@ config.activates = false
 // Finder/LaunchServices semantics with an isolated home; no CLI in PATH.
 config.environment = ["HOME": args[2], "PATH": "/usr/bin:/bin", "TOOTOO_HOME": args[3],
                       "CODEX_HOME": args[2] + "/.codex"]
+if args.count > 4 && args[4] == "codex-off" {
+    config.environment["TOOTOO_CODEX_QUOTA_AUTO"] = "off"
+}
+if args.count > 4 && args[4] == "codex-other-profile" {
+    config.environment["CODEX_HOME"] = args[2] + "/other-profile"
+}
 let deadline = Date().addingTimeInterval(20)
 var finished = false
 var status: Int32 = 1
