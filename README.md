@@ -184,15 +184,17 @@ v0.2.3 及更早版本没有应用内更新入口，请先通过 Homebrew 或 Re
 
 #### 额度来源验证（试验分支）
 
-正式版不会自动启用 Codex 实时读取。要试验当前 Codex CLI 账号的实时额度，可在此分支单独构建调试版，再从终端显式启用读取；不会安装、替换或停止正式版。使用同一个已登录的 `codex` 命令环境，无需复制凭证，也不会发起登录。新建目录只隔离 TooToo 自己的配置、缓存和存档，不改变 Codex 配置。
+单独打开 `TooToo-Debug.app` 后，在「设置 → 额度来源」选择「启用 Codex 实时读取（仅本次）」，然后在系统弹窗里允许。退出调试版后授权失效；浏览器不能开启它。只使用本机 Codex CLI 的已有登录状态，不要求登录、不读取凭据。测试包不替换正式版，也不安装到「应用程序」。
+
+如需从源码验证：
 
 ```bash
 NO_INSTALL=1 TOOTOO_DEBUG=1 bash macos/build_app.sh
 trial_state="$(mktemp -d "${TMPDIR:-/tmp}/tootoo-quota.XXXXXX")"
-TOOTOO_HOME="$trial_state" TOOTOO_CODEX_APP_SERVER=1 ./dist/TooToo-Debug.app/Contents/MacOS/TooToo-Debug
+TOOTOO_HOME="$trial_state" ./dist/TooToo-Debug.app/Contents/MacOS/TooToo-Debug
 ```
 
-在「设置 → 额度来源」查看实时、未读取或历史记录状态。未明确验证当前账号的 Codex 日志与 Antigravity 上次记录只在工具卡标为历史，不作为当前剩余额度。退出试验版即可停止本次读取。
+实时额度、历史日志和无数据会分开显示。历史日志账号未核实，不算当前剩余额度；Antigravity 无法读取时可在同一处看到简明失败分类和可用的 HTTP 状态码。
 
 ## CLI 与浏览器模式
 

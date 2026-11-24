@@ -12,6 +12,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   verify:
@@ -34,7 +35,21 @@ jobs:
           python3 -m unittest discover -s tests -v
           node --test tests/*.test.cjs
           bash -n macos/build_app.sh
-      - name: Build an isolated Universal Debug bundle without installing or launching it
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: tootoo-quota-sources-debug-test
+          path: ${{ runner.temp }}/tootoo-quota-v1
+          github-token: ${{ github.token }}
+          run-id: 45343661285
+      - name: Reproduce original exact Debug launch isolation using fake Codex
+        run: |
+          set -euo pipefail
+          old="$RUNNER_TEMP/tootoo-quota-v1"
+          zip=TooToo-Debug-v0.2.8-macos-universal.zip
+          (cd "$old" && printf '%s  %s\n' e5aa7194381721afa82c64eed4fd6afc4c73a28aadc12d1913002d3f8009181a "$zip" | shasum -a 256 -c -)
+          ditto -x -k "$old/$zip" "$old"
+          python3 tests/codex_native_quota_macos.py "$old/TooToo-Debug.app" original-v1
+      - name: Build an isolated Universal Debug bundle without installing it
         env:
           TOOTOO_DEBUG: '1'
           UNIVERSAL: '1'
@@ -60,9 +75,10 @@ jobs:
           codesign --verify --strict --deep "$app"
           lipo "$app/Contents/MacOS/TooToo-Debug" -verify_arch arm64 x86_64
           shasum -a 256 "dist/$zip" "dist/$zip.sha256"
+          python3 tests/codex_native_quota_macos.py "$app" candidate-v2
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: tootoo-quota-sources-debug-test
+          name: tootoo-quota-sources-debug-v2
           path: |
             dist/TooToo-Debug-v0.2.8-macos-universal.zip
             dist/TooToo-Debug-v0.2.8-macos-universal.zip.sha256

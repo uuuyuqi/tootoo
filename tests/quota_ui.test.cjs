@@ -87,3 +87,12 @@ test('the same running AGY process can show a fresh sample without showing offli
   assert.match(render('gem5h',{antigravity},{antigravity:cached}).agy,/运行中 · 最近读取/);
   assert.equal(render('gem5h',{antigravity},{antigravity:{...cached,reason:'discovery'}}).bar[0],false);
 });
+
+test('AGY diagnostics show only a valid numeric HTTP status for the matching error', () => {
+  const diag=(reason,http_status)=>render('none',{},{
+    antigravity:{state:'unavailable',reason,cache_state:'none',http_status},
+  }).agy;
+  assert.match(diag('http_status',401),/HTTP 401/);
+  for(const invalid of ['401',0,600,1.5,null]) assert.doesNotMatch(diag('http_status',invalid),/HTTP/);
+  assert.doesNotMatch(diag('connect_tls',401),/HTTP/);
+});

@@ -126,16 +126,40 @@ class AntigravityQuotaTests(unittest.TestCase):
             response.status = 401
             status = scanner.fetch_antigravity_quota(force=True)
             self.assertEqual(status["status"]["reason"], "http_status")
+            self.assertEqual(status["status"]["http_status"], 401)
+            self.assertEqual(scanner.fetch_antigravity_quota(), status)
+            self.assertEqual(self.request.call_count, 1)
             response.read.assert_not_called()
             response.status = 200
             bad_json = scanner.fetch_antigravity_quota(force=True)
             self.assertEqual(bad_json["status"]["reason"], "response_shape")
+            self.assertNotIn("http_status", bad_json["status"])
             self.assertNotIn("private response", json.dumps(bad_json))
             response.read.return_value = b'{"body":"not a quota payload"}'
             wrong_schema = scanner.fetch_antigravity_quota(force=True)
             self.assertEqual(wrong_schema["status"]["reason"], "response_shape")
             self.assertEqual(wrong_schema["quota"], {})
             connection.close.assert_called()
+
+    def test_status_code_is_from_first_http_failure_at_selected_precedence(self):
+        self.provider()
+        self.endpoints.return_value = [("http", n, "", False) for n in range(1, 4)]
+        self.request.side_effect = [OSError("private detail"), scanner._AntigravityProbeFailure("http_status", 404),
+                                    scanner._AntigravityProbeFailure("http_status", 503)]
+        result = scanner.fetch_antigravity_quota()
+        self.assertEqual(result["status"]["http_status"], 404)
+
+        self.request.side_effect = [scanner._AntigravityProbeFailure("http_status", 403), {},
+                                    scanner._AntigravityProbeFailure("http_status", 502)]
+        result = scanner.fetch_antigravity_quota(force=True)
+        self.assertEqual(result["status"]["reason"], "response_shape")
+        self.assertNotIn("http_status", result["status"])
+
+        self.endpoints.return_value = [("http", 2, "", False)]
+        self.request.side_effect = scanner._AntigravityProbeFailure("http_status", 999)
+        result = scanner.fetch_antigravity_quota(force=True)
+        self.assertEqual(result["status"]["reason"], "http_status")
+        self.assertNotIn("http_status", result["status"])
 
     def test_live_missing_reset_never_becomes_new_snapshot_offline(self):
         self.provider(("weekly", .2, None))

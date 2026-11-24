@@ -2181,7 +2181,8 @@ def scan_all_events(force: bool = False, rebuild: bool = False) -> tuple[list[di
 # ---------- Antigravity Loopback Quota ----------
 
 _AG_QUOTA_LOCK = threading.Lock()
-_AG_QUOTA_CACHE: dict[str, tuple[float, dict[str, Any], str | None]] = {}
+_AgProbeReason = tuple[str, int | None]
+_AG_QUOTA_CACHE: dict[str, tuple[float, dict[str, Any], _AgProbeReason | None]] = {}
 _AG_LAST_QUOTA: dict[str, Any] | None = None
 _AG_SCAN_EMPTY_UNTIL = 0.0
 _AG_QUOTA_TTL = 300.0
@@ -2276,7 +2277,11 @@ def _antigravity_endpoints(process: dict[str, Any]) -> list[tuple[str, int, str,
 
 
 class _AntigravityProbeFailure(ValueError):
-    """An internal category only: no response text, status detail or request data."""
+    """Safe failure metadata: category and optional numeric HTTP status only."""
+
+    def __init__(self, reason: str, status: int | None = None):
+        super().__init__(reason)
+        self.status = status if type(status) is int and 100 <= status <= 599 else None
 
 
 def _antigravity_request(endpoint: tuple[str, int, str, bool]) -> Any:
@@ -2302,7 +2307,7 @@ def _antigravity_request(endpoint: tuple[str, int, str, bool]) -> Any:
         )
         response = connection.getresponse()
         if response.status != 200:
-            raise _AntigravityProbeFailure("http_status")
+            raise _AntigravityProbeFailure("http_status", response.status)
         body = response.read(_AG_MAX_RESPONSE_BYTES + 1)
         if len(body) > _AG_MAX_RESPONSE_BYTES:
             raise _AntigravityProbeFailure("response_shape")
@@ -2472,12 +2477,19 @@ _AG_PROBE_ORDER = {"discovery": 0, "connect_tls": 1, "http_status": 2, "response
 
 
 def fetch_antigravity_quota(force: bool = False) -> dict[str, Any]:
-    def result(quota: dict[str, Any], reason: str | None, cache_state: str) -> dict[str, Any]:
+    def priority(failure: _AgProbeReason) -> int:
+        return _AG_PROBE_ORDER[failure[0]]
+
+    def result(quota: dict[str, Any], failure: _AgProbeReason | None, cache_state: str) -> dict[str, Any]:
         state = ("cached" if quota.get("cached") else "live") if quota else "unavailable"
-        return {"quota": quota, "status": {"state": state, "reason": reason, "cache_state": cache_state}}
+        reason, code = failure if failure else (None, None)
+        status = {"state": state, "reason": reason, "cache_state": cache_state}
+        if reason == "http_status" and code is not None:
+            status["http_status"] = code
+        return {"quota": quota, "status": status}
 
     with _AG_QUOTA_LOCK:
-        reason = "discovery"
+        reason: _AgProbeReason = ("discovery", None)
         for process in _antigravity_running_processes(force=force):
             endpoints = _antigravity_endpoints(process)
             if not endpoints:
@@ -2495,9 +2507,9 @@ def fetch_antigravity_quota(force: bool = False) -> dict[str, Any]:
                         return result(quota, None, cache_state)
                     # A known reset crossed the cache deadline; try a fresh probe.
                 elif cached[2] is not None:
-                    reason = max(reason, cached[2], key=_AG_PROBE_ORDER.__getitem__)
+                    reason = max(reason, cached[2], key=priority)
                     continue
-            probe_reason = "connect_tls"
+            probe_reason: _AgProbeReason = ("connect_tls", None)
             for endpoint in endpoints:
                 try:
                     raw = _normalize_antigravity_quota_summary(_antigravity_request(endpoint))
@@ -2509,18 +2521,18 @@ def fetch_antigravity_quota(force: bool = False) -> dict[str, Any]:
                         _AG_QUOTA_CACHE[marker] = (time.monotonic() + _AG_QUOTA_TTL, quota, None)
                         _save_persisted_ag_quota(quota)
                         return result(quota, None, "none")
-                    failure = "response_shape"
+                    failure: _AgProbeReason = ("response_shape", None)
                 except _AntigravityProbeFailure as exc:
-                    failure = str(exc)
-                    if failure not in _AG_PROBE_ORDER:
-                        failure = "response_shape"
+                    category = str(exc)
+                    failure = (category, exc.status) if category in _AG_PROBE_ORDER else ("response_shape", None)
                 except (OSError, http.client.HTTPException):
-                    failure = "connect_tls"
+                    failure = ("connect_tls", None)
                 except (ValueError, RecursionError):
-                    failure = "response_shape"
-                probe_reason = max(probe_reason, failure, key=_AG_PROBE_ORDER.__getitem__)
+                    failure = ("response_shape", None)
+                # Ties preserve the first attempt at this priority, including its status.
+                probe_reason = max(probe_reason, failure, key=priority)
             _AG_QUOTA_CACHE[marker] = (time.monotonic() + _AG_RETRY_TTL, {}, probe_reason)
-            reason = max(reason, probe_reason, key=_AG_PROBE_ORDER.__getitem__)
+            reason = max(reason, probe_reason, key=priority)
         quota, cache_state = _load_persisted_ag_quota()
         return result(quota, reason, cache_state)
 

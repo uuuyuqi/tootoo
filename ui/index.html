@@ -7546,6 +7546,9 @@
     <div class="qcfg-row" style="padding-top:8px;border-top:1px dashed var(--border)">
       <label>额度来源</label>
       <span id="quotaSourceCodex" style="color:var(--muted)">Codex：尚未读取</span>
+      <div id="codexQuotaControlRow" style="display:none">
+        <button id="codexQuotaControlBtn" class="btn" type="button">启用 Codex 实时读取（仅本次）</button>
+      </div>
       <span id="quotaSourceAgy" style="color:var(--muted)">Antigravity：尚未读取</span>
     </div>
 
@@ -8089,6 +8092,30 @@ function postNative(action, extra = {}) {
   } catch {}
   return false;
 }
+
+// TOOTOO_CODEX_CONTROL_START
+const codexQuotaControlRow = document.getElementById("codexQuotaControlRow");
+const codexQuotaControlBtn = document.getElementById("codexQuotaControlBtn");
+const codexQuotaNativeBridge = Boolean(window.webkit?.messageHandlers?.tootoo);
+if (DEV_DEBUG_ENABLED && codexQuotaNativeBridge) {
+  let enabled = null;
+  window.__onCodexQuotaControl = state => {
+    if (typeof state?.enabled !== "boolean" || typeof state?.busy !== "boolean") return;
+    enabled = state.enabled;
+    codexQuotaControlRow.style.display = "";
+    codexQuotaControlBtn.disabled = state.busy;
+    codexQuotaControlBtn.textContent = state.busy ? "正在切换…" : enabled
+      ? "关闭 Codex 实时读取" : "启用 Codex 实时读取（仅本次）";
+    if (state.refresh) void fetchTelemetry(true);
+  };
+  codexQuotaControlBtn.addEventListener("click", event => {
+    if (event.isTrusted && enabled !== null && !codexQuotaControlBtn.disabled) {
+      postNative("setCodexQuotaControl", {enabled: !enabled});
+    }
+  });
+  postNative("getCodexQuotaControl");
+}
+// TOOTOO_CODEX_CONTROL_END
 
 // TOOTOO_UPDATE_UI_START
 const updateUi = Object.fromEntries([
@@ -10613,7 +10640,10 @@ function quotaDiagnostics(d) {
   const ag = qs.antigravity || {};
   const reasons = {discovery:"未找到已运行的额度来源",connect_tls:"本地连接失败",
     http_status:"本地请求未成功",response_shape:"未返回可用的额度数据"};
-  const why = reasons[ag.reason] || "";
+  const status = ag.http_status;
+  const statusSuffix = ag.reason === "http_status" && Number.isInteger(status) && status >= 100 && status <= 599
+    ? "（HTTP " + status + "）" : "";
+  const why = (reasons[ag.reason] || "") + statusSuffix;
   let agyText = "未读到当前额度";
   if (ag.state === "live") agyText = "来自运行中的 Antigravity";
   else if (isRecentAgyQuota(ag)) agyText = "运行中 · 最近读取";

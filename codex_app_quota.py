@@ -62,6 +62,8 @@ def _child_env() -> dict[str, str]:
 def _probe(executable: str, *, timeout: float = TIMEOUT) -> tuple[str, dict | None]:
     deadline = time.monotonic() + timeout
     env = _child_env()
+    # Finder's short PATH may omit the Node interpreter next to the CLI shim.
+    env["PATH"] = os.path.dirname(executable) + os.pathsep + env.get("PATH", os.defpath)
     proc = None
     try:
         proc = subprocess.Popen([executable, "app-server", "--listen", "stdio://"],
@@ -145,6 +147,9 @@ class CodexQuotaReader:
                 self._key, self._result, self._until = None, None, 0.0
             return "disabled", None
         executable = shutil.which("codex")
+        if not executable and os.environ.get("TOOTOO_DEBUG") == "1":
+            # GUI launches do not inherit interactive shell PATH configuration.
+            executable = shutil.which("codex", path="/opt/homebrew/bin:/usr/local/bin")
         if not executable:
             return "unavailable", None
         key = (os.path.abspath(executable), os.environ.get("CODEX_HOME"))

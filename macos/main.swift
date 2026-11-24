@@ -308,7 +308,8 @@ class TelemetryWebViewController: NSViewController, WKScriptMessageHandler, WKNa
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         if let dict = message.body as? [String: Any], let action = dict["action"] as? String {
-            let privileged = ["getKeepAwakeState", "setKeepAwake", "getUpdateState", "checkForUpdate", "installUpdate", "openUpdateRelease"]
+            let privileged = ["getKeepAwakeState", "setKeepAwake", "getUpdateState", "checkForUpdate", "installUpdate", "openUpdateRelease",
+                              "getCodexQuotaControl", "setCodexQuotaControl"]
             if privileged.contains(action) {
                 guard message.frameInfo.isMainFrame, let frameURL = message.frameInfo.request.url,
                       matchesAppPage(frameURL) else { return }
@@ -430,6 +431,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private var keepAwakeAssertionID: IOPMAssertionID?
     private var keepAwakeTimer: Timer?
     private var keepAwakeError: String?
+    #if TOOTOO_DEBUG
+    private var codexQuotaEnabled = ProcessInfo.processInfo.environment["TOOTOO_CODEX_APP_SERVER"] == "1"
+    private var changingCodexQuota = false
+    #endif
     private var baseStatusToolTip = variantName
     private var currentTier: BunnyTierInfo = BUNNY_TIERS[0]
     private var lastMetrics: TodayMetrics?
@@ -689,6 +694,44 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         return "/usr/bin/python3"
     }
 
+    #if TOOTOO_DEBUG
+    private func syncCodexQuotaControl(refresh: Bool = false) {
+        let js = "window.__onCodexQuotaControl && window.__onCodexQuotaControl({enabled:\(codexQuotaEnabled),busy:\(changingCodexQuota),refresh:\(refresh)});"
+        popoverVC?.evalJS(js)
+        fullWindowVC?.evalJS(js)
+    }
+
+    private func setCodexQuotaControl(_ enabled: Bool) {
+        guard !changingCodexQuota, enabled != codexQuotaEnabled else { return }
+        changingCodexQuota = true
+        syncCodexQuotaControl()
+        if enabled {
+            let alert = NSAlert()
+            alert.messageText = "读取当前 Codex CLI 的额度？"
+            alert.informativeText = "仅本次试验运行。TooToo 会用本机 Codex 命令的当前登录状态查询额度，不会要求登录、换账号或读取凭据。"
+            alert.addButton(withTitle: "允许本次读取")
+            alert.addButton(withTitle: "取消")
+            NSApp.activate(ignoringOtherApps: true)
+            guard alert.runModal() == .alertFirstButtonReturn else {
+                changingCodexQuota = false
+                syncCodexQuotaControl()
+                return
+            }
+        }
+        codexQuotaEnabled = enabled
+        // Only stop and restart the Python process this Debug instance owns.
+        // Off clears the old process and its account-scoped cache immediately.
+        stopBackend()
+        startBackend()
+        waitForBackend { [weak self] in
+            guard let self = self else { return }
+            self.changingCodexQuota = false
+            self.syncCodexQuotaControl(refresh: true)
+            self.refreshMenuBarSummary()
+        }
+    }
+    #endif
+
     private func startBackend() {
         guard let resPath = Bundle.main.resourcePath else { return }
         let serverScript = (resPath as NSString).appendingPathComponent("server.py")
@@ -707,6 +750,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         env["TOOTOO_UPDATE_NONCE"] = updateController.backendNonce
         #if TOOTOO_DEBUG
         env["TOOTOO_DEBUG"] = "1"
+        env["TOOTOO_CODEX_APP_SERVER"] = codexQuotaEnabled ? "1" : "0"
         if env["TOOTOO_HOME"]?.isEmpty != false {
             let home = env["HOME"].flatMap { $0.isEmpty ? nil : $0 } ?? NSHomeDirectory()
             env["TOOTOO_HOME"] = (home as NSString).appendingPathComponent(".tootoo-debug")
@@ -1077,6 +1121,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
                 setMenuBarQuotaBar(mode)
             }
         #if TOOTOO_DEBUG
+        case "getCodexQuotaControl":
+            syncCodexQuotaControl()
+        case "setCodexQuotaControl":
+            if let enabled = payload["enabled"] as? Bool { setCodexQuotaControl(enabled) }
         case "setDebugTier":
             if let lv = payload["level"] as? Int, (1...10).contains(lv) {
                 debugTierOverride = lv
