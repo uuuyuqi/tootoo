@@ -1,6 +1,7 @@
 import concurrent.futures
 import json
 import os
+import struct
 import tempfile
 import time
 import threading
@@ -102,6 +103,94 @@ send({"id":2,"result":{"rateLimits":{"limitId":"codex","primary":None,
             result = quota._probe(exe, str(self.dir), {}, threading.Event(), timeout=2)
         self.assertEqual(result["status"]["state"], "live")
         self.assertEqual(result["quota"]["secondary"]["used_percent"], 5)
+
+    def make_npm(self, machine, layout, *, nested):
+        npm_arch, triple, cpu = quota._NPM_ARCH[machine]
+        prefix = self.dir / (machine + ("-nested" if nested else "-flat"))
+        modules = prefix / "lib/node_modules/@openai"
+        root = modules / "codex"
+        (root / "bin").mkdir(parents=True)
+        launcher = root / "bin/codex.js"
+        launcher.write_text('#!/usr/bin/env node\nthrow "wrapper must not run";\n')
+        (prefix / "bin").mkdir()
+        (prefix / "bin/codex").symlink_to("../lib/node_modules/@openai/codex/bin/codex.js")
+        version = "0.172.0" if layout.startswith("bin") else "0.120.0"
+        dep = f"codex-darwin-{npm_arch}"
+        binary_version = f"{version}-darwin-{npm_arch}"
+        (root / "package.json").write_text(json.dumps({
+            "name": "@openai/codex", "version": version, "bin": {"codex": "bin/codex.js"},
+            "optionalDependencies": {f"@openai/{dep}": f"npm:@openai/codex@{binary_version}"},
+        }))
+        native = (root / "node_modules/@openai" if nested else modules) / dep
+        binary = native / "vendor" / triple / layout
+        binary.parent.mkdir(parents=True)
+        (native / "package.json").write_text(json.dumps({
+            "name": "@openai/codex", "version": binary_version, "os": ["darwin"], "cpu": [npm_arch],
+        }))
+        binary.write_bytes(self.macho(cpu))
+        binary.chmod(0o755)
+        return prefix, root, native, binary
+
+    @staticmethod
+    def macho(cpu, kind=2):
+        return struct.pack("<8I", 0xFEEDFACF, cpu, 0, kind, 0, 0, 0, 0)
+
+    def test_npm_nested_arm64_and_hoisted_x64_legacy_use_native_only(self):
+        for machine, layout, nested in (("arm64", "bin/codex", True), ("x86_64", "codex/codex", False)):
+            prefix, _, _, binary = self.make_npm(machine, layout, nested=nested)
+            self.assertIsNone(quota._resolve_homebrew(prefix))
+            self.assertEqual(quota._resolve_npm(prefix, machine), binary)
+            self.assertIsNone(quota._resolve_npm(prefix, "x86_64" if machine == "arm64" else "arm64"))
+
+    def test_npm_rejects_wrong_arch_nonexec_and_fake_universal(self):
+        prefix, _, _, binary = self.make_npm("arm64", "bin/codex", nested=True)
+        arm = quota._NPM_ARCH["arm64"][2]
+        intel = quota._NPM_ARCH["x86_64"][2]
+        for payload in (self.macho(intel), self.macho(arm, 6), b"\xcf\xfa\xed\xfe",
+                        struct.pack(">7I", 0xCAFEBABE, 1, arm, 0, 28, 32, 0) + self.macho(intel),
+                        struct.pack(">7I", 0xCAFEBABE, 1, arm, 0, 28, 64, 0) + self.macho(arm)):
+            binary.write_bytes(payload)
+            self.assertIsNone(quota._resolve_npm(prefix, "arm64"))
+        binary.write_bytes(struct.pack(">7I", 0xCAFEBABE, 1, arm, 0, 28, 32, 0) + self.macho(arm))
+        self.assertEqual(quota._resolve_npm(prefix, "arm64"), binary)
+
+    def test_npm_rejects_launcher_chain_and_package_or_executable_symlinks(self):
+        prefix, root, native, binary = self.make_npm("arm64", "bin/codex", nested=True)
+        wrapper = root / "bin/codex.js"
+        entry = prefix / "bin/codex"
+        entry.unlink()
+        alternate = entry.with_name("hop")
+        alternate.symlink_to(wrapper)
+        entry.symlink_to(alternate)
+        self.assertIsNone(quota._resolve_npm(prefix, "arm64"))
+        entry.unlink()
+        entry.symlink_to(wrapper)
+        outside = self.dir / "outside"
+        outside.write_bytes(binary.read_bytes())
+        outside.chmod(0o755)
+        binary.unlink()
+        binary.symlink_to(outside)
+        self.assertIsNone(quota._resolve_npm(prefix, "arm64"))
+        binary.unlink()
+        binary.write_bytes(outside.read_bytes())
+        binary.chmod(0o755)
+        moved = native.with_name("another-package")
+        native.rename(moved)
+        native.symlink_to(moved, target_is_directory=True)
+        self.assertIsNone(quota._resolve_npm(prefix, "arm64"))
+
+    def test_npm_rejects_wrong_manifest_and_group_writable_paths(self):
+        prefix, _, native, binary = self.make_npm("arm64", "bin/codex", nested=True)
+        manifest = native / "package.json"
+        good = json.loads(manifest.read_text())
+        manifest.write_text(json.dumps({**good, "version": "0.5.0-darwin-arm64"}))
+        self.assertIsNone(quota._resolve_npm(prefix, "arm64"))
+        manifest.write_text(json.dumps(good))
+        binary.parent.chmod(0o777)
+        self.assertIsNone(quota._resolve_npm(prefix, "arm64"))
+        binary.parent.chmod(0o755)
+        binary.chmod(0o775)
+        self.assertIsNone(quota._resolve_npm(prefix, "arm64"))
 
     def test_resolve_homebrew_cask_and_reject_external_symlink_or_wrapper(self):
         prefix = self.dir / "homebrew"

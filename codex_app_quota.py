@@ -6,9 +6,11 @@ from contextlib import suppress
 import json
 import os
 import platform
+import re
 import selectors
 import signal
 import stat
+import struct
 import subprocess
 import tempfile
 import threading
@@ -106,13 +108,151 @@ def _resolve_homebrew(prefix):
         return None
 
 
+_NPM_ARCH = {
+    "arm64": ("arm64", "aarch64-apple-darwin", 0x0100000C),
+    "x86_64": ("x64", "x86_64-apple-darwin", 0x01000007),
+}
+_NPM_WRAPPER = Path("lib/node_modules/@openai/codex/bin/codex.js")
+_MAX_NPM_MANIFEST = 64 * 1024
+_NPM_VERSION = re.compile(r"[0-9]+\.[0-9]+\.[0-9]+(?:-[a-zA-Z0-9.-]+)?(?:\+[a-zA-Z0-9.-]+)?")
+
+
+def _npm_dirs_are_trusted(prefix, directory, admin_gid):
+    # Only the launcher symlink itself is allowed. Reject pnpm stores, linked
+    # packages and any intermediate symlink, including the maintained prefix.
+    if prefix != prefix.resolve(strict=True):
+        return False
+    for directory in (directory, *directory.parents):
+        if directory == prefix.parent:
+            return True
+        info = directory.lstat()
+        if (not stat.S_ISDIR(info.st_mode) or info.st_uid not in (0, os.getuid()) or
+                info.st_mode & 0o002 or (info.st_mode & 0o020 and info.st_gid != admin_gid)):
+            return False
+    return False
+
+
+def _npm_regular(info):
+    return stat.S_ISREG(info.st_mode) and info.st_uid in (0, os.getuid()) and not info.st_mode & 0o022
+
+
+def _npm_manifest(path):
+    # These are public package manifests, not account/user configuration.
+    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    with os.fdopen(fd, "rb") as file:
+        info = os.fstat(file.fileno())
+        if not _npm_regular(info) or info.st_size > _MAX_NPM_MANIFEST:
+            return None
+        raw = file.read(_MAX_NPM_MANIFEST + 1)
+    if len(raw) > _MAX_NPM_MANIFEST:
+        return None
+    data = json.loads(raw)
+    return data if isinstance(data, dict) else None
+
+
+def _npm_macho_executable(path, cpu):
+    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    with os.fdopen(fd, "rb") as file:
+        info = os.fstat(file.fileno())
+        if not _npm_regular(info) or not os.access(path, os.X_OK):
+            return False
+
+        def native_slice(offset):
+            file.seek(offset)
+            header = file.read(32)
+            endian = {b"\xcf\xfa\xed\xfe": "<", b"\xfe\xed\xfa\xcf": ">"}.get(header[:4])
+            return bool(len(header) == 32 and endian and
+                        struct.unpack_from(endian + "I", header, 4)[0] == cpu and
+                        struct.unpack_from(endian + "I", header, 12)[0] == 2)  # MH_EXECUTE
+
+        magic = file.read(4)
+        fat = {b"\xca\xfe\xba\xbe": (">", False), b"\xca\xfe\xba\xbf": (">", True),
+               b"\xbe\xba\xfe\xca": ("<", False), b"\xbf\xba\xfe\xca": ("<", True)}.get(magic)
+        if fat is None:
+            return native_slice(0)
+        endian, fat64 = fat
+        count_bytes = file.read(4)
+        if len(count_bytes) != 4:
+            return False
+        count, = struct.unpack(endian + "I", count_bytes)
+        record = struct.Struct(endian + ("IIQQII" if fat64 else "IIIII"))
+        if not 0 < count <= 16:
+            return False
+        table = file.read(count * record.size)
+        if len(table) != count * record.size:
+            return False
+        return any(arch == cpu and off >= 8 + len(table) and size >= 32 and
+                   off + size <= info.st_size and native_slice(off)
+                   for arch, _subtype, off, size, *_unused in record.iter_unpack(table))
+
+
+def _resolve_npm(prefix, machine):
+    arch = _NPM_ARCH.get(machine)
+    if arch is None:
+        return None
+    npm_arch, triple, cpu = arch
+    admin_gid = _homebrew_admin_gid()
+    entry = prefix / "bin/codex"
+    wrapper = prefix / _NPM_WRAPPER
+    root = wrapper.parent.parent
+    try:
+        if not _npm_dirs_are_trusted(prefix, entry.parent, admin_gid):
+            return None
+        link = entry.lstat()
+        if not stat.S_ISLNK(link.st_mode) or link.st_uid not in (0, os.getuid()):
+            return None
+        # A single standard npm symlink, not a general command-line resolver.
+        if os.readlink(entry) not in (str(wrapper), "../" + str(_NPM_WRAPPER)):
+            return None
+        if not _npm_dirs_are_trusted(prefix, wrapper.parent, admin_gid) or not _npm_regular(wrapper.lstat()):
+            return None
+        package = _npm_manifest(root / "package.json")
+        if not package or package.get("name") != "@openai/codex" or package.get("bin") != {"codex": "bin/codex.js"}:
+            return None
+        version = package.get("version")
+        if not isinstance(version, str) or len(version) > 80 or not _NPM_VERSION.fullmatch(version):
+            return None
+        flavor = f"darwin-{npm_arch}"
+        dependency = f"codex-{flavor}"
+        expected_version = f"{version}-{flavor}"
+        optional = package.get("optionalDependencies")
+        if not isinstance(optional, dict) or optional.get(f"@openai/{dependency}") != f"npm:@openai/codex@{expected_version}":
+            return None
+        for native in (root / f"node_modules/@openai/{dependency}", root.parent / dependency):
+            # Match npm's nested-before-hoisted search only when no nested
+            # package exists. Do not bypass an invalid or linked nested package.
+            if not os.path.lexists(native):
+                continue
+            if not _npm_dirs_are_trusted(prefix, native, admin_gid):
+                return None
+            metadata = _npm_manifest(native / "package.json")
+            if not metadata or metadata.get("name") != "@openai/codex" or metadata.get("version") != expected_version:
+                return None
+            if metadata.get("os") != ["darwin"] or metadata.get("cpu") != [npm_arch]:
+                return None
+            for layout in ("bin/codex", "codex/codex"):
+                candidate = native / "vendor" / triple / layout
+                if not os.path.lexists(candidate):
+                    continue
+                if not _npm_dirs_are_trusted(prefix, candidate.parent, admin_gid):
+                    return None
+                return candidate if _npm_macho_executable(candidate, cpu) else None
+            return None
+    except (OSError, ValueError, RecursionError, RuntimeError):
+        return None
+    return None
+
+
 def _find_codex():
-    # Only conventional Apple Silicon / Intel Homebrew paths. Do not resolve a
-    # command from user/project PATH, a shell alias, or an environment override.
-    prefixes = ("/opt/homebrew", "/usr/local")
-    if platform.machine() == "x86_64":
-        prefixes = prefixes[::-1]
-    return next((path for p in prefixes if (path := _resolve_homebrew(Path(p))) is not None), None)
+    # Known standard paths only, never arbitrary PATH or a configurable command.
+    machine = platform.machine()
+    prefixes = ("/usr/local", "/opt/homebrew") if machine == "x86_64" else ("/opt/homebrew", "/usr/local")
+    for base in prefixes:
+        prefix = Path(base)
+        path = _resolve_homebrew(prefix) or _resolve_npm(prefix, machine)
+        if path is not None:
+            return path
+    return None
 
 
 def _context():

@@ -89,15 +89,68 @@ def install_fake(src, cleanup):
     cleanup.callback(remove)
 
 
-def main(app, launcher):
+def install_npm_fake(src, cleanup):
+    """Reproduce the npm-global architecture package via its literal symlink."""
+    machine = os.uname().machine
+    arch, triple, root = {
+        "arm64": ("arm64", "aarch64-apple-darwin", Path("/opt/homebrew")),
+        "x86_64": ("x64", "x86_64-apple-darwin", Path("/usr/local")),
+    }[machine]
+    launch = root / "bin/codex"
+    modules = root / "lib/node_modules"
+    package = modules / "@openai/codex"
+    optional_name = "@openai/codex-darwin-" + arch
+    optional = package / "node_modules" / optional_name
+    wrapper = package / "bin/codex.js"
+    target = optional / "vendor" / triple / "bin/codex"
+    installed_version = "0.172.0"
+    assert not os.path.lexists(launch) and not os.path.lexists(package), "unexpected real CLI present"
+
+    def install_text(path, text, mode="0644"):
+        with TemporaryDirectory(prefix="tootoo-npm-metadata-") as tmp:
+            fixture = Path(tmp) / path.name
+            fixture.write_text(text)
+            subprocess.run(["sudo", "install", "-m", mode, str(fixture), str(path)], check=True)
+
+    for directory in (launch.parent, wrapper.parent, target.parent):
+        if not directory.exists():
+            subprocess.run(["sudo", "install", "-d", "-g", "admin", "-m", "0775", str(directory)], check=True)
+    install_text(package / "package.json", json.dumps({
+        "name": "@openai/codex", "version": installed_version,
+        "bin": {"codex": "bin/codex.js"},
+        "optionalDependencies": {optional_name: f"npm:@openai/codex@{installed_version}-darwin-{arch}"},
+    }))
+    install_text(optional / "package.json", json.dumps({
+        "name": "@openai/codex", "version": f"{installed_version}-darwin-{arch}",
+        "os": ["darwin"], "cpu": [arch],
+    }))
+    install_text(wrapper, """#!/usr/bin/env node
+require('node:fs').writeFileSync(process.env.HOME + '/codex_wrapper_executed', 'unexpected');
+process.exit(77);
+""", "0755")
+    subprocess.run(["sudo", "install", "-m", "0755", str(src), str(target)], check=True)
+    subprocess.run(["sudo", "ln", "-s", "../lib/node_modules/@openai/codex/bin/codex.js", str(launch)], check=True)
+
+    def remove():
+        assert launch.resolve(strict=True) == wrapper and target.read_bytes() == src.read_bytes(), "fixture changed; refused to remove"
+        subprocess.run(["sudo", "rm", str(launch)], check=True)
+        subprocess.run(["sudo", "rm", "-r", str(package)], check=True)
+    cleanup.callback(remove)
+    return target
+
+
+def main(app, launcher, npm=False):
     with TemporaryDirectory(prefix="tootoo-codex-release-") as tmp, ExitStack() as prefix:
         root = Path(tmp).resolve()
         source, fake = root / "fake.c", root / "codex"
         source.write_text(FAKE_CODEX)
         subprocess.run(["/usr/bin/clang", str(source), "-o", str(fake)], check=True, timeout=30)
-        install_fake(fake, prefix)
-        for balance, case in enumerate(("unused", "stale", "other-profile", "off", "log",
-                                       "auto-weekly", "auto-zero", "cancel"), 261):
+        npm_native = install_npm_fake(fake, prefix) if npm else None
+        if not npm:
+            install_fake(fake, prefix)
+        cases = ("auto-weekly", "auto-zero") if npm else (
+            "unused", "stale", "other-profile", "off", "log", "auto-weekly", "auto-zero", "cancel")
+        for balance, case in enumerate(cases, 271 if npm else 261):
             with ExitStack() as cleanup:
                 home = root / case
                 home.mkdir()
@@ -137,6 +190,9 @@ def main(app, launcher):
                         time.sleep(.05)
                     worker = int(marker.read_text())
                     assert darwin.table().get(worker) == (child, os.getuid())
+                    if npm_native is not None:
+                        assert darwin.path(worker) == os.fsencode(npm_native), "npm shim rather than native package"
+                        assert not (home / "codex_wrapper_executed").exists(), "npm JS wrapper executed"
                     assert calls.read_text().splitlines() == ["initialize", "initialized", "account/rateLimits/read"]
                     if case == "cancel":
                         os.kill(child, signal.SIGTERM)
@@ -163,8 +219,8 @@ def main(app, launcher):
                         assert q["secondary"]["used_percent"] == (0 if case == "auto-zero" else 5)
                         assert (q["source"],q["account_scope"]) == ("app_server","current_cli")
                         assert calls.read_text().splitlines() == ["initialize", "initialized", "account/rateLimits/read"]
-                print(f"PASS Codex packaged LaunchServices {case}", flush=True)
+                print(f"PASS Codex packaged LaunchServices {'npm-native' if npm else 'Homebrew'} {case}", flush=True)
 
 
 if __name__ == "__main__":
-    main(*(Path(arg).resolve() for arg in sys.argv[1:3]))
+    main(*(Path(arg).resolve() for arg in sys.argv[1:3]), npm="--npm" in sys.argv[3:])

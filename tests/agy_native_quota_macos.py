@@ -96,7 +96,7 @@ int main(int argc, char **argv) {
     sleep(7);
     puts("{\"status\":\"SUCCESS\",\"num_turns\":0,\"command\":{\"name\":\"usage\",\"data\":{\"groups\":["
     "{\"name\":\"Gemini Models\",\"buckets\":[{\"id\":\"gemini-5h\",\"window\":\"5h\",\"remaining_fraction\":0.75}]},"
-    "{\"name\":\"Claude and GPT models\",\"buckets\":[{\"id\":\"3p-weekly\",\"window\":\"weekly\",\"remaining_fraction\":0.0}]},"
+    "{\"name\":\"Claude and GPT models\",\"buckets\":[{\"id\":\"3p-weekly\",\"window\":\"weekly\",\"remaining_fraction\":1,\"reset_time\":\"1970-01-01T00:00:00Z\"},{\"id\":\"3p-5h\",\"window\":\"5h\",\"remaining_fraction\":1,\"reset_time\":\"1970-01-01T00:00:00Z\"}]},"
     "{\"name\":\"Gemini 4 Argon\",\"buckets\":[{\"id\":\"gemini-argon-wtu-weekly\",\"window\":\"weekly\",\"remaining_fraction\":0.42}]}]}}}");
   } else return 99;
   return 0;
@@ -206,7 +206,12 @@ def main(app, launcher):
                     assert state["state"] in ("live", "cached") and state["selected_source"] == "cli", state
                     assert quota["source"] in ("cli", "cli_cached")
                     assert {b["id"]: b["remaining_fraction"] for b in quota["buckets"]} == {
-                        "gemini_5h": .75, "cg_7d": 0.0, "argon_7d": .42}
+                        "gemini_5h": .75, "cg_5h": 1, "cg_7d": 1, "argon_7d": .42}
+                    third_party = [b for b in quota["buckets"] if b["id"].startswith("cg_")]
+                    assert len(third_party) == 2
+                    assert all(b["resets_at"] is None and b["used_percent"] == 0 for b in third_party)
+                    card = next(tool for tool in data["tools"] if tool["tool"] == "antigravity")
+                    assert card["quota"]["buckets"] == quota["buckets"], card["quota"]
                     assert log.read_text().splitlines() == ["version", "usage"]
                 else:
                     assert not log.exists() and quota is None, (case, state, quota)

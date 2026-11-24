@@ -58,6 +58,47 @@ class AgyCliQuotaTest(unittest.TestCase):
         groups.pop(1)
         self.assertFalse(any(x["group_id"] == "gemini" for x in cli.parse_usage(json.dumps(raw).encode(), 0)["buckets"]))
 
+    def test_full_epoch_zero_windows_survive_with_no_reset_and_cache(self):
+        raw = report()
+        third_party, gemini, _ = raw["command"]["data"]["groups"]
+        for item in third_party["buckets"]:
+            item.update(remaining_fraction=1, reset_time="1970-01-01T00:00:00Z")
+        now = time.time()
+        gemini["buckets"][0]["reset_time"] = "2020-01-01T00:00:00Z"
+        encoded = json.dumps(raw).encode()
+        buckets = {b["id"]: b for b in cli.parse_usage(encoded, now)["buckets"]}
+        self.assertEqual(set(buckets), {"cg_5h", "cg_7d", "gemini_7d", "argon_7d"})
+        for key in ("cg_5h", "cg_7d"):
+            self.assertEqual(buckets[key]["used_percent"], 0)
+            self.assertIsNone(buckets[key]["resets_at"])
+        self.assertEqual(buckets["argon_7d"]["remaining_fraction"], .53)
+        with patch.object(cli, "_find_agy", return_value=Path(sys.executable)), patch.object(
+            cli, "_exec", side_effect=((b"agy 1.5.15\n", None), (encoded, None))
+        ) as launch:
+            result = self.read_until_settled()
+            self.assertEqual(result["quota"]["source"], "cli_cached")
+            self.assertEqual({b["id"] for b in result["quota"]["buckets"]}, set(buckets))
+            self.assertEqual([b["resets_at"] for b in result["quota"]["buckets"]
+                              if b["id"].startswith("cg_")], [None, None])
+            self.assertEqual(launch.call_count, 2)
+
+    def test_epoch_zero_requires_exact_full_valid_aware_timestamp(self):
+        raw = report()
+        third_party = raw["command"]["data"]["groups"][0]["buckets"]
+        third_party[1].update(reset_time="1970-01-01T00:00:00+00:00")
+        for value, reset in (
+            (0, "1970-01-01T00:00:00Z"),
+            (.99, "1970-01-01T00:00:00Z"),
+            (1, 0),
+            (1, "1970-01-01T00:00:00"),
+            (1, "1970-01-01T00:00:01Z"),
+            (1, "not-a-date"),
+        ):
+            third_party[0].update(remaining_fraction=value, reset_time=reset)
+            buckets = {b["id"]: b for b in cli.parse_usage(json.dumps(raw).encode(), time.time())["buckets"]}
+            self.assertNotIn("cg_5h", buckets, (value, reset))
+            self.assertIsNone(buckets["cg_7d"]["resets_at"])
+
     def test_one_turn_wrong_command_and_duplicate_ids_fail_closed(self):
         raw = report()
         for change in ({"num_turns": 1}, {"num_turns": False}, {"usage": {"input_tokens": 1}},

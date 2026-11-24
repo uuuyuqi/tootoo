@@ -101,7 +101,11 @@ def parse_usage(raw: bytes, now: float):
                     if parsed.utcoffset() is None:
                         continue
                     reset = parsed.timestamp()
-                    if reset <= now:
+                    if reset == 0 and value == 1:
+                        # AGY reports the protobuf zero timestamp when a full
+                        # window has not started; there is no reset to show.
+                        reset = None
+                    elif reset <= now:
                         continue
                 except (AttributeError, ValueError, OverflowError, OSError):
                     continue
