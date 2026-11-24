@@ -40,6 +40,23 @@ jobs:
           python3 -m unittest discover -s tests -v
           node --test tests/*.test.cjs
           bash -n macos/build_app.sh
+      - name: Build normal Universal ZIP and authoritative checksum
+        env:
+          VERSION: '0.2.9'
+          BUILD_NUMBER: '11'
+          TOOTOO_DEBUG: '0'
+          UNIVERSAL: '1'
+          PACKAGE_ZIP: '1'
+          NO_INSTALL: '1'
+        run: bash macos/build_app.sh
+      - name: Read Codex official weekly data in real non-Debug app
+        run: |
+          set -euo pipefail
+          smoke="$(mktemp -d)"
+          trap 'rm -rf "$smoke"' EXIT
+          ditto -x -k "dist/$ZIP_NAME" "$smoke"
+          swiftc -swift-version 5 -framework AppKit tests/LaunchQuotaTrial.swift -o "$smoke/launch"
+          python3 tests/codex_background_native_macos.py "$smoke/TooToo.app" "$smoke/launch"
       - name: Verify native URL allowlist and real Keep Awake
         run: |
           set -euo pipefail
@@ -50,15 +67,6 @@ jobs:
           swiftc -O -D TOOTOO_KEEP_AWAKE_SMOKE -framework AppKit -framework WebKit \
             -framework Foundation -framework IOKit macos/main.swift macos/UpdateController.swift macos/PopoverLifecycle.swift -o "$smoke/TooToo"
           python3 tests/keep_awake_macos.py "$smoke/TooToo"
-      - name: Build normal Universal ZIP and authoritative checksum
-        env:
-          VERSION: '0.2.9'
-          BUILD_NUMBER: '11'
-          TOOTOO_DEBUG: '0'
-          UNIVERSAL: '1'
-          PACKAGE_ZIP: '1'
-          NO_INSTALL: '1'
-        run: bash macos/build_app.sh
       - name: Test actual staged ZIP and rollback with disposable apps
         run: |
           set -euo pipefail
@@ -118,14 +126,6 @@ jobs:
           ditto -x -k "dist/$ZIP_NAME" "$smoke"
           swiftc -swift-version 5 -framework AppKit tests/LaunchQuotaTrial.swift -o "$smoke/launch"
           python3 tests/agy_native_quota_macos.py "$smoke/TooToo.app" "$smoke/launch"
-      - name: Read Codex official weekly data in real non-Debug app
-        run: |
-          set -euo pipefail
-          smoke="$(mktemp -d)"
-          trap 'rm -rf "$smoke"' EXIT
-          ditto -x -k "dist/$ZIP_NAME" "$smoke"
-          swiftc -swift-version 5 -framework AppKit tests/LaunchQuotaTrial.swift -o "$smoke/launch"
-          python3 tests/codex_background_native_macos.py "$smoke/TooToo.app" "$smoke/launch"
       - name: Verify Debug remains check-only
         env:
           VERSION: '0.2.9'

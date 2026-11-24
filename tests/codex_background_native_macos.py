@@ -144,12 +144,19 @@ def main(app, launcher):
                         assert worker not in darwin.table(), "Codex worker outlived backend"
                     else:
                         deadline = time.monotonic() + 12
+                        last_status = None
                         while time.monotonic() < deadline:
                             data = snapshot(port)
-                            if data["quota_status"]["codex"]["state"] in ("live", "cached"):
+                            status = data["quota_status"]["codex"]
+                            if status != last_status:
+                                print(f"{case}: {status} (elapsed {time.monotonic()-started:.2f}s)", flush=True)
+                                last_status = status
+                            if status["state"] in ("live", "cached", "no_data", "unavailable"):
                                 break
                             time.sleep(.2)
-                        q = data["quotas"]["codex"]
+                        q = data["quotas"].get("codex")
+                        assert q is not None, (case, last_status, calls.read_text(), worker in darwin.table())
+
                         assert q["primary"] is None and q["secondary"]["window_minutes"] == 10080
                         assert q["secondary"]["used_percent"] == (0 if case == "auto-zero" else 5)
                         assert (q["source"],q["account_scope"]) == ("app_server","current_cli")
