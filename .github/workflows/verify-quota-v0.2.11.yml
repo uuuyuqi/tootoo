@@ -21,7 +21,7 @@ permissions:
 
 jobs:
   verify:
-    runs-on: macos-15
+    runs-on: macos-15-intel
     timeout-minutes: 20
     env:
       ZIP_NAME: TooToo-v0.2.11-macos-universal.zip
