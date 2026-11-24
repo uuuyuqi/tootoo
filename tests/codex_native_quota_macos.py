@@ -3,7 +3,7 @@ from contextlib import ExitStack
 from importlib.util import spec_from_file_location, module_from_spec
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from urllib.request import build_opener, ProxyHandler
+from http.client import HTTPConnection, HTTPException
 import json
 import os
 import subprocess
@@ -15,7 +15,6 @@ spec = spec_from_file_location("stop_debug", ROOT / "macos/stop_debug.py")
 stop_debug = module_from_spec(spec)
 spec.loader.exec_module(stop_debug)
 darwin = stop_debug.DarwinProcesses()
-opener = build_opener(ProxyHandler({}))
 
 FAKE_CODEX = r'''#!/usr/bin/env python3
 import json, os, sys, time
@@ -56,8 +55,15 @@ def listeners(pid):
             yield int(line.rsplit(":", 1)[1])
 
 def read_local(port, path, timeout=12):
-    with opener.open(f"http://127.0.0.1:{port}{path}",timeout=timeout) as response:
-        return json.load(response)
+    connection = HTTPConnection("127.0.0.1", port, timeout=timeout)
+    try:
+        connection.request("GET", path)
+        with connection.getresponse() as response:
+            if response.status != 200:
+                raise ValueError(f"loopback HTTP {response.status}")
+            return json.load(response)
+    finally:
+        connection.close()
 
 def find_backend(p, expected_balance, timeout=32):
     timestamp = time.monotonic() + timeout
@@ -79,10 +85,26 @@ def find_backend(p, expected_balance, timeout=32):
                     if read_local(port, "/api/carrot", timeout=1).get("balance") == expected_balance:
                         print(f"Exact app {p.pid} owns backend {pid} and port {port}; isolated state verified", flush=True)
                         return pid, port
-                except (OSError, ValueError) as error:
-                    observed[pid] = (*observed[pid], type(error).__name__)
+                except (OSError, ValueError, HTTPException) as error:
+                    observed[pid] = (*observed[pid], str(getattr(error, "reason", error))[:160])
                     continue
         time.sleep(.2)
+    candidates = [pid for pid, (parent, uid) in darwin.table().items()
+                  if parent == p.pid and uid == os.getuid()]
+    if candidates:
+        diagnostic = subprocess.run(["/bin/ps", "-p", str(candidates[0]), "-o", "state=,etime=,comm="],
+                                    capture_output=True, text=True, timeout=3)
+        print("Isolated child process state: " + diagnostic.stdout.strip(), flush=True)
+        with TemporaryDirectory(prefix="tootoo-native-sample-") as temporary:
+            sample = Path(temporary) / "sample.txt"
+            try:
+                subprocess.run(["/usr/bin/sample", str(candidates[0]), "1", "1", "-file", str(sample)],
+                               capture_output=True, text=True, timeout=6)
+            except (OSError, subprocess.TimeoutExpired):
+                pass
+            if sample.exists():
+                stack = sample.read_text(errors="replace").split("Binary Images:",1)[0]
+                print("\n".join(stack.splitlines()[15:40]),flush=True)
     raise AssertionError(f"packaged Debug backend not found (app exit={p.poll()}; direct children={observed})")
 
 def stop_backend(pid, parent):
@@ -100,12 +122,19 @@ def start(app, scenario, home, bin_path, cleanup):
     for dest in paths.values():
         dest.mkdir()
     (paths["TOOTOO_HOME"] / "carrot_state.json").write_text(json.dumps({"balance":expected_balance}))
-    env = {**os.environ, "HOME": str(home), "PATH": str(bin_path) + ":/usr/bin:/bin:/usr/sbin:/sbin",
+    env = {**os.environ, "HOME": str(home), "PATH": str(bin_path) + os.pathsep + os.environ.get("PATH", os.defpath),
            **{key:str(dest) for key,dest in paths.items()}}
     env.pop("TOOTOO_CODEX_APP_SERVER", None)
     if scenario == "explicit":
         env["TOOTOO_CODEX_APP_SERVER"] = "1"
     env["PYTHONDONTWRITEBYTECODE"] = "1"
+    if scenario == "default":
+        # Mirror the bundled app's fixed Python selection; import with this
+        # isolated fixture only so incompatibility is visible in CI stderr.
+        python = next(p for p in ("/opt/homebrew/bin/python3", "/usr/local/bin/python3", "/usr/bin/python3")
+                      if os.access(p,os.X_OK))
+        subprocess.run([python, "-c", "import server; print('Bundled backend imports; Python', server.sys.version.split()[0])"],
+                       cwd=app/"Contents/Resources",env=env,check=True,timeout=15)
     p = subprocess.Popen([str(binary)], env=env, stdout=subprocess.DEVNULL)
     cleanup.callback(stop_process,p)
     child, port = find_backend(p,expected_balance)
