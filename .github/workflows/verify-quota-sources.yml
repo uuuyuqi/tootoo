@@ -1,0 +1,71 @@
+name: TooToo quota sources test build
+
+on:
+  push:
+    branches: ['test/quota-sources']
+    paths:
+      - .github/workflows/verify-quota-sources.yml
+      - '**.py'
+      - macos/**
+      - tests/**
+      - ui/**
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: macos-15-intel
+    timeout-minutes: 16
+    env:
+      TOOTOO_CODEX_APP_SERVER: '0'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Test exact source with synthetic quota fixtures
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          git merge-base --is-ancestor 14c230b52cc4a052201be71c56dde3a860203dcf HEAD
+          test "$(cat VERSION)" = 0.2.8
+          python3 -m unittest discover -s tests -v
+          node --test tests/*.test.cjs
+          bash -n macos/build_app.sh
+      - name: Build an isolated Universal Debug bundle without installing or launching it
+        env:
+          TOOTOO_DEBUG: '1'
+          UNIVERSAL: '1'
+          PACKAGE_ZIP: '1'
+          NO_INSTALL: '1'
+        run: bash macos/build_app.sh
+      - name: Verify archived Debug app and bundled test-branch source
+        run: |
+          set -euo pipefail
+          zip=TooToo-Debug-v0.2.8-macos-universal.zip
+          (cd dist && shasum -a 256 -c "$zip.sha256")
+          fixture=$(mktemp -d)
+          trap 'rm -rf "$fixture"' EXIT
+          ditto -x -k "dist/$zip" "$fixture"
+          app="$fixture/TooToo-Debug.app"
+          res="$app/Contents/Resources"
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$app/Contents/Info.plist")" = com.tootoo.telemetry.debug
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "$app/Contents/Info.plist")" = 10
+          test ! -e "$res/.release" && test ! -e "$res/update_install.py"
+          cmp codex_app_quota.py "$res/codex_app_quota.py"
+          cmp scanner.py "$res/scanner.py"
+          cmp ui/index.html "$res/ui/index.html"
+          codesign --verify --strict --deep "$app"
+          lipo "$app/Contents/MacOS/TooToo-Debug" -verify_arch arm64 x86_64
+          shasum -a 256 "dist/$zip" "dist/$zip.sha256"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: tootoo-quota-sources-debug-test
+          path: |
+            dist/TooToo-Debug-v0.2.8-macos-universal.zip
+            dist/TooToo-Debug-v0.2.8-macos-universal.zip.sha256
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0

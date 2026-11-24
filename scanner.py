@@ -30,6 +30,7 @@ from pathlib import Path
 from typing import Any
 
 from pricing import PricingEngine, calibrate_observed_rates, trigger_background_sync_if_stale
+from codex_app_quota import TTL as CODEX_QUOTA_TTL, reader as codex_quota_reader
 
 HOME = os.path.expanduser("~")
 CACHE_DIR = os.path.expanduser(os.environ.get("TOOTOO_HOME") or "~/.tootoo")
@@ -2180,7 +2181,7 @@ def scan_all_events(force: bool = False, rebuild: bool = False) -> tuple[list[di
 # ---------- Antigravity Loopback Quota ----------
 
 _AG_QUOTA_LOCK = threading.Lock()
-_AG_QUOTA_CACHE: dict[str, tuple[float, dict[str, Any]]] = {}
+_AG_QUOTA_CACHE: dict[str, tuple[float, dict[str, Any], str | None]] = {}
 _AG_LAST_QUOTA: dict[str, Any] | None = None
 _AG_SCAN_EMPTY_UNTIL = 0.0
 _AG_QUOTA_TTL = 300.0
@@ -2274,6 +2275,10 @@ def _antigravity_endpoints(process: dict[str, Any]) -> list[tuple[str, int, str,
     return list(dict.fromkeys(endpoints))
 
 
+class _AntigravityProbeFailure(ValueError):
+    """An internal category only: no response text, status detail or request data."""
+
+
 def _antigravity_request(endpoint: tuple[str, int, str, bool]) -> Any:
     scheme, port, csrf, requires_csrf = endpoint
     headers = {
@@ -2297,11 +2302,14 @@ def _antigravity_request(endpoint: tuple[str, int, str, bool]) -> Any:
         )
         response = connection.getresponse()
         if response.status != 200:
-            raise ValueError("AGY quota request failed")
+            raise _AntigravityProbeFailure("http_status")
         body = response.read(_AG_MAX_RESPONSE_BYTES + 1)
         if len(body) > _AG_MAX_RESPONSE_BYTES:
-            raise ValueError("AGY quota response too large")
-        return json.loads(body)
+            raise _AntigravityProbeFailure("response_shape")
+        try:
+            return json.loads(body)
+        except (ValueError, RecursionError):
+            raise _AntigravityProbeFailure("response_shape") from None
     finally:
         connection.close()
 
@@ -2311,7 +2319,7 @@ def _antigravity_number(value: Any) -> float | None:
         return None
     try:
         number = float(value)
-    except ValueError:
+    except (ValueError, OverflowError):
         return None
     return number if math.isfinite(number) else None
 
@@ -2323,7 +2331,7 @@ def _antigravity_remaining(bucket: Any) -> float | None:
     if raw is None and bucket.get("case") == "remainingFraction":
         raw = bucket.get("value")
     number = _antigravity_number(raw)
-    return max(0.0, min(1.0, number)) if number is not None else None
+    return number if number is not None and 0 <= number <= 1 else None
 
 
 def _normalize_antigravity_quota_summary(payload: Any) -> dict[str, Any]:
@@ -2385,11 +2393,7 @@ def _normalize_antigravity_quota_summary(payload: Any) -> dict[str, Any]:
 
 def _save_persisted_ag_quota(quota: dict[str, Any]) -> None:
     global _AG_LAST_QUOTA
-    payload = {
-        "fetched_at": int(time.time()),
-        "source": quota.get("source", "provider"),
-        "buckets": quota.get("buckets", []),
-    }
+    payload = {"fetched_at": quota["fetched_at"], "buckets": quota["buckets"]}
     _AG_LAST_QUOTA = payload
     try:
         os.makedirs(CACHE_DIR, exist_ok=True)
@@ -2401,41 +2405,79 @@ def _save_persisted_ag_quota(quota: dict[str, Any]) -> None:
         pass
 
 
-def _load_persisted_ag_quota() -> dict[str, Any]:
+def _current_ag_quota(
+    raw: Any, now: float, *, cached: bool, allow_unknown_reset: bool,
+) -> tuple[dict[str, Any], str]:
+    """Only expose normalized quota fields, never manufacture a new window."""
+    if not isinstance(raw, dict) or not isinstance(raw.get("buckets"), list):
+        return {}, "invalid"
+    fetched = _antigravity_number(raw.get("fetched_at"))
+    if fetched is None or fetched <= 0 or fetched > now:
+        return {}, "invalid"
+    if now - fetched > _AG_PERSIST_MAX_AGE:
+        return {}, "expired"
+
+    buckets, expired, invalid = [], False, False
+    spec = {key: (label, minutes) for _, key, label, minutes in _AG_QUOTA_WINDOWS}
+    seen = set()
+    for b in raw["buckets"]:
+        key = b.get("key") if isinstance(b, dict) else None
+        if not isinstance(key, str) or key not in spec or key in seen:
+            invalid = True
+            continue
+        used = _antigravity_number(b.get("used_percent"))
+        rst = _antigravity_number(b.get("resets_at"))
+        if used is None or not 0 <= used <= 100:
+            invalid = True
+            continue
+        if rst is not None and rst > 0 and now >= rst:
+            expired = True
+            continue
+        if rst is None or rst <= 0:
+            if not allow_unknown_reset:
+                invalid = True
+                continue
+            rst = None
+        label, minutes = spec[key]
+        seen.add(key)
+        buckets.append({"key": key, "label": label, "used_percent": used,
+                        "window_minutes": minutes, "resets_at": rst})
+    if not buckets:
+        return {}, "expired" if expired else "invalid"
+    quota = {"source": "provider_cached" if cached else "provider",
+             "fetched_at": int(fetched), "buckets": buckets}
+    if cached:
+        quota["cached"] = True
+    return quota, "partial" if expired or invalid else "fresh"
+
+
+def _load_persisted_ag_quota() -> tuple[dict[str, Any], str]:
     global _AG_LAST_QUOTA
     raw = _AG_LAST_QUOTA
     if raw is None:
         try:
-            if os.path.exists(AG_QUOTA_CACHE_FILE):
-                with open(AG_QUOTA_CACHE_FILE, "r", encoding="utf-8") as f:
-                    loaded = json.load(f)
-                if isinstance(loaded, dict) and isinstance(loaded.get("buckets"), list):
-                    raw = loaded
-                    _AG_LAST_QUOTA = raw
-        except Exception:
-            raw = None
-    if not isinstance(raw, dict):
-        return {}
-    now = time.time()
-    fetched_at = float(raw.get("fetched_at") or 0)
-    if fetched_at <= 0 or (now - fetched_at) > _AG_PERSIST_MAX_AGE:
-        return {}
-    buckets = []
-    for b in raw.get("buckets", []):
-        if not isinstance(b, dict):
-            continue
-        item = dict(b)
-        rst = item.get("resets_at")
-        if isinstance(rst, (int, float)) and rst > 0 and now >= rst:
-            # Quota window has already reset since last snapshot
-            item["used_percent"] = 0.0
-            item["resets_at"] = None
-        buckets.append(item)
-    return {"source": "provider_cached", "cached": True, "fetched_at": int(fetched_at), "buckets": buckets} if buckets else {}
+            with open(AG_QUOTA_CACHE_FILE, "r", encoding="utf-8") as f:
+                raw = json.load(f)
+            _AG_LAST_QUOTA = raw if isinstance(raw, dict) else None
+        except FileNotFoundError:
+            return {}, "none"
+        except (OSError, ValueError, RecursionError):
+            return {}, "invalid"
+    # An undated bucket may be shown when sampled live, but the saved snapshot
+    # cannot attest that the window is still current after the provider is gone.
+    return _current_ag_quota(raw, time.time(), cached=True, allow_unknown_reset=False)
+
+
+_AG_PROBE_ORDER = {"discovery": 0, "connect_tls": 1, "http_status": 2, "response_shape": 3}
 
 
 def fetch_antigravity_quota(force: bool = False) -> dict[str, Any]:
+    def result(quota: dict[str, Any], reason: str | None, cache_state: str) -> dict[str, Any]:
+        state = ("cached" if quota.get("cached") else "live") if quota else "unavailable"
+        return {"quota": quota, "status": {"state": state, "reason": reason, "cache_state": cache_state}}
+
     with _AG_QUOTA_LOCK:
+        reason = "discovery"
         for process in _antigravity_running_processes(force=force):
             endpoints = _antigravity_endpoints(process)
             if not endpoints:
@@ -2446,20 +2488,41 @@ def fetch_antigravity_quota(force: bool = False) -> dict[str, Any]:
             cached = _AG_QUOTA_CACHE.get(marker)
             if not force and cached and time.monotonic() < cached[0]:
                 if cached[1]:
-                    return cached[1]
-                continue
+                    quota, cache_state = _current_ag_quota(
+                        cached[1], time.time(), cached=True, allow_unknown_reset=True,
+                    )
+                    if quota and cache_state == "fresh":
+                        return result(quota, None, cache_state)
+                    # A known reset crossed the cache deadline; try a fresh probe.
+                elif cached[2] is not None:
+                    reason = max(reason, cached[2], key=_AG_PROBE_ORDER.__getitem__)
+                    continue
+            probe_reason = "connect_tls"
             for endpoint in endpoints:
                 try:
-                    quota = _normalize_antigravity_quota_summary(_antigravity_request(endpoint))
-                except (OSError, http.client.HTTPException, ValueError):
-                    continue
-                if quota:
-                    _AG_QUOTA_CACHE[marker] = (time.monotonic() + _AG_QUOTA_TTL, quota)
-                    _save_persisted_ag_quota(quota)
-                    return quota
-            _AG_QUOTA_CACHE[marker] = (time.monotonic() + _AG_RETRY_TTL, {})
-        # No running AGY process right now: keep showing last-known quota snapshot instead of disappearing
-        return _load_persisted_ag_quota()
+                    raw = _normalize_antigravity_quota_summary(_antigravity_request(endpoint))
+                    now = time.time()
+                    if raw:
+                        raw["fetched_at"] = int(now)
+                    quota, _ = _current_ag_quota(raw, now, cached=False, allow_unknown_reset=True)
+                    if quota:
+                        _AG_QUOTA_CACHE[marker] = (time.monotonic() + _AG_QUOTA_TTL, quota, None)
+                        _save_persisted_ag_quota(quota)
+                        return result(quota, None, "none")
+                    failure = "response_shape"
+                except _AntigravityProbeFailure as exc:
+                    failure = str(exc)
+                    if failure not in _AG_PROBE_ORDER:
+                        failure = "response_shape"
+                except (OSError, http.client.HTTPException):
+                    failure = "connect_tls"
+                except (ValueError, RecursionError):
+                    failure = "response_shape"
+                probe_reason = max(probe_reason, failure, key=_AG_PROBE_ORDER.__getitem__)
+            _AG_QUOTA_CACHE[marker] = (time.monotonic() + _AG_RETRY_TTL, {}, probe_reason)
+            reason = max(reason, probe_reason, key=_AG_PROBE_ORDER.__getitem__)
+        quota, cache_state = _load_persisted_ag_quota()
+        return result(quota, reason, cache_state)
 
 
 def load_local_quota_configs() -> dict[str, dict[str, Any]]:
@@ -2675,9 +2738,19 @@ def build_telemetry(
     trigger_background_sync_if_stale()
     events, quotas, scan_ms = scan_all_events(force=force, rebuild=rebuild)
     # Provider quotas refresh independently of unchanged local log signatures.
-    ag_quota = fetch_antigravity_quota(force=force or rebuild)
+    ag_result = fetch_antigravity_quota(force=force or rebuild) or {}
+    ag_quota = ag_result.get("quota")
     if ag_quota:
         quotas = {**quotas, "antigravity": ag_quota}
+
+    codex_status, codex_quota = codex_quota_reader.fetch()
+    if codex_quota is not None:
+        quotas = {**quotas, "codex": codex_quota}
+    elif "codex" in quotas:
+        # Log snapshots can be useful context, but they do not identify the
+        # currently authenticated account and must not fill live empty slots.
+        quotas = {**quotas, "codex": {**quotas["codex"], "source": "session_log",
+                                     "freshness": "unknown", "account_scope": "unknown"}}
 
     # Dynamic 4-layer pricing (overrides -> locally calibrated native logs -> remote OpenRouter/LiteLLM -> fallback)
     if _MEM_OBSERVED_TS != _MEM_SCAN_TS or force:
@@ -3108,6 +3181,10 @@ def build_telemetry(
         ],
         "quotas": quotas,
         "tools": tools_out,
+        "quota_status": {
+            "codex": {"state": codex_status, "ttl_seconds": CODEX_QUOTA_TTL},
+            "antigravity": ag_result.get("status"),
+        },
         "models": models_out,
         "projects": projects_out,
         "recent_calls": recent_calls,

@@ -182,6 +182,18 @@ v0.2.3 及更早版本没有应用内更新入口，请先通过 Homebrew 或 Re
 
 执行 `bash macos/run_debug.sh` 启动隔离的 `TooToo-Debug.app`，可以与 Homebrew 正式版同时运行。用 `NO_INSTALL=1 bash macos/run_debug.sh` 从 `dist/` 运行，不安装到「应用程序」。调试版默认使用 `~/.tootoo-debug`，正式版仍使用 `~/.tootoo`；可按需设置非空的 `TOOTOO_HOME` 为其他独立目录。两个版本仍读取同一套 AI 工具原始日志。
 
+#### 额度来源验证（试验分支）
+
+正式版不会自动启用 Codex 实时读取。要试验当前 Codex CLI 账号的实时额度，可在此分支单独构建调试版，再从终端显式启用读取；不会安装、替换或停止正式版。使用同一个已登录的 `codex` 命令环境，无需复制凭证，也不会发起登录。新建目录只隔离 TooToo 自己的配置、缓存和存档，不改变 Codex 配置。
+
+```bash
+NO_INSTALL=1 TOOTOO_DEBUG=1 bash macos/build_app.sh
+trial_state="$(mktemp -d "${TMPDIR:-/tmp}/tootoo-quota.XXXXXX")"
+TOOTOO_HOME="$trial_state" TOOTOO_CODEX_APP_SERVER=1 ./dist/TooToo-Debug.app/Contents/MacOS/TooToo-Debug
+```
+
+在「设置 → 额度来源」查看实时、未读取或历史记录状态。未明确验证当前账号的 Codex 日志与 Antigravity 上次记录只在工具卡标为历史，不作为当前剩余额度。退出试验版即可停止本次读取。
+
 ## CLI 与浏览器模式
 
 不想用菜单栏 App？也可以直接在终端或任意浏览器使用：

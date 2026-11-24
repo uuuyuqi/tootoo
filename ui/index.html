@@ -7543,6 +7543,12 @@
       </div>
     </div>
 
+    <div class="qcfg-row" style="padding-top:8px;border-top:1px dashed var(--border)">
+      <label>额度来源</label>
+      <span id="quotaSourceCodex" style="color:var(--muted)">Codex：尚未读取</span>
+      <span id="quotaSourceAgy" style="color:var(--muted)">Antigravity：尚未读取</span>
+    </div>
+
     <div class="qcfg-row" style="padding-top:8px;border-top:1px dashed var(--border);margin-bottom:0">
       <label>数据与窗口</label>
       <div style="display:flex;flex-wrap:wrap;gap:6px">
@@ -10580,11 +10586,50 @@ function renderToolChips(d) {
 }
 
 function pickCodexQuotaBucket(cx) {
-  const buckets = [cx?.primary, cx?.secondary].filter(b => b?.used_percent != null);
+  if (cx?.source !== "app_server" || cx.freshness !== "live" || cx.account_scope !== "current_cli") return undefined;
+  const buckets = [cx.primary, cx.secondary].filter(quotaBucketIsUsable);
   return buckets.find(b => Number(b.window_minutes) === 10080) ?? buckets[0];
 }
 
+function quotaBucketIsUsable(bucket) {
+  const used = bucket?.used_percent;
+  return typeof used === "number" && Number.isFinite(used) && used >= 0 && used <= 100;
+}
+
+function isRecentAgyQuota(status) {
+  return status?.state === "cached" && status.reason === null && status.cache_state === "fresh";
+}
+
+function quotaDiagnostics(d) {
+  const qs = d?.quota_status || {}, quotas = d?.quotas || {};
+  const codex = qs.codex?.state ?? qs.codex?.status;
+  const cx = quotas.codex;
+  let codexText = "未读到当前额度";
+  if (pickCodexQuotaBucket(cx)) codexText = "来自当前 Codex CLI 账号";
+  else if (codex === "disabled") codexText = "实时读取未开启";
+  else if (codex === "unavailable") codexText = "暂时无法读取实时额度";
+  else if (codex === "no_data") codexText = "当前 CLI 未返回额度";
+  if (cx?.source === "session_log") codexText += "；仅有历史日志，账号未核实";
+  const ag = qs.antigravity || {};
+  const reasons = {discovery:"未找到已运行的额度来源",connect_tls:"本地连接失败",
+    http_status:"本地请求未成功",response_shape:"未返回可用的额度数据"};
+  const why = reasons[ag.reason] || "";
+  let agyText = "未读到当前额度";
+  if (ag.state === "live") agyText = "来自运行中的 Antigravity";
+  else if (isRecentAgyQuota(ag)) agyText = "运行中 · 最近读取";
+  else if (ag.state === "cached") agyText = (why ? why + "；" : "") +
+    (ag.cache_state === "partial" ? "仅部分上次记录仍有效" : "仅显示上次记录");
+  else if (ag.state === "unavailable") agyText = why || "暂时无法读取";
+  if (ag.state === "unavailable" && ag.cache_state === "expired") agyText += "；上次记录已过期";
+  return { codex: "Codex：" + codexText, agy: "Antigravity：" + agyText };
+}
+
 function renderTopQuota(d) {
+  const details = quotaDiagnostics(d);
+  const codexSource = document.getElementById("quotaSourceCodex");
+  const agySource = document.getElementById("quotaSourceAgy");
+  if (codexSource) codexSource.textContent = details.codex;
+  if (agySource) agySource.textContent = details.agy;
   const box = document.getElementById("topQuota");
   if (!box) return;
   const mode = menuBarQuotaBar;
@@ -10598,7 +10643,9 @@ function renderTopQuota(d) {
     gem7d: ["antigravity:gemini_7d", "Gemini 周"],
     cg5h:  ["antigravity:cg_5h", "C/G 5h"],
   };
-  const buckets = quotas.antigravity?.buckets || [];
+  const agySourceName = quotas.antigravity?.source;
+  const recentAgy = agySourceName === "provider_cached" && isRecentAgyQuota(d.quota_status?.antigravity);
+  const buckets = agySourceName === "provider" || recentAgy ? quotas.antigravity.buckets || [] : [];
   let selected = null;
   for (const source of new Set([mode, "gem5h", "gem7d", "cg5h", "codex"])) {
     if (source === "codex") {
@@ -10606,8 +10653,8 @@ function renderTopQuota(d) {
       if (b) selected = [b, Number(b.window_minutes) === 10080 ? "Codex 周" : "Codex"];
     } else {
       const spec = keyMap[source];
-      const b = spec && buckets.find(x => x?.key === spec[0] && x.used_percent != null);
-      if (b) selected = [b, b.label || spec[1]];
+      const b = spec && buckets.find(x => x?.key === spec[0] && quotaBucketIsUsable(x));
+      if (b) selected = [b, (b.label || spec[1]) + (recentAgy ? " · 最近" : "")];
     }
     if (selected) break;
   }
@@ -10631,7 +10678,7 @@ function renderTopQuota(d) {
   fillEl.style.background = col;
   const rst = resetsAt ? fmtResetTime(resetsAt) : "";
   document.getElementById("tqRst").textContent = rst;
-  box.removeAttribute("title");
+  box.title = name.startsWith("Codex") ? details.codex : details.agy;
   box.classList.add("show");
 }
 
@@ -11144,6 +11191,9 @@ function renderAgents(d) {
         let quotaHtml = "";
         if (t.quota && (t.quota.primary || t.quota.secondary || (t.quota.buckets && t.quota.buckets.length))) {
           const isLocal = t.quota.source === "local";
+          const isHistorical = ["session_log", "provider_cached"].includes(t.quota.source);
+          const sourceLabel = t.quota.source === "session_log" ? "日志记录 · 账号未核实"
+            : t.quota.source === "provider_cached" ? "上次读取" : t.quota.source === "app_server" ? "当前 CLI 账号" : "";
           const quotaLabel = (obj, fallback) => {
             if (obj && obj.label) return obj.label;
             const wm = Number(obj && obj.window_minutes);
@@ -11173,8 +11223,8 @@ function renderAgents(d) {
               tipTxt = `${lbl}（${isCustom ? "自定义" : "本地估算"}）：已用 ${usedStr} / 上限 ${limStr}，剩余 ${remStr}（${obj.used_requests || 0}次请求${peakStr}），点击 ⚙ 可修改上限`;
               rightHtml = `<span class="quota-sub" style="margin-left:auto">${usedStr} / ${limStr}</span>`;
             } else {
-              const rst = obj.resets_at ? fmtResetTime(obj.resets_at) : "";
-              tipTxt = `${lbl}：已用 ${Math.round(usedPct)}%，剩余 ${remPct}%`;
+              const rst = !isHistorical && obj.resets_at ? fmtResetTime(obj.resets_at) : "";
+              tipTxt = `${lbl}（${sourceLabel || "官方额度"}）：${isHistorical ? "记录时" : ""}已用 ${Math.round(usedPct)}%，剩余 ${remPct}%`;
               if (rst) {
                 rightHtml = `<span class="quota-rst" title="额度重置时间">${rst}</span>`;
               }
@@ -11185,15 +11235,15 @@ function renderAgents(d) {
             return `<div class="quota-item" title="${esc(tipTxt)}">
               <span class="quota-lbl">${esc(lbl)}</span>
               <div class="quota-track"><div class="quota-fill" style="width:${remPct}%;background:${col}"></div></div>
-              <span class="quota-pct" style="color:${col}">剩 ${remPct}%</span>
+              <span class="quota-pct" style="color:${col}">${isHistorical ? "当时剩" : "剩"} ${remPct}%</span>
               ${rightHtml}
               ${editBtn}
             </div>`;
           };
 
-          const rawBuckets = (t.quota.buckets && t.quota.buckets.length)
+          const rawBuckets = ((t.quota.buckets && t.quota.buckets.length)
             ? t.quota.buckets
-            : [t.quota.primary, t.quota.secondary].filter(x => x && x.used_percent != null);
+            : [t.quota.primary, t.quota.secondary]).filter(quotaBucketIsUsable);
 
           if (rawBuckets.length > 0) {
             const foldKey = `tootoo_qfold_${t.tool}`;
@@ -11204,10 +11254,11 @@ function renderAgents(d) {
             const worstCol = worstRem <= 15 ? "var(--bad)" : worstRem <= 30 ? "var(--warn)" : "var(--teal)";
             const badgeHtml = isLocal
               ? `<span class="quota-badge">${t.quota.is_custom ? "自定义" : "本地估算"}</span>`
-              : "";
+              : sourceLabel ? `<span class="quota-badge">${esc(sourceLabel)}</span>` : "";
+            const leftLabel = isHistorical ? "当时剩" : "剩";
             const summaryTxt = rawBuckets.length > 1
-              ? `<span class="quota-collapsed-sum" style="color:var(--muted);font-size:9.5px">${esc(quotaLabel(worst, ""))} <strong style="color:${worstCol}">剩 ${worstRem}%</strong></span>`
-              : `<span class="quota-collapsed-sum" style="color:${worstCol};font-weight:700;font-size:10px">剩 ${worstRem}%</span>`;
+              ? `<span class="quota-collapsed-sum" style="color:var(--muted);font-size:9.5px">${esc(quotaLabel(worst, ""))} <strong style="color:${worstCol}">${leftLabel} ${worstRem}%</strong></span>`
+              : `<span class="quota-collapsed-sum" style="color:${worstCol};font-weight:700;font-size:10px">${leftLabel} ${worstRem}%</span>`;
 
             quotaHtml = `<div class="quota-row ${isFolded ? "collapsed" : ""}" data-qfold="${esc(t.tool)}">
               <div class="quota-head">

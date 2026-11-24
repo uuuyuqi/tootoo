@@ -344,6 +344,7 @@ struct TodayMetrics {
     let cg5hRem: Int?
     let codexRem: Int?
     let codexWeekly: Bool
+    let agyRecent: Bool
 }
 
 // Bottom micro quota bar options for menu bar
@@ -1131,8 +1132,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     }
 
     private func remPct(from usedNum: Any?) -> Int? {
-        guard let used = (usedNum as? NSNumber)?.doubleValue else { return nil }
-        return max(0, min(100, Int((100.0 - used).rounded())))
+        guard let number = usedNum as? NSNumber, CFGetTypeID(number) != CFBooleanGetTypeID() else { return nil }
+        let used = number.doubleValue
+        guard used.isFinite, (0...100).contains(used) else { return nil }
+        return Int((100.0 - used).rounded())
     }
 
     private func fetchSummary(range: String, completion: @escaping (TodayMetrics?) -> Void) {
@@ -1157,7 +1160,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             var codexWeekly = false
 
             let quotas = obj["quotas"] as? [String: Any] ?? [:]
+            let statuses = obj["quota_status"] as? [String: Any]
+            let agyStatus = statuses?["antigravity"] as? [String: Any]
+            let agySource = (quotas["antigravity"] as? [String: Any])?["source"] as? String
+            let agyRecent = agySource == "provider_cached" &&
+                agyStatus?["state"] as? String == "cached" &&
+                agyStatus?["reason"] is NSNull && agyStatus?["cache_state"] as? String == "fresh"
             if let agy = quotas["antigravity"] as? [String: Any],
+               agySource == "provider" || agyRecent,
                let buckets = agy["buckets"] as? [[String: Any]] {
                 for b in buckets {
                     let key = (b["key"] as? String) ?? ""
@@ -1166,7 +1176,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
                     else if key == "antigravity:cg_5h" { cg5h = self.remPct(from: b["used_percent"]) }
                 }
             }
-            if let cx = quotas["codex"] as? [String: Any] {
+            if let cx = quotas["codex"] as? [String: Any],
+               cx["source"] as? String == "app_server",
+               cx["freshness"] as? String == "live",
+               cx["account_scope"] as? String == "current_cli" {
                 let buckets = ["primary", "secondary"].compactMap { key -> (remaining: Int, weekly: Bool)? in
                     guard let bucket = cx[key] as? [String: Any],
                           let remaining = self.remPct(from: bucket["used_percent"]) else { return nil }
@@ -1182,7 +1195,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
 
             completion(TodayMetrics(
                 tokens: tok, cost: cost, tps: tps, ttft: ttft,
-                gem5hRem: gem5h, gem7dRem: gem7d, cg5hRem: cg5h, codexRem: codex, codexWeekly: codexWeekly
+                gem5hRem: gem5h, gem7dRem: gem7d, cg5hRem: cg5h, codexRem: codex, codexWeekly: codexWeekly, agyRecent: agyRecent
             ))
         }.resume()
     }
@@ -1226,7 +1239,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             (quotaBars.first { $0.key == menuBarQuotaBar && $0.remaining != nil } ??
              quotaBars.first { $0.remaining != nil })
         let barPct = chosenBar?.remaining
-        let barName = chosenBar?.label ?? ""
+        let recentAgySuffix = m.agyRecent && chosenBar?.key != "codex" ? " · 最近读取" : ""
+        let barName = (chosenBar?.label ?? "") + recentAgySuffix
 
         DispatchQueue.main.async {
             guard let button = self.statusItem.button else { return }
