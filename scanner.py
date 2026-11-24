@@ -29,6 +29,7 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+from agy_cli_quota import fetch_agy_cli_quota
 from pricing import PricingEngine, calibrate_observed_rates, trigger_background_sync_if_stale
 
 HOME = os.path.expanduser("~")
@@ -2665,6 +2666,33 @@ def _compute_local_rolling_quotas(
     return out
 
 
+def select_antigravity_quota(events: list[dict[str, Any]], *, force: bool = False):
+    """Select exactly one source. Do not mask a CLI failure with another account."""
+    def legacy():
+        quota = fetch_antigravity_quota(force=force) or None
+        state = ("cached" if quota.get("cached") else "live") if quota else "unavailable"
+        return {"quota": quota, "status": {"state": state, "selected_source": "desktop"}}
+    mode = os.environ.get("TOOTOO_AGY_CLI")
+    if mode == "off":
+        return {"quota": None, "status": {"state": "disabled", "selected_source": "off"}}, True
+    now = time.time()
+    recently_used = any(ev.get("tool") == "antigravity" and now - 7 * 86400 <= ev.get("ts", 0) <= now + 300
+                        for ev in events)
+    if mode != "auto" or not recently_used:
+        return legacy(), False
+    result = fetch_agy_cli_quota(enabled=True)
+    status = result["status"]
+    if status.get("reason") in {"cli_missing", "cli_version"}:
+        old = legacy()
+        if old.get("quota"):
+            return old, True
+    quota = result.get("quota")
+    if quota is not None:
+        quota = {**quota, "buckets": [{**bucket, "key": "antigravity:" + bucket["id"] }
+                                     for bucket in quota["buckets"]]}
+    return {"quota": quota, "status": {**status, "selected_source": "cli"}}, True
+
+
 def build_telemetry(
     range_key: str = "7d",
     tool_filter: str = "all",
@@ -2675,7 +2703,10 @@ def build_telemetry(
     trigger_background_sync_if_stale()
     events, quotas, scan_ms = scan_all_events(force=force, rebuild=rebuild)
     # Provider quotas refresh independently of unchanged local log signatures.
-    ag_quota = fetch_antigravity_quota(force=force or rebuild)
+    ag_result, hide_log_quota = select_antigravity_quota(events, force=force or rebuild)
+    if hide_log_quota and "antigravity" in quotas:
+        quotas = {key: value for key, value in quotas.items() if key != "antigravity"}
+    ag_quota = ag_result["quota"]
     if ag_quota:
         quotas = {**quotas, "antigravity": ag_quota}
 
@@ -3107,6 +3138,7 @@ def build_telemetry(
             for h in range(24)
         ],
         "quotas": quotas,
+        "quota_status": {"antigravity": ag_result["status"]},
         "tools": tools_out,
         "models": models_out,
         "projects": projects_out,

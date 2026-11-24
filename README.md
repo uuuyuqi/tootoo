@@ -106,13 +106,9 @@ brew upgrade --cask tootoo
 
 ### 方式二：下载 GitHub Release 安装包
 
-1. 前往 [**Releases**](https://github.com/uuuyuqi/tootoo/releases) 下载最新版 `TooToo-v0.2.8-macos-universal.zip`。
+1. 前往 [**Releases**](https://github.com/uuuyuqi/tootoo/releases) 下载最新版 `TooToo-v0.2.9-macos-universal.zip`。
 2. 解压后将 `TooToo.app` 拖入 `/Applications`。
-3. 首次打开若遇 macOS 未知开发者提示（开源项目使用 ad-hoc 本地签名），在终端执行一次即可：
-   ```bash
-   xattr -cr /Applications/TooToo.app
-   open /Applications/TooToo.app
-   ```
+3. 此安装包使用 ad-hoc 签名，未经过 Apple 公证。首次安装或手动替换时，macOS 仍可能提示无法验证开发者。
 
 ### 方式三：从源码编译
 
@@ -150,6 +146,11 @@ TooToo 启动后自动发现本机已安装工具的会话记录，零配置开�
 - **随时回归极简**：点击面板右下角 ⚙ **设置 → 开启「简洁模式」**，立即隐藏全部养成与游戏入口，回归纯粹的高精度遥测仪表盘。
 
 ---
+
+### v0.2.9 更新
+
+- 近期使用过 Antigravity 时，TooToo 在后台用新版 AGY CLI 的官方 `/usage` 查询剩余额度，并分开显示 Gemini、Claude/GPT 和 Argon（若有返回）。在「设置 → AGY 额度」可关闭自动读取。
+- 新方式要求 AGY CLI 1.1.11 以上的 1.x 版本、默认安装位置以及允许斜杠命令的现有设置。TooToo 不读取登录凭据、不修改 AGY 设置，保留旧版桌面读取方式。
 
 ### v0.2.8 更新
 

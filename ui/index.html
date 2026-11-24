@@ -7488,6 +7488,8 @@
         <button data-field="q_gem5h">Gemini 5h</button>
         <button data-field="q_gem7d">Gemini 周</button>
         <button data-field="q_cg5h">C/G 5h</button>
+        <button data-field="q_cg7d">C/G 周</button>
+        <button data-field="q_argon7d">Argon 周</button>
         <button data-field="q_codex">Codex</button>
       </div>
     </div>
@@ -7499,6 +7501,8 @@
         <button data-qbar="gem5h" class="on">Gemini 5h</button>
         <button data-qbar="gem7d">Gemini 周</button>
         <button data-qbar="cg5h">C/G 5h</button>
+        <button data-qbar="cg7d">C/G 周</button>
+        <button data-qbar="argon7d">Argon 周</button>
         <button data-qbar="codex">Codex</button>
       </div>
     </div>
@@ -7541,6 +7545,15 @@
         </div>
         <button type="button" class="settings-switch" id="minimalModeSwitch" role="switch" aria-checked="false" title="开启或关闭简洁模式"></button>
       </div>
+    </div>
+
+    <div class="qcfg-row" style="padding-top:8px;border-top:1px dashed var(--border)">
+      <label>AGY 额度</label>
+      <span id="quotaSourceAgy" style="color:var(--muted)">Antigravity：尚未读取</span>
+      <div id="agyQuotaControlRow" style="display:none">
+        <button id="agyQuotaControlBtn" class="btn" type="button">开启 AGY 额度自动读取</button>
+      </div>
+      <ul id="agyQuotaGroups" aria-label="AGY CLI 额度组" style="display:none;margin:0;padding-left:18px"></ul>
     </div>
 
     <div class="qcfg-row" style="padding-top:8px;border-top:1px dashed var(--border);margin-bottom:0">
@@ -8083,6 +8096,30 @@ function postNative(action, extra = {}) {
   } catch {}
   return false;
 }
+
+// TOOTOO_AGY_CONTROL_START
+const agyQuotaControlRow = document.getElementById("agyQuotaControlRow");
+const agyQuotaControlBtn = document.getElementById("agyQuotaControlBtn");
+const agyQuotaNativeBridge = Boolean(window.webkit?.messageHandlers?.tootoo);
+if (agyQuotaNativeBridge) {
+  let enabled = null;
+  window.__onAgyQuotaControl = state => {
+    if (typeof state?.enabled !== "boolean" || typeof state?.busy !== "boolean") return;
+    enabled = state.enabled;
+    agyQuotaControlRow.style.display = "";
+    agyQuotaControlBtn.disabled = state.busy;
+    agyQuotaControlBtn.textContent = state.busy ? "正在切换…" : enabled
+      ? "关闭 AGY 额度自动读取" : "开启 AGY 额度自动读取";
+    if (state.refresh) void fetchTelemetry(true);
+  };
+  agyQuotaControlBtn.addEventListener("click", event => {
+    if (event.isTrusted && enabled !== null && !agyQuotaControlBtn.disabled) {
+      postNative("setAgyQuotaControl", {enabled: !enabled});
+    }
+  });
+  postNative("getAgyQuotaControl");
+}
+// TOOTOO_AGY_CONTROL_END
 
 // TOOTOO_UPDATE_UI_START
 const updateUi = Object.fromEntries([
@@ -10584,7 +10621,48 @@ function pickCodexQuotaBucket(cx) {
   return buckets.find(b => Number(b.window_minutes) === 10080) ?? buckets[0];
 }
 
+function agyQuotaDiagnostic(status) {
+  if (status?.state === "disabled") return "自动读取已关闭";
+  if (status?.selected_source === "cli") {
+    if (status.state === "loading") return "正在查询 AGY CLI 额度…";
+    if (status.state === "live" || status.state === "cached") return "来自 AGY CLI · 最近读取";
+    const reasons = {
+      cli_missing: "未找到 AGY CLI", cli_version: "AGY CLI 版本暂不支持",
+      cli_settings: "当前 CLI 设置不允许查询 /usage",
+      cli_execution: "本地 AGY 命令没能完成", cli_timeout: "AGY 查询超时",
+      cli_exit: "AGY 命令查询失败", cli_output_limit: "AGY 返回的数据过大",
+      cli_shape: "CLI 返回中没有可识别的额度数据",
+    };
+    return reasons[status.reason] || "AGY CLI 暂未返回额度";
+  }
+  if (status?.state === "live") return "来自运行中的 Antigravity 桌面版";
+  if (status?.state === "cached") return "Antigravity 桌面版 · 上次读取";
+  return "暂未读到官方额度";
+}
+
+function renderAgyQuotaGroups(d) {
+  const list = document.getElementById("agyQuotaGroups");
+  if (!list) return;
+  const quota = d?.quotas?.antigravity;
+  const valid = quota?.source === "cli" ||
+    (quota?.source === "cli_cached" && d?.quota_status?.antigravity?.state === "cached");
+  const buckets = valid && Array.isArray(quota.buckets) ? quota.buckets : [];
+  const rows = buckets.filter(b => typeof b.label === "string" && Number.isFinite(b.used_percent) && b.used_percent >= 0 && b.used_percent <= 100).map(b => {
+    const item = document.createElement("li");
+    const remaining = Number((100 - b.used_percent).toFixed(2));
+    const reset = Number.isFinite(b.resets_at) && b.resets_at > 0
+      ? " · " + new Date(b.resets_at * 1000).toLocaleString() + " 重置" : "";
+    item.textContent = b.label + "：剩余 " + remaining + "%" + reset;
+    return item;
+  });
+  list.replaceChildren(...rows);
+  list.style.display = rows.length ? "" : "none";
+}
+
 function renderTopQuota(d) {
+  const agySource = document.getElementById("quotaSourceAgy");
+  if (agySource) agySource.textContent = "Antigravity：" + agyQuotaDiagnostic(d?.quota_status?.antigravity);
+  renderAgyQuotaGroups(d);
   const box = document.getElementById("topQuota");
   if (!box) return;
   const mode = menuBarQuotaBar;
@@ -10597,10 +10675,12 @@ function renderTopQuota(d) {
     gem5h: ["antigravity:gemini_5h", "Gemini 5h"],
     gem7d: ["antigravity:gemini_7d", "Gemini 周"],
     cg5h:  ["antigravity:cg_5h", "C/G 5h"],
+    cg7d:  ["antigravity:cg_7d", "C/G 周"],
+    argon7d: ["antigravity:argon_7d", "Argon 周"],
   };
   const buckets = quotas.antigravity?.buckets || [];
   let selected = null;
-  for (const source of new Set([mode, "gem5h", "gem7d", "cg5h", "codex"])) {
+  for (const source of new Set([mode, "gem5h", "gem7d", "cg5h", "cg7d", "argon7d", "codex"])) {
     if (source === "codex") {
       const b = pickCodexQuotaBucket(quotas.codex);
       if (b) selected = [b, Number(b.window_minutes) === 10080 ? "Codex 周" : "Codex"];

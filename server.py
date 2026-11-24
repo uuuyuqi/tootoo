@@ -11,6 +11,8 @@ import hashlib
 import hmac
 import json
 import os
+import signal
+import socketserver
 import sys
 import threading
 import time
@@ -21,6 +23,7 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
+from agy_cli_quota import stop_agy_cli_quota
 from pricing import sync_remote_pricing
 from update_check import checker as update_checker
 from scanner import CACHE_DIR, build_telemetry, load_carrot_state, save_carrot_state, save_local_quota_config
@@ -421,6 +424,14 @@ class TooTooServer(ThreadingHTTPServer):
     daemon_threads = True
     allow_reuse_address = True
 
+    def server_bind(self) -> None:
+        # http.server reverse-resolves the bind address before listen(). This
+        # JSON/HTML server never uses a canonical hostname; a slow resolver
+        # must not block the bundled app's loopback backend from becoming ready.
+        socketserver.TCPServer.server_bind(self)
+        self.server_name, self.server_port = self.server_address[:2]
+
+
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="tootoo — Local Vibe Coding Telemetry Console")
@@ -462,15 +473,25 @@ def main() -> None:
         except Exception:
             pass
 
-    threading.Thread(target=_warmup, daemon=True).start()
-
-    if not args.no_open:
-        threading.Timer(0.35, lambda: webbrowser.open(url)).start()
-
+    # Native Off and Quit terminate this owned backend. Give its AGY worker
+    # the same cancellation path as a normal shutdown so no child survives.
+    agy_auto = os.environ.get("TOOTOO_AGY_CLI") == "auto"
     try:
+        if agy_auto:
+            def stop_requested(*_):
+                raise KeyboardInterrupt
+            signal.signal(signal.SIGTERM, stop_requested)
+        threading.Thread(target=_warmup, daemon=True).start()
+
+        if not args.no_open:
+            threading.Timer(0.35, lambda: webbrowser.open(url)).start()
+
         server.serve_forever()
     except KeyboardInterrupt:
         print("\ntootoo stopped.")
+    finally:
+        if agy_auto:
+            stop_agy_cli_quota()
         server.server_close()
 
 

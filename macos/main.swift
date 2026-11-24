@@ -308,7 +308,8 @@ class TelemetryWebViewController: NSViewController, WKScriptMessageHandler, WKNa
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         if let dict = message.body as? [String: Any], let action = dict["action"] as? String {
-            let privileged = ["getKeepAwakeState", "setKeepAwake", "getUpdateState", "checkForUpdate", "installUpdate", "openUpdateRelease"]
+            let privileged = ["getKeepAwakeState", "setKeepAwake", "getUpdateState", "checkForUpdate", "installUpdate", "openUpdateRelease",
+                              "getAgyQuotaControl", "setAgyQuotaControl"]
             if privileged.contains(action) {
                 guard message.frameInfo.isMainFrame, let frameURL = message.frameInfo.request.url,
                       matchesAppPage(frameURL) else { return }
@@ -331,6 +332,8 @@ let ALL_MENUBAR_FIELDS: [(key: String, label: String)] = [
     ("q_gem5h", "Gemini 5h 剩余额度"),
     ("q_gem7d", "Gemini 周 剩余额度"),
     ("q_cg5h",  "C/G 5h 剩余额度"),
+    ("q_cg7d",  "C/G 周 剩余额度"),
+    ("q_argon7d", "Argon 周 剩余额度"),
     ("q_codex", "Codex 剩余额度"),
 ]
 
@@ -342,6 +345,8 @@ struct TodayMetrics {
     let gem5hRem: Int?
     let gem7dRem: Int?
     let cg5hRem: Int?
+    let cg7dRem: Int?
+    let argon7dRem: Int?
     let codexRem: Int?
     let codexWeekly: Bool
 }
@@ -352,6 +357,8 @@ let ALL_QUOTA_BAR_MODES: [(key: String, label: String)] = [
     ("gem5h", "Gemini 5h"),
     ("gem7d", "Gemini 周"),
     ("cg5h",  "C/G 5h"),
+    ("cg7d", "C/G 周"),
+    ("argon7d", "Argon 周"),
     ("codex", "Codex 周"),
 ]
 
@@ -415,6 +422,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private var popoverVC: TelemetryWebViewController?
     private var fullWindow: NSWindow?
     private var fullWindowVC: TelemetryWebViewController?
+    private var agyQuotaEnabled = !UserDefaults.standard.bool(forKey: "agyQuotaAutoDisabled")
+    private var changingAgyQuota = false
     private var backendProcess: Process?
     private var port: UInt16 = variantPreferredPort
     private var statusTimer: Timer?
@@ -688,6 +697,30 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         return "/usr/bin/python3"
     }
 
+    private func syncAgyQuotaControl(refresh: Bool = false) {
+        let js = "window.__onAgyQuotaControl && window.__onAgyQuotaControl({enabled:\(agyQuotaEnabled),busy:\(changingAgyQuota),refresh:\(refresh)});"
+        popoverVC?.evalJS(js)
+        fullWindowVC?.evalJS(js)
+    }
+
+    private func setAgyQuotaControl(_ enabled: Bool) {
+        guard !changingAgyQuota, enabled != agyQuotaEnabled else { return }
+        agyQuotaEnabled = enabled
+        changingAgyQuota = true
+        UserDefaults.standard.set(!enabled, forKey: "agyQuotaAutoDisabled")
+        syncAgyQuotaControl()
+        // Only restart the backend owned by this app. This also drops its
+        // in-flight probe and memory-only quota sample when switched off.
+        stopBackend()
+        startBackend()
+        waitForBackend { [weak self] in
+            guard let self = self else { return }
+            self.changingAgyQuota = false
+            self.syncAgyQuotaControl(refresh: true)
+            self.refreshMenuBarSummary()
+        }
+    }
+
     private func startBackend() {
         guard let resPath = Bundle.main.resourcePath else { return }
         let serverScript = (resPath as NSString).appendingPathComponent("server.py")
@@ -703,6 +736,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         var env = ProcessInfo.processInfo.environment
         env["PYTHONUNBUFFERED"] = "1"
         env["PYTHONDONTWRITEBYTECODE"] = "1" // Keep the verified bundle’s resource seal intact.
+        env["TOOTOO_AGY_CLI"] = agyQuotaEnabled ? "auto" : "off"
         env["TOOTOO_UPDATE_NONCE"] = updateController.backendNonce
         #if TOOTOO_DEBUG
         env["TOOTOO_DEBUG"] = "1"
@@ -1059,6 +1093,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             updateController.install()
         case "openUpdateRelease":
             updateController.openRelease()
+        case "getAgyQuotaControl":
+            syncAgyQuotaControl()
+        case "setAgyQuotaControl":
+            if let enabled = payload["enabled"] as? Bool { setAgyQuotaControl(enabled) }
         case "getKeepAwakeState":
             syncKeepAwakeToWeb()
         case "setKeepAwake":
@@ -1153,6 +1191,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             var gem5h: Int? = nil
             var gem7d: Int? = nil
             var cg5h: Int? = nil
+            var cg7d: Int? = nil
+            var argon7d: Int? = nil
             var codex: Int? = nil
             var codexWeekly = false
 
@@ -1164,6 +1204,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
                     if key == "antigravity:gemini_5h" { gem5h = self.remPct(from: b["used_percent"]) }
                     else if key == "antigravity:gemini_7d" { gem7d = self.remPct(from: b["used_percent"]) }
                     else if key == "antigravity:cg_5h" { cg5h = self.remPct(from: b["used_percent"]) }
+                    else if key == "antigravity:cg_7d" { cg7d = self.remPct(from: b["used_percent"]) }
+                    else if key == "antigravity:argon_7d" { argon7d = self.remPct(from: b["used_percent"]) }
                 }
             }
             if let cx = quotas["codex"] as? [String: Any] {
@@ -1182,7 +1224,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
 
             completion(TodayMetrics(
                 tokens: tok, cost: cost, tps: tps, ttft: ttft,
-                gem5hRem: gem5h, gem7dRem: gem7d, cg5hRem: cg5h, codexRem: codex, codexWeekly: codexWeekly
+                gem5hRem: gem5h, gem7dRem: gem7d, cg5hRem: cg5h, cg7dRem: cg7d, argon7dRem: argon7d, codexRem: codex, codexWeekly: codexWeekly
             ))
         }.resume()
     }
@@ -1207,6 +1249,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
                 if let v = m.gem7dRem { parts.append("Gem周 \(v)%") }
             case "q_cg5h":
                 if let v = m.cg5hRem { parts.append("C/G \(v)%") }
+            case "q_cg7d":
+                if let v = m.cg7dRem { parts.append("C/G周 \(v)%") }
+            case "q_argon7d":
+                if let v = m.argon7dRem { parts.append("Argon周 \(v)%") }
             case "q_codex":
                 if let v = m.codexRem { parts.append("Codex \(v)%") }
             default:
@@ -1220,6 +1266,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             ("gem5h", m.gem5hRem, "Gemini 5h"),
             ("gem7d", m.gem7dRem, "Gemini 周"),
             ("cg5h", m.cg5hRem, "C/G 5h"),
+            ("cg7d", m.cg7dRem, "C/G 周"),
+            ("argon7d", m.argon7dRem, "Argon 周"),
             ("codex", m.codexRem, m.codexWeekly ? "Codex 周" : "Codex"),
         ]
         let chosenBar = menuBarQuotaBar == "none" ? nil :
