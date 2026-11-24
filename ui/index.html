@@ -6306,6 +6306,34 @@
     margin-left: auto;
   }
 
+  /* AGY provider rows share the same four columns, regardless of label,
+     percent, or whether a reset time is available. */
+  .quota-list.agy-quota-grid .quota-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1.85fr) minmax(36px, 1fr) 3.9em 5.3em;
+    column-gap: 6px;
+  }
+
+  .agy-quota-grid .quota-lbl {
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.32;
+  }
+
+  .agy-quota-grid .quota-track {
+    min-width: 0;
+    max-width: none;
+  }
+
+  .agy-quota-grid .quota-pct,
+  .agy-quota-grid .quota-rst {
+    justify-self: end;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    margin-left: 0;
+  }
+
   .quota-sub {
     color: var(--muted);
     font-size: 9.5px;
@@ -11289,6 +11317,7 @@ function renderAgents(d) {
               ? `<span class="quota-collapsed-sum" style="color:var(--muted);font-size:9.5px">${esc(quotaLabel(worst, ""))} <strong style="color:${worstCol}">剩 ${worstRem}%</strong></span>`
               : `<span class="quota-collapsed-sum" style="color:${worstCol};font-weight:700;font-size:10px">剩 ${worstRem}%</span>`;
 
+            const alignedAgy = t.tool === "antigravity" && !isLocal;
             quotaHtml = `<div class="quota-row ${isFolded ? "collapsed" : ""}" data-qfold="${esc(t.tool)}">
               <div class="quota-head">
                 <button class="quota-fold-btn" data-qfold-btn="${esc(t.tool)}" title="点击展开或隐藏额度">
@@ -11297,7 +11326,7 @@ function renderAgents(d) {
                 </button>
                 <span style="display:inline-flex;align-items:center;gap:6px">${summaryTxt}${badgeHtml}</span>
               </div>
-              <div class="quota-list">${rawBuckets.map((b, idx) => makeQuota(b, idx === 0 ? "主额度" : "次额度")).join("")}</div>
+              <div class="quota-list${alignedAgy ? " agy-quota-grid" : ""}">${rawBuckets.map((b, idx) => makeQuota(b, idx === 0 ? "主额度" : "次额度")).join("")}</div>
             </div>`;
           }
         }

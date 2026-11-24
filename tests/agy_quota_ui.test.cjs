@@ -49,3 +49,24 @@ test('CLI exact weekly groups remain separate, including 0%, and diagnostics are
     assert.equal(vm.runInNewContext(code+'\nagyQuotaDiagnostic({selected_source:"cli",state:"unavailable",reason:"cli_timeout",raw:"secret"});'), 'AGY 查询超时');
   }
 });
+
+test('only official AGY rows share grid columns; missing reset leaves no fake date', () => {
+  const renderer = html.slice(html.indexOf('function renderAgents('), html.indexOf('let qcfgState = '));
+  const rows = [{label:'Claude and GPT models · Weekly', used_percent:0},
+    {label:'Gemini Models · 5h', used_percent:10, resets_at:123}];
+  for (const [tool,source,aligned] of [
+    ['antigravity','cli',true], ['antigravity','provider',true],
+    ['antigravity','local',false], ['codex','provider',false],
+  ]) {
+    const node = {querySelectorAll: () => []};
+    vm.runInNewContext(renderer + '\nrenderAgents({kpi:{tokens:1},tools:[fixture]});', {
+      fixture:{tool,label:tool,tokens:1,cost:0,quota:{source,buckets:rows}},
+      document:{getElementById:()=>node},localStorage:{getItem:()=>null},
+      esc:String,fmtCostRich:String,fmtNum:String,splitNumUnit:String,fmtResetTime:()=> '3h7m',
+    });
+    assert.equal(node.innerHTML.includes('quota-list agy-quota-grid'),aligned);
+    assert.match(node.innerHTML,/Claude and GPT models · Weekly/);
+    assert.match(node.innerHTML,/剩 100%/);
+    assert.equal((node.innerHTML.match(/class="quota-rst"/g)||[]).length,1);
+  }
+});
