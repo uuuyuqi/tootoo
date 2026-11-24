@@ -1318,6 +1318,7 @@
     border-radius: 0 5px 5px 0;
     transition: background 0.14s ease;
   }
+  #mbCfgChips button[hidden], #mbQuotaBarChips button[hidden] { display: none !important; }
   .top-quota.show { display: flex; }
   .top-quota:hover { background: color-mix(in srgb, var(--surface) 72%, transparent); }
 
@@ -7535,7 +7536,7 @@
         <button data-field="q_gem7d">Gemini 周</button>
         <button data-field="q_cg5h">C/G 5h</button>
         <button data-field="q_cg7d">C/G 周</button>
-        <button data-field="q_argon7d">Argon 周</button>
+        <button data-field="q_argon7d" title="Antigravity 返回的 Gemini 4 Argon 独立额度，不是 Gemini 通用周额度" hidden>Gemini 4 Argon 周额度</button>
         <button data-field="q_codex">Codex</button>
       </div>
     </div>
@@ -7544,11 +7545,12 @@
       <label>顶部栏底部额度条（单选）</label>
       <div class="mb-cfg-chips" id="mbQuotaBarChips">
         <button data-qbar="none">关闭</button>
-        <button data-qbar="gem5h" class="on">Gemini 5h</button>
+        <button data-qbar="auto" class="on">自动</button>
+        <button data-qbar="gem5h">Gemini 5h</button>
         <button data-qbar="gem7d">Gemini 周</button>
         <button data-qbar="cg5h">C/G 5h</button>
         <button data-qbar="cg7d">C/G 周</button>
-        <button data-qbar="argon7d">Argon 周</button>
+        <button data-qbar="argon7d" title="Antigravity 返回的 Gemini 4 Argon 独立额度，不是 Gemini 通用周额度" hidden>Gemini 4 Argon 周额度</button>
         <button data-qbar="codex">Codex</button>
       </div>
     </div>
@@ -8359,18 +8361,24 @@ document.addEventListener("visibilitychange", scheduleKeepAwakeRefresh);
 // TOOTOO_KEEP_AWAKE_UI_END
 
 let menuBarFields = ["tokens", "cost"];
-let menuBarQuotaBar = localStorage.getItem("tootoo_qbar") || "gem5h";
+const validQuotaBarModes = new Set(["none","auto","gem5h","gem7d","cg5h","cg7d","argon7d","codex"]);
+const savedQuotaBar = localStorage.getItem("tootoo_qbar");
+let menuBarQuotaBar = validQuotaBarModes.has(savedQuotaBar) ? savedQuotaBar : "auto";
 function renderMenuBarCfgChips() {
+  const hasArgon = state.data?.quotas?.antigravity?.buckets?.some(
+    b => b?.key === "antigravity:argon_7d" && b.used_percent != null) || false;
   document.querySelectorAll("#mbCfgChips button").forEach(btn => {
     btn.classList.toggle("on", menuBarFields.includes(btn.dataset.field));
+    if (btn.dataset.field === "q_argon7d") btn.hidden = !hasArgon && !menuBarFields.includes("q_argon7d");
   });
   document.querySelectorAll("#mbQuotaBarChips button").forEach(btn => {
     btn.classList.toggle("on", btn.dataset.qbar === menuBarQuotaBar);
+    if (btn.dataset.qbar === "argon7d") btn.hidden = !hasArgon && menuBarQuotaBar !== "argon7d";
   });
 }
 window.__onMenuBarFields = (fields, qbar) => {
   if (Array.isArray(fields)) menuBarFields = fields;
-  if (typeof qbar === "string") menuBarQuotaBar = qbar;
+  if (validQuotaBarModes.has(qbar)) menuBarQuotaBar = qbar;
   renderMenuBarCfgChips();
   if (state.data) renderTopQuota(state.data);
 };
@@ -10668,6 +10676,7 @@ function agyQuotaDiagnostic(status) {
 }
 
 function renderTopQuota(d) {
+  if (typeof renderMenuBarCfgChips === "function") renderMenuBarCfgChips();
   const codexSource = document.getElementById("quotaSourceCodex");
   if (codexSource) codexSource.textContent = codexQuotaDiagnostic(d?.quota_status?.codex, d?.quotas?.codex);
   const agySource = document.getElementById("quotaSourceAgy");
@@ -10685,24 +10694,33 @@ function renderTopQuota(d) {
     gem7d: ["antigravity:gemini_7d", "Gemini 周"],
     cg5h:  ["antigravity:cg_5h", "C/G 5h"],
     cg7d:  ["antigravity:cg_7d", "C/G 周"],
-    argon7d: ["antigravity:argon_7d", "Argon 周"],
+    argon7d: ["antigravity:argon_7d", "Gemini 4 Argon 周额度"],
   };
   const buckets = quotas.antigravity?.buckets || [];
   let selected = null;
-  for (const source of new Set([mode, "gem5h", "gem7d", "cg5h", "cg7d", "argon7d", "codex"])) {
+  for (const source of (mode === "auto" ? ["gem5h", "gem7d", "cg5h", "cg7d", "argon7d", "codex"] : [mode])) {
     if (source === "codex") {
       const b = pickCodexQuotaBucket(quotas.codex);
       if (b) selected = [b, Number(b.window_minutes) === 10080 ? "Codex 周" : "Codex"];
     } else {
       const spec = keyMap[source];
       const b = spec && buckets.find(x => x?.key === spec[0] && x.used_percent != null);
-      if (b) selected = [b, b.label || spec[1]];
+      if (b) selected = [b, source === "argon7d" ? spec[1] : b.label || spec[1]];
     }
     if (selected) break;
   }
 
   if (!selected) {
-    box.classList.remove("show");
+    const name = mode === "codex" ? "Codex 周" : keyMap[mode]?.[1];
+    if (!name) { box.classList.remove("show"); return; }
+    document.getElementById("tqName").textContent = name;
+    const pct = document.getElementById("tqPct");
+    pct.textContent = "暂无数据";
+    pct.style.color = "var(--muted)";
+    document.getElementById("tqFill").style.width = "0%";
+    document.getElementById("tqRst").textContent = "";
+    box.title = "选定的额度暂无数据；如需自动切换，请在设置中选择「自动」";
+    box.classList.add("show");
     return;
   }
   const [bucket, name] = selected;

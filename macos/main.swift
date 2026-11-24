@@ -332,7 +332,7 @@ let ALL_MENUBAR_FIELDS: [(key: String, label: String)] = [
     ("q_gem7d", "Gemini 周 剩余额度"),
     ("q_cg5h",  "C/G 5h 剩余额度"),
     ("q_cg7d",  "C/G 周 剩余额度"),
-    ("q_argon7d", "Argon 周 剩余额度"),
+    ("q_argon7d", "Gemini 4 Argon 周额度"),
     ("q_codex", "Codex 剩余额度"),
 ]
 
@@ -353,13 +353,20 @@ struct TodayMetrics {
 // Bottom micro quota bar options for menu bar
 let ALL_QUOTA_BAR_MODES: [(key: String, label: String)] = [
     ("none",  "关闭"),
+    ("auto",  "自动"),
     ("gem5h", "Gemini 5h"),
     ("gem7d", "Gemini 周"),
     ("cg5h",  "C/G 5h"),
     ("cg7d", "C/G 周"),
-    ("argon7d", "Argon 周"),
+    ("argon7d", "Gemini 4 Argon 周额度"),
     ("codex", "Codex 周"),
 ]
+
+func selectQuotaBar(mode: String, bars: [(key: String, remaining: Int?, label: String)]) -> (key: String, remaining: Int?, label: String)? {
+    if mode == "none" { return nil }
+    if mode == "auto" { return bars.first { $0.remaining != nil } }
+    return bars.first { $0.key == mode }
+}
 
 class MenuBarQuotaBarView: NSView {
     var percent: Int? = nil { didSet { needsDisplay = true } }
@@ -426,7 +433,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private var statusTimer: Timer?
     private var eventMonitor: Any?
     private var menuBarFields: [String] = ["tokens", "cost"]
-    private var menuBarQuotaBar: String = "gem5h"
+    private var menuBarQuotaBar: String = "auto"
     private let keepAwakeDurations = [0, 60, 120, 240, 480]
     private var keepAwakeMode = "off"
     private var preferredKeepAwakeMode = "system"
@@ -459,10 +466,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             // Default: Tokens · Cost (configurable anytime)
             menuBarFields = ["tokens", "cost"]
         }
-        if let savedBar = UserDefaults.standard.string(forKey: "tootoo_menubar_quota_bar") {
+        if let savedBar = UserDefaults.standard.string(forKey: "tootoo_menubar_quota_bar"),
+           ALL_QUOTA_BAR_MODES.contains(where: { $0.key == savedBar }) {
             menuBarQuotaBar = savedBar
         } else {
-            menuBarQuotaBar = "gem5h"
+            menuBarQuotaBar = "auto"
         }
 
         let defaults = keepAwakeDefaults
@@ -822,6 +830,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         modeMenu.addItem(NSMenuItem.separator())
         // Individual toggles
         for f in ALL_MENUBAR_FIELDS {
+            if f.key == "q_argon7d" && lastMetrics?.argon7dRem == nil && !menuBarFields.contains(f.key) { continue }
             let item = NSMenuItem(title: "显示 \(f.label)", action: #selector(toggleField(_:)), keyEquivalent: "")
             item.representedObject = f.key
             item.state = menuBarFields.contains(f.key) ? .on : .off
@@ -832,7 +841,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         qBarHeader.isEnabled = false
         modeMenu.addItem(qBarHeader)
         for q in ALL_QUOTA_BAR_MODES {
+            if q.key == "argon7d" && lastMetrics?.argon7dRem == nil && menuBarQuotaBar != q.key { continue }
             let item = NSMenuItem(title: "  \(q.label)", action: #selector(selectQuotaBarMode(_:)), keyEquivalent: "")
+            if q.key == "argon7d" { item.toolTip = "独立于 Gemini 通用周额度" }
             item.representedObject = q.key
             item.state = (menuBarQuotaBar == q.key) ? .on : .off
             modeMenu.addItem(item)
@@ -879,6 +890,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     }
 
     private func setMenuBarQuotaBar(_ mode: String) {
+        guard ALL_QUOTA_BAR_MODES.contains(where: { $0.key == mode }) else { return }
         menuBarQuotaBar = mode
         UserDefaults.standard.set(mode, forKey: "tootoo_menubar_quota_bar")
         if let m = lastMetrics {
@@ -1134,7 +1146,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
                     self.currentTier = BUNNY_TIERS[0]
                     self.statusItem.button?.image = makeBunnyMenuBarIcon(tier: 1)
                     self.statusItem.button?.title = variantMenuPrefix + (self.menuBarFields.isEmpty ? "" : " 0")
-                    self.baseStatusToolTip = variantName
+                    self.lastMetrics = nil
+                    self.quotaBarView?.percent = nil
+                    self.quotaBarView?.isHidden = true
+                    let pinnedBar = ALL_QUOTA_BAR_MODES.first {
+                        $0.key == self.menuBarQuotaBar && $0.key != "none" && $0.key != "auto"
+                    }
+                    self.baseStatusToolTip = pinnedBar.map { "\(variantName) · \($0.label) 暂无数据" } ?? variantName
                     self.updateKeepAwakeToolTip()
                 }
             }
@@ -1240,17 +1258,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             ("gem7d", m.gem7dRem, "Gemini 周"),
             ("cg5h", m.cg5hRem, "C/G 5h"),
             ("cg7d", m.cg7dRem, "C/G 周"),
-            ("argon7d", m.argon7dRem, "Argon 周"),
+            ("argon7d", m.argon7dRem, "Gemini 4 Argon 周额度"),
             ("codex", m.codexRem, m.codexWeekly ? "Codex 周" : "Codex"),
         ]
-        let chosenBar = menuBarQuotaBar == "none" ? nil :
-            (quotaBars.first { $0.key == menuBarQuotaBar && $0.remaining != nil } ??
-             quotaBars.first { $0.remaining != nil })
-        let barPct = chosenBar?.remaining
-        let barName = chosenBar?.label ?? ""
-
         DispatchQueue.main.async {
             guard let button = self.statusItem.button else { return }
+            let chosenBar = selectQuotaBar(mode: self.menuBarQuotaBar, bars: quotaBars)
+            let barPct = chosenBar?.remaining
+            let barName = chosenBar?.label ?? ""
             let title = variantMenuPrefix + title
             let hasText = !title.isEmpty
             let compactIcon = (!hasText && barPct != nil)
@@ -1320,7 +1335,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
                     string: title,
                     attributes: [.font: NSFont.monospacedDigitSystemFont(ofSize: 11.5, weight: .medium)]
                 )
-                self.baseStatusToolTip = variantName
+                self.baseStatusToolTip = barName.isEmpty ? variantName : "\(variantName) · \(barName) 暂无数据"
                 self.quotaBarView?.percent = nil
                 self.quotaBarView?.isHidden = true
             }

@@ -24,6 +24,7 @@ test('CLI exact weekly groups remain separate, including 0%, and diagnostics are
     assert.match(divs.quotaSourceAgy.textContent,/AGY CLI/);
     assert.equal(shown.has('show'),mode!=='none');
     if(mode!=='none') assert.equal(divs.tqPct.textContent,mode==='cg7d'?'剩 0%':'剩 42%');
+    if(mode==='argon7d') assert.equal(divs.tqName.textContent,'Gemini 4 Argon 周额度');
     assert.equal(vm.runInNewContext(code+'\nagyQuotaDiagnostic({selected_source:"cli",state:"unavailable",reason:"cli_timeout",raw:"secret"});'), 'AGY 查询超时');
   }
 });
