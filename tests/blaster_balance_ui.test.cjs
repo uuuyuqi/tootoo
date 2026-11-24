@@ -22,11 +22,11 @@ function harness() {
     localStorage: {getItem:()=>0, setItem:(...x)=>written.push(x)},
     document: {getElementById(id){
       if (!nodes.has(id)) nodes.set(id, {id, hidden:false, textContent:"",
-        classList:{remove: c => nodes.get(id).removed = c}, querySelector(){return {}}, addEventListener(_, fn){this.click=fn;}});
+        classList:{add() {}, remove: c => nodes.get(id).removed = c}, querySelector(){return {}}, addEventListener(_, fn){this.click=fn;}});
       return nodes.get(id);
     }}, startBlasterGame(){}, frozen:false, hasActiveBoss:true, wave:2, dt:.05,
   });
-  vm.runInContext(chunk("function advanceBlasterHordeWarning(", "function spawnHordeFormation(") +
+  vm.runInContext(chunk("function shouldStartBlasterHorde(", "function spawnHordeFormation(") +
     chunk("function handleBlasterEnemyDeath(", "function triggerBlasterNova(") +
     chunk("function finishBlasterGame(", "// GAME 1: 🥕 TOKEN RAIN CATCHER"),ctx);
   const game = extra => ({
@@ -76,13 +76,16 @@ test("ordinary core and ammo drops get rarer without stealing coin, mystery, or 
   assert.equal(decoy.pickups.length,0);
 });
 
-test("each wave entrance provides exactly one catchable combat-only pack", () => {
+test("each horde provides exactly one catchable combat-only pack", () => {
   const h=harness();
   for(const [count,timer,kind] of [[1,0,"shield_pack"],[2,0,"shield_pack"],
     [3,0,"berserk_orb"],[6,5,"shield_pack"]]) {
-    const s=h.game({hordeCount:count,berserkTimer:timer,hordeTimer:.06});
+    const s=h.game({hordeCount:count-1,berserkTimer:timer});
+    h.ctx.triggerBlasterHorde(s,2);
+    assert.equal(s.pickups.length,count===1 ? 1 : 0);
+    s.hordeTimer=.06;
     h.ctx.advanceBlasterHordeWarning(s,.03);
-    assert.equal(s.pickups.length,0);
+    assert.equal(s.pickups.length,count===1 ? 1 : 0);
     for(let i=0;i<6;i++) h.ctx.advanceBlasterHordeWarning(s,.05);
     assert.equal(s.pickups.length,1);
     assert.equal(s.pickups[0].kind,kind);
@@ -92,6 +95,49 @@ test("each wave entrance provides exactly one catchable combat-only pack", () =>
     assert((s.h-26-s.pickups[0].y-34)/s.pickups[0].vy < 2);
     assert.equal(s.hordeTimer,9.5);
     assert.equal(s.hordeState,"active");
+  }
+});
+
+test("dry minimum ammo can reach and catch the first aid at default and maximum rate", () => {
+  for (const tps of [25, 72, 200]) {
+    const h=harness();
+    const root=h.ctx;
+    Object.assign(root, {
+      state:{data:{kpi:{tps,cache_hit:0}}}, debugState:{active:false},
+      getEffectiveTodayTokens:()=>0, getBunnyTier:()=>({level:1}),
+      performance:{now:()=>0}, blasterState:null, playTone(){},
+      requestAnimationFrame:()=>1, window:{}, blasterCanvas:{clientWidth:400}, blCtx:{setTransform(){}},
+      blKeys:{left:false,right:false},
+    });
+    vm.runInContext(chunk("function getBlasterLoadout(", "function refreshArcadeContext(") +
+      chunk("function spawnHordeFormation(", "function spawnBlasterParts(") +
+      chunk("function startBlasterGame(", "  // Render blaster canvas") +
+      chunk("  // End check (never end from 0 ammo", "function finishBlasterGame("), root);
+    root.startBlasterGame();
+    const s=root.blasterState;
+    assert.equal(s.ammo,40);
+    assert.equal(s.refundProb,0);
+    assert.equal(root.shouldStartBlasterHorde({...s, ammo:100, elapsed:8}),false);
+    assert.equal(root.shouldStartBlasterHorde({...s, ammo:100, elapsed:9.5}),true);
+    assert.equal(root.shouldStartBlasterHorde({...s, ammo:0, elapsed:0, hordeCount:1}),false);
+    let drops=0, spawnedAt, target;
+    for (let frame=1; frame<=600 && s.shieldTimer===0 && s.running; frame++) {
+      root.tickBlasterGame(frame*1000/60);
+      // Isolate ammo depletion from unrelated defense losses or combat drops.
+      s.enemies.length=0;
+      s.enemyBullets.length=0;
+      if (s.pickups.length && !target) {
+        drops+=s.pickups.length;
+        target=s.pickups[0];
+        spawnedAt=s.elapsed;
+        s.targetX=target.x;
+      }
+    }
+    assert.ok(spawnedAt < 9.5, `tps ${tps}: first dry warning occurred at ${spawnedAt}`);
+    assert.equal(drops,1);
+    assert.equal(target.kind,"shield_pack");
+    assert.equal(s.pickups.length,0);
+    assert.ok(s.shieldTimer>0 && s.running && s.ammo>0, `tps ${tps}: catch reached with ${s.ammo} ammo`);
   }
 });
 

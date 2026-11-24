@@ -110,3 +110,59 @@ test("Space activates a focused End button without triggering the global dash", 
   assert.equal(dash, 1);
   assert.equal(calls, 1);
 });
+
+function rainGameplayHarness(source=html, random=()=>.99) {
+  const first=source.indexOf("function triggerRainWave("), last=source.indexOf("  // Render scene with shared Adventure Backdrop!",first);
+  assert(first>=0 && last>first);
+  const sfx=[], math=Object.create(Math);
+  math.random=random;
+  const ctx=vm.createContext({Math:math, debugState:{active:false}, rainKeys:{},
+    playSfx:key=>sfx.push(key), grantAdventureCoins:()=>1, rollInGameMysteryLoot:()=>({icon:"",actualName:"fixture"}),
+  });
+  vm.runInContext(source.slice(first,last)+"\n}",ctx);
+  const game=(extra={})=>({
+    w:400,h:248,x:200,targetX:200,running:true,lastTs:0,timeLeft:30,tps:72,cacheRate:.6,tierMult:1,
+    spawnAcc:0,waveTimer:0,waveSideAcc:0,waveTotalPts:0,score:0,combo:0,maxCombo:0,shields:0,
+    freezeTimer:0,magnetTimer:0,feverTimer:0,droneTimer:0,laserTimer:0,coinsCaught:0,
+    powerupDropCooldown:0,items:[],floats:[],parts:[],lootsFound:[],...extra,
+  });
+  return {ctx,sfx,game};
+}
+
+test("gold stays valuable without refreshing a gold, dedicated, or fever magnet", () => {
+  const {ctx,sfx,game}=rainGameplayHarness();
+  const drop=kind=>({kind,x:200,y:220,vy:0,r:11,rot:0});
+  const tick=(s,...items)=>{
+    ctx.rainState=s;
+    s.items=items.map(drop);
+    ctx.tickRainGame(s.lastTs+16);
+    assert.equal(s.items.length,0);
+  };
+  const s=game();
+  tick(s,"gold");
+  assert.equal(s.score,50);
+  assert.equal(s.magnetTimer,1);
+  assert.equal(sfx.at(-1),"gold");
+  assert.match(s.floats.at(-1).txt,/吸引 1s/);
+  tick(s,"gold","gold");
+  assert.ok(s.magnetTimer<1 && s.magnetTimer>.9);
+  assert.match(s.floats.at(-1).txt,/金胡萝卜/);
+  tick(s,"magnet_orb");
+  assert.equal(s.magnetTimer,4);
+  tick(s,"gold");
+  assert.ok(s.magnetTimer<4 && s.magnetTimer>3.9);
+  s.magnetTimer=0;
+  s.feverTimer=2;
+  tick(s,"gold");
+  assert.equal(s.magnetTimer,0);
+
+  const wave=game({items:[drop("bomb")]});
+  ctx.rainState=wave;
+  ctx.triggerRainWave(wave,4.5);
+  assert.equal(wave.items[0].kind,"gold");
+  assert.equal(wave.items[0].noPenalty,true);
+  ctx.tickRainGame(16);
+  assert.equal(wave.score,50);
+  assert.equal(wave.waveTotalPts,50);
+  assert.equal(wave.magnetTimer,1);
+});

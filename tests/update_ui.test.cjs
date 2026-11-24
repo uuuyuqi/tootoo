@@ -182,3 +182,60 @@ test("failed browser refresh does not erase the last known gear update", async (
   await settled();
   assert.equal(classes.get("settingsBtn:update-available"), false);
 });
+
+test("native retains confirmed candidate across checking and errors without borrowing capability", () => {
+  const { window, ui, actions } = harness();
+  window.__onUpdateState(available);
+  window.__onUpdateState({ status: "checking", canInstall: true, latestVersion: available.latestVersion });
+  assert.equal(ui.updateNoticeBtn.hidden, false);
+  assert.equal(ui.updateNoticeLabel.textContent, "有新版本 v0.2.5");
+  assert.equal(ui.updateActionBtn.disabled, true);
+  ui.updateActionBtn.events.click();
+  assert.deepEqual(actions, [["getUpdateState"]]);
+  window.__onUpdateState({ status: "error", latestVersion: "v99.0.0", notes: "unconfirmed" });
+  assert.equal(ui.updateNoticeLabel.textContent, "有新版本 v0.2.5");
+  assert.equal(ui.updateNotes.textContent, available.notes);
+  ui.updateActionBtn.events.click();
+  assert.deepEqual(actions.at(-1), ["checkForUpdate"]);
+  window.__onUpdateState({ status: "error", canInstall: true });
+  ui.updateActionBtn.events.click();
+  assert.deepEqual(actions.at(-1), ["checkForUpdate"]);
+  window.__onUpdateState({ status: "error", latestVersion: available.latestVersion, canInstall: true });
+  ui.updateActionBtn.events.click();
+  assert.deepEqual(actions.at(-1), ["installUpdate"]);
+});
+
+test("cold rollback only becomes retryable with native capability and a valid version", () => {
+  const { window, ui, actions } = harness();
+  const rollback = { ...available, status: "error", error: "installer rolled back" };
+  window.__onUpdateState({ ...rollback, canInstall: false });
+  assert.equal(ui.updateNoticeBtn.hidden, true);
+  assert.match(ui.updateStatus.textContent, /installer rolled back/);
+  window.__onUpdateState({ ...rollback, latestVersion: "invalid" });
+  assert.equal(ui.updateNoticeBtn.hidden, true);
+  ui.updateActionBtn.events.click();
+  assert.deepEqual(actions.at(-1), ["checkForUpdate"]);
+  window.__onUpdateState(rollback);
+  assert.equal(ui.updateNoticeLabel.textContent, "有新版本 v0.2.5");
+  assert.equal(ui.updateNoticeBtn.hidden, false);
+  ui.updateActionBtn.events.click();
+  assert.deepEqual(actions.at(-1), ["installUpdate"]);
+});
+
+test("browser errors cannot establish an update or acquire install capability", async () => {
+  const { ui, requests, actions } = harness(false);
+  requests[0].reply({ ...available, status: "error" });
+  await settled();
+  assert.equal(ui.updateNoticeBtn.hidden, true);
+  ui.updateActionBtn.events.click();
+  assert.equal(requests[1].opts.method, "GET");
+  requests[1].reply(available);
+  await settled();
+  ui.updateActionBtn.events.click();
+  assert.equal(ui.updateNoticeBtn.hidden, false);
+  requests[2].reply({ ...available, status: "error", latestVersion: "v99.0.0" });
+  await settled();
+  assert.equal(ui.updateNoticeLabel.textContent, "有新版本 v0.2.5");
+  assert.equal(ui.updateActionBtn.textContent, "检查更新");
+  assert.deepEqual(actions, []);
+});

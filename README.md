@@ -106,7 +106,7 @@ brew upgrade --cask tootoo
 
 ### 方式二：下载 GitHub Release 安装包
 
-1. 前往 [**Releases**](https://github.com/uuuyuqi/tootoo/releases) 下载最新版 `TooToo-v0.2.6-macos-universal.zip`。
+1. 前往 [**Releases**](https://github.com/uuuyuqi/tootoo/releases) 下载最新版 `TooToo-v0.2.7-macos-universal.zip`。
 2. 解压后将 `TooToo.app` 拖入 `/Applications`。
 3. 首次打开若遇 macOS 未知开发者提示（开源项目使用 ad-hoc 本地签名），在终端执行一次即可：
    ```bash
@@ -150,6 +150,11 @@ TooToo 启动后自动发现本机已安装工具的会话记录，零配置开�
 - **随时回归极简**：点击面板右下角 ⚙ **设置 → 开启「简洁模式」**，立即隐藏全部养成与游戏入口，回归纯粹的高精度遥测仪表盘。
 
 ---
+
+### v0.2.7 更新
+
+- 「打 Bug」和「接 Token 雨」都可主动结束并查看战报。打 Bug 的敌潮每波提供一份补给，减少重复强化和补弹；Token 雨的强力掉落也更有节奏。
+- 有新版本时，设置齿轮显示小圆点；仍可在「设置 → 软件更新」里检查、下载与安装。
 
 ### v0.2.6 更新
 

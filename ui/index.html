@@ -8106,7 +8106,13 @@ const updateInstallStates = new Set(["downloading", "verifying", "installing"]);
 const updateNative = Boolean(window.webkit?.messageHandlers?.tootoo);
 let updateState = { status: "idle", canInstall: false };
 let updateRequest = 0;
-let knownGearUpdate = "";
+let knownUpdate = null;
+
+function canInstallUpdate() {
+  return updateNative && updateState.canInstall === true &&
+    (updateState.status === "available" || updateState.status === "error") &&
+    Boolean(knownUpdate && updateVersionLabel(updateState.latestVersion) === knownUpdate.version);
+}
 
 function updateVersionLabel(value) {
   if (typeof value !== "string") return "";
@@ -8115,13 +8121,13 @@ function updateVersionLabel(value) {
 }
 
 function renderUpdateState() {
-  const { status, currentVersion, latestVersion, notes, canInstall, progress, error } = updateState;
-  const current = updateVersionLabel(currentVersion), latest = updateVersionLabel(latestVersion);
-  const candidate = Boolean(latest && (status === "available" ||
-    (status === "error" && latest === updateState.previousCandidate)));
-  const installable = updateNative && canInstall === true && candidate;
-  const gearLabel = knownGearUpdate ? "设置 · 有新版本 " + knownGearUpdate : "设置";
-  updateUi.settingsBtn.classList.toggle("update-available", Boolean(knownGearUpdate));
+  const { status, currentVersion, progress, error } = updateState;
+  const current = updateVersionLabel(currentVersion);
+  const latest = knownUpdate?.version || "";
+  const candidate = Boolean(latest && ["available", "checking", "error"].includes(status));
+  const installable = canInstallUpdate();
+  const gearLabel = latest ? "设置 · 有新版本 " + latest : "设置";
+  updateUi.settingsBtn.classList.toggle("update-available", Boolean(latest));
   updateUi.settingsBtn.title = gearLabel;
   updateUi.settingsBtn.setAttribute("aria-label", gearLabel);
   updateUi.updateNoticeBtn.hidden = !candidate;
@@ -8135,7 +8141,7 @@ function renderUpdateState() {
   if (status === "error" && typeof error === "string" && error.trim()) label += " " + error.slice(0, 300);
   updateUi.updateStatus.textContent = label;
   updateUi.updateStatus.classList.toggle("error", status === "error");
-  const summary = latest && typeof notes === "string" ? notes.trim().slice(0, 450) : "";
+  const summary = knownUpdate?.notes || "";
   updateUi.updateNotes.textContent = summary;
   updateUi.updateNotes.hidden = !summary;
   updateUi.updateProgress.hidden = !updateInstallStates.has(status);
@@ -8151,18 +8157,16 @@ function renderUpdateState() {
 function showUpdateState(value, trustedNative = false) {
   if (!value || !Object.prototype.hasOwnProperty.call(updateLabels, value.status)) return false;
   const next = { ...value, canInstall: trustedNative && value.canInstall === true };
-  // Keep the candidate visible after an install failed, but never infer it from an unsolicited error.
-  const previousCandidate = updateVersionLabel(updateState.latestVersion);
-  if (value.status === "error" &&
-      (updateState.status === "available" || updateInstallStates.has(updateState.status) || updateState.previousCandidate)) {
-    next.latestVersion ||= updateState.latestVersion;
-    next.notes ||= updateState.notes;
-    next.previousCandidate = previousCandidate;
+  const latest = updateVersionLabel(value.latestVersion);
+  // A rollback may first report an error before the native updater finishes
+  // validating the release. Only its explicit install capability can establish
+  // a new candidate from an error; browser errors never establish one.
+  if (value.status === "available" || (value.status === "error" && next.canInstall && latest)) {
+    const notes = typeof value.notes === "string" ? value.notes.trim().slice(0, 450) : "";
+    knownUpdate = latest ? { version: latest, notes: notes || (knownUpdate?.version === latest ? knownUpdate.notes : "") } : null;
+  } else if (["current", "idle", "unsupported"].includes(value.status)) {
+    knownUpdate = null;
   }
-  // Keep a confirmed update visible during a transient check/error or while
-  // installing. Clear it only on a confirmed replacement or a reset state.
-  if (value.status === "available") knownGearUpdate = updateVersionLabel(value.latestVersion);
-  else if (value.status === "current" || value.status === "idle" || value.status === "unsupported") knownGearUpdate = "";
   updateState = next;
   renderUpdateState();
   return true;
@@ -8174,7 +8178,7 @@ window.__onUpdateState = (value) => {
 
 async function checkWebUpdate(force = false) {
   const request = ++updateRequest;
-  if (force) showUpdateState({ ...updateState, status: "checking" });
+  if (force) showUpdateState({ status: "checking", currentVersion: updateState.currentVersion });
   try {
     const response = await fetch("/api/update" + (force ? "?force=1" : ""), {
       method: "GET",
@@ -8184,7 +8188,7 @@ async function checkWebUpdate(force = false) {
     const value = await response.json();
     if (request === updateRequest && !showUpdateState(value)) throw new Error("invalid update state");
   } catch {
-    if (request === updateRequest && force) showUpdateState({ ...updateState, status: "error" });
+    if (request === updateRequest && force) showUpdateState({ status: "error", currentVersion: updateState.currentVersion });
   }
 }
 
@@ -8201,8 +8205,7 @@ updateUi.updateNoticeBtn.addEventListener("click", openUpdateSettings);
 updateUi.updateActionBtn.addEventListener("click", () => {
   if (updateWorkingStates.has(updateState.status)) return;
   if (updateNative) {
-    const install = updateState.canInstall === true && !updateUi.updateNoticeBtn.hidden;
-    postNative(install ? "installUpdate" : "checkForUpdate");
+    postNative(canInstallUpdate() ? "installUpdate" : "checkForUpdate");
   } else {
     void checkWebUpdate(true);
   }
@@ -12841,6 +12844,13 @@ function triggerBlasterBerserk(force = false, customMsg = null) {
   return true;
 }
 
+function shouldStartBlasterHorde(s) {
+  // With no cache refunds, keep enough time to steer to the first falling
+  // pack (~1.6s to reach the ship). Later hordes use only their normal clock.
+  return s.elapsed >= s.nextHordeAt ||
+    (s.hordeCount === 0 && s.ammo <= Math.ceil(s.fireHz * 2.15));
+}
+
 function triggerBlasterHorde(s, wave) {
   if (!s || !s.running) return;
   s.hordeState = "warn";
@@ -12857,6 +12867,7 @@ function triggerBlasterHorde(s, wave) {
   };
   s.shakeTimer = 0.25;
   playSfx("alarm");
+  if (s.hordeCount === 1) spawnBlasterHordeAid(s);
 }
 
 function advanceBlasterHordeWarning(s, dt) {
@@ -12866,8 +12877,12 @@ function advanceBlasterHordeWarning(s, dt) {
   s.hordeState = "active";
   s.hordeTimer = 9.5;
   s.hordeWaveAcc = 0.6; // Immediate first formation!
-  // One aid pickup per horde entrance. A core replaces the shield every
-  // third horde unless Berserk is already active.
+  if (s.hordeCount > 1) spawnBlasterHordeAid(s);
+}
+
+function spawnBlasterHordeAid(s) {
+  // One aid per wave; the first arrives during the warning. A core replaces
+  // the shield every third wave unless Berserk is already active.
   const kind = s.hordeCount % 3 === 0 && s.berserkTimer <= 0 ? "berserk_orb" : "shield_pack";
   const x = s.x + (s.x <= s.w / 2 ? 48 : -48); // Toward center, just outside automatic catch range.
   s.pickups.push({ x, y: 32, vy: 100, kind, amt: 1 });
@@ -13349,7 +13364,7 @@ function tickBlasterGame(now) {
   // Periodic Enemy Horde & Special Mechanism Bosses (cleanly interleaved!)
   const hasActiveBoss = s.enemies.some(e => e.boss && !e.isDecoy);
   if (!frozen) {
-    if (s.hordeState === "idle" && !hasActiveBoss && s.elapsed >= s.nextHordeAt) {
+    if (s.hordeState === "idle" && !hasActiveBoss && shouldStartBlasterHorde(s)) {
       triggerBlasterHorde(s, wave);
     } else if (s.hordeState === "warn") {
       advanceBlasterHordeWarning(s, dt);
@@ -14865,9 +14880,10 @@ function tickRainGame(now) {
           s.floats.push({ x: it.x, y: by - 18, txt: `+${pts} 💎 算力蓝钻!`, col: "#0284C7", life: 0.95 });
           playSfx("gold");
         } else if (it.kind === "gold") {
-          s.magnetTimer = Math.max(s.magnetTimer, 3.6);
+          const startsMagnet = s.magnetTimer <= 0 && s.feverTimer <= 0;
+          if (startsMagnet) s.magnetTimer = 1;
           spawnRainParticles(it.x, it.y, "#F59E0B", 16);
-          s.floats.push({ x: it.x, y: by - 18, txt: `+${pts} 磁铁暴走!`, col: "#F59E0B", life: 1.0 });
+          s.floats.push({ x: it.x, y: by - 18, txt: `+${pts} ${startsMagnet ? "🧲 吸引 1s" : "金胡萝卜"}`, col: "#F59E0B", life: 1.0 });
           playSfx("gold");
         } else if (it.kind === "cache") {
           spawnRainParticles(it.x, it.y, "#0E8A78", 10);
