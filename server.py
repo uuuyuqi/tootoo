@@ -11,6 +11,7 @@ import hashlib
 import hmac
 import json
 import os
+import socketserver
 import sys
 import threading
 import time
@@ -420,6 +421,13 @@ class TooTooHandler(BaseHTTPRequestHandler):
 class TooTooServer(ThreadingHTTPServer):
     daemon_threads = True
     allow_reuse_address = True
+
+    def server_bind(self) -> None:
+        # http.server reverse-resolves the bind address before listen(). This
+        # JSON/HTML server never uses a canonical hostname; a slow resolver
+        # must not block the bundled app's loopback backend from becoming ready.
+        socketserver.TCPServer.server_bind(self)
+        self.server_name, self.server_port = self.server_address[:2]
 
 
 def main() -> None:

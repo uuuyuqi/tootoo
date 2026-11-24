@@ -72,6 +72,7 @@ jobs:
           test ! -e "$res/.release" && test ! -e "$res/update_install.py"
           cmp codex_app_quota.py "$res/codex_app_quota.py"
           cmp scanner.py "$res/scanner.py"
+          cmp server.py "$res/server.py"
           cmp ui/index.html "$res/ui/index.html"
           codesign --verify --strict --deep "$app"
           lipo "$app/Contents/MacOS/TooToo-Debug" -verify_arch arm64 x86_64

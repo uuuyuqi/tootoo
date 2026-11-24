@@ -114,7 +114,7 @@ def stop_backend(pid, parent):
         except ProcessLookupError:
             pass
 
-def start(app, scenario, home, bin_path, cleanup):
+def start(app, scenario, home, bin_path, cleanup, legacy_dns_fixture=None):
     binary = app / "Contents/MacOS/TooToo-Debug"
     expected_balance = 271 if scenario == "explicit" else 193
     paths = {key: home / name for key, name in [("CODEX_HOME",".codex"),("TOOTOO_HOME","trial-state")]}
@@ -128,6 +128,10 @@ def start(app, scenario, home, bin_path, cleanup):
     if scenario == "explicit":
         env["TOOTOO_CODEX_APP_SERVER"] = "1"
     env["PYTHONDONTWRITEBYTECODE"] = "1"
+    if legacy_dns_fixture:
+        # V1's artifact is kept byte-exact; isolate the runner's blocking
+        # reverse lookup at the test boundary. V2 runs without this fixture.
+        env["PYTHONPATH"] = str(legacy_dns_fixture)
     if scenario == "default":
         # Mirror the bundled app's fixed Python selection; import with this
         # isolated fixture only so incompatibility is visible in CI stderr.
@@ -153,10 +157,18 @@ def main(app, phase):
         fake.write_text(FAKE_CODEX)
         fake.chmod(0o700)
         off, on = root/"off", root/"on"
+        legacy_dns_fixture = None
+        if phase == "original-v1":
+            legacy_dns_fixture = root/"legacy-dns-fixture"
+            legacy_dns_fixture.mkdir()
+            (legacy_dns_fixture/"sitecustomize.py").write_text(
+                "import socket\nlookup = socket.getfqdn\n"
+                "socket.getfqdn = lambda name='': name if name == '127.0.0.1' else lookup(name)\n")
+            print("V1 only: stubbed reverse DNS on loopback; exact artifact unchanged",flush=True)
         # Deliberately keep both named Debug apps alive; no request may be
         # misattributed to the older/unconsented instance.
-        off_port = start(app,"default",off,binaries,cleanup)
-        on_port = start(app,"explicit",on,binaries,cleanup)
+        off_port = start(app,"default",off,binaries,cleanup,legacy_dns_fixture)
+        on_port = start(app,"explicit",on,binaries,cleanup,legacy_dns_fixture)
         assert off_port != on_port
         a, b = snapshot(off_port), snapshot(on_port)
         assert a["quota_status"]["codex"]["state"] == "disabled"
