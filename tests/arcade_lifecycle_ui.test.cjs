@@ -55,6 +55,7 @@ function harness(active) {
     startBlasterGame() {}, spawnConfettiBurst() {}, playSfx() {},
     grantAdventureCoins: n => (awarded.push(n), n),
     performance: {now: () => now}, disconnectStream() {}, syncSlidePill() {},
+    activeFetchCtrl: null, fetchTelemetry() {},
     debugState: {}, renderAdventurePropBars() {}, renderBackdropBar() {}, renderAlchemyStats() {}, renderGachaMeta() {},
     getBlasterLoadout: () => ({ammo:50, fireHz:4, cannons:1, refundProb:0.05}),
     getBunnyTier: () => ({level:1, name:"test"}), getEffectiveTodayTokens: () => 5,

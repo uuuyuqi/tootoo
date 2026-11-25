@@ -254,6 +254,8 @@ class TelemetryWebViewController: NSViewController, WKScriptMessageHandler, WKNa
     let url: URL
     let onAction: (String, [String: Any]) -> Void
     var onPageReady: (() -> Void)?
+    private(set) var isPageReady = false
+    private var needsTelemetryRefresh = false
     private var webView: WKWebView!
 
     init(url: URL, size: NSSize, onAction: @escaping (String, [String: Any]) -> Void) {
@@ -276,16 +278,29 @@ class TelemetryWebViewController: NSViewController, WKScriptMessageHandler, WKNa
         wv.load(URLRequest(url: url))
     }
 
-    func reloadPage() {
-        webView?.reload()
-    }
-
     func evalJS(_ js: String) {
         webView?.evaluateJavaScript(js, completionHandler: nil)
     }
 
+    func requestTelemetryRefresh() {
+        guard isPageReady else {
+            needsTelemetryRefresh = true
+            return
+        }
+        evalJS("window.__refreshTelemetry && window.__refreshTelemetry();")
+    }
+
+    func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        isPageReady = false
+    }
+
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        isPageReady = true
         onPageReady?()
+        if needsTelemetryRefresh {
+            needsTelemetryRefresh = false
+            requestTelemetryRefresh()
+        }
     }
 
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction,
@@ -338,6 +353,7 @@ let ALL_MENUBAR_FIELDS: [(key: String, label: String)] = [
 
 struct TodayMetrics {
     let tokens: Double
+    let effectiveTodayTokens: Double
     let cost: Double
     let tps: Double?
     let ttft: Double?
@@ -430,6 +446,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private var fullWindowVC: TelemetryWebViewController?
     private var backendProcess: Process?
     private var port: UInt16 = variantPreferredPort
+    private let quotaForceToken = UUID().uuidString + UUID().uuidString
     private var statusTimer: Timer?
     private var eventMonitor: Any?
     private var menuBarFields: [String] = ["tokens", "cost"]
@@ -445,6 +462,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private var baseStatusToolTip = variantName
     private var currentTier: BunnyTierInfo = BUNNY_TIERS[0]
     private var lastMetrics: TodayMetrics?
+    private var issuedSummaryRefresh: UInt64 = 0
+    private var appliedSummaryRefresh: UInt64 = 0
+    #if TOOTOO_MENU_SMOKE
+    private var smokeSummaryCompletions = 0
+    #endif
     private var showUpdateSettingsWhenLoaded = false
     private lazy var updateController = NativeUpdateController(backendIsRunning: { [weak self] in
         self?.backendProcess?.isRunning == true
@@ -483,6 +505,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         #if TOOTOO_KEEP_AWAKE_SMOKE
         if ProcessInfo.processInfo.arguments.contains("--keep-awake-ci") {
             startKeepAwakeSmoke()
+            return
+        }
+        #endif
+
+        #if TOOTOO_MENU_SMOKE
+        let args = ProcessInfo.processInfo.arguments
+        if args.count == 3, args[1] == "--menu-summary-ci", let fixturePort = UInt16(args[2]) {
+            startMenuSummarySmoke(port: fixturePort)
             return
         }
         #endif
@@ -723,9 +753,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         env["TOOTOO_AGY_CLI"] = agyOff ? "off" : "auto"
         env["TOOTOO_CODEX_QUOTA_AUTO"] = env["TOOTOO_CODEX_QUOTA_AUTO"] == "off" ? "off" : "auto"
         env["TOOTOO_UPDATE_NONCE"] = updateController.backendNonce
+        env["TOOTOO_QUOTA_FORCE_TOKEN"] = quotaForceToken
         #if TOOTOO_DEBUG
         env["TOOTOO_DEBUG"] = "1"
-        if env["TOOTOO_HOME"]?.isEmpty != false {
+        if env["TOOTOO_HOME"]?.isEmpty != false && env["TOOTOO_DATA_DIR"]?.isEmpty != false {
             let home = env["HOME"].flatMap { $0.isEmpty ? nil : $0 } ?? NSHomeDirectory()
             env["TOOTOO_HOME"] = (home as NSString).appendingPathComponent(".tootoo-debug")
         }
@@ -923,19 +954,23 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     }
 
     @objc private func openUpdatesFromMenu() {
-        DispatchQueue.main.async {
-            self.showUpdateSettingsWhenLoaded = self.fullWindowVC == nil
-            self.openFullWindow()
-            self.fullWindowVC?.evalJS("window.__openUpdateSettings && window.__openUpdateSettings();")
-            self.updateController.sync()
-            if self.updateController.availableVersion == nil { self.updateController.check(force: true) }
-        }
+        showUpdateSettingsWhenLoaded = true
+        openFullWindow()
+        openUpdateSettingsIfReady()
+        updateController.sync()
+        if updateController.availableVersion == nil { updateController.check(force: true) }
+    }
+
+    private func openUpdateSettingsIfReady() {
+        guard showUpdateSettingsWhenLoaded, let vc = fullWindowVC, vc.isPageReady else { return }
+        showUpdateSettingsWhenLoaded = false
+        vc.evalJS("window.__openUpdateSettings && window.__openUpdateSettings();")
     }
 
     @objc private func manualRefresh() {
-        refreshMenuBarSummary()
-        popoverVC?.reloadPage()
-        fullWindowVC?.reloadPage()
+        refreshMenuBarSummary(force: true)
+        popoverVC?.requestTelemetryRefresh()
+        fullWindowVC?.requestTelemetryRefresh()
     }
 
     @objc private func openInBrowser() {
@@ -1044,6 +1079,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             self?.handleWebAction(action, payload: payload)
         }
         fullWindowVC = vc
+        vc.onPageReady = { [weak self] in self?.openUpdateSettingsIfReady() }
 
         let win = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 1280, height: 820),
@@ -1072,10 +1108,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             refreshMenuBarSummary()
         case "getUpdateState":
             updateController.sync()
-            if showUpdateSettingsWhenLoaded, let vc = fullWindowVC {
-                showUpdateSettingsWhenLoaded = false
-                vc.evalJS("window.__openUpdateSettings && window.__openUpdateSettings();")
-            }
         case "checkForUpdate":
             updateController.check(force: true)
         case "installUpdate":
@@ -1134,19 +1166,24 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         return String(format: "$%.2f", c)
     }
 
-    private func refreshMenuBarSummary() {
-        // Bunny tier & menu bar strictly track TODAY's total tokens (resets to Lv.1 at midnight)
-        fetchSummary(range: "today") { [weak self] metrics in
-            guard let self = self else { return }
-            if let m = metrics {
-                self.lastMetrics = m
-                self.applyMenuBarMetrics(m)
-            } else {
-                DispatchQueue.main.async {
+    private func refreshMenuBarSummary(force: Bool = false) {
+        // Only the bunny's tier includes today's reward XP. Usage text is raw.
+        issuedSummaryRefresh += 1
+        let request = issuedSummaryRefresh
+        fetchSummary(range: "today", force: force) { [weak self] metrics in
+            DispatchQueue.main.async {
+                guard let self, request >= self.appliedSummaryRefresh else { return }
+                #if TOOTOO_MENU_SMOKE
+                defer { self.smokeSummaryCompletions += 1 }
+                #endif
+                if let metrics {
+                    self.appliedSummaryRefresh = request
+                    self.lastMetrics = metrics
+                    self.applyMenuBarMetrics(metrics)
+                } else if self.lastMetrics == nil && request == self.issuedSummaryRefresh {
                     self.currentTier = BUNNY_TIERS[0]
                     self.statusItem.button?.image = makeBunnyMenuBarIcon(tier: 1)
                     self.statusItem.button?.title = variantMenuPrefix + (self.menuBarFields.isEmpty ? "" : " 0")
-                    self.lastMetrics = nil
                     self.quotaBarView?.percent = nil
                     self.quotaBarView?.isHidden = true
                     let pinnedBar = ALL_QUOTA_BAR_MODES.first {
@@ -1159,22 +1196,90 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         }
     }
 
+    #if TOOTOO_MENU_SMOKE
+    private func startMenuSummarySmoke(port fixturePort: UInt16) {
+        port = fixturePort
+        menuBarFields = ["tokens"]
+        menuBarQuotaBar = "gem5h"
+        setupStatusItem()
+        setupPopover()
+        refreshMenuBarSummary()
+        smokeWait(1, polls: 120) { [weak self] in self?.verifyMenuSummarySmoke() }
+    }
+
+    private func smokeWait(_ count: Int, polls: Int, done: @escaping () -> Void) {
+        if smokeSummaryCompletions >= count {
+            DispatchQueue.main.async(execute: done)
+        } else if polls > 0 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
+                self?.smokeWait(count, polls: polls - 1, done: done)
+            }
+        } else {
+            fatalError("Timed out waiting for native menu summary")
+        }
+    }
+
+    private func smokeMetricsStillValid() -> Bool {
+        return lastMetrics?.tokens == 590_000_000 && currentTier.level == 6
+            && statusItem.button?.attributedTitle.string == " 590.0M" && quotaBarView?.percent == 75
+            && quotaBarView?.isHidden == false
+    }
+
+    private func verifyMenuSummarySmoke() {
+        guard smokeMetricsStillValid() else { fatalError("Effective XP must change tier, not raw menu token text") }
+        openUpdatesFromMenu()
+        // A simultaneous popover message must not consume the pending full-window intent.
+        handleWebAction("getUpdateState", payload: [:])
+        smokeWaitForFullWindow(polls: 200)
+    }
+
+    private func smokeWaitForFullWindow(polls: Int) {
+        guard fullWindowVC?.isPageReady == true else {
+            if polls == 0 { fatalError("Timed out waiting for full dashboard page") }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
+                self?.smokeWaitForFullWindow(polls: polls - 1)
+            }
+            return
+        }
+        manualRefresh()
+        smokeWait(2, polls: 120) { [weak self] in
+            guard self?.smokeMetricsStillValid() == true else {
+                fatalError("Transient forced polling failure cleared the last good menu summary")
+            }
+            // Leave the run loop alive long enough for WebKit's beacons to drain.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                print("PASS native menu summary, stale snapshot, force, and update readiness")
+                NSApp.terminate(nil)
+            }
+        }
+    }
+    #endif
+
     private func remPct(from usedNum: Any?) -> Int? {
         guard let used = (usedNum as? NSNumber)?.doubleValue else { return nil }
         return max(0, min(100, Int((100.0 - used).rounded())))
     }
 
-    private func fetchSummary(range: String, completion: @escaping (TodayMetrics?) -> Void) {
-        guard let url = URL(string: "http://127.0.0.1:\(port)/api/telemetry?range=\(range)&tool=all") else {
+    private func fetchSummary(range: String, force: Bool, completion: @escaping (TodayMetrics?) -> Void) {
+        let forceQuery = force ? "&force=1" : ""
+        guard let url = URL(string: "http://127.0.0.1:\(port)/api/telemetry?range=\(range)&tool=all\(forceQuery)") else {
             completion(nil); return
         }
-        URLSession.shared.dataTask(with: url) { data, _, _ in
-            guard let data = data,
+        var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 12)
+        if force { request.setValue(quotaForceToken, forHTTPHeaderField: "X-TooToo-Quota-Force") }
+        URLSession.shared.dataTask(with: request) { data, response, _ in
+            guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode),
+                  let data = data,
                   let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                   let kpi = obj["kpi"] as? [String: Any] else {
                 completion(nil); return
             }
-            let tok = (kpi["tokens"] as? NSNumber)?.doubleValue ?? 0
+            guard let tok = (kpi["tokens"] as? NSNumber)?.doubleValue, tok.isFinite, tok >= 0 else {
+                completion(nil); return
+            }
+            let effective = (obj["effective_today_tokens"] as? NSNumber)?.doubleValue
+                ?? (obj["today_tokens"] as? NSNumber)?.doubleValue ?? tok
+            let evolutionTokens = effective.isFinite && effective >= 0 ? effective : tok
             let cost = (kpi["cost"] as? NSNumber)?.doubleValue ?? 0
             let tps = (kpi["tps"] as? NSNumber)?.doubleValue
             let ttft = (kpi["ttft_p50"] as? NSNumber)?.doubleValue
@@ -1214,14 +1319,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             }
 
             completion(TodayMetrics(
-                tokens: tok, cost: cost, tps: tps, ttft: ttft,
+                tokens: tok, effectiveTodayTokens: evolutionTokens, cost: cost, tps: tps, ttft: ttft,
                 gem5hRem: gem5h, gem7dRem: gem7d, cg5hRem: cg5h, cg7dRem: cg7d, argon7dRem: argon7d, codexRem: codex, codexWeekly: codexWeekly
             ))
         }.resume()
     }
 
     private func applyMenuBarMetrics(_ m: TodayMetrics) {
-        let tier = bunnyTier(for: m.tokens)
+        let tier = bunnyTier(for: m.effectiveTodayTokens)
         let bothGem = menuBarFields.contains("q_gem5h") && menuBarFields.contains("q_gem7d")
         var parts: [String] = []
         for f in menuBarFields {

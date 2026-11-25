@@ -16,8 +16,11 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+import quota_runtime
+
 _TTL = 180
-_FAILURE_TTL = 30
+_FAILURE_TTL = 60
+_FORCE_DEBOUNCE = 2.0
 _MAX_AGE = 24 * 60 * 60
 _CACHE_NAME = "agy_cli_quota_cache.json"
 _MAX_CONFIG = 256 * 1024
@@ -33,11 +36,10 @@ _BUCKETS = {
     "gemini-argon-wtu-weekly": ("argon_7d", "argon", "Gemini 4 Argon", "weekly", 10080),
 }
 _LOCK = threading.Lock()
-_UPDATED = threading.Condition(_LOCK)
-_generation = 0
 _cache_key = None
 _cache_result = None
 _cache_until = 0.0
+_last_force = None
 _cache_reason = None
 _pending = None
 
@@ -242,27 +244,15 @@ def _version_ok(raw):
 
 
 def agy_quota_generation():
-    with _LOCK:
-        return _generation
+    return quota_runtime.generation()
 
 
 def wait_for_agy_quota_update(generation, timeout=20):
-    # Taking the generation before rendering also covers a completion between
-    # rendering and wait. Never clear a shared Event between SSE clients.
-    with _UPDATED:
-        _UPDATED.wait_for(lambda: _generation != generation, timeout=timeout)
-        return _generation
-
-
-def _notify_locked():
-    global _generation
-    _generation += 1
-    _UPDATED.notify_all()
+    return quota_runtime.wait(generation, timeout=timeout)
 
 
 def _cache_path():
-    root = Path(os.path.expanduser(os.environ.get("TOOTOO_HOME") or "~/.tootoo"))
-    return root / _CACHE_NAME
+    return Path(quota_runtime.data_root()) / _CACHE_NAME
 
 
 def _snapshot_key(home, binary):
@@ -360,8 +350,8 @@ def _purge_snapshot():
 
 
 def _cancel(purge=False):
-    global _cache_key, _cache_result, _cache_until, _cache_reason
-    _cache_key, _cache_result, _cache_until, _cache_reason = None, None, 0, None
+    global _cache_key, _cache_result, _cache_until, _cache_reason, _last_force
+    _cache_key, _cache_result, _cache_until, _cache_reason, _last_force = None, None, 0, None, None
     if _pending is not None:
         _pending[1].set()
     if purge:
@@ -401,7 +391,7 @@ def _collect(home, binary, key, cancelled):
     except (OSError, KeyError, RuntimeError):
         pass
     finally:
-        with _UPDATED:
+        with _LOCK:
             _pending = None
             if not cancelled.is_set() and key == _cache_key:
                 quota = result["quota"]
@@ -417,7 +407,7 @@ def _collect(home, binary, key, cancelled):
                 elif _cache_reason in {"cli_auth", "cli_settings"}:
                     _cache_result = None
                     _purge_snapshot()
-                _notify_locked()
+                quota_runtime.publish()
 
 
 def _prepare_cache(purge_invalid=False):
@@ -448,21 +438,27 @@ def prime_agy_cli_quota():
         _prepare_cache(purge_invalid=True)
 
 
-def fetch_agy_cli_quota(enabled: bool):
+def fetch_agy_cli_quota(enabled: bool, *, force: bool = False):
     """Return the previous quota immediately, even while refresh is pending."""
-    global _pending
-    with _UPDATED:
+    global _pending, _last_force
+    with _LOCK:
         if enabled is not True:
             had_state = _cache_result is not None or _pending is not None
             _cancel(purge=True)
             if had_state:
-                _notify_locked()
+                quota_runtime.publish()
             return _result("disabled")
         home, binary, reason = _prepare_cache(purge_invalid=True)
         if reason:
             return _result("unavailable", reason)
         refreshing = _pending is not None and not _pending[1].is_set()
-        if _pending is None and time.monotonic() >= _cache_until:
+        now_mono = time.monotonic()
+        force_due = force and (_last_force is None or now_mono - _last_force >= _FORCE_DEBOUNCE)
+        if force_due:
+            # Web and native refresh can overlap. A pending same-scope request
+            # already satisfies force; debounce a second click even if it just finished.
+            _last_force = now_mono
+        if _pending is None and (force_due or now_mono >= _cache_until):
             cancelled = threading.Event()
             thread = threading.Thread(target=_collect, args=(home, binary, _cache_key, cancelled),
                                       name="agy-quota", daemon=True)

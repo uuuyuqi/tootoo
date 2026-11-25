@@ -5,7 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DIST="$ROOT/dist"
 VERSION="${VERSION:-$(cat "$ROOT/VERSION")}"
 VERSION_CLEAN="${VERSION#v}"
-BUILD_NUMBER="${BUILD_NUMBER:-16}"
+BUILD_NUMBER="${BUILD_NUMBER:-17}"
 TOOTOO_DEBUG="${TOOTOO_DEBUG:-0}"
 NO_INSTALL="${NO_INSTALL:-0}"
 PACKAGE_ZIP="${PACKAGE_ZIP:-0}"
@@ -78,6 +78,7 @@ fi
 echo "==> Bundling scanner, pricing, server, CLI, and UI..."
 cp "$ROOT/scanner.py" "$RES/scanner.py"
 cp "$ROOT/agy_cli_quota.py" "$RES/agy_cli_quota.py"
+cp "$ROOT/quota_runtime.py" "$RES/quota_runtime.py"
 cp "$ROOT/codex_app_quota.py" "$RES/codex_app_quota.py"
 cp "$ROOT/pricing.py" "$RES/pricing.py"
 cp "$ROOT/server.py" "$RES/server.py"
@@ -179,6 +180,9 @@ cat > "$CONTENTS/Info.plist" <<PLIST
 </plist>
 PLIST
 
+# Clear packaging-only metadata from this build before signing.
+xattr -cr "$APP"
+
 echo "==> Ad-hoc code signing..."
 codesign --force --deep --sign - "$APP"
 
@@ -188,7 +192,7 @@ if [[ "$PACKAGE_ZIP" == "1" ]]; then
   ZIP_PATH="$DIST/$APP_NAME-v${VERSION_CLEAN}-macos-${ARCH_TAG}.zip"
   rm -f "$ZIP_PATH"
   echo "==> Packaging release archive: $ZIP_PATH"
-  ditto -c -k --sequesterRsrc --keepParent "$APP" "$ZIP_PATH"
+  ditto -c -k --norsrc --keepParent "$APP" "$ZIP_PATH"
   SHA256="$(shasum -a 256 "$ZIP_PATH" | awk '{print $1}')"
   echo "    SHA256: $SHA256"
   echo "$SHA256  $(basename "$ZIP_PATH")" > "${ZIP_PATH}.sha256"

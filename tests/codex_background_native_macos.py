@@ -10,7 +10,7 @@ import subprocess
 import sys
 import time
 
-from agy_native_quota_macos import LaunchServicesApp, darwin, find_backend, snapshot, stop_backend
+from agy_native_quota_macos import LaunchServicesApp, darwin, find_backend, next_quota_event, snapshot, stop_backend
 
 FAKE_CODEX = r'''
 #include <stdio.h>
@@ -43,9 +43,11 @@ int main(int argc, char **argv) {
   fprintf(log,"%d\n",getpid());
   fclose(log);
   sleep(7);
+  if (snprintf(path,sizeof path,"%s/codex_next_snapshot",home) >= sizeof path) return 10;
+  int next = access(path, F_OK) == 0;
   printf("{\"id\":2,\"result\":{\"rateLimits\":{\"limitId\":\"codex\",\"primary\":null,\"secondary\":"
          "{\"usedPercent\":%d,\"windowDurationMins\":10080,\"resetsAt\":null}}}}\n",
-         strstr(home,"auto-zero") ? 0 : 5);
+         next ? 71 : strstr(home,"auto-zero") ? 0 : 5);
   fflush(stdout);
   return 0;
 }
@@ -149,18 +151,22 @@ def main(app, launcher, npm=False):
         if not npm:
             install_fake(fake, prefix)
         cases = ("auto-weekly", "auto-zero") if npm else (
-            "unused", "stale", "other-profile", "off", "log", "auto-weekly", "auto-zero", "cancel")
+            "unused", "stale", "other-profile", "off", "log", "auto-weekly", "auto-restart", "auto-zero", "cancel")
         for balance, case in enumerate(cases, 271 if npm else 261):
             with ExitStack() as cleanup:
-                home = root / case
-                home.mkdir()
-                (home / ".codex").mkdir()
-                (home / "other-profile").mkdir()
+                restart = case == "auto-restart"
+                home = root / ("auto-weekly" if restart else case)
                 state_dir = home / "state"
-                state_dir.mkdir()
+                if restart:
+                    (home / "codex_next_snapshot").touch()
+                else:
+                    home.mkdir()
+                    (home / ".codex").mkdir()
+                    (home / "other-profile").mkdir()
+                    state_dir.mkdir()
+                    if case != "unused":
+                        seed_codex(home, case)
                 (state_dir / "carrot_state.json").write_text(json.dumps({"balance": balance}))
-                if case != "unused":
-                    seed_codex(home, case)
                 pid = int(subprocess.check_output([str(launcher), str(app), str(home), str(state_dir),
                                                    "codex-" + case], text=True, timeout=25))
                 process = LaunchServicesApp(pid)
@@ -171,6 +177,16 @@ def main(app, launcher, npm=False):
                 data = snapshot(port)
                 status = data["quota_status"]["codex"]["state"]
                 calls = home / "codex_rpc_calls"
+                if restart:
+                    cached = data["quotas"].get("codex")
+                    assert status == "cached" and cached["secondary"]["used_percent"] == 5, (status, cached)
+                    assert time.monotonic() - started < 4, "persisted Codex cache blocked on CLI"
+                    msg, elapsed = next_quota_event(port, data["quota_version"])
+                    assert msg["quotas"]["codex"]["secondary"]["used_percent"] == 71, msg["quota_status"]
+                    expected = ["initialize", "initialized", "account/rateLimits/read"]
+                    assert calls.read_text().splitlines() == expected * 2
+                    print(f"PASS Codex packaged native cold cache + early SSE delivery ({elapsed:.2f}s)", flush=True)
+                    continue
                 if case in ("unused", "stale", "other-profile", "off", "log"):
                     assert not calls.exists(), (case, status)
                     if case == "log":

@@ -238,7 +238,46 @@ class AgyCliQuotaTest(unittest.TestCase):
                 self.assertEqual(failed["quota"], previous)
                 self.assertEqual(failed["status"]["reason"], failure)
                 self.assertFalse(failed["status"]["refreshing"])
-                self.assertLessEqual(cli._cache_until - time.monotonic(), 30)
+                self.assertLessEqual(cli._cache_until - time.monotonic(), cli._FAILURE_TTL)
+
+    def test_force_bypasses_cooldown_preserves_sample_and_coalesces_duplicates(self):
+        encoded = json.dumps(report()).encode()
+        entered, release = threading.Event(), threading.Event()
+        attempts = 0
+
+        def execute(_exe, args, *_):
+            nonlocal attempts
+            if args == ["--version"]:
+                return b"1.5.15\n", None
+            attempts += 1
+            if attempts == 1:
+                return encoded, None
+            entered.set()
+            if not release.wait(2):
+                return None, "cli_execution"
+            return None, "cli_timeout"
+
+        with patch.object(cli, "_find_agy", return_value=Path(sys.executable)), \
+                patch.object(cli, "_exec", side_effect=execute):
+            original = self.read_until_settled()["quota"]
+            self.assertFalse(cli.fetch_agy_cli_quota(True)["status"]["refreshing"])
+            try:
+                current = cli.fetch_agy_cli_quota(True, force=True)
+                self.assertEqual(current["quota"], original)
+                self.assertTrue(current["status"]["refreshing"])
+                self.assertTrue(entered.wait(1))
+                for _ in range(15):
+                    self.assertEqual(cli.fetch_agy_cli_quota(True, force=True)["quota"], original)
+                self.assertEqual(attempts, 2)
+                generation = cli.agy_quota_generation()
+            finally:
+                release.set()
+            self.assertNotEqual(cli.wait_for_agy_quota_update(generation, timeout=1), generation)
+            settled = cli.fetch_agy_cli_quota(True, force=True)
+            self.assertEqual(settled["status"]["reason"], "cli_timeout")
+            self.assertEqual(settled["quota"], original)
+            self.assertFalse(settled["status"]["refreshing"])
+            self.assertEqual(attempts, 2)
 
     def test_disk_restart_scope_off_and_expired_reset(self):
         current = report()
@@ -318,18 +357,18 @@ class AgyCliQuotaTest(unittest.TestCase):
 
         handler_waits = threading.local()
 
-        def wait_once(generation):
+        def wait_once(generation, **kw):
             if getattr(handler_waits, "waited", False):
                 # Finish both HTTP handler threads after the target frame.
                 # Otherwise a later quota update can wake dead subscribers
                 # and invoke production telemetry after our mocks leave scope.
                 raise BrokenPipeError
             handler_waits.waited = True
-            return cli.wait_for_agy_quota_update(generation)
+            return cli.quota_runtime.wait(generation, **kw)
 
         with patch.object(cli, "_find_agy", return_value=Path(sys.executable)), \
                 patch.object(cli, "_exec", side_effect=execute), \
-                patch.object(server, "wait_for_agy_quota_update", side_effect=wait_once), \
+                patch.object(server, "wait_for_quota_update", side_effect=wait_once), \
                 patch.object(server, "build_telemetry", side_effect=telemetry):
             with server.TooTooServer(("127.0.0.1", 0), server.TooTooHandler) as httpd:
                 thread = threading.Thread(target=httpd.serve_forever, kwargs={"poll_interval": .05}, daemon=True)
@@ -338,8 +377,9 @@ class AgyCliQuotaTest(unittest.TestCase):
                 try:
                     self.assertEqual(cli.fetch_agy_cli_quota(True)["status"]["state"], "loading")
                     self.assertTrue(ready.wait(.8))
+                    drawn = server.quota_generation()
                     for client in clients:
-                        client.request("GET", "/api/stream?skip_initial=1")
+                        client.request("GET", f"/api/stream?skip_initial=1&since_quota_version={drawn}")
                     # HTTPResponse cannot conveniently distinguish blocked headers
                     # from a blocked frame with the production keep-alive handler.
                     # Release only once both server threads have sent headers.

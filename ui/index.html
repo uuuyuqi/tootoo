@@ -10507,9 +10507,17 @@ function finishBoot() {
 }
 
 let activeFetchCtrl = null;
+let lastStreamSnapshot = null;
 
 async function fetchTelemetry(force = false, acceptData = () => true) {
   const seq = ++fetchSeq;
+  const startingStreamSnapshot = lastStreamSnapshot;
+  const matchesLatestSnapshot = data => !lastStreamSnapshot ||
+    startingStreamSnapshot === lastStreamSnapshot ||
+    lastStreamSnapshot.range !== state.range || lastStreamSnapshot.tool !== state.tool ||
+    !Number.isSafeInteger(data.quota_version) ||
+    !Number.isSafeInteger(lastStreamSnapshot.quotaVersion) ||
+    data.quota_version === lastStreamSnapshot.quotaVersion;
   if (activeFetchCtrl) {
     try { activeFetchCtrl.abort(); } catch {}
   }
@@ -10523,14 +10531,14 @@ async function fetchTelemetry(force = false, acceptData = () => true) {
     const res = await fetch(url, { signal: ctrl.signal });
     if (!res.ok) throw new Error("HTTP " + res.status);
     const data = await res.json();
-    if (seq !== fetchSeq || !acceptData()) return;
+    if (seq !== fetchSeq || !acceptData() || !matchesLatestSnapshot(data)) return;
     // If popover defaults to today and today has 0 requests, smoothly switch to this week on initial load
     if (isPopover && !state.data && state.range === "today" && data.kpi.requests === 0) {
       state.range = "week";
       document.querySelectorAll("#rangeSeg button").forEach(b => b.classList.toggle("active", b.dataset.range === "week"));
       const resW = await fetch(`/api/telemetry?range=week&tool=${encodeURIComponent(state.tool)}`, { signal: ctrl.signal });
       const dataW = await resW.json();
-      if (seq !== fetchSeq || !acceptData()) return;
+      if (seq !== fetchSeq || !acceptData() || !matchesLatestSnapshot(dataW)) return;
       state.data = dataW;
       lastFetchTs = Date.now();
       renderAll(dataW);
@@ -10551,10 +10559,13 @@ async function fetchTelemetry(force = false, acceptData = () => true) {
     } else {
       console.error(err);
     }
-    if (!state.data && seq === fetchSeq) {
+    if (!state.data && seq === fetchSeq && agyQuotaRetryVisible()) {
       const el = document.getElementById("bootStatus");
       if (el) el.textContent = "正在唤醒本地扫描引擎…";
-      bootRetryTimer = setTimeout(() => fetchTelemetry(false), 350);
+      bootRetryTimer = setTimeout(() => {
+        bootRetryTimer = null;
+        if (agyQuotaRetryVisible() && !state.data && !activeFetchCtrl) fetchTelemetry(false);
+      }, 350);
     }
   } finally {
     clearTimeout(timeoutId);
@@ -10564,6 +10575,8 @@ async function fetchTelemetry(force = false, acceptData = () => true) {
     }
   }
 }
+
+window.__refreshTelemetry = () => fetchTelemetry(true);
 
 let popoverVisible = !isPopover;
 
@@ -10592,6 +10605,8 @@ window.__onPopoverOpen = () => {
     if (Date.now() - lastFetchTs > 12000) {
       fetchTelemetry(false);
     }
+  } else if (!activeFetchCtrl) {
+    fetchTelemetry(false);
   }
 };
 
@@ -10635,6 +10650,8 @@ document.addEventListener("visibilitychange", () => {
     scheduleAgyQuotaLoadingRetry();
     connectStream(true);
     if (Date.now() - lastFetchTs > 15000) fetchTelemetry(false);
+  } else if (!activeFetchCtrl) {
+    fetchTelemetry(false);
   }
 });
 
@@ -10643,11 +10660,16 @@ function connectStream(skipInitial = true) {
   // Keep background pre-warmed popover completely quiet until opened
   if (isPopover && !popoverVisible) return;
   if (!isPopover && document.hidden) return;
-  const url = `/api/stream?range=${encodeURIComponent(state.range)}&tool=${encodeURIComponent(state.tool)}&skip_initial=${skipInitial ? 1 : 0}`;
+  const {range, tool} = state;
+  const version = state.data?.quota_version;
+  const cursor = skipInitial && Number.isSafeInteger(version) ? `&since_quota_version=${version}` : "";
+  const url = `/api/stream?range=${encodeURIComponent(range)}&tool=${encodeURIComponent(tool)}&skip_initial=${skipInitial ? 1 : 0}${cursor}`;
   const es = new EventSource(url);
   es.onmessage = (ev) => {
+    if (state.es !== es || state.range !== range || state.tool !== tool) return;
     try {
       const data = JSON.parse(ev.data);
+      lastStreamSnapshot = {range, tool, quotaVersion: data.quota_version};
       state.data = data;
       lastFetchTs = Date.now();
       renderAll(data);
@@ -10732,7 +10754,7 @@ function pickCodexQuotaBucket(cx) {
 }
 
 function codexQuotaDiagnostic(status, quota) {
-  if (quota?.source === "app_server") return "当前 Codex CLI 账号 · 最近读取";
+  if (quota?.source === "app_server") return quota.freshness === "stale" ? "当前 Codex CLI 账号 · 上次额度" : "当前 Codex CLI 账号 · 最近读取";
   if (quota?.source === "session_log") return "本地日志 · 账号未核实";
   if (status?.state === "inactive") return "未检测到近期 Codex 使用";
   if (status?.state === "loading") return "正在读取 Codex CLI 额度…";
@@ -10741,8 +10763,8 @@ function codexQuotaDiagnostic(status, quota) {
 }
 
 function agyQuotaDiagnostic(status) {
+  if (status?.state === "loading") return "正在查询 AGY CLI 额度…";
   if (status?.selected_source === "cli") {
-    if (status.state === "loading") return "正在查询 AGY CLI 额度…";
     if (status.state === "live") return "来自 AGY CLI · 最近读取";
     const reasons = {
       cli_missing: "未找到 AGY CLI", cli_version: "AGY CLI 版本暂不支持",
@@ -10836,10 +10858,13 @@ function renderTopQuota(d) {
     if (selected) break;
   }
 
-  const loading = !selected && !!keyMap[mode] && d.quota_status?.antigravity?.state === "loading";
-  setAgyQuotaColdLoading(loading);
+  const agyLoading = d.quota_status?.antigravity?.state === "loading";
+  const codexLoading = d.quota_status?.codex?.state === "loading";
+  const loading = !selected && (mode === "auto" ? agyLoading || codexLoading
+    : mode === "codex" ? codexLoading : !!keyMap[mode] && agyLoading);
+  setAgyQuotaColdLoading(!selected && !!keyMap[mode] && agyLoading);
   if (!selected) {
-    const name = mode === "codex" ? "Codex 周" : keyMap[mode]?.[1];
+    const name = mode === "auto" && loading ? "官方额度" : mode === "codex" ? "Codex 周" : keyMap[mode]?.[1];
     if (!name) { box.classList.remove("show"); return; }
     document.getElementById("tqName").textContent = name;
     const pct = document.getElementById("tqPct");
@@ -11428,9 +11453,9 @@ function renderAgents(d) {
             </div>`;
           };
 
-          const rawBuckets = (t.quota.buckets && t.quota.buckets.length)
-            ? t.quota.buckets
-            : [t.quota.primary, t.quota.secondary].filter(x => x && x.used_percent != null);
+          const listedBuckets = (t.quota.buckets || []).filter(x => x?.used_percent != null);
+          const rawBuckets = listedBuckets.length ? listedBuckets
+            : [t.quota.primary, t.quota.secondary].filter(x => x?.used_percent != null);
 
           if (rawBuckets.length > 0) {
             const foldKey = `tootoo_qfold_${t.tool}`;
@@ -11458,6 +11483,13 @@ function renderAgents(d) {
               <div class="quota-list${alignedAgy ? " agy-quota-grid" : ""}">${rawBuckets.map((b, idx) => makeQuota(b, idx === 0 ? "主额度" : "次额度")).join("")}</div>
             </div>`;
           }
+        }
+
+        if (!quotaHtml && (t.tool === "codex" || t.tool === "antigravity") &&
+            d.quota_status?.[t.tool]?.state === "loading") {
+          quotaHtml = `<div class="quota-row"><div class="quota-head" role="status">
+            <span class="quota-lbl">额度</span><span class="quota-pct" style="color:var(--muted)">读取中…</span>
+          </div></div>`;
         }
 
         return `<div class="agent-item" style="border-left-color:${accent}">

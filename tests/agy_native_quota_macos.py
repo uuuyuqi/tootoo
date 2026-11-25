@@ -30,11 +30,11 @@ def snapshot(port, path="/api/telemetry?range=today&tool=all", timeout=12):
         conn.close()
 
 
-def next_quota_event(port):
+def next_quota_event(port, quota_version):
     conn = HTTPConnection("127.0.0.1", port, timeout=12)
     try:
         start = time.monotonic()
-        conn.request("GET", "/api/stream?range=today&tool=all&skip_initial=1")
+        conn.request("GET", f"/api/stream?range=today&tool=all&skip_initial=1&since_quota_version={quota_version}")
         with conn.getresponse() as response:
             assert response.status == 200, response.status
             while line := response.readline():
@@ -223,7 +223,7 @@ def main(app, launcher):
                     assert time.monotonic() - started < 4, "persisted cache lookup blocked on CLI"
                     buckets = data["quotas"]["antigravity"]["buckets"]
                     assert next(b["remaining_fraction"] for b in buckets if b["id"] == "gemini_5h") == .75
-                    msg, elapsed = next_quota_event(port)
+                    msg, elapsed = next_quota_event(port, data["quota_version"])
                     quota = msg["quotas"]["antigravity"]
                     assert next(b["remaining_fraction"] for b in quota["buckets"] if b["id"] == "gemini_5h") == .40
                     card = next(tool for tool in msg["tools"] if tool["tool"] == "antigravity")

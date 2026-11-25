@@ -11,7 +11,9 @@ import hashlib
 import hmac
 import json
 import os
+import select
 import signal
+import socket
 import socketserver
 import sys
 import threading
@@ -21,11 +23,12 @@ import uuid
 import webbrowser
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from queue import Empty, Full, Queue
 from urllib.parse import parse_qs, urlparse
 
-from agy_cli_quota import (agy_quota_generation, fetch_agy_cli_quota, prime_agy_cli_quota,
-                           stop_agy_cli_quota, wait_for_agy_quota_update)
-from codex_app_quota import stop_codex_cli_quota
+from agy_cli_quota import fetch_agy_cli_quota, prime_agy_cli_quota, stop_agy_cli_quota
+from codex_app_quota import invalidate_codex_cli_quota, stop_codex_cli_quota
+from quota_runtime import generation as quota_generation, wait as wait_for_quota_update
 from pricing import sync_remote_pricing
 from update_check import checker as update_checker
 from scanner import CACHE_DIR, build_telemetry, refresh_native_codex_quota, load_carrot_state, save_carrot_state, save_local_quota_config
@@ -252,6 +255,31 @@ class TooTooHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _native_quota_force(self) -> None:
+        # An ordinary loopback HTTP/SSE client can read existing Codex quota,
+        # but only this app's native request can skip the owned scheduler's cooldown.
+        token = os.environ.get("TOOTOO_QUOTA_FORCE_TOKEN")
+        supplied = self.headers.get("X-TooToo-Quota-Force", "")
+        if (token and self.headers.get("Sec-Fetch-Site") != "cross-site"
+                and self.client_address[0] == "127.0.0.1"
+                and self.headers.get("Host") == f"127.0.0.1:{self.server.server_port}"
+                and hmac.compare_digest(supplied.encode("utf-8"), token.encode("utf-8"))):
+            dispatch = getattr(self.server, "schedule_codex_force", None)
+            if dispatch is not None:
+                dispatch()
+
+    def _stream_closed(self) -> bool:
+        stop = getattr(self.server, "stop_streams", None)
+        if stop is not None and stop.is_set():
+            return True
+        try:
+            ready, _, _ = select.select([self.connection], [], [], 0)
+            return bool(ready) and not self.connection.recv(1, socket.MSG_PEEK | getattr(socket, "MSG_DONTWAIT", 0))
+        except BlockingIOError:
+            return False
+        except (OSError, ValueError):
+            return True
+
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
         if parsed.path == "/api/update":
@@ -353,9 +381,15 @@ class TooTooHandler(BaseHTTPRequestHandler):
             t_flt = qs.get("tool", ["all"])[0]
             force = qs.get("force", ["0"])[0] == "1"
             rebuild = qs.get("rebuild", ["0"])[0] == "1"
+            if (force or rebuild) and self.headers.get("Sec-Fetch-Site") == "cross-site":
+                self._send_json({"error": "Cross-site forced refresh is not allowed."}, status=403)
+                return
+            if force:
+                self._native_quota_force()
+            cursor = quota_generation()  # Before render: a concurrent completion must not be skipped.
             try:
                 data = build_telemetry(range_key=r_key, tool_filter=t_flt, force=force, rebuild=rebuild)
-                self._send_json(data)
+                self._send_json({**data, "quota_version": cursor})
             except Exception as e:
                 self._send_json({"error": str(e)}, status=500)
             return
@@ -365,23 +399,29 @@ class TooTooHandler(BaseHTTPRequestHandler):
             r_key = qs.get("range", ["7d"])[0]
             t_flt = qs.get("tool", ["all"])[0]
             skip_initial = qs.get("skip_initial", ["0"])[0] == "1"
-            generation = agy_quota_generation()
+            cursor = quota_generation()
+            since = qs.get("since_quota_version", [""])[0]
             self.send_response(HTTPStatus.OK)
             self.send_header("Content-Type", "text/event-stream")
             self.send_header("Cache-Control", "no-cache")
             self.send_header("Connection", "keep-alive")
             self.end_headers()
             try:
-                if skip_initial:
-                    generation = wait_for_agy_quota_update(generation)
-                while True:
+                # If a probe completed between GET and subscribe (or the backend
+                # was restarted), the drawn cursor is stale: send immediately.
+                if skip_initial and since == str(cursor):
+                    cursor = wait_for_quota_update(cursor, stopped=self._stream_closed)
+                while not self._stream_closed():
                     data = build_telemetry(range_key=r_key, tool_filter=t_flt)
-                    msg = f"data: {json.dumps(data, ensure_ascii=False)}\n\n".encode("utf-8")
+                    msg = f"data: {json.dumps({**data, 'quota_version': cursor}, ensure_ascii=False)}\n\n".encode("utf-8")
                     self.wfile.write(msg)
                     self.wfile.flush()
-                    generation = wait_for_agy_quota_update(generation)
+                    cursor = wait_for_quota_update(cursor, stopped=self._stream_closed)
             except (BrokenPipeError, ConnectionResetError, OSError):
                 return
+            finally:
+                self.close_connection = True
+            return
 
         self.send_error(HTTPStatus.NOT_FOUND)
 
@@ -426,6 +466,18 @@ class TooTooHandler(BaseHTTPRequestHandler):
 class TooTooServer(ThreadingHTTPServer):
     daemon_threads = True
     allow_reuse_address = True
+
+    def __init__(self, *args, **kwargs):
+        self.stop_streams = threading.Event()
+        super().__init__(*args, **kwargs)
+
+    def shutdown(self) -> None:
+        self.stop_streams.set()
+        super().shutdown()
+
+    def server_close(self) -> None:
+        self.stop_streams.set()
+        super().server_close()
 
     def server_bind(self) -> None:
         # http.server reverse-resolves the bind address before listen(). This
@@ -487,14 +539,30 @@ def main() -> None:
     codex_auto = os.environ.get("TOOTOO_CODEX_QUOTA_AUTO") == "auto"
     codex_closing = threading.Event()
     codex_gate = threading.Lock()
+    codex_force = Queue(maxsize=1)
+
+    def _schedule_codex_force():
+        try:
+            codex_force.put_nowait(True)
+        except Full:
+            pass
 
     def _codex_tick():
+        force = False
         while not codex_closing.is_set():
             try:
-                refresh_native_codex_quota(codex_closing, codex_gate)
+                refresh_native_codex_quota(codex_closing, codex_gate, force=force)
             except (OSError, ValueError, RuntimeError):
                 pass
-            codex_closing.wait(28)
+            try:
+                force = codex_force.get(timeout=28)
+            except Empty:
+                force = False
+
+    if codex_auto:
+        server.schedule_codex_force = _schedule_codex_force
+    elif os.environ.get("TOOTOO_CODEX_QUOTA_AUTO") == "off":
+        invalidate_codex_cli_quota()
 
     try:
         if agy_auto or codex_auto:
@@ -515,6 +583,7 @@ def main() -> None:
     finally:
         if codex_auto:
             codex_closing.set()
+            _schedule_codex_force()
             with codex_gate:
                 stop_codex_cli_quota()
         if agy_auto:

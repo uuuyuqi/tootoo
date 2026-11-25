@@ -19,6 +19,9 @@ class CodexAppQuotaTest(unittest.TestCase):
         fixture = tempfile.TemporaryDirectory()
         self.addCleanup(fixture.cleanup)
         self.dir = Path(fixture.name).resolve()
+        env = patch.dict(os.environ, {"TOOTOO_HOME": str(self.dir / "state"), "CODEX_HOME": str(self.dir)})
+        env.start()
+        self.addCleanup(env.stop)
 
     def fake(self, source):
         path = self.dir / "codex"
@@ -251,6 +254,83 @@ send({"id":2,"result":{"rateLimits":{"limitId":"codex","primary":None,
         self.assertIsNone(quota.parse_rate_limits(data, 301))
         with patch.dict(os.environ, {"CODEX_HOME":"relative"}):
             self.assertIsNone(quota.codex_cli_home())
+
+
+    def test_force_swr_transient_failure_disk_scope_and_explicit_logout(self):
+        import quota_runtime
+        entered, release = threading.Event(), threading.Event()
+        fake = self.fake("raise AssertionError('transport must be mocked')")
+
+        def wire(*args):
+            return quota._status("live", quota=quota.parse_rate_limits({"rateLimits": {
+                "limitId": "codex", "secondary": {"usedPercent": 5, "windowDurationMins": 10080}
+            }}, time.time()))
+
+        with patch.object(quota, "_find_codex", return_value=fake), patch.object(quota, "_probe", side_effect=wire):
+            quota.fetch_codex_cli_quota(True)
+            old = self.wait_for(lambda s: s["quota"] is not None)
+        old_slot = old["quota"]["secondary"]
+        cache = Path(os.environ["TOOTOO_HOME"]) / quota._CACHE_NAME
+        self.assertEqual(cache.stat().st_mode & 0o777, 0o600)
+        self.assertEqual(set(json.loads(cache.read_text())), {"version", "scope", "fetched_at", "primary", "secondary"})
+
+        def fail(*args):
+            entered.set()
+            release.wait(1)
+            return quota._status("unavailable", "cli_timeout")
+
+        with patch.object(quota, "_find_codex", return_value=fake), patch.object(quota, "_probe", side_effect=fail) as probe:
+            generation = quota_runtime.generation()
+            current = quota.fetch_codex_cli_quota(True, force=True)
+            self.assertEqual(current["quota"]["secondary"], old_slot)
+            self.assertTrue(current["status"]["refreshing"])
+            self.assertTrue(entered.wait(.8))
+            quota.fetch_codex_cli_quota(True, force=True)
+            release.set()
+            self.assertNotEqual(quota_runtime.wait(generation, timeout=1), generation)
+            self.assertEqual(quota.peek_codex_app_quota()["quota"]["secondary"], old_slot)
+            self.assertEqual(quota.peek_codex_app_quota()["status"]["reason"], "cli_timeout")
+            quota.fetch_codex_cli_quota(True, force=True)  # No immediate extra subprocess after fast completion.
+            self.assertEqual(probe.call_count, 1)
+
+        def logged_out(*args):
+            entered.set()
+            release.wait(1)
+            return quota._status("unavailable", "cli_auth")
+
+        quota.stop_codex_cli_quota()
+        entered.clear()
+        release.clear()
+        with patch.object(quota, "_find_codex", return_value=fake), patch.object(quota, "_probe", side_effect=logged_out):
+            generation = quota_runtime.generation()
+            restored = quota.fetch_codex_cli_quota(True)
+            self.assertEqual(restored["quota"]["secondary"], old_slot)
+            self.assertTrue(restored["status"]["refreshing"])
+            self.assertTrue(entered.wait(.8))
+            release.set()
+            quota_runtime.wait(generation, timeout=1)
+            self.assertIsNone(quota.peek_codex_app_quota()["quota"])
+            self.assertEqual(quota.peek_codex_app_quota()["status"]["reason"], "cli_auth")
+            self.assertFalse(cache.exists())
+
+    def test_profile_change_hides_current_disk_values_and_data_dir_alias(self):
+        import quota_runtime
+        fake = self.fake("raise AssertionError()")
+        state = Path(os.environ["TOOTOO_HOME"])
+        with patch.dict(os.environ, {"TOOTOO_HOME": "", "TOOTOO_DATA_DIR": str(state)}):
+            self.assertEqual(quota_runtime.data_root(), str(state))
+            key = quota._key_for(fake, quota._context())
+        value = quota.parse_rate_limits({"rateLimits": {"primary": {"usedPercent": 5, "windowDurationMins": 10080}}},
+                                        time.time())
+        quota._save_snapshot(key, value)
+        self.assertIsNotNone(quota._load_snapshot(key))
+        # Only metadata of the fixed config path binds scope.
+        (self.dir / "config.toml").touch()
+        next_key = quota._key_for(fake, quota._context())
+        self.assertNotEqual(next_key, key)
+        self.assertIsNone(quota._load_snapshot(next_key))
+        with patch.dict(os.environ, {"TOOTOO_DATA_DIR": str(self.dir / "ignored")}):
+            self.assertEqual(quota_runtime.data_root(), str(state))
 
 
 if __name__ == "__main__":

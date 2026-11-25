@@ -1,7 +1,7 @@
 """Read the local Codex CLI quota over documented App Server JSONL, without turns."""
 from __future__ import annotations
 
-import copy
+import hashlib
 from contextlib import suppress
 import json
 import os
@@ -17,7 +17,12 @@ import threading
 import time
 from pathlib import Path
 
-TTL = 60
+from quota_runtime import data_root, publish
+
+TTL = 180
+MAX_AGE = 24 * 60 * 60
+FORCE_DEBOUNCE = 2.0
+_CACHE_NAME = 'codex_app_quota_cache.json'
 BACKOFF = 120
 TIMEOUT = 20.0
 MAX_BYTES = 256 * 1024
@@ -32,6 +37,9 @@ _pending = None
 _key = None
 _last = None
 _until = 0.0
+_failure = None
+_last_force = -float('inf')
+_binary = None
 
 
 def _status(state, reason=None, quota=None):
@@ -280,7 +288,20 @@ def codex_cli_home():
 
 def _key_for(binary, context):
     meta = binary.stat()
-    return binary, context, meta.st_dev, meta.st_ino, meta.st_mtime_ns, meta.st_size
+    root = Path(data_root()).resolve()
+    home, profile, _ = context
+    # Metadata only: do not open a credential file or query a keychain.
+    marks = []
+    for path in (home, profile, profile / "config.toml", profile / "auth.json"):
+        try:
+            record = path.lstat()
+            marks.append((record.st_dev, record.st_ino,
+                          record.st_mtime_ns if path not in (home, profile) else None))
+        except FileNotFoundError:
+            marks.append(None)
+    mark = (str(root), context, str(binary), meta.st_dev, meta.st_ino,
+            meta.st_mtime_ns, meta.st_size, os.getuid(), marks)
+    return root, hashlib.sha256(repr(mark).encode()).hexdigest()
 
 
 def _probe(binary, cwd, env, cancelled, timeout=TIMEOUT):
@@ -344,7 +365,11 @@ def _probe(binary, cwd, env, cancelled, timeout=TIMEOUT):
                     if not isinstance(msg, dict) or "method" in msg or type(msg.get("id")) is not int or msg["id"] != expected:
                         continue
                     if "error" in msg or not isinstance(msg.get("result"), dict):
-                        return _status("unavailable", "cli_rpc_error")
+                        error = msg.get("error")
+                        detail = error.get("message", "") if isinstance(error, dict) else ""
+                        explicit_logout = isinstance(detail, str) and re.search(
+                            r"\b(?:not logged in|not signed in|authentication required|not authenticated)\b", detail, re.I)
+                        return _status("unavailable", "cli_auth" if explicit_logout else "cli_rpc_error")
                     if expected == 1:
                         expected = 2
                         phase = "cli_write"
@@ -379,9 +404,71 @@ def _probe(binary, cwd, env, cancelled, timeout=TIMEOUT):
 
 
 
+def _cache_file(key):
+    return key[0] / _CACHE_NAME
+
+
+def _stored(quota):
+    return {"fetched_at": quota["ts"], "primary": quota["primary"], "secondary": quota["secondary"]}
+
+
+def _normalized_snapshot(record, now):
+    if not isinstance(record, dict):
+        return None
+    ts = record.get("fetched_at")
+    if type(ts) not in (int, float) or not 0 <= now - ts < MAX_AGE:
+        return None
+    slots = {}
+    for slot in ("primary", "secondary"):
+        bucket = record.get(slot)
+        slots[slot] = (_bucket({"usedPercent": bucket.get("used_percent"),
+                                "windowDurationMins": bucket.get("window_minutes"),
+                                "resetsAt": bucket.get("resets_at")}, now)
+                       if isinstance(bucket, dict) else None)
+    if not any(slots.values()):
+        return None
+    return {"source": "app_server", "account_scope": "current_cli", "limit_id": "codex", "ts": ts, **slots}
+
+
+def _load_snapshot(key):
+    try:
+        fd = os.open(_cache_file(key), os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+        with os.fdopen(fd, "rb") as file:
+            info = os.fstat(file.fileno())
+            if (not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid() or
+                    stat.S_IMODE(info.st_mode) != 0o600 or info.st_size > 16384):
+                return None
+            record = json.loads(file.read(16385))
+        if isinstance(record, dict) and record.get("scope") == key[1] and record.get("version") == 1:
+            return _normalized_snapshot(record, time.time())
+    except (OSError, ValueError, RecursionError):
+        pass
+    return None
+
+
+def _save_snapshot(key, quota):
+    target = _cache_file(key)
+    temp = None
+    try:
+        target.parent.mkdir(mode=0o700, exist_ok=True, parents=True)
+        fd, temp = tempfile.mkstemp(prefix=".codex-quota-", dir=target.parent)
+        with os.fdopen(fd, "w", encoding="utf-8") as stream:
+            json.dump({"version": 1, "scope": key[1], **_stored(quota)}, stream, allow_nan=False)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temp, target)
+    except (OSError, ValueError):
+        pass
+    finally:
+        if temp is not None:
+            with suppress(OSError):
+                os.unlink(temp)
+
+
 def _clear():
-    global _key, _last, _until
-    _key, _last, _until = None, None, 0.0
+    global _key, _last, _until, _failure, _last_force, _binary
+    _key, _last, _until, _failure, _binary = None, None, 0.0, None, None
+    _last_force = -float("inf")
     if _pending is not None:
         _pending[0].set()
     return _pending
@@ -394,8 +481,21 @@ def stop_codex_cli_quota():
         work[1].join(timeout=.8)
 
 
+def invalidate_codex_cli_quota():
+    stop_codex_cli_quota()
+    with suppress(OSError):
+        (Path(data_root()) / _CACHE_NAME).unlink(missing_ok=True)
+
+
+def _matches_context(binary, key):
+    try:
+        return _key_for(binary, _context()) == key
+    except (OSError, ValueError, RuntimeError):
+        return False
+
+
 def _collect(binary, key, context, cancelled):
-    global _pending, _last, _until
+    global _pending, _last, _until, _failure
     result = _status("unavailable", "cli_execution")
     try:
         home, codex_home, override = context
@@ -404,47 +504,63 @@ def _collect(binary, key, context, cancelled):
         if override:
             env["CODEX_HOME"] = str(codex_home)
         with tempfile.TemporaryDirectory(prefix="tootoo-codex-quota-") as cwd:
-            if _find_codex() == binary and _key_for(binary, _context()) == key:
+            if _find_codex() == binary and _matches_context(binary, key):
                 result = _probe(binary, cwd, env, cancelled)
     except (OSError, ValueError, RuntimeError):
         pass
     finally:
         with _LOCK:
             _pending = None
-            if cancelled.is_set() or key != _key:
-                return
-            _last = result
-            quota = result["quota"]
-            duration = TTL if quota else BACKOFF
-            if quota:
-                resets = [b["resets_at"] for b in (quota["primary"], quota["secondary"])
-                          if b is not None and b["resets_at"] is not None]
-                if resets:
-                    duration = min(duration, max(0, min(resets) - time.time()))
-            _until = time.monotonic() + duration
+            if not cancelled.is_set() and key == _key:
+                quota = result["quota"]
+                _failure = (result["status"]["state"], result["status"]["reason"]) if quota is None else None
+                duration = TTL if quota else BACKOFF
+                if not _matches_context(binary, key):
+                    _last, _failure, duration = None, ("unavailable", "cli_context"), 0
+                elif quota:
+                    _last = quota
+                    _save_snapshot(key, quota)
+                    resets = [b["resets_at"] for b in (quota["primary"], quota["secondary"])
+                              if b is not None and b["resets_at"] is not None]
+                    if resets:
+                        duration = min(duration, max(0, min(resets) - time.time()))
+                elif _failure[1] == "cli_auth":
+                    _last = None
+                    with suppress(OSError):
+                        _cache_file(key).unlink(missing_ok=True)
+                _until = time.monotonic() + duration
+                publish()
 
 
 def _view():
-    if _pending is not None and not _pending[0].is_set():
+    refreshing = _pending is not None and not _pending[0].is_set()
+    now = time.time()
+    quota = _normalized_snapshot(_stored(_last), now) if _last is not None else None
+    if quota is not None:
+        stale = (refreshing or _failure is not None or now - quota["ts"] >= TTL or
+                 any(quota[slot] != _last[slot] for slot in ("primary", "secondary")))
+        quota["freshness"] = "stale" if stale else "recent"
+        result = _status("cached", _failure[1] if _failure else None, quota)
+        result["status"].update(refreshing=refreshing, fetched_at=quota["ts"], cache_state="stale" if stale else "fresh")
+        return result
+    if refreshing:
         return _status("loading")
-    if _last is None or _until <= time.monotonic():
-        return _status("disabled" if _key is None else "unavailable")
-    result = copy.deepcopy(_last)
-    if result["quota"] is not None:
-        result["status"]["state"] = "cached"
-        result["quota"]["freshness"] = "recent"
-    return result
+    if _failure is not None:
+        return _status(*_failure)
+    return _status("disabled" if _key is None else "unavailable")
 
 
 def peek_codex_app_quota():
-    """Side-effect-free snapshot suitable for HTTP rendering; never starts processes."""
+    """Read the already available sample; HTTP must not launch a process."""
     with _LOCK:
+        if _key is not None and not _matches_context(_binary, _key):
+            return _status("unavailable", "cli_context")
         return _view()
 
 
-def fetch_codex_cli_quota(enabled: bool):
+def fetch_codex_cli_quota(enabled: bool, *, force=False):
     """Native-owned scheduler only. Returns immediately; at most one child."""
-    global _key, _last, _until, _pending
+    global _key, _last, _until, _pending, _failure, _last_force, _binary
     with _LOCK:
         if enabled is not True:
             _clear()
@@ -458,14 +574,18 @@ def fetch_codex_cli_quota(enabled: bool):
             key = _key_for(binary, context)
         except (OSError, ValueError, RuntimeError) as err:
             _clear()
-            _last = _status("unavailable", "cli_missing" if isinstance(err, FileNotFoundError) and binary is None
-                            else "cli_context")
+            _failure = ("unavailable", "cli_missing" if isinstance(err, FileNotFoundError) and binary is None
+                        else "cli_context")
             _until = time.monotonic() + BACKOFF
             return _view()
         if key != _key:
             _clear()
-            _key = key
-        if _pending is None and (_last is None or _until <= time.monotonic()):
+            _key, _binary = key, binary
+            _last = _load_snapshot(key)
+        now = time.monotonic()
+        if _pending is None and (now >= _until or (force and now - _last_force >= FORCE_DEBOUNCE)):
+            if force:
+                _last_force = now
             cancelled = threading.Event()
             thread = threading.Thread(target=_collect, args=(binary, key, context, cancelled), daemon=True)
             _pending = cancelled, thread

@@ -71,23 +71,26 @@ test('full no-reset Claude/GPT 5h and weekly are individually selectable with no
   }
 });
 
-function coldQuotaHarness(mode = 'gem7d') {
+function coldQuotaHarness(mode = 'gem7d', isPopover = false) {
   const code = html.slice(html.indexOf('function pickCodexQuotaBucket('), html.indexOf('const numAnimState ='));
   const fetchCode = html.slice(html.indexOf('let activeFetchCtrl = null;'), html.indexOf('let shouldAnimateCharts = true;'));
-  const clock = new Map(), requests = [];
+  const clock = new Map(), requests = [], streams = [];
   let timerId = 0, activeStream;
   const divs = Object.fromEntries(['topQuota','quotaSourceAgy','tqName','tqPct','tqFill','tqRst'].map(key => [key, {
     style: {}, classList: { add(){}, remove(){} }, removeAttribute(){}, replaceChildren(){},
   }]));
+  const shown = new Set();
+  divs.topQuota.classList = { add: cls => shown.add(cls), remove: cls => shown.delete(cls) };
   const ctx = vm.createContext({
-    menuBarQuotaBar: mode, fetchSeq: 0, lastFetchTs: 0, isPopover: false,
+    menuBarQuotaBar: mode, fetchSeq: 0, lastFetchTs: 0, isPopover, bootRetryTimer: null,
+    requestAnimationFrame(){}, resumePopoverArcade(){},
     state: { range: 'today', tool: 'all', data: {} },
     document: { hidden: false, body: { classList: { add(){}, remove(){} } }, getElementById: id => divs[id], addEventListener(){} },
-    window: {}, console, AbortController, finishBoot(){},
+    window: {}, console, AbortController, finishBoot(){}, postNative(){},
     setTimeout(fn, ms) { const id = ++timerId; clock.set(id, {fn, ms}); return id; },
     clearTimeout(id) { clock.delete(id); },
     fetch(url) { return new Promise(resolve => requests.push({url, respond: d => resolve({ok:true, json: async () => d})})); },
-    EventSource: class { constructor() { activeStream = this; } close(){} },
+    EventSource: class { constructor(url) { activeStream = this; streams.push(this); this.url = url; } close(){ this.closed = true; } },
   });
   vm.runInContext(code + '\n' + fetchCode + '\nfunction renderAll(d) { renderTopQuota(d); }', ctx);
   const emit = d => activeStream.onmessage({data: JSON.stringify(d)});
@@ -107,7 +110,7 @@ function coldQuotaHarness(mode = 'gem7d') {
     clock.delete(id);
     tick.fn();
   }
-  return { ctx, divs, requests, emit, loading, cached, tickRetry, scheduled: () => [...clock.values()].filter(t => t.ms === 2000).length };
+  return { ctx, divs, requests, streams, shown, clock, emit, loading, cached, tickRetry, scheduled: () => [...clock.values()].filter(t => t.ms === 2000).length };
 }
 
 test('cold eligible pin is reading; last successful value survives refresh and a late fallback GET', async () => {
@@ -154,4 +157,93 @@ test('cold retry capped at three and never borrowed for Codex or another AGY gro
     assert.equal(h.scheduled(), 0);
     assert.equal(h.divs.tqPct.textContent, '暂无数据');
   }
+});
+
+test('explicit Codex loading is visible in Codex and auto mode, but never displaces a valid official quota', () => {
+  const h = coldQuotaHarness('codex');
+  const codexLoading = { quota_status: { codex: { state: 'loading' } } };
+  h.emit(codexLoading);
+  assert.equal(h.divs.tqName.textContent, 'Codex 周');
+  assert.equal(h.divs.tqPct.textContent, '读取中…');
+  assert.equal(h.shown.has('show'), true);
+  assert.equal(h.scheduled(), 0, 'Codex uses SSE rather than a new polling loop');
+  h.ctx.menuBarQuotaBar = 'auto';
+  h.emit(codexLoading);
+  assert.equal(h.divs.tqName.textContent, '官方额度');
+  assert.equal(h.divs.tqPct.textContent, '读取中…');
+  h.emit({ ...h.cached(), ...codexLoading });
+  assert.equal(h.divs.tqPct.textContent, '剩 84%');
+  h.ctx.menuBarQuotaBar = 'codex';
+  h.emit({ ...codexLoading, quotas: { codex: { secondary: { used_percent: 0, window_minutes: 10080 } } } });
+  assert.equal(h.divs.tqPct.textContent, '剩 100%');
+  h.emit({ quota_status: { codex: { state: 'unavailable' } } });
+  assert.equal(h.divs.tqPct.textContent, '暂无数据');
+  h.ctx.menuBarQuotaBar = 'auto';
+  h.emit({ quota_status: { codex: { state: 'no_data' } } });
+  assert.equal(h.shown.has('show'), false);
+  h.emit(h.loading);
+  assert.equal(h.divs.tqPct.textContent, '读取中…');
+});
+
+test('both tool cards show only explicit cold loading and retain valid buckets', () => {
+  const renderer = html.slice(html.indexOf('function renderAgents('), html.indexOf('let qcfgState = '));
+  for (const tool of ['codex','antigravity']) {
+    const node = {querySelectorAll: () => []};
+    const fixture = {tool, label:tool, tokens:1};
+    const status = {state:'loading'};
+    const data = {kpi:{tokens:1}, tools:[fixture], quota_status:{[tool]:status}};
+    const ctx = vm.createContext({
+      data, document:{getElementById:()=>node}, localStorage:{getItem:()=>null},
+      esc:String, fmtCostRich:String, fmtNum:String, splitNumUnit:String,
+    });
+    vm.runInContext(renderer, ctx);
+    ctx.renderAgents(data);
+    assert.match(node.innerHTML,/额度<\/span><span[^>]+>读取中…/);
+    fixture.quota = { buckets:[{used_percent:null}, {used_percent:100}] };
+    ctx.renderAgents(data);
+    assert.match(node.innerHTML,/剩 0%/);
+    assert.doesNotMatch(node.innerHTML,/读取中…|剩 100%/);
+    fixture.quota = { buckets:[{used_percent:null}] };
+    status.state = 'unavailable';
+    ctx.renderAgents(data);
+    assert.doesNotMatch(node.innerHTML,/读取中…|剩 100%/);
+  }
+});
+
+test('reconnect uses displayed quota cursor, old streams are ignored, and native manual refresh is forced', async () => {
+  const h = coldQuotaHarness();
+  assert.doesNotMatch(h.streams[0].url, /since_quota_version/);
+  h.emit({ ...h.loading, quota_version: 120 });
+  h.ctx.connectStream(true);
+  assert.match(h.streams[1].url, /skip_initial=1&since_quota_version=120/);
+  assert.equal(h.streams[0].closed, true);
+  const pending = h.ctx.window.__refreshTelemetry();
+  assert.match(h.requests[0].url,/force=1/);
+  h.emit({ ...h.cached(), quota_version: 121 });
+  h.streams[0].onmessage({ data: JSON.stringify(h.loading) });
+  assert.equal(h.divs.tqPct.textContent, '剩 84%');
+  h.requests[0].respond({ ...h.loading, quota_version: 120 });
+  await pending;
+  assert.equal(h.divs.tqPct.textContent, '剩 84%');
+  h.ctx.document.hidden = true;
+  h.ctx.connectStream(true);
+  assert.equal(h.streams[1].closed, true);
+  assert.equal(h.streams.length, 2, 'hidden page must not start another stream');
+});
+
+test('native hidden prewarm does not poll after failure and opening retries unfinished boot', async () => {
+  const h = coldQuotaHarness('codex', true);
+  h.ctx.state.data = null;
+  const boot = h.ctx.fetchTelemetry(false);
+  h.requests[0].respond(null);
+  await boot;
+  assert.equal(h.streams.length, 0);
+  assert.equal(h.clock.size, 0);
+  h.ctx.window.__onPopoverVisibility({ generation: 1, visible: true });
+  assert.equal(h.requests.length, 2);
+  const fresh = { quota_version: 320, kpi: { requests: 1 }, quota_status: { codex: { state: 'loading' } } };
+  h.requests[1].respond(fresh);
+  await new Promise(setImmediate);
+  assert.equal(h.divs.tqPct.textContent, '读取中…');
+  assert.match(h.streams[0].url, /since_quota_version=320/);
 });

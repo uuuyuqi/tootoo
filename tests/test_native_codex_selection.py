@@ -52,4 +52,22 @@ class NativeCodexQuotaSelectionTests(unittest.TestCase):
                 if expected is None:
                     fetch.assert_not_called()
                 else:
-                    fetch.assert_called_once_with(enabled=expected)
+                    fetch.assert_called_once_with(enabled=expected, force=False)
+
+
+    def test_expired_log_is_not_reused_when_no_native_result_exists(self):
+        old = {**self.current_log, "primary": {**self.current_log["primary"], "resets_at": self.now-1}}
+        with patch.object(self, "recent", {"quota": None, "status": {"state": "disabled"}}):
+            q, status, count = self.select(old)
+            self.assertEqual((q, status, count), (None, {"state": "loading"}, 1))
+        q, status, count = self.select(old, mode="off")
+        self.assertEqual((q, status, count), (None, {"state": "disabled"}, 0))
+
+    def test_force_remains_native_owned_and_does_not_bypass_recent_or_log_guard(self):
+        closing, gate = threading.Event(), threading.Lock()
+        with patch.object(scanner, "scan_all_events", return_value=([], {}, 0)), \
+             patch.object(scanner, "_MEM_CODEX_ACTIVITY", self.now - 100), \
+             patch.object(scanner.time, "time", return_value=self.now), \
+             patch.object(scanner, "fetch_codex_cli_quota") as fetch:
+            scanner.refresh_native_codex_quota(closing, gate, force=True)
+            fetch.assert_called_once_with(enabled=True, force=True)

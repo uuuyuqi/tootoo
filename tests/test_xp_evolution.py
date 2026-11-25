@@ -93,6 +93,7 @@ class EvolutionBoostTests(unittest.TestCase):
                 patch.object(scanner, "select_antigravity_quota", return_value=({"quota": None, "status": {}}, False)):
             result = scanner.build_telemetry(range_key="yesterday")
         self.assertEqual(result["today_tokens"], 0)
+        self.assertEqual(result["effective_today_tokens"], 3_000_000)
         self.assertEqual(result["kpi"]["tokens"], 0)
         self.assertEqual(result["evo_peak_tokens"], 3_000_000)
         self.assertEqual(self.peak()["peak_day"], actual)

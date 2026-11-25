@@ -35,9 +35,10 @@ from typing import Any
 from agy_cli_quota import fetch_agy_cli_quota
 from codex_app_quota import codex_cli_home, fetch_codex_cli_quota, peek_codex_app_quota
 from pricing import PricingEngine, calibrate_observed_rates, trigger_background_sync_if_stale
+from quota_runtime import data_root
 
 HOME = os.path.expanduser("~")
-CACHE_DIR = os.path.expanduser(os.environ.get("TOOTOO_HOME") or "~/.tootoo")
+CACHE_DIR = data_root()
 CACHE_FILE = os.path.join(CACHE_DIR, "scan_cache_v5.json")
 CONFIG_FILE = os.path.join(CACHE_DIR, "config.json")
 EVO_STATE_FILE = os.path.join(CACHE_DIR, "evo_state.json")
@@ -126,18 +127,24 @@ def _update_evo_peak_locked(today_iso: str, effective_today: int) -> int:
 
 
 def _record_evo_telemetry(today_iso: str, today_tokens: int, observed: float) -> int:
+    return _observe_evo_telemetry(today_iso, today_tokens, observed)[0]
+
+
+def _observe_evo_telemetry(today_iso: str, today_tokens: int, observed: float) -> tuple[int, int]:
     global _REAL_DAY_TOTAL
+    effective = today_tokens
     try:
         with _game_state_lock():
-            if _local_day() != today_iso:
-                return _update_evo_peak_locked(_local_day(), 0)
+            local_day = _local_day()
+            if local_day != today_iso:
+                return _update_evo_peak_locked(local_day, 0), effective
             if _REAL_DAY_TOTAL is None or observed >= _REAL_DAY_TOTAL[2]:
                 _REAL_DAY_TOTAL = (today_iso, today_tokens, observed)
-            boost = _validated_xp_boost(load_carrot_state()["home"].get("xp_boost"), today_iso)
-            return _update_evo_peak_locked(today_iso, today_tokens + boost)
+            effective += _validated_xp_boost(load_carrot_state()["home"].get("xp_boost"), today_iso)
+            return _update_evo_peak_locked(today_iso, effective), effective
     except OSError:
         # A read-only/missing data directory should not break raw telemetry.
-        return max(today_tokens, int((_MEM_EVO_STATE or {}).get("peak_daily_tokens", 0)))
+        return max(today_tokens, int((_MEM_EVO_STATE or {}).get("peak_daily_tokens", 0))), effective
 
 
 def _real_tokens_for_xp_post(today_iso: str) -> int:
@@ -2769,48 +2776,52 @@ def _compute_local_rolling_quotas(
     return out
 
 
-def _codex_working_log(quota, now):
+def _usable_codex_log(quota, now):
     if not isinstance(quota, dict):
-        return False
+        return None
+    slots = {}
     for slot in ("primary", "secondary"):
         bucket = quota.get(slot)
-        if not isinstance(bucket, dict):
-            continue
-        used, reset = bucket.get("used_percent"), bucket.get("resets_at")
-        if type(used) not in (int, float) or not 0 <= used <= 100:
-            continue
-        if reset is None or (type(reset) in (int, float) and reset > now):
-            return True
-    return False
+        used = bucket.get("used_percent") if isinstance(bucket, dict) else None
+        reset = bucket.get("resets_at") if isinstance(bucket, dict) else None
+        if (type(used) in (int, float) and 0 <= used <= 100
+                and (reset is None or (type(reset) in (int, float) and now < reset < math.inf))):
+            slots[slot] = bucket
+        else:
+            slots[slot] = None
+    return {**quota, **slots, "source": "session_log", "account_scope": "unknown"} if any(slots.values()) else None
 
 
 def _codex_recent_activity(now):
     return now - 7 * 86400 <= _MEM_CODEX_ACTIVITY <= now + 300 and _MEM_CODEX_ACTIVITY > 0
 
 
-def refresh_native_codex_quota(closing, gate):
+def refresh_native_codex_quota(closing, gate, *, force=False):
     """Only the owned native backend scheduler can call this launch function."""
     _events, quotas, _elapsed = scan_all_events()
     now = time.time()
-    enabled = _codex_recent_activity(now) and not _codex_working_log(quotas.get("codex"), now)
+    enabled = _codex_recent_activity(now) and _usable_codex_log(quotas.get("codex"), now) is None
     with gate:
         if not closing.is_set():
-            fetch_codex_cli_quota(enabled=enabled)
+            fetch_codex_cli_quota(enabled=enabled, force=force)
 
 
 def select_codex_quota(log):
     """Telemetry/SSE only view an already available sample; never launch Codex."""
     now = time.time()
-    log = {**log, "source": "session_log", "account_scope": "unknown"} if _has_valid_quota(log) else None
-    mode = os.environ.get("TOOTOO_CODEX_QUOTA_AUTO")
-    if _codex_working_log(log, now):
+    log = _usable_codex_log(log, now)
+    if log is not None:
         return log, {"state": "log"}
-    if mode != "auto":
-        return log, {"state": "disabled"}
+    if os.environ.get("TOOTOO_CODEX_QUOTA_AUTO") != "auto":
+        return None, {"state": "disabled"}
     if not _codex_recent_activity(now):
-        return log, {"state": "inactive"}
+        return None, {"state": "inactive"}
     result = peek_codex_app_quota()
-    return (result["quota"] or log), result["status"]
+    status = result["status"]
+    # The startup scheduler has not opened a scope yet; this isn't operator Off.
+    if status.get("state") == "disabled":
+        status = {**status, "state": "loading"}
+    return result["quota"], status
 
 
 def select_antigravity_quota(events: list[dict[str, Any]], *, force: bool = False):
@@ -2827,7 +2838,7 @@ def select_antigravity_quota(events: list[dict[str, Any]], *, force: bool = Fals
                         for ev in events)
     if mode != "auto" or not recently_used:
         return legacy(), False
-    result = fetch_agy_cli_quota(enabled=True)
+    result = fetch_agy_cli_quota(enabled=True, force=force)
     status = result["status"]
     if result.get("quota") is None and status.get("reason") in {"cli_missing", "cli_version"}:
         old = legacy()
@@ -2860,6 +2871,8 @@ def build_telemetry(
     codex_quota, codex_status = select_codex_quota(quotas.get("codex"))
     if codex_quota:
         quotas = {**quotas, "codex": codex_quota}
+    elif "codex" in quotas:
+        quotas = {key: value for key, value in quotas.items() if key != "codex"}
 
     # Dynamic 4-layer pricing (overrides -> locally calibrated native logs -> remote OpenRouter/LiteLLM -> fallback)
     if _MEM_OBSERVED_TS != _MEM_SCAN_TS or force:
@@ -2915,7 +2928,7 @@ def build_telemetry(
             continue
         filtered.append(ev)
 
-    evo_peak_tokens = _record_evo_telemetry(today_iso, today_tokens, real_observed)
+    evo_peak_tokens, effective_today_tokens = _observe_evo_telemetry(today_iso, today_tokens, real_observed)
 
     # Aggregations
     totals = {"in": 0, "out": 0, "cr": 0, "cw": 0, "reason": 0, "cost": 0.0, "requests": 0}
@@ -3249,6 +3262,7 @@ def build_telemetry(
         "range": range_key,
         "tool_filter": tool_filter,
         "today_tokens": today_tokens,
+        "effective_today_tokens": effective_today_tokens,
         "evo_peak_tokens": evo_peak_tokens,
         "pricing_status": pricing.status(),
         "available_tools": available_tools,
