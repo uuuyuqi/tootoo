@@ -30,6 +30,9 @@ class AgyCliQuotaTest(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         self.home = Path(self.tmp.name)
+        env = patch.dict(os.environ, {"TOOTOO_HOME": str(self.home / ".tootoo")})
+        env.start()
+        self.addCleanup(env.stop)
         self.settings = self.home / ".gemini/antigravity-cli/settings.json"
         self.settings.parent.mkdir(parents=True)
         self.mock_home = patch.object(cli.Path, "home", return_value=self.home)
@@ -203,3 +206,134 @@ class AgyCliQuotaTest(unittest.TestCase):
             self.assertLess(time.monotonic() - start, 1)
             self.assertIsNone(cli._pending)
             self.assertIsNone(cli._cache_result)
+
+    def test_swr_keeps_real_percent_during_timeout_and_exit_backoff(self):
+        entered, release = threading.Event(), threading.Event()
+        encoded = json.dumps(report()).encode()
+
+        def execute(_exe, args, *_):
+            if args == ["--version"]:
+                return b"1.5.15\n", None
+            if not entered.is_set() and cli._cache_result is None:
+                return encoded, None
+            entered.set()
+            self.assertTrue(release.wait(.8))
+            return None, failure
+
+        with patch.object(cli, "_find_agy", return_value=Path(sys.executable)), patch.object(cli, "_exec", side_effect=execute):
+            previous = self.read_until_settled()["quota"]
+            for failure in ("cli_timeout", "cli_exit", "cli_execution"):
+                entered.clear()
+                release.clear()
+                cli._cache_until = 0.0
+                pending = cli.fetch_agy_cli_quota(True)
+                self.assertEqual(pending["quota"], previous)
+                self.assertEqual(pending["status"]["state"], "cached")
+                self.assertTrue(pending["status"]["refreshing"])
+                self.assertTrue(entered.wait(1))
+                generation = cli.agy_quota_generation()
+                release.set()
+                self.assertNotEqual(cli.wait_for_agy_quota_update(generation, timeout=1), generation)
+                failed = cli.fetch_agy_cli_quota(True)
+                self.assertEqual(failed["quota"], previous)
+                self.assertEqual(failed["status"]["reason"], failure)
+                self.assertFalse(failed["status"]["refreshing"])
+                self.assertLessEqual(cli._cache_until - time.monotonic(), 30)
+
+    def test_disk_restart_scope_off_and_expired_reset(self):
+        current = report()
+        weekly = current["command"]["data"]["groups"][0]["buckets"][1]
+        weekly["reset_time"] = cli.datetime.fromtimestamp(time.time() + 30).astimezone().isoformat()
+        encoded = json.dumps(current).encode()
+        with patch.object(cli, "_find_agy", return_value=Path(sys.executable)), patch.object(
+                cli, "_exec", side_effect=[(b"1.5.15\n", None), (encoded, None)]):
+            first = self.read_until_settled()
+            path = cli._cache_path()
+            self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+            disk = json.loads(path.read_text())
+            self.assertEqual(set(disk), {"scope", "version", "fetched_at", "buckets"})
+            self.assertEqual(set(disk["buckets"][0]), {"provider_bucket_id", "remaining_fraction", "resets_at"})
+            self.assertTrue(all(str(self.home) not in str(x) for x in disk.values()))
+            cli.stop_agy_cli_quota()
+            cli.prime_agy_cli_quota()
+            self.assertEqual(cli._cache_result, first["quota"])
+            filtered = cli._validated_snapshot(disk, time.time() + 60)
+            self.assertNotIn("cg_7d", [b["id"] for b in filtered["buckets"]])
+            self.assertIsNone(cli._validated_snapshot(disk, time.time() + 86401))
+            with patch.dict(os.environ, {"TOOTOO_HOME": str(self.home / "other") }):
+                cli.stop_agy_cli_quota()
+                cli.prime_agy_cli_quota()
+                self.assertIsNone(cli._cache_result)
+            replacement = self.home / "replacement-agy"
+            replacement.write_bytes(b"different inode")
+            with patch.object(cli, "_find_agy", return_value=replacement):
+                cli.stop_agy_cli_quota()
+                cli.prime_agy_cli_quota()
+                self.assertIsNone(cli._cache_result)
+            cli.stop_agy_cli_quota()
+            cli.prime_agy_cli_quota()
+            self.assertEqual(cli._cache_result, first["quota"])
+            self.assertEqual(cli.fetch_agy_cli_quota(False)["status"]["state"], "disabled")
+            self.assertFalse(path.exists())
+
+    def test_explicit_auth_failure_invalidates_previous_sample(self):
+        encoded = json.dumps(report()).encode()
+        with patch.object(cli, "_find_agy", return_value=Path(sys.executable)), patch.object(
+                cli, "_exec", side_effect=[(b"1.5.15\n", None), (encoded, None), (b"1.5.15\n", None), (None, "cli_auth")]):
+            self.assertIsNotNone(self.read_until_settled()["quota"])
+            cli._cache_until = 0.0
+            generation = cli.agy_quota_generation()
+            self.assertIsNotNone(cli.fetch_agy_cli_quota(True)["quota"])
+            cli.wait_for_agy_quota_update(generation, timeout=1)
+            result = cli.fetch_agy_cli_quota(True)
+            self.assertIsNone(result["quota"])
+            self.assertEqual(result["status"]["reason"], "cli_auth")
+            self.assertFalse(cli._cache_path().exists())
+
+    def test_real_sse_handler_wakes_all_subscribers_on_collector_completion(self):
+        import http.client
+        import server
+
+        ready, release = threading.Event(), threading.Event()
+        encoded = json.dumps(report()).encode()
+
+        def execute(_exe, args, *_):
+            if args == ["--version"]:
+                return b"1.5.15\n", None
+            ready.set()
+            if not release.wait(2):
+                return None, "cli_timeout"
+            return encoded, None
+
+        def telemetry(**_):
+            sample = cli.fetch_agy_cli_quota(True)
+            return {"quotas": {"antigravity": sample["quota"]}, "quota_status": {"antigravity": sample["status"]}}
+
+        with patch.object(cli, "_find_agy", return_value=Path(sys.executable)), \
+                patch.object(cli, "_exec", side_effect=execute), patch.object(server, "build_telemetry", side_effect=telemetry):
+            with server.TooTooServer(("127.0.0.1", 0), server.TooTooHandler) as httpd:
+                thread = threading.Thread(target=httpd.serve_forever, kwargs={"poll_interval": .05}, daemon=True)
+                thread.start()
+                clients = [http.client.HTTPConnection("127.0.0.1", httpd.server_port, timeout=1.5) for _ in range(2)]
+                try:
+                    self.assertEqual(cli.fetch_agy_cli_quota(True)["status"]["state"], "loading")
+                    self.assertTrue(ready.wait(.8))
+                    for client in clients:
+                        client.request("GET", "/api/stream?skip_initial=1")
+                    # HTTPResponse cannot conveniently distinguish blocked headers
+                    # from a blocked frame with the production keep-alive handler.
+                    # Release only once both server threads have sent headers.
+                    responses = [client.getresponse() for client in clients]
+                    start = time.monotonic()
+                    release.set()
+                    for response in responses:
+                        frame = response.fp.readline()
+                        self.assertTrue(frame.startswith(b"data: "), frame)
+                        self.assertIsNotNone(json.loads(frame[6:])["quotas"]["antigravity"])
+                    self.assertLess(time.monotonic() - start, 1.5)
+                finally:
+                    release.set()
+                    for client in clients:
+                        client.close()
+                    httpd.shutdown()
+                    thread.join(timeout=1)

@@ -10508,7 +10508,7 @@ function finishBoot() {
 
 let activeFetchCtrl = null;
 
-async function fetchTelemetry(force = false) {
+async function fetchTelemetry(force = false, acceptData = () => true) {
   const seq = ++fetchSeq;
   if (activeFetchCtrl) {
     try { activeFetchCtrl.abort(); } catch {}
@@ -10523,14 +10523,14 @@ async function fetchTelemetry(force = false) {
     const res = await fetch(url, { signal: ctrl.signal });
     if (!res.ok) throw new Error("HTTP " + res.status);
     const data = await res.json();
-    if (seq !== fetchSeq) return;
+    if (seq !== fetchSeq || !acceptData()) return;
     // If popover defaults to today and today has 0 requests, smoothly switch to this week on initial load
     if (isPopover && !state.data && state.range === "today" && data.kpi.requests === 0) {
       state.range = "week";
       document.querySelectorAll("#rangeSeg button").forEach(b => b.classList.toggle("active", b.dataset.range === "week"));
       const resW = await fetch(`/api/telemetry?range=week&tool=${encodeURIComponent(state.tool)}`, { signal: ctrl.signal });
       const dataW = await resW.json();
-      if (seq !== fetchSeq) return;
+      if (seq !== fetchSeq || !acceptData()) return;
       state.data = dataW;
       lastFetchTs = Date.now();
       renderAll(dataW);
@@ -10576,6 +10576,7 @@ function disconnectStream() {
 
 window.__onPopoverOpen = () => {
   popoverVisible = true;
+  scheduleAgyQuotaLoadingRetry();
   resumePopoverArcade();
   requestAnimationFrame(() => {
     syncSlidePill("rangeSeg", true);
@@ -10596,6 +10597,7 @@ window.__onPopoverOpen = () => {
 
 window.__onPopoverClose = () => {
   popoverVisible = false;
+  pauseAgyQuotaLoadingRetry();
   if (typeof stopQuotaSiphon === "function") stopQuotaSiphon();
   if (typeof clearBunnySpeech === "function") clearBunnySpeech();
   pausePopoverArcade();
@@ -10627,8 +10629,10 @@ window.__onPopoverVisibility = (snapshot) => {
 document.addEventListener("visibilitychange", () => {
   if (isPopover) return;
   if (document.hidden) {
+    pauseAgyQuotaLoadingRetry();
     disconnectStream();
   } else if (state.data) {
+    scheduleAgyQuotaLoadingRetry();
     connectStream(true);
     if (Date.now() - lastFetchTs > 15000) fetchTelemetry(false);
   }
@@ -10739,7 +10743,7 @@ function codexQuotaDiagnostic(status, quota) {
 function agyQuotaDiagnostic(status) {
   if (status?.selected_source === "cli") {
     if (status.state === "loading") return "正在查询 AGY CLI 额度…";
-    if (status.state === "live" || status.state === "cached") return "来自 AGY CLI · 最近读取";
+    if (status.state === "live") return "来自 AGY CLI · 最近读取";
     const reasons = {
       cli_missing: "未找到 AGY CLI", cli_version: "AGY CLI 版本暂不支持",
       cli_settings: "当前 CLI 设置不允许查询 /usage",
@@ -10747,11 +10751,53 @@ function agyQuotaDiagnostic(status) {
       cli_exit: "AGY 命令查询失败", cli_output_limit: "AGY 返回的数据过大",
       cli_shape: "CLI 返回中没有可识别的额度数据",
     };
+    if (status.state === "cached") {
+      return reasons[status.reason] ? `来自 AGY CLI · 上次额度 · ${reasons[status.reason]}` : "来自 AGY CLI · 最近读取";
+    }
     return reasons[status.reason] || "AGY CLI 暂未返回额度";
   }
   if (status?.state === "live") return "来自运行中的 Antigravity 桌面版";
   if (status?.state === "cached") return "Antigravity 桌面版 · 上次读取";
   return "暂未读到官方额度";
+}
+
+let agyQuotaColdLoading = false;
+let agyQuotaLoadingGeneration = 0;
+let agyQuotaRetryTimer = null;
+let agyQuotaRetryCount = 0;
+
+function pauseAgyQuotaLoadingRetry() {
+  if (agyQuotaRetryTimer !== null) clearTimeout(agyQuotaRetryTimer);
+  agyQuotaRetryTimer = null;
+}
+
+function agyQuotaRetryVisible() {
+  return !document.hidden && (typeof popoverVisible === "undefined" || popoverVisible);
+}
+
+function scheduleAgyQuotaLoadingRetry() {
+  if (!agyQuotaColdLoading || agyQuotaRetryTimer !== null || agyQuotaRetryCount >= 3 || !agyQuotaRetryVisible()) return;
+  const generation = agyQuotaLoadingGeneration;
+  agyQuotaRetryTimer = setTimeout(() => {
+    agyQuotaRetryTimer = null;
+    const stillCold = () => agyQuotaColdLoading && agyQuotaLoadingGeneration === generation && agyQuotaRetryVisible();
+    if (!stillCold()) return;
+    ++agyQuotaRetryCount;
+    // Do not abort a foreground refresh. An older fallback response must
+    // also never replace an intervening successful SSE update.
+    if (typeof activeFetchCtrl === "undefined" || !activeFetchCtrl) fetchTelemetry(false, stillCold);
+    scheduleAgyQuotaLoadingRetry();
+  }, 2000);
+}
+
+function setAgyQuotaColdLoading(loading) {
+  if (agyQuotaColdLoading !== loading) {
+    ++agyQuotaLoadingGeneration;
+    agyQuotaRetryCount = 0;
+    agyQuotaColdLoading = loading;
+  }
+  if (loading) scheduleAgyQuotaLoadingRetry();
+  else pauseAgyQuotaLoadingRetry();
 }
 
 function renderTopQuota(d) {
@@ -10764,6 +10810,7 @@ function renderTopQuota(d) {
   if (!box) return;
   const mode = menuBarQuotaBar;
   if (!d || !mode || mode === "none") {
+    setAgyQuotaColdLoading(false);
     box.classList.remove("show");
     return;
   }
@@ -10789,16 +10836,18 @@ function renderTopQuota(d) {
     if (selected) break;
   }
 
+  const loading = !selected && !!keyMap[mode] && d.quota_status?.antigravity?.state === "loading";
+  setAgyQuotaColdLoading(loading);
   if (!selected) {
     const name = mode === "codex" ? "Codex 周" : keyMap[mode]?.[1];
     if (!name) { box.classList.remove("show"); return; }
     document.getElementById("tqName").textContent = name;
     const pct = document.getElementById("tqPct");
-    pct.textContent = "暂无数据";
+    pct.textContent = loading ? "读取中…" : "暂无数据";
     pct.style.color = "var(--muted)";
     document.getElementById("tqFill").style.width = "0%";
     document.getElementById("tqRst").textContent = "";
-    box.title = "选定的额度暂无数据；如需自动切换，请在设置中选择「自动」";
+    box.title = loading ? "正在读取选定的官方额度…" : "选定的额度暂无数据；如需自动切换，请在设置中选择「自动」";
     box.classList.add("show");
     return;
   }

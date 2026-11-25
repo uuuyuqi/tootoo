@@ -23,7 +23,8 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from agy_cli_quota import stop_agy_cli_quota
+from agy_cli_quota import (agy_quota_generation, fetch_agy_cli_quota, prime_agy_cli_quota,
+                           stop_agy_cli_quota, wait_for_agy_quota_update)
 from codex_app_quota import stop_codex_cli_quota
 from pricing import sync_remote_pricing
 from update_check import checker as update_checker
@@ -364,6 +365,7 @@ class TooTooHandler(BaseHTTPRequestHandler):
             r_key = qs.get("range", ["7d"])[0]
             t_flt = qs.get("tool", ["all"])[0]
             skip_initial = qs.get("skip_initial", ["0"])[0] == "1"
+            generation = agy_quota_generation()
             self.send_response(HTTPStatus.OK)
             self.send_header("Content-Type", "text/event-stream")
             self.send_header("Cache-Control", "no-cache")
@@ -371,13 +373,13 @@ class TooTooHandler(BaseHTTPRequestHandler):
             self.end_headers()
             try:
                 if skip_initial:
-                    time.sleep(20)
+                    generation = wait_for_agy_quota_update(generation)
                 while True:
                     data = build_telemetry(range_key=r_key, tool_filter=t_flt)
                     msg = f"data: {json.dumps(data, ensure_ascii=False)}\n\n".encode("utf-8")
                     self.wfile.write(msg)
                     self.wfile.flush()
-                    time.sleep(20)
+                    generation = wait_for_agy_quota_update(generation)
             except (BrokenPipeError, ConnectionResetError, OSError):
                 return
 
@@ -466,6 +468,11 @@ def main() -> None:
     # Warm scan cache into memory immediately so first popover open is instant
     def _warmup() -> None:
         try:
+            agy_mode = os.environ.get("TOOTOO_AGY_CLI")
+            if agy_mode == "auto":
+                prime_agy_cli_quota()
+            elif agy_mode == "off":
+                fetch_agy_cli_quota(enabled=False)  # Purge only this profile's disk snapshot.
             build_telemetry("today", "all")
         except Exception:
             pass

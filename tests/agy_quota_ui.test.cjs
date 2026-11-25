@@ -34,7 +34,7 @@ test('only official AGY rows share grid columns; missing reset leaves no fake da
   const rows = [{label:'Claude and GPT models · Weekly', used_percent:0},
     {label:'Gemini Models · 5h', used_percent:10, resets_at:123}];
   for (const [tool,source,aligned] of [
-    ['antigravity','cli',true], ['antigravity','provider',true],
+    ['antigravity','cli',true], ['antigravity','cli_cached',true], ['antigravity','provider',true],
     ['antigravity','local',false], ['codex','provider',false],
   ]) {
     const node = {querySelectorAll: () => []};
@@ -68,5 +68,90 @@ test('full no-reset Claude/GPT 5h and weekly are individually selectable with no
     assert.equal(divs.tqName.textContent,label);
     assert.equal(divs.tqPct.textContent,'剩 100%');
     assert.equal(divs.tqRst.textContent,'');
+  }
+});
+
+function coldQuotaHarness(mode = 'gem7d') {
+  const code = html.slice(html.indexOf('function pickCodexQuotaBucket('), html.indexOf('const numAnimState ='));
+  const fetchCode = html.slice(html.indexOf('let activeFetchCtrl = null;'), html.indexOf('let shouldAnimateCharts = true;'));
+  const clock = new Map(), requests = [];
+  let timerId = 0, activeStream;
+  const divs = Object.fromEntries(['topQuota','quotaSourceAgy','tqName','tqPct','tqFill','tqRst'].map(key => [key, {
+    style: {}, classList: { add(){}, remove(){} }, removeAttribute(){}, replaceChildren(){},
+  }]));
+  const ctx = vm.createContext({
+    menuBarQuotaBar: mode, fetchSeq: 0, lastFetchTs: 0, isPopover: false,
+    state: { range: 'today', tool: 'all', data: {} },
+    document: { hidden: false, body: { classList: { add(){}, remove(){} } }, getElementById: id => divs[id], addEventListener(){} },
+    window: {}, console, AbortController, finishBoot(){},
+    setTimeout(fn, ms) { const id = ++timerId; clock.set(id, {fn, ms}); return id; },
+    clearTimeout(id) { clock.delete(id); },
+    fetch(url) { return new Promise(resolve => requests.push({url, respond: d => resolve({ok:true, json: async () => d})})); },
+    EventSource: class { constructor() { activeStream = this; } close(){} },
+  });
+  vm.runInContext(code + '\n' + fetchCode + '\nfunction renderAll(d) { renderTopQuota(d); }', ctx);
+  const emit = d => activeStream.onmessage({data: JSON.stringify(d)});
+  ctx.connectStream();
+  const loading = { quota_status: { antigravity: { state: 'loading', selected_source: 'cli' } } };
+  function cached() {
+    return {
+      quota_status: { antigravity: { state: 'cached', selected_source: 'cli', refreshing: false, reason: 'cli_timeout' } },
+      quotas: { antigravity: { source: 'cli_cached', buckets: [
+        { key: 'antigravity:gemini_7d', label: 'Gemini Models · Weekly', used_percent: 16 },
+      ] } },
+    };
+  }
+  function tickRetry() {
+    const [id, tick] = [...clock].find(([, t]) => t.ms === 2000) || [];
+    assert.ok(tick, 'one short retry scheduled');
+    clock.delete(id);
+    tick.fn();
+  }
+  return { ctx, divs, requests, emit, loading, cached, tickRetry, scheduled: () => [...clock.values()].filter(t => t.ms === 2000).length };
+}
+
+test('cold eligible pin is reading; last successful value survives refresh and a late fallback GET', async () => {
+  const h = coldQuotaHarness();
+  h.emit(h.loading);
+  h.emit(h.loading);
+  assert.equal(h.divs.tqPct.textContent, '读取中…');
+  assert.match(h.divs.topQuota.title, /正在读取/);
+  assert.equal(h.scheduled(), 1);
+  h.tickRetry();
+  assert.equal(h.requests.length, 1);
+  assert.match(h.requests[0].url, /force=0/);
+  h.emit(h.cached());
+  assert.equal(h.divs.tqPct.textContent, '剩 84%');
+  assert.match(h.divs.quotaSourceAgy.textContent, /上次额度.*超时/);
+  assert.equal(h.scheduled(), 0);
+  h.requests[0].respond(h.loading);
+  await new Promise(setImmediate);
+  assert.equal(h.divs.tqPct.textContent, '剩 84%', 'old fallback must not erase SSE quota');
+  const refreshing = h.cached();
+  refreshing.quota_status.antigravity.refreshing = true;
+  h.emit(refreshing);
+  assert.equal(h.divs.tqPct.textContent, '剩 84%');
+  assert.equal(h.scheduled(), 0);
+});
+
+test('cold retry capped at three and never borrowed for Codex or another AGY group', async () => {
+  const h = coldQuotaHarness();
+  h.emit(h.loading);
+  for (let i = 0; i < 3; i++) {
+    h.tickRetry();
+    h.requests[i].respond(h.loading);
+    await new Promise(setImmediate);
+  }
+  assert.equal(h.requests.length, 3);
+  assert.equal(h.scheduled(), 0);
+  h.emit(h.loading);
+  assert.equal(h.scheduled(), 0, 'repeated loading SSE does not reset budget');
+  h.emit({ quota_status: { antigravity: { state: 'unavailable', selected_source: 'cli', reason: 'cli_timeout' } } });
+  assert.equal(h.divs.tqPct.textContent, '暂无数据');
+  for (const mode of ['codex', 'none', 'cg7d']) {
+    h.ctx.menuBarQuotaBar = mode;
+    h.emit(mode === 'cg7d' ? h.cached() : h.loading);
+    assert.equal(h.scheduled(), 0);
+    assert.equal(h.divs.tqPct.textContent, '暂无数据');
   }
 });

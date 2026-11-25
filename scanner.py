@@ -2829,7 +2829,7 @@ def select_antigravity_quota(events: list[dict[str, Any]], *, force: bool = Fals
         return legacy(), False
     result = fetch_agy_cli_quota(enabled=True)
     status = result["status"]
-    if status.get("reason") in {"cli_missing", "cli_version"}:
+    if result.get("quota") is None and status.get("reason") in {"cli_missing", "cli_version"}:
         old = legacy()
         if old.get("quota"):
             return old, True

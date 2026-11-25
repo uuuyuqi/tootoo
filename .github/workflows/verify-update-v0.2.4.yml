@@ -2,7 +2,8 @@ name: TooToo 0.2.4 update verification
 
 on:
   push:
-    branches: [main, 'feature/tootoo-update-v0.2.4']
+    # Historical candidate only: active release workflows keep these checks.
+    branches: ['feature/tootoo-update-v0.2.4']
     paths:
       - .github/workflows/verify-update-v0.2.4.yml
       - macos/**

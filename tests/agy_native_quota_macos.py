@@ -30,6 +30,23 @@ def snapshot(port, path="/api/telemetry?range=today&tool=all", timeout=12):
         conn.close()
 
 
+def next_quota_event(port):
+    conn = HTTPConnection("127.0.0.1", port, timeout=12)
+    try:
+        start = time.monotonic()
+        conn.request("GET", "/api/stream?range=today&tool=all&skip_initial=1")
+        with conn.getresponse() as response:
+            assert response.status == 200, response.status
+            while line := response.readline():
+                if line.startswith(b"data: "):
+                    elapsed = time.monotonic() - start
+                    assert elapsed < 12, "SSE waited instead of waking on background CLI completion"
+                    return json.loads(line[6:]), elapsed
+        raise AssertionError("SSE ended before quota update")
+    finally:
+        conn.close()
+
+
 def find_backend(app, parent, expected_balance):
     deadline = time.monotonic() + 32
     assert darwin.path(parent) == os.fsencode(app / "Contents/MacOS/TooToo")
@@ -94,10 +111,12 @@ int main(int argc, char **argv) {
     fprintf(marker,"%d\n",getpid());
     fclose(marker);
     sleep(7);
-    puts("{\"status\":\"SUCCESS\",\"num_turns\":0,\"command\":{\"name\":\"usage\",\"data\":{\"groups\":["
-    "{\"name\":\"Gemini Models\",\"buckets\":[{\"id\":\"gemini-5h\",\"window\":\"5h\",\"remaining_fraction\":0.75}]},"
+    if (snprintf(file,sizeof file,"%s/agy_second_snapshot",home) >= sizeof file) return 6;
+    int second = access(file, F_OK) == 0;
+    printf("{\"status\":\"SUCCESS\",\"num_turns\":0,\"command\":{\"name\":\"usage\",\"data\":{\"groups\":["
+    "{\"name\":\"Gemini Models\",\"buckets\":[{\"id\":\"gemini-5h\",\"window\":\"5h\",\"remaining_fraction\":%s}]},"
     "{\"name\":\"Claude and GPT models\",\"buckets\":[{\"id\":\"3p-weekly\",\"window\":\"weekly\",\"remaining_fraction\":1,\"reset_time\":\"1970-01-01T00:00:00Z\"},{\"id\":\"3p-5h\",\"window\":\"5h\",\"remaining_fraction\":1,\"reset_time\":\"1970-01-01T00:00:00Z\"}]},"
-    "{\"name\":\"Gemini 4 Argon\",\"buckets\":[{\"id\":\"gemini-argon-wtu-weekly\",\"window\":\"weekly\",\"remaining_fraction\":0.42}]}]}}}");
+    "{\"name\":\"Gemini 4 Argon\",\"buckets\":[{\"id\":\"gemini-argon-wtu-weekly\",\"window\":\"weekly\",\"remaining_fraction\":0.42}]}]}}}\n", second ? "0.40" : "0.75");
   } else return 99;
   return 0;
 }
@@ -151,21 +170,28 @@ def main(app, launcher):
                                   capture_output=True)
         assert existing.returncode != 0, "requires disposable CI account with no saved AGY preference"
         preferences.callback(clear_preference)
-        for balance, case in enumerate(("inactive", "auto", "cancel", "off", "off-restart"), 231):
+        for balance, case in enumerate(("inactive", "auto", "auto-restart", "cancel", "off", "off-restart", "off-cached"), 231):
             if case == "off":
                 subprocess.run(["/usr/bin/defaults", "write", "com.tootoo.telemetry",
                                 "agyQuotaAutoDisabled", "-bool", "YES"], check=True)
             with ExitStack() as cleanup:
-                home = root / case
-                (home / ".local/bin").mkdir(parents=True)
-                (home / ".codex").mkdir()
-                (home / "state").mkdir()
+                reuse = case in ("auto-restart", "off-cached")
+                home = root / ("auto" if reuse else case)
+                cached_path = home / "state/agy_cli_quota_cache.json"
+                if reuse:
+                    assert cached_path.is_file(), "successful CLI quota was not persisted"
+                else:
+                    (home / ".local/bin").mkdir(parents=True)
+                    (home / ".codex").mkdir()
+                    (home / "state").mkdir()
+                    installed = home / ".local/bin/agy"
+                    installed.write_bytes(fake.read_bytes())
+                    installed.chmod(0o700)
+                    if case != "inactive":
+                        seed_activity(home)
+                if case == "auto-restart":
+                    (home / "agy_second_snapshot").touch()
                 (home / "state/carrot_state.json").write_text(json.dumps({"balance": balance}))
-                installed = home / ".local/bin/agy"
-                installed.write_bytes(fake.read_bytes())
-                installed.chmod(0o700)
-                if case != "inactive":
-                    seed_activity(home)
                 pid = int(subprocess.check_output([str(launcher), str(app), str(home),
                                                    str(home / "state"), case], text=True, timeout=25))
                 process = LaunchServicesApp(pid)
@@ -192,6 +218,19 @@ def main(app, launcher):
                     assert agy_pid not in darwin.table(), "owned AGY outlived native backend stop"
                     print("PASS packaged LaunchServices cancel: pending CLI process terminated", flush=True)
                     continue
+                if case == "auto-restart":
+                    assert state["state"] == "cached" and state["refreshing"] is True, state
+                    assert time.monotonic() - started < 4, "persisted cache lookup blocked on CLI"
+                    buckets = data["quotas"]["antigravity"]["buckets"]
+                    assert next(b["remaining_fraction"] for b in buckets if b["id"] == "gemini_5h") == .75
+                    msg, elapsed = next_quota_event(port)
+                    quota = msg["quotas"]["antigravity"]
+                    assert next(b["remaining_fraction"] for b in quota["buckets"] if b["id"] == "gemini_5h") == .40
+                    card = next(tool for tool in msg["tools"] if tool["tool"] == "antigravity")
+                    assert card["quota"]["buckets"] == quota["buckets"]
+                    assert (home / "agy_invocations").read_text().splitlines() == ["version", "usage"] * 2
+                    print(f"PASS packaged LaunchServices cold cache + early SSE delivery ({elapsed:.2f}s)", flush=True)
+                    continue
                 if case == "auto":
                     deadline = time.monotonic() + 22
                     while state["state"] == "loading" and time.monotonic() < deadline:
@@ -214,7 +253,11 @@ def main(app, launcher):
                     assert card["quota"]["buckets"] == quota["buckets"], card["quota"]
                     assert log.read_text().splitlines() == ["version", "usage"]
                 else:
-                    assert not log.exists() and quota is None, (case, state, quota)
+                    assert quota is None, (case, state, quota)
+                    if case == "off-cached":
+                        assert log.read_text().splitlines() == ["version", "usage"] * 2
+                    else:
+                        assert not log.exists(), (case, state)
                     if case.startswith("off"):
                         assert state["state"] == "disabled", state
                 print(f"PASS packaged LaunchServices {case}: {state['state']}", flush=True)
