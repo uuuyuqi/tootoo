@@ -175,6 +175,54 @@ final class LayoutHarness: NSObject, NSApplicationDelegate, WKNavigationDelegate
         try await check("452 no boost", actual: "675.86e6", xp: "0", rail: 52, badge: false)
         try await check("452 simple", actual: "675.86e6", rail: 52, badge: false, simple: true)
         try await check("452 debug simulation", actual: "675.86e6", rail: 52, badge: false, debug: true)
+        _ = try await eval("""
+            (() => {
+              const now = Date.now() / 1000;
+              state.data = {
+                kpi: { tokens: 0 }, tools: [], today_tokens: 565e6, evo_peak_tokens: 600e6,
+                grokbot: { sessions: 2, user_messages: 5, bot_replies: 4, reply_latency_p50: 2, latency_samples: 1 },
+                quotas: { grokbot: { source: 'local_cache', plan: 'Fixture Plan', read_at: now - 10,
+                  expires_at: now + 600, buckets: [{ key: 'grokbot:weekly', used_percent: 63, resets_at: now + 1200 }] }}
+              };
+              minimalMode = false;
+              debugState.active = false;
+              debugState.simTokens = null;
+              carrotDiskState.home = cloneHomeState({});
+              menuBarQuotaBar = 'grokbot';
+              renderAgents(state.data);
+              renderTopQuota(state.data);
+              openEvoModal();
+              return true;
+            })()
+            """)
+        try await Task.sleep(nanoseconds: 250_000_000)
+        try await verify("452 Grok Bot and historical tier", """
+            (() => {
+              if (innerWidth !== 452) throw Error('expected 452px fixture viewport');
+              const card = document.querySelector('#agentListPop [data-agent="grokbot"]');
+              const text = document.getElementById('tqPct');
+              const name = document.getElementById('tqName');
+              if (!card || card.getBoundingClientRect().width <= 0 ||
+                  card.querySelector('.grokbot-plan')?.textContent !== 'Fixture Plan' ||
+                  card.querySelector('.quota-pct')?.textContent !== '剩 37.0%' ||
+                  name.textContent !== 'Grok Bot 周' || text.textContent !== '剩 37%')
+                throw Error('Grok Bot quota card and native pin failed to render');
+              if (card.scrollWidth > card.clientWidth + 2 ||
+                  document.documentElement.scrollWidth > innerWidth)
+                throw Error('Grok Bot card overflows the 452px viewport');
+              const past = document.querySelector('#evoGrid [data-lv="6"].past-tier');
+              const frame = past?.querySelector('.bunny-wrap');
+              const svg = frame?.querySelector('.bunny-svg');
+              if (!svg || past.dataset.locked !== '0' || !past.textContent.includes('曾解锁 · 今日未达'))
+                throw Error('historically unlocked card missing its visual state');
+              const frameStyle = getComputedStyle(frame), bunnyStyle = getComputedStyle(svg);
+              if (frameStyle.filter !== 'none' || frameStyle.backgroundImage !== 'none' ||
+                  frameStyle.borderTopStyle !== 'solid' || !bunnyStyle.filter.includes('grayscale'))
+                throw Error('historical card filters or gradient applied to the wrong layer');
+              document.getElementById('evoCloseBtn').click();
+              return 'PASS: 452px Grok Bot quota and historical evolution styling';
+            })()
+            """)
         window.setContentSize(NSSize(width: 900, height: 650))
         _ = try await eval("document.body.classList.remove('popover-mode'); true")
         try await Task.sleep(nanoseconds: 150_000_000)

@@ -16,12 +16,15 @@ import fcntl
 import glob
 import hashlib
 import http.client
+import io
 import json
 import math
 import os
 import re
+import shutil
 import sqlite3
 import ssl
+import stat
 import subprocess
 import tempfile
 import threading
@@ -34,6 +37,7 @@ from typing import Any
 
 from agy_cli_quota import fetch_agy_cli_quota
 from codex_app_quota import codex_cli_home, fetch_codex_cli_quota, peek_codex_app_quota
+from grokbot import grokbot_activity
 from pricing import PricingEngine, calibrate_observed_rates, trigger_background_sync_if_stale
 from quota_runtime import data_root
 
@@ -928,23 +932,141 @@ def _codex_quota_key(quota: dict[str, Any]) -> tuple[bool, float]:
     return generic, quota.get("ts", 0)
 
 
+_CODEX_PARSER_REV = 3
+_CODEX_USAGE_FIELDS = ("input_tokens", "cached_input_tokens", "output_tokens",
+                       "reasoning_output_tokens", "cache_write_input_tokens")
+
+
+class _NoCodexZstdDecoder(OSError):
+    pass
+
+
+def _trusted_zstd():
+    # Finder does not necessarily inherit a package manager's PATH. An
+    # explicit path may win, but not a relative shim or writable parent chain.
+    choices = (shutil.which("zstd"), "/usr/bin/zstd", "/opt/homebrew/bin/zstd", "/usr/local/bin/zstd")
+    owners = (0, os.getuid())
+    native_magic = {b"\x7fELF", b"\xcf\xfa\xed\xfe", b"\xfe\xed\xfa\xcf",
+                    b"\xca\xfe\xba\xbe", b"\xca\xfe\xba\xbf"}
+    for path in choices:
+        if not path or not os.path.isabs(path):
+            continue
+        try:
+            resolved = os.path.realpath(path)
+            if any(not stat.S_ISDIR(st.st_mode) or st.st_uid not in owners or st.st_mode & 0o022
+                   for parent in set(Path(path).parents) | set(Path(resolved).parents)
+                   for st in (parent.stat(),)):
+                continue
+            st = os.stat(resolved)
+            if (not stat.S_ISREG(st.st_mode) or st.st_uid not in owners
+                    or st.st_mode & 0o022 or not os.access(resolved, os.X_OK)):
+                continue
+            with open(resolved, "rb") as binary:
+                if binary.read(4) in native_magic:
+                    return resolved
+        except OSError:
+            continue
+    return None
+
+@contextmanager
+def _open_codex_rollout(path):
+    if not path.endswith(".zst"):
+        with open(path, encoding="utf-8", errors="ignore") as stream:
+            yield stream
+        return
+    try:
+        from compression import zstd as std_zstd
+    except ImportError:
+        std_zstd = None
+    if std_zstd is not None:
+        try:
+            with std_zstd.open(path, "rt", encoding="utf-8", errors="ignore") as stream:
+                yield stream
+        except std_zstd.ZstdError as exc:
+            raise OSError("Unreadable compressed Codex rollout") from exc
+        return
+    try:
+        import zstandard
+    except ImportError:
+        zstandard = None
+    if zstandard is not None:
+        with open(path, "rb") as raw:
+            with zstandard.ZstdDecompressor().stream_reader(raw, read_across_frames=True) as decoded:
+                try:
+                    with io.TextIOWrapper(decoded, encoding="utf-8", errors="ignore") as stream:
+                        yield stream
+                except zstandard.ZstdError as exc:
+                    raise OSError("Unreadable compressed Codex rollout") from exc
+        return
+    binary = _trusted_zstd()
+    if binary is None:
+        raise _NoCodexZstdDecoder()
+    proc = subprocess.Popen([binary, "-q", "-d", "-c", "--", path],
+                            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                            env={"PATH": "/usr/bin:/bin", "LC_ALL": "C"})
+    try:
+        with io.TextIOWrapper(proc.stdout, encoding="utf-8", errors="ignore") as stream:
+            yield stream
+        if proc.wait(timeout=2) != 0:
+            raise OSError("Unreadable compressed Codex rollout")
+    finally:
+        if proc.poll() is None:
+            proc.kill()
+            proc.wait()
+
+
+def _codex_usage(raw):
+    if not isinstance(raw, dict):
+        return None
+    values = tuple(raw.get(key, 0) for key in _CODEX_USAGE_FIELDS)
+    if any(type(value) is not int or value < 0 for value in values):
+        return None
+    return values
+
+
+def _codex_event(usage, ts, model, gen=None, ttft=None):
+    li, lc, total_out, reasoning, cw = usage
+    lc = min(li, lc)
+    # OpenAI's reasoning output is a subset of the provider's output total.
+    # Persist disjoint visible/reasoning components for all token aggregates.
+    reasoning = min(reasoning, total_out)
+    inp = li - lc
+    return {"ts": ts, "model": model, "in": inp, "out": total_out - reasoning,
+            "cr": lc, "cw": cw, "reason": reasoning, "gen": gen, "ttft": ttft,
+            "cost": estimate_cost(model, inp, total_out, lc, cw, 0)}
+
+
+def _codex_response_id(raw):
+    return raw if isinstance(raw, str) and 0 < len(raw) <= 256 else None
+
+
 def parse_codex_file(path: str) -> dict[str, Any]:
     events: list[dict[str, Any]] = []
     project: str | None = None
     model = "gpt-5"
     perf_trigger: float | None = None
     perf_first: float | None = None
-    prev_total_key: tuple[int, int, int, int] | None = None
+    prev_total_key: tuple[int, ...] | None = None
+    usage_records: dict[str, dict[str, Any]] = {}
+    ordinary_response_ids: set[str] = set()
+    adjacent_usage_id = None
+    pending_compactions: list[str] = []
+    omitted_compactions: set[str] = set()
+    zstd_retry = False
     latest_quota: dict[str, Any] | None = None
 
     try:
-        with open(path, "r", encoding="utf-8", errors="ignore") as f:
+        with _open_codex_rollout(path) as f:
             for line in f:
-                if not line or line[0] != "{":
+                if not line.strip():
+                    continue
+                preceding_usage_id, adjacent_usage_id = adjacent_usage_id, None
+                if line[0] != "{":
                     continue
                 # Fast pre-filter before full JSON parse
                 is_meta = '"session_meta"' in line or '"turn_context"' in line
-                is_token = '"token_count"' in line or '"token_usage_record"' in line
+                is_token = ('"token_count"' in line or '"token_usage_record"' in line
+                            or '"compacted"' in line)
                 is_task = '"task_started"' in line
                 is_item = '"item_completed"' in line and ('"Reasoning"' in line or '"AgentMessage"' in line)
                 if not (is_meta or is_token or is_task or is_item):
@@ -963,8 +1085,12 @@ def parse_codex_file(path: str) -> dict[str, Any]:
                 except Exception:
                     continue
 
+                if not isinstance(obj, dict):
+                    continue
                 typ = obj.get("type")
                 payload = obj.get("payload")
+                if typ == "compacted" and payload is None:
+                    payload = {}  # Older top-level marker, with no compaction ID.
                 if not isinstance(payload, dict):
                     continue
                 ts = parse_iso_ts(obj.get("timestamp"))
@@ -977,6 +1103,17 @@ def parse_codex_file(path: str) -> dict[str, Any]:
                 elif typ == "session_meta":
                     if not project and isinstance(payload.get("cwd"), str):
                         project = payload["cwd"]
+                elif typ == "token_usage_record":
+                    rid = _codex_response_id(payload.get("response_id"))
+                    usage = _codex_usage(payload.get("usage"))
+                    if rid and ts is not None and usage and any(usage):
+                        usage_records.setdefault(rid, _codex_event(usage, ts, model))
+                        adjacent_usage_id = rid
+                elif typ == "compacted":
+                    explicit = payload.get("compaction_response_id")
+                    rid = _codex_response_id(explicit) if explicit is not None else preceding_usage_id
+                    if rid and prev_total_key is not None:
+                        pending_compactions.append(rid)
                 elif typ == "event_msg":
                     ptyp = payload.get("type")
                     if ptyp == "task_started" and ts is not None:
@@ -996,28 +1133,23 @@ def parse_codex_file(path: str) -> dict[str, Any]:
                             }
                             if latest_quota is None or _codex_quota_key(snapshot) > _codex_quota_key(latest_quota):
                                 latest_quota = snapshot
-                        info = payload.get("info") or {}
-                        tot = info.get("total_token_usage") or {}
-                        last = info.get("last_token_usage") or {}
-                        if not isinstance(last, dict) or not ts:
+                        info = payload.get("info")
+                        if not isinstance(info, dict) or ts is None:
                             continue
-                        tkey = (
-                            int(tot.get("input_tokens", 0) or 0),
-                            int(tot.get("cached_input_tokens", 0) or 0),
-                            int(tot.get("output_tokens", 0) or 0),
-                            int(tot.get("reasoning_output_tokens", 0) or 0),
-                        )
-                        if prev_total_key is not None and tkey == prev_total_key and any(tkey):
+                        raw_total = info.get("total_token_usage")
+                        tkey = (_codex_usage(raw_total)
+                                if isinstance(raw_total, dict) and "input_tokens" in raw_total
+                                and "output_tokens" in raw_total else None)
+                        if tkey is not None:
+                            if pending_compactions and tkey == prev_total_key:
+                                omitted_compactions.update(pending_compactions)
+                            pending_compactions.clear()
+                            if prev_total_key is not None and tkey == prev_total_key and any(tkey):
+                                continue
+                            prev_total_key = tkey
+                        last = _codex_usage(info.get("last_token_usage"))
+                        if not last or not any(last):
                             continue
-                        prev_total_key = tkey
-
-                        li = int(last.get("input_tokens", 0) or 0)
-                        lc = int(last.get("cached_input_tokens", 0) or 0)
-                        lo = int(last.get("output_tokens", 0) or 0)
-                        lr = int(last.get("reasoning_output_tokens", 0) or 0)
-                        if not (li or lc or lo or lr):
-                            continue
-                        non_cached_in = max(li - lc, 0)
                         end_ms = ts * 1000.0
                         gen = ttft = None
                         if perf_first is not None and end_ms > perf_first:
@@ -1027,24 +1159,28 @@ def parse_codex_file(path: str) -> dict[str, Any]:
                         elif perf_trigger is not None and end_ms > perf_trigger:
                             gen = round((end_ms - perf_trigger) / 1000.0, 3)
 
-                        events.append({
-                            "ts": ts,
-                            "model": model,
-                            "in": non_cached_in,
-                            "out": lo,
-                            "cr": lc,
-                            "cw": int(last.get("cache_write_input_tokens", 0) or 0),
-                            "reason": lr,
-                            "gen": gen,
-                            "ttft": ttft,
-                            "cost": estimate_cost(model, non_cached_in, lo, lc, 0, 0),
-                        })
+                        events.append(_codex_event(last, ts, model, gen, ttft))
+                        rid = _codex_response_id(payload.get("response_id"))
+                        if rid:
+                            ordinary_response_ids.add(rid)
                         perf_trigger = None
                         perf_first = None
-    except OSError:
-        pass
+    except _NoCodexZstdDecoder:
+        zstd_retry = True
+    except (OSError, EOFError, subprocess.SubprocessError):
+        # A corrupt compressed archive is not a trustworthy partial report.
+        if path.endswith(".zst"):
+            events.clear()
+            ordinary_response_ids.clear()
+            omitted_compactions.clear()
+            latest_quota = None
 
-    return {"events": events, "project": project, "quota": latest_quota}
+    for rid, event in usage_records.items():
+        if rid in omitted_compactions and rid not in ordinary_response_ids:
+            events.append({**event, "codex_compaction_id": rid})
+    return {"events": events, "project": project, "quota": latest_quota,
+            "codex_ordinary_response_ids": sorted(ordinary_response_ids),
+            "codex_parser_rev": _CODEX_PARSER_REV, "zstd_retry": zstd_retry}
 
 
 # ---------- OpenCode SQLite Scanner ----------
@@ -2106,8 +2242,9 @@ def scan_all_events(force: bool = False, rebuild: bool = False) -> tuple[list[di
             seen_codex_roots.add(identity)
             for folder in ("sessions", "archived_sessions"):
                 cx_dir = os.path.join(root, folder)
-                for p in glob.glob(os.path.join(cx_dir, "**", "*.jsonl"), recursive=True):
-                    sources.append(("codex", p))
+                for pattern in ("*.jsonl", "*.jsonl.zst"):
+                    for p in sorted(glob.glob(os.path.join(cx_dir, "**", pattern), recursive=True)):
+                        sources.append(("codex", p))
         for p in discover_omp_files():
             sources.append(("omp", p))
         devin_db = os.path.join(HOME, ".local", "share", "devin", "cli", "sessions.db")
@@ -2187,7 +2324,11 @@ def scan_all_events(force: bool = False, rebuild: bool = False) -> tuple[list[di
                 cached_quota = cached["data"].get("quota")
                 # Old parsers could persist an empty quota dict. Reparse it
                 # once; the new parser uses None when no usable quota exists.
-                if tool != "codex" or not isinstance(cached_quota, dict) or _has_valid_quota(cached_quota):
+                if tool != "codex" or (
+                    cached["data"].get("codex_parser_rev") == _CODEX_PARSER_REV
+                    and not cached["data"].get("zstd_retry")
+                    and (not isinstance(cached_quota, dict) or _has_valid_quota(cached_quota))
+                ):
                     continue
 
             if tool == "antigravity":
@@ -2244,11 +2385,15 @@ def scan_all_events(force: bool = False, rebuild: bool = False) -> tuple[list[di
         agy_ws: dict[str, str] | None = None
         active_codex = codex_cli_home() if os.environ.get("TOOTOO_CODEX_QUOTA_AUTO") == "auto" else None
         codex_activity = 0.0
+        seen_codex_compactions: set[str] = set()
+        accounted_codex_responses: set[str] = set()
         for tool, path, key in valid_sources:
             entry = fcache.get(key)
             if not entry:
                 continue
             parsed = entry["data"]
+            if tool == "codex":
+                accounted_codex_responses.update(parsed.get("codex_ordinary_response_ids", ()))
             fb_proj: str | None = None
             if tool == "antigravity" and not parsed.get("project"):
                 if agy_ws is None:
@@ -2268,7 +2413,16 @@ def scan_all_events(force: bool = False, rebuild: bool = False) -> tuple[list[di
                     quotas[tool] = q
             evs = parsed.get("events")
             if evs:
-                all_events.extend(evs)
+                if tool == "codex":
+                    for ev in evs:
+                        rid = ev.get("codex_compaction_id")
+                        if rid is not None:
+                            if rid in seen_codex_compactions:
+                                continue
+                            seen_codex_compactions.add(rid)
+                        all_events.append(ev)
+                else:
+                    all_events.extend(evs)
                 # Only the matching CLI profile can trigger an automatic probe.
                 # Other profiles still retain their normal log-based telemetry.
                 if tool == "codex" and active_codex is not None:
@@ -2281,6 +2435,11 @@ def scan_all_events(force: bool = False, rebuild: bool = False) -> tuple[list[di
         if dirty:
             _CACHE_NEEDS_SAVE = True
             _flush_cache_if_needed(force_disk=rebuild)
+
+        # Only an exact provider response ID can suppress a supplementary
+        # compaction across files. Never infer identity from coincident totals.
+        if seen_codex_compactions & accounted_codex_responses:
+            all_events = [ev for ev in all_events if ev.get("codex_compaction_id") not in accounted_codex_responses]
 
         _MEM_SCAN_EVENTS = all_events
         _MEM_SCAN_QUOTAS = quotas
@@ -2653,7 +2812,7 @@ def _calc_rolling_bucket(
                     cache_write=ev.get("cw", 0),
                     reasoning=ev.get("reason", 0),
                     native_cost=ev.get("native_cost"),
-                    bill_reasoning=(tool in ("antigravity", "gemini")),
+                    bill_reasoning=(tool in ("antigravity", "gemini", "codex")),
                 )
                 used_cost += c
 
@@ -2910,6 +3069,11 @@ def build_telemetry(
     else:
         min_day = "0000-01-01"
 
+    # Activity-only provider: no synthetic Token events or accounting entries.
+    grokbot = grokbot_activity(min_day, max_day, now=now.timestamp())
+    if grokbot and grokbot["quota"] is not None:
+        quotas = {**quotas, "grokbot": grokbot["quota"]}
+
     # Available tools summary (across selected time range, before tool_filter)
     tool_counts: dict[str, int] = defaultdict(int)
     tool_tokens_all: dict[str, int] = defaultdict(int)
@@ -2964,7 +3128,7 @@ def build_telemetry(
             cache_write=cw,
             reasoning=reas,
             native_cost=ev.get("native_cost"),
-            bill_reasoning=(tool in ("antigravity", "gemini")),
+            bill_reasoning=(tool in ("antigravity", "gemini", "codex")),
         )
         tot_tok = inp + out + cr + cw + reas
 
@@ -3050,7 +3214,7 @@ def build_telemetry(
         ttft = ev.get("ttft")
         if gen is not None:
             tmp_perf: dict[str, dict[str, Any]] = {}
-            if perf_add(tmp_perf, model, out, gen, ttft):
+            if perf_add(tmp_perf, model, out + (reas if tool == "codex" else 0), gen, ttft):
                 st = tmp_perf[model]
                 perf_merge(overall_perf, st)
                 perf_merge(mm["perf"].setdefault("_", empty_perf()), st)
@@ -3186,8 +3350,9 @@ def build_telemetry(
         gen = ev.get("gen")
         ttft = ev.get("ttft")
         tps = None
-        if gen and gen > PERF_MIN_SECONDS and out >= PERF_MIN_OUTPUT:
-            v = out / gen
+        perf_out = out + (ev.get("reason", 0) if ev["tool"] == "codex" else 0)
+        if gen and gen > PERF_MIN_SECONDS and perf_out >= PERF_MIN_OUTPUT:
+            v = perf_out / gen
             if v <= PERF_MAX_TPS:
                 tps = round(v, 1)
         dt = datetime.fromtimestamp(ev["ts"]).astimezone()
@@ -3199,7 +3364,7 @@ def build_telemetry(
             cache_write=ev.get("cw", 0),
             reasoning=ev.get("reason", 0),
             native_cost=ev.get("native_cost"),
-            bill_reasoning=(ev["tool"] in ("antigravity", "gemini")),
+            bill_reasoning=(ev["tool"] in ("antigravity", "gemini", "codex")),
         )
         recent_calls.append({
             "time": dt.strftime("%m-%d %H:%M:%S"),
@@ -3306,6 +3471,7 @@ def build_telemetry(
             for h in range(24)
         ],
         "quotas": quotas,
+        "grokbot": grokbot,
         "quota_status": {"antigravity": ag_result["status"], "codex": codex_status},
         "tools": tools_out,
         "models": models_out,

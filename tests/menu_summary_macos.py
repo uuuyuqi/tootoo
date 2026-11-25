@@ -37,9 +37,15 @@ class Handler(BaseHTTPRequestHandler):
                     "kpi": {"tokens": 590_000_000, "cost": 0},
                     "today_tokens": 590_000_000,
                     "effective_today_tokens": 610_000_000,
-                    "quotas": {"antigravity": {"buckets": [
-                        {"key": "antigravity:gemini_5h", "used_percent": 25},
-                    ]}},
+                    "quotas": {
+                        "antigravity": {"buckets": [
+                            {"key": "antigravity:gemini_5h", "used_percent": 25},
+                        ]},
+                        "grokbot": {"buckets": [
+                            {"key": "grokbot:weekly", "used_percent": 1, "resets_at": time.time() - 30},
+                            {"key": "grokbot:weekly", "used_percent": 63, "resets_at": time.time() + 300},
+                        ]},
+                    },
                 }).encode()
                 self.reply(200, body, "application/json")
         elif url.path == "/":

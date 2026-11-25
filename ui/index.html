@@ -1231,9 +1231,20 @@
   }
 
   .evo-card.unlocked { background: var(--surface); }
-  .evo-card.past-tier { background: var(--surface-2, var(--surface)); }
-  .evo-card.past-tier .bunny-wrap { filter: grayscale(1); }
-  .evo-card.past-tier .evo-name { color: var(--muted); }
+  .evo-card.past-tier {
+    background: color-mix(in srgb, var(--surface) 72%, var(--surface-2));
+  }
+  /* Quiet the tile and illustration separately: desaturating a stage's dark
+     gradient as a unit leaves an almost-black frame around the bunny. */
+  .evo-card.past-tier .bunny-wrap {
+    background: var(--surface-2);
+    border: 1.5px solid var(--border-strong);
+    box-shadow: none;
+  }
+  .evo-card.past-tier .bunny-wrap::before,
+  .evo-card.past-tier .bunny-wrap::after { content: none; }
+  .evo-card.past-tier .bunny-svg { filter: grayscale(1) contrast(0.60); }
+  .evo-card.past-tier .evo-name { color: var(--ink-soft); }
   .evo-history-note { color: var(--muted); font-size: 9px; line-height: 1.35; }
   .evo-card.current {
     background: var(--surface);
@@ -6620,6 +6631,13 @@
     border-radius: 3px;
     cursor: pointer;
   }
+  .mb-cfg-chips button[hidden] { display: none; }
+  .grokbot-meta { font-size: 10px; color: var(--muted); white-space: normal; }
+  .grokbot-warning { font-size: 10px; color: var(--warn); margin-top: 5px; }
+  .agent-item[data-agent="grokbot"] { scroll-margin-top: 12px; }
+  .agent-item[data-agent="grokbot"] .agent-stats { grid-template-columns: 1fr 1.65fr 1fr; }
+  .agent-item[data-agent="grokbot"] .agent-top { flex-wrap: wrap; gap: 4px 8px; }
+  .grokbot-plan { font-size: 10px; max-width: 100%; overflow-wrap: anywhere; }
   .mb-cfg-chips button.on {
     background: var(--active-bg);
     border-color: var(--active-border);
@@ -7621,6 +7639,7 @@
         <button data-field="q_cg7d">C/G 周</button>
         <button data-field="q_argon7d" title="Antigravity 返回的 Gemini 4 Argon 独立额度，不是 Gemini 通用周额度" hidden>Gemini 4 Argon 周额度</button>
         <button data-field="q_codex">Codex</button>
+        <button data-field="q_grokbot" hidden>Grok Bot 周</button>
       </div>
     </div>
 
@@ -7635,6 +7654,7 @@
         <button data-qbar="cg7d">C/G 周</button>
         <button data-qbar="argon7d" title="Antigravity 返回的 Gemini 4 Argon 独立额度，不是 Gemini 通用周额度" hidden>Gemini 4 Argon 周额度</button>
         <button data-qbar="codex">Codex</button>
+        <button data-qbar="grokbot" hidden>Grok Bot 周</button>
       </div>
     </div>
 
@@ -8450,19 +8470,23 @@ document.addEventListener("visibilitychange", scheduleKeepAwakeRefresh);
 // TOOTOO_KEEP_AWAKE_UI_END
 
 let menuBarFields = ["tokens", "cost"];
-const validQuotaBarModes = new Set(["none","auto","gem5h","gem7d","cg5h","cg7d","argon7d","codex"]);
+const validQuotaBarModes = new Set(["none","auto","gem5h","gem7d","cg5h","cg7d","argon7d","codex","grokbot"]);
 const savedQuotaBar = localStorage.getItem("tootoo_qbar");
 let menuBarQuotaBar = validQuotaBarModes.has(savedQuotaBar) ? savedQuotaBar : "auto";
 function renderMenuBarCfgChips() {
   const hasArgon = state.data?.quotas?.antigravity?.buckets?.some(
     b => b?.key === "antigravity:argon_7d" && b.used_percent != null) || false;
+  const grokbot = state.data?.quotas?.grokbot || state.data?.grokbot?.quota;
+  const hasGrokbotQuota = !!grokbot && !!pickGrokBotWeeklyQuota(grokbot);
   document.querySelectorAll("#mbCfgChips button").forEach(btn => {
     btn.classList.toggle("on", menuBarFields.includes(btn.dataset.field));
     if (btn.dataset.field === "q_argon7d") btn.hidden = !hasArgon && !menuBarFields.includes("q_argon7d");
+    if (btn.dataset.field === "q_grokbot") btn.hidden = !hasGrokbotQuota && !menuBarFields.includes("q_grokbot");
   });
   document.querySelectorAll("#mbQuotaBarChips button").forEach(btn => {
     btn.classList.toggle("on", btn.dataset.qbar === menuBarQuotaBar);
     if (btn.dataset.qbar === "argon7d") btn.hidden = !hasArgon && menuBarQuotaBar !== "argon7d";
+    if (btn.dataset.qbar === "grokbot") btn.hidden = !hasGrokbotQuota && menuBarQuotaBar !== "grokbot";
   });
 }
 window.__onMenuBarFields = (fields, qbar) => {
@@ -10774,8 +10798,18 @@ function renderToolChips(d) {
       <span class="cnt">${fmtNum(t.tokens)}</span>
     </button>`;
   }
+  const grokChip = d.grokbot || d.quotas?.grokbot;
+  if (grokChip) html += `<button type="button" class="chip" data-focus-agent="grokbot" title="查看 Grok Bot 消息与本地周额度">
+    <span class="dot" style="background:#7b81dc"></span>Grok Bot</button>`;
   bar.innerHTML = html;
-  bar.querySelectorAll(".chip").forEach(btn => {
+  bar.querySelector('[data-focus-agent="grokbot"]')?.addEventListener("click", () => {
+    if (isPopover) document.querySelector('#popTabs [data-tab="overview"]')?.click();
+    const selector = isPopover ? "#agentListPop" : "#agentList";
+    const card = document.querySelector(`${selector} [data-agent="grokbot"]`);
+    card?.focus({preventScroll: true});
+    card?.scrollIntoView({block: "nearest"});
+  });
+  bar.querySelectorAll(".chip[data-tool]").forEach(btn => {
     btn.addEventListener("click", () => {
       state.tool = btn.dataset.tool;
       btn.classList.remove("pop");
@@ -10822,6 +10856,24 @@ function agyQuotaDiagnostic(status) {
   if (status?.state === "live") return "来自运行中的 Antigravity 桌面版";
   if (status?.state === "cached") return "Antigravity 桌面版 · 上次读取";
   return "暂未读到官方额度";
+}
+
+function grokBotQuotaExpired(q, now = Date.now()/1000) {
+  if (q?.source !== "local_cache") return false;
+  const reset = (Array.isArray(q.buckets) ? q.buckets.find(b => b?.key === "grokbot:weekly")?.resets_at : null) ?? q.resets_at;
+  return q.state === "expired" || [q.expires_at, reset].some(t => Number.isFinite(t) && t > 0 && t <= now);
+}
+
+function pickGrokBotWeeklyQuota(q, now = Date.now()/1000) {
+  if (q?.source !== "local_cache" || !Array.isArray(q.buckets) || grokBotQuotaExpired(q, now)) return null;
+  const expiry = Number(q.expires_at);
+  if (!Number.isFinite(expiry) || expiry <= now) return null;
+  return q.buckets.find(b => {
+    if (b?.key !== "grokbot:weekly" || !Number.isFinite(b.used_percent) ||
+        b.used_percent < 0 || b.used_percent > 100) return false;
+    const reset = Number(b.resets_at);
+    return b.resets_at == null || (Number.isFinite(reset) && reset > now);
+  }) || null;
 }
 
 let agyQuotaColdLoading = false;
@@ -10887,10 +10939,13 @@ function renderTopQuota(d) {
   };
   const buckets = quotas.antigravity?.buckets || [];
   let selected = null;
-  for (const source of (mode === "auto" ? ["gem5h", "gem7d", "cg5h", "cg7d", "argon7d", "codex"] : [mode])) {
+  for (const source of (mode === "auto" ? ["gem5h", "gem7d", "cg5h", "cg7d", "argon7d", "codex", "grokbot"] : [mode])) {
     if (source === "codex") {
       const b = pickCodexQuotaBucket(quotas.codex);
       if (b) selected = [b, Number(b.window_minutes) === 10080 ? "Codex 周" : "Codex"];
+    } else if (source === "grokbot") {
+      const b = pickGrokBotWeeklyQuota(quotas.grokbot || d.grokbot?.quota);
+      if (b) selected = [b, "Grok Bot 周"];
     } else {
       const spec = keyMap[source];
       const b = spec && buckets.find(x => x?.key === spec[0] && x.used_percent != null);
@@ -10905,15 +10960,17 @@ function renderTopQuota(d) {
     : mode === "codex" ? codexLoading : !!keyMap[mode] && agyLoading);
   setAgyQuotaColdLoading(!selected && !!keyMap[mode] && agyLoading);
   if (!selected) {
-    const name = mode === "auto" && loading ? "官方额度" : mode === "codex" ? "Codex 周" : keyMap[mode]?.[1];
+    const name = mode === "auto" && loading ? "官方额度" : mode === "codex" ? "Codex 周" : mode === "grokbot" ? "Grok Bot 周" : keyMap[mode]?.[1];
     if (!name) { box.classList.remove("show"); return; }
     document.getElementById("tqName").textContent = name;
     const pct = document.getElementById("tqPct");
-    pct.textContent = loading ? "读取中…" : "暂无数据";
+    const expiredGrok = mode === "grokbot" && grokBotQuotaExpired(quotas.grokbot || d.grokbot?.quota);
+    pct.textContent = loading ? "读取中…" : expiredGrok ? "待刷新" : "暂无数据";
     pct.style.color = "var(--muted)";
     document.getElementById("tqFill").style.width = "0%";
     document.getElementById("tqRst").textContent = "";
-    box.title = loading ? "正在读取选定的官方额度…" : "选定的额度暂无数据；如需自动切换，请在设置中选择「自动」";
+    box.title = loading ? "正在读取选定的官方额度…" : expiredGrok ? "Grok Bot 额度缓存已过期 · 等待刷新"
+      : "选定的额度暂无数据；如需自动切换，请在设置中选择「自动」";
     box.classList.add("show");
     return;
   }
@@ -11409,6 +11466,46 @@ function fmtResetTime(tsSec) {
   return `${Math.max(1, m)}m`;
 }
 
+function renderGrokBotAgent(g, q) {
+  const bucket = pickGrokBotWeeklyQuota(q);
+  const expired = grokBotQuotaExpired(q);
+  const fmtDate = value => {
+    const n = Number(value);
+    return Number.isFinite(n) && n > 0 && n < 8.64e12
+      ? new Date(n * 1000).toLocaleString("zh-CN", {month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false})
+      : "";
+  };
+  const count = n => Number.isFinite(n) && n >= 0 ? fmtNum(n) : "—";
+  const p50 = g?.reply_latency_p50;
+  const latency = Number.isFinite(p50) && p50 >= 0 && g.latency_samples > 0 ? `${p50.toFixed(2)}s` : "—";
+  const last = fmtDate(g?.last_active_ts);
+  const readAt = bucket ? fmtDate(q.read_at) : "";
+  const resetAt = bucket ? fmtResetTime(bucket.resets_at) : "";
+  const rem = bucket ? Math.max(0, Math.min(100, 100-bucket.used_percent)) : null;
+  const color = rem <= 15 ? "var(--bad)" : rem <= 30 ? "var(--warn)" : "var(--good)";
+  const plan = [q?.plan, q?.plan_tier].map(x => typeof x === "string" ? x.trim().slice(0, 48) : "").filter(Boolean).join(" · ");
+  const warn = bucket && q.would_refuse_send === true ? '<div class="grokbot-warning">Grok Bot 可能暂时拒绝发送消息，请留意周额度。</div>' : "";
+  const val = (label, value) => `<div class="stat-cell"><span class="stat-lbl">${label}</span><strong class="stat-val">${value}</strong></div>`;
+  return `<div class="agent-item" data-agent="grokbot" tabindex="-1" style="border-left-color:#7b81dc">
+    <div class="agent-top"><span class="agent-name">Grok Bot</span>
+      ${plan && bucket ? `<span class="quota-badge grokbot-plan">${esc(plan)}</span>` : ""}
+      <span class="grokbot-meta">${last ? "最近活跃 " + esc(last) : "本地消息记录"}</span>
+    </div>
+    <div class="agent-stats">${val("会话",Number.isFinite(g?.sessions) && g.sessions >= 0 ? count(g.sessions)+" 个" : "—")}
+      ${val("交互", Number.isFinite(g?.user_messages) && Number.isFinite(g?.bot_replies) ? `${count(g.user_messages)} 问 / ${count(g.bot_replies)} 答` : "—")}
+      ${val("回复中位",latency)}</div>
+    <div class="quota-row">
+      <div class="quota-item"><span class="quota-lbl">Grok Bot 周</span>
+        ${bucket ? `<div class="quota-track"><div class="quota-fill" style="width:${rem}%;background:${color}"></div></div><span class="quota-pct" style="color:${color}">剩 ${rem.toFixed(1)}%</span>`
+          : `<span class="grokbot-meta">${expired ? "缓存已过期 · 等待刷新" : "暂无可用周额度"}</span>`}
+      </div>
+      ${bucket ? `<div class="grokbot-meta">本地缓存${readAt ? " · 读取 " + esc(readAt) : ""}${resetAt ? " · " + esc(resetAt) + " 后重置" : ""} · 已用 ${bucket.used_percent.toFixed(1)}%</div>` : ""}
+      ${warn}
+    </div>
+    <div class="grokbot-meta">云端推理不落盘 Token 与底层模型名 · 不计入总 Token / 费用 / 模型排行</div>
+  </div>`;
+}
+
 function renderAgents(d) {
   const targets = [
     [document.getElementById("agentList"), document.getElementById("agentCountPill")],
@@ -11417,8 +11514,9 @@ function renderAgents(d) {
   const tools = d.tools || [];
   const grand = Math.max(1, d.kpi.tokens);
 
+  const hasGrokBot = d.grokbot || d.quotas?.grokbot;
   const html = !tools.length
-    ? `<div class="empty">暂无本地会话数据</div>`
+    ? (hasGrokBot ? "" : `<div class="empty">暂无本地会话数据</div>`)
     : tools.map(t => {
         const share = Math.round((t.tokens / grand) * 100);
         const accent = esc(t.accent || "#6B7280");
@@ -11564,10 +11662,13 @@ function renderAgents(d) {
         </div>`;
       }).join("");
 
+  const grokHtml = hasGrokBot ? renderGrokBotAgent(d.grokbot, d.quotas?.grokbot || d.grokbot?.quota) : "";
   for (const [el, pill] of targets) {
-    if (pill) pill.textContent = `${tools.length} 个活跃`;
+    if (pill) pill.textContent = `${tools.length + (d.grokbot?.sessions > 0 ? 1 : 0)} 个活跃`;
     if (el) {
-      el.innerHTML = html;
+      const retainGrokFocus = document.activeElement?.dataset?.agent === "grokbot" && el.contains(document.activeElement);
+      el.innerHTML = grokHtml + html;
+      if (retainGrokFocus) el.querySelector('[data-agent="grokbot"]')?.focus({preventScroll: true});
       el.querySelectorAll(".quota-edit-btn").forEach(btn => {
         btn.addEventListener("click", (e) => {
           e.stopPropagation();

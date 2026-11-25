@@ -106,7 +106,7 @@ brew upgrade --cask tootoo
 
 ### 方式二：下载 GitHub Release 安装包
 
-1. 前往 [**Releases**](https://github.com/uuuyuqi/tootoo/releases) 下载最新版 `TooToo-v0.2.16-macos-universal.zip`。
+1. 前往 [**Releases**](https://github.com/uuuyuqi/tootoo/releases) 下载最新版 `TooToo-v0.2.17-macos-universal.zip`。
 2. 解压后将 `TooToo.app` 拖入 `/Applications`。
 3. 此安装包使用 ad-hoc 签名，未经过 Apple 公证。首次安装或手动替换时，macOS 仍可能提示无法验证开发者。
 
@@ -162,6 +162,12 @@ TooToo 启动后自动发现本机已安装工具的会话记录，零配置开�
 
 - Codex 优先保留本地日志已有的有效额度。近期使用过且日志没有可用额度时，macOS 应用才会从标准 Homebrew 位置启动 Codex，后台只向当前 Codex CLI 账号读取额度，不合并不同来源的窗口。
 - Codex 和 AGY 都默认按条件自动读取；设置仅显示来源，不重复显示额度列表。旧版明确保存的 AGY 关闭状态会保留。管理员可为应用进程设置 `TOOTOO_AGY_CLI=off` 或 `TOOTOO_CODEX_QUOTA_AUTO=off`，禁用新的后台读取。
+
+### v0.2.17 更新
+
+- macOS 新增 Grok Bot 周额度和会话活跃度。只从本机读取额度缓存和消息元数据；不读取凭证，不提取对话正文，不计入 Token、费用或模型排行。过期额度显示待刷新。可钉选到顶部和菜单栏。
+- Codex 可扫描普通与 Zstandard 压缩会话日志（有标准库解压能力、可选 Python 模块或本机 `zstd` 时）；修正推理 Token 重复计数，并补记日志中可核实、未被累计值覆盖的上下文压缩用量。
+- 进化图鉴用浅灰徽章显示曾解锁但今日未达到的形态，保留头像细节、饰品和互动。
 
 ### v0.2.16 更新
 

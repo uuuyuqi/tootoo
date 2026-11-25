@@ -1,4 +1,5 @@
 import AppKit
+import CoreFoundation
 import Foundation
 import IOKit.pwr_mgt
 import WebKit
@@ -349,6 +350,7 @@ let ALL_MENUBAR_FIELDS: [(key: String, label: String)] = [
     ("q_cg7d",  "C/G 周 剩余额度"),
     ("q_argon7d", "Gemini 4 Argon 周额度"),
     ("q_codex", "Codex 剩余额度"),
+    ("q_grokbot", "Grok Bot 周剩余额度"),
 ]
 
 struct TodayMetrics {
@@ -364,6 +366,7 @@ struct TodayMetrics {
     let argon7dRem: Int?
     let codexRem: Int?
     let codexWeekly: Bool
+    let grokBotWeeklyRem: Int?
 }
 
 // Bottom micro quota bar options for menu bar
@@ -376,12 +379,35 @@ let ALL_QUOTA_BAR_MODES: [(key: String, label: String)] = [
     ("cg7d", "C/G 周"),
     ("argon7d", "Gemini 4 Argon 周额度"),
     ("codex", "Codex 周"),
+    ("grokbot", "Grok Bot 周剩余额度"),
 ]
 
 func selectQuotaBar(mode: String, bars: [(key: String, remaining: Int?, label: String)]) -> (key: String, remaining: Int?, label: String)? {
     if mode == "none" { return nil }
     if mode == "auto" { return bars.first { $0.remaining != nil } }
     return bars.first { $0.key == mode }
+}
+
+func grokBotWeeklyRemaining(_ quotas: [String: Any], now: TimeInterval = Date().timeIntervalSince1970) -> Int? {
+    guard let grok = quotas["grokbot"] as? [String: Any],
+          (grok["state"] as? String) != "expired",
+          let buckets = grok["buckets"] as? [[String: Any]] else { return nil }
+    if let rawExpiry = grok["expires_at"], !(rawExpiry is NSNull) {
+        guard let expiry = rawExpiry as? NSNumber, CFGetTypeID(expiry) != CFBooleanGetTypeID(),
+              expiry.doubleValue.isFinite, expiry.doubleValue > now else { return nil }
+    }
+    for bucket in buckets where (bucket["key"] as? String) == "grokbot:weekly" {
+        guard let amount = bucket["used_percent"] as? NSNumber,
+              CFGetTypeID(amount) != CFBooleanGetTypeID() else { continue }
+        let used = amount.doubleValue
+        guard used.isFinite, (0.0...100.0).contains(used) else { continue }
+        if let rawReset = bucket["resets_at"], !(rawReset is NSNull) {
+            guard let reset = rawReset as? NSNumber, CFGetTypeID(reset) != CFBooleanGetTypeID(),
+                  reset.doubleValue.isFinite, reset.doubleValue > now else { continue }
+        }
+        return Int((100.0 - used).rounded())
+    }
+    return nil
 }
 
 class MenuBarQuotaBarView: NSView {
@@ -831,7 +857,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         }
     }
 
-    private func showContextMenu() {
+    private func makeContextMenu() -> NSMenu {
         let menu = NSMenu()
         let tierItem = NSMenuItem(title: "当前形态：Lv.\(currentTier.level) \(currentTier.name)", action: nil, keyEquivalent: "")
         tierItem.isEnabled = false
@@ -862,6 +888,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         // Individual toggles
         for f in ALL_MENUBAR_FIELDS {
             if f.key == "q_argon7d" && lastMetrics?.argon7dRem == nil && !menuBarFields.contains(f.key) { continue }
+            if f.key == "q_grokbot" && lastMetrics?.grokBotWeeklyRem == nil && !menuBarFields.contains(f.key) { continue }
             let item = NSMenuItem(title: "显示 \(f.label)", action: #selector(toggleField(_:)), keyEquivalent: "")
             item.representedObject = f.key
             item.state = menuBarFields.contains(f.key) ? .on : .off
@@ -873,6 +900,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         modeMenu.addItem(qBarHeader)
         for q in ALL_QUOTA_BAR_MODES {
             if q.key == "argon7d" && lastMetrics?.argon7dRem == nil && menuBarQuotaBar != q.key { continue }
+            if q.key == "grokbot" && lastMetrics?.grokBotWeeklyRem == nil && menuBarQuotaBar != q.key { continue }
             let item = NSMenuItem(title: "  \(q.label)", action: #selector(selectQuotaBarMode(_:)), keyEquivalent: "")
             if q.key == "argon7d" { item.toolTip = "独立于 Gemini 通用周额度" }
             item.representedObject = q.key
@@ -892,7 +920,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         menu.addItem(NSMenuItem.separator())
         menu.addItem(withTitle: "退出 \(variantName)", action: #selector(quitApp), keyEquivalent: "q")
 
-        statusItem.menu = menu
+        return menu
+    }
+
+    private func showContextMenu() {
+        statusItem.menu = makeContextMenu()
         statusItem.button?.performClick(nil)
         statusItem.menu = nil
     }
@@ -1203,8 +1235,24 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         menuBarQuotaBar = "gem5h"
         setupStatusItem()
         setupPopover()
+        guard !smokeMenuFieldKeys().contains("q_grokbot"), !smokeMenuFieldKeys().contains("grokbot") else {
+            fatalError("Grok Bot menu choices should be hidden before data or selection")
+        }
+        menuBarFields.append("q_grokbot")
+        menuBarQuotaBar = "grokbot"
+        guard smokeMenuFieldKeys().contains("q_grokbot"), smokeMenuFieldKeys().contains("grokbot") else {
+            fatalError("Persisted Grok Bot choices must be accessible without current data")
+        }
+        menuBarFields = ["tokens"]
+        menuBarQuotaBar = "gem5h"
         refreshMenuBarSummary()
         smokeWait(1, polls: 120) { [weak self] in self?.verifyMenuSummarySmoke() }
+    }
+
+    private func smokeMenuFieldKeys() -> [String] {
+        makeContextMenu().items.first { $0.title == "菜单栏显示配置" }?.submenu?.items.compactMap {
+            $0.representedObject as? String
+        } ?? []
     }
 
     private func smokeWait(_ count: Int, polls: Int, done: @escaping () -> Void) {
@@ -1227,6 +1275,29 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
 
     private func verifyMenuSummarySmoke() {
         guard smokeMetricsStillValid() else { fatalError("Effective XP must change tier, not raw menu token text") }
+        guard let snapshot = lastMetrics,
+              snapshot.grokBotWeeklyRem == 37,
+              smokeMenuFieldKeys().contains("q_grokbot"), smokeMenuFieldKeys().contains("grokbot") else {
+            fatalError("Valid Grok Bot weekly should populate both native menu choices")
+        }
+        menuBarFields = ["q_grokbot"]
+        menuBarQuotaBar = "grokbot"
+        applyMenuBarMetrics(snapshot)
+        DispatchQueue.main.async {
+            guard self.statusItem.button?.attributedTitle.string == " GrokBot 37%",
+                  self.quotaBarView?.percent == 37,
+                  self.baseStatusToolTip.contains("Grok Bot 周 剩余 37%") else {
+                fatalError("Pinned Grok Bot text/bar did not render the weekly figure")
+            }
+            print("PASS native Grok Bot menu choices, pinned weekly bar and text")
+            self.menuBarFields = ["tokens"]
+            self.menuBarQuotaBar = "gem5h"
+            self.applyMenuBarMetrics(snapshot)
+            self.smokeOpenUpdates()
+        }
+    }
+
+    private func smokeOpenUpdates() {
         openUpdatesFromMenu()
         // A simultaneous popover message must not consume the pending full-window intent.
         handleWebAction("getUpdateState", payload: [:])
@@ -1320,7 +1391,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
 
             completion(TodayMetrics(
                 tokens: tok, effectiveTodayTokens: evolutionTokens, cost: cost, tps: tps, ttft: ttft,
-                gem5hRem: gem5h, gem7dRem: gem7d, cg5hRem: cg5h, cg7dRem: cg7d, argon7dRem: argon7d, codexRem: codex, codexWeekly: codexWeekly
+                gem5hRem: gem5h, gem7dRem: gem7d, cg5hRem: cg5h, cg7dRem: cg7d, argon7dRem: argon7d, codexRem: codex, codexWeekly: codexWeekly,
+                grokBotWeeklyRem: grokBotWeeklyRemaining(quotas)
             ))
         }.resume()
     }
@@ -1351,6 +1423,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
                 if let v = m.argon7dRem { parts.append("Argon周 \(v)%") }
             case "q_codex":
                 if let v = m.codexRem { parts.append("Codex \(v)%") }
+            case "q_grokbot":
+                if let v = m.grokBotWeeklyRem { parts.append("GrokBot \(v)%") }
             default:
                 break
             }
@@ -1365,6 +1439,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             ("cg7d", m.cg7dRem, "C/G 周"),
             ("argon7d", m.argon7dRem, "Gemini 4 Argon 周额度"),
             ("codex", m.codexRem, m.codexWeekly ? "Codex 周" : "Codex"),
+            // Add Grok Bot as a final Auto candidate; existing precedence is unchanged.
+            ("grokbot", m.grokBotWeeklyRem, "Grok Bot 周"),
         ]
         DispatchQueue.main.async {
             guard let button = self.statusItem.button else { return }
