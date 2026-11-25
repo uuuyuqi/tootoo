@@ -10807,7 +10807,8 @@ function renderToolChips(d) {
     const selector = isPopover ? "#agentListPop" : "#agentList";
     const card = document.querySelector(`${selector} [data-agent="grokbot"]`);
     card?.focus({preventScroll: true});
-    card?.scrollIntoView({block: "nearest"});
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    card?.scrollIntoView({block: "nearest", behavior: reduceMotion ? "auto" : "smooth"});
   });
   bar.querySelectorAll(".chip[data-tool]").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -11667,7 +11668,7 @@ function renderAgents(d) {
     if (pill) pill.textContent = `${tools.length + (d.grokbot?.sessions > 0 ? 1 : 0)} 个活跃`;
     if (el) {
       const retainGrokFocus = document.activeElement?.dataset?.agent === "grokbot" && el.contains(document.activeElement);
-      el.innerHTML = grokHtml + html;
+      el.innerHTML = html + grokHtml;
       if (retainGrokFocus) el.querySelector('[data-agent="grokbot"]')?.focus({preventScroll: true});
       el.querySelectorAll(".quota-edit-btn").forEach(btn => {
         btn.addEventListener("click", (e) => {
