@@ -28,14 +28,14 @@ def main(resources):
                    PYTHONDONTWRITEBYTECODE="1", TZ="UTC")
         now_ms = int(time.time() * 1000)
         private_text = "private-prompt-fixture-must-not-appear"
-        private_id = "fixture-private-account-must-not-appear"
+        private_id = "auth0%7Cfixture-private-account-must-not-appear"
         base = "sand.client.slice.account." + private_id
         cache = {"value": {"kind": "present", "expiresAtMs": now_ms + 600_000, "reading": {
             "readAtMs": now_ms - 20_000, "usage": {"percentUsed": "63",
             "nextResetMs": now_ms + 3_600_000, "grokPlanLabel": "Fixture Plan"},
         }}}
         quota_file = blob(store, base + ".weekly-usage.cache", cache)
-        blob(store, base + ".transcript.replicas.test", [
+        blob(store, base + ".transcript.replicas.test%7Cuuid", [
             {"kind": "message", "role": "user", "timestampMs": now_ms - 5000,
              "requestId": "linked-request", "content": private_text},
             {"kind": "send-message", "timestampMs": now_ms - 3000, "requestId": "linked-request",
@@ -47,6 +47,9 @@ def main(resources):
             quota = live["quotas"]["grokbot"]
             assert quota["buckets"][0]["key"] == "grokbot:weekly", quota
             assert quota["buckets"][0]["used_percent"] == 63, quota
+            activity = live["grokbot"]
+            assert (activity["sessions"], activity["user_messages"], activity["bot_replies"]) == (1, 1, 1), activity
+            assert activity["reply_latency_p50"] == 2, activity
             assert live["kpi"]["tokens"] == live["kpi"]["cost"] == 0, live["kpi"]
             for private in (private_id, private_text, "linked-request"):
                 assert private not in json.dumps(live), "raw Grok account/content leaked to telemetry"

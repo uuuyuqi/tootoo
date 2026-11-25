@@ -15,6 +15,7 @@ import threading
 import time
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import unquote_to_bytes
 
 _CACHE_LOCK = threading.Lock()
 _MEM = {}
@@ -23,7 +24,12 @@ _MAX_QUOTA = 256 * 1024
 _MAX_VALUE = 512
 _MAX_EVENTS = 100_000
 _MAX_FILES = 4096
-_NAME = re.compile(r"sand\.client\.slice\.account\.([A-Za-z0-9_:@+\-]{1,160})\.(weekly-usage\.cache|transcript\.replicas\.[A-Za-z0-9_:.@+\-]{0,320})\Z")
+_NAME = re.compile(
+    r"sand\.client\.slice\.account\.([A-Za-z0-9_:@+%\-]{1,160})\."
+    r"(weekly-usage\.cache|transcript\.replicas\.([A-Za-z0-9_:.@+%\-]{0,320}))\Z"
+)
+_ACCOUNT_ID = re.compile(rb"[A-Za-z0-9_:@+|\-]+")
+_REPLICA_ID = re.compile(rb"[A-Za-z0-9_:.@+|\-]*")
 _ESC = re.compile(rb'["\\\\\x00-\x1f]')
 _META = {b'"kind"': "kind", b'"role"': "role", b'"timestampMs"': "timestampMs", b'"requestId"': "requestId"}
 # Content-like keys are never descended into, even if nested JSON contains
@@ -41,9 +47,21 @@ def _key(name):
     except (ValueError, UnicodeError, binascii.Error):
         return None
     m = _NAME.fullmatch(decoded)
-    if m:
-        return m.group(1), "quota" if m.group(2) == "weekly-usage.cache" else "transcript"
-    return None
+    if not m:
+        return None
+    encoded, suffix, replica = m.groups()
+    # Decode one layer only for validation and the in-memory account join.
+    # Files are still opened by their original, base32-only directory entry.
+    # The post-decode allowlists reject malformed escapes, nested escapes,
+    # encoded separators, controls, and traversal.
+    account = unquote_to_bytes(encoded)
+    if not _ACCOUNT_ID.fullmatch(account):
+        return None
+    if replica is not None:
+        replica_id = unquote_to_bytes(replica)
+        if not _REPLICA_ID.fullmatch(replica_id) or b".." in replica_id:
+            return None
+    return account.decode("ascii"), "quota" if suffix == "weekly-usage.cache" else "transcript"
 
 
 def _dir():

@@ -184,7 +184,7 @@ def fmt_num(n: int | float) -> str:
 
 
 def print_cli_report(range_key: str, tool_filter: str) -> None:
-    data = build_telemetry(range_key=range_key, tool_filter=tool_filter)
+    data = build_telemetry(range_key=range_key, tool_filter=tool_filter, wait_for_history=True)
     kpi = data["kpi"]
 
     bold = "\033[1m"
@@ -506,7 +506,7 @@ def main() -> None:
         return
 
     if args.json:
-        print(json.dumps(build_telemetry(args.range, args.tool), indent=2, ensure_ascii=False))
+        print(json.dumps(build_telemetry(args.range, args.tool, wait_for_history=True), indent=2, ensure_ascii=False))
         return
 
     if args.cli:

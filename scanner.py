@@ -15,6 +15,7 @@ import atexit
 import fcntl
 import glob
 import hashlib
+import heapq
 import http.client
 import io
 import json
@@ -29,6 +30,8 @@ import subprocess
 import tempfile
 import threading
 import time
+import zlib
+from bisect import bisect_left, bisect_right
 from collections import defaultdict
 from contextlib import contextmanager
 from datetime import date, datetime, timedelta, timezone
@@ -39,11 +42,11 @@ from agy_cli_quota import fetch_agy_cli_quota
 from codex_app_quota import codex_cli_home, fetch_codex_cli_quota, peek_codex_app_quota
 from grokbot import grokbot_activity
 from pricing import PricingEngine, calibrate_observed_rates, trigger_background_sync_if_stale
-from quota_runtime import data_root
+from quota_runtime import data_root, publish as publish_telemetry
 
 HOME = os.path.expanduser("~")
 CACHE_DIR = data_root()
-CACHE_FILE = os.path.join(CACHE_DIR, "scan_cache_v5.json")
+CACHE_FILE = os.path.join(CACHE_DIR, "scan_cache_v6.json")
 CONFIG_FILE = os.path.join(CACHE_DIR, "config.json")
 EVO_STATE_FILE = os.path.join(CACHE_DIR, "evo_state.json")
 # Separate from the scanner lock. Never hold this while scanning logs or
@@ -161,7 +164,9 @@ def _real_tokens_for_xp_post(today_iso: str) -> int:
     events, _, _ = scan_all_events()
     observed = time.monotonic()
     real = sum(ev["in"] + ev["out"] + ev["cr"] + ev["cw"] + ev.get("reason", 0)
-               for ev in events if ev["day"] == today_iso)
+               for ev in _iter_window(events, today_iso, today_iso)
+               if not (isinstance(events, _RangedEvents) and events.history_pending
+                       and ev.get("codex_compaction_id") is not None))
     with _EVO_LOCK:
         if _local_day() != today_iso:
             return 0
@@ -2053,6 +2058,13 @@ def _save_cache(cache: dict[str, Any]) -> None:
         with open(tmp, "w", encoding="utf-8") as f:
             json.dump(cache, f, separators=(",", ":"))
         os.replace(tmp, CACHE_FILE)
+        # v5 is derived data, not provider logs. Never load its huge JSON on
+        # startup; remove it only after a v6 hot cache was safely published.
+        if os.path.basename(CACHE_FILE) == "scan_cache_v6.json":
+            try:
+                os.unlink(os.path.join(CACHE_DIR, "scan_cache_v5.json"))
+            except OSError:
+                pass
     except OSError:
         pass
 
@@ -2076,7 +2088,7 @@ def _file_sig(path: str) -> list[int | float]:
 _SCAN_LOCK = threading.Lock()
 _MEM_FILE_CACHE: dict[str, Any] | None = None
 _MEM_SCAN_TS: float = 0.0
-_MEM_SCAN_EVENTS: list[dict[str, Any]] | None = None
+_MEM_SCAN_EVENTS: _RangedEvents | None = None
 _MEM_SCAN_QUOTAS: dict[str, Any] = {}
 _MEM_CODEX_ACTIVITY: float = 0.0
 _MEM_OBSERVED_TS: float = -1.0
@@ -2202,15 +2214,339 @@ def _hydrate_parsed(tool: str, path: str, parsed: dict[str, Any], fallback_proj:
     return backfilled
 
 
-def scan_all_events(force: bool = False, rebuild: bool = False) -> tuple[list[dict[str, Any]], dict[str, Any], float]:
+# ---------- Compressed Codex history ----------
+#
+# Immutable per-file records retain exact tokens, durations, projects, session
+# identities, quota, and compaction IDs. Only the target days are expanded into
+# event dictionaries. Keeping row data (rather than rounded summaries) preserves
+# historical prices under new pricing rules, histograms, and end-of-range tape.
+_CODEX_ARCHIVE_DAYS = 7
+_CODEX_SYNC_ZSTD_MAX_FILES = 8
+_CODEX_SYNC_ZSTD_MAX_BYTES = 256 * 1024
+_CODEX_ARCHIVE_BATCH = 128
+_CODEX_ARCHIVE_INVENTORY_TTL = 60.0
+_CODEX_ARCHIVE_RETRY = 60.0
+_CODEX_ARCHIVE_SCHEMA = 1
+
+
+class _ArchivedCodex:
+    def __init__(self, path, payload):
+        self.project, self.quota, self.ordinary_ids, rows = payload
+        self.count = len(rows)
+        self.session = hashlib.md5(path.encode("utf-8")).hexdigest()[:10]
+        self.days = defaultdict(list)
+        self.compactions = []
+        self.latest = 0.0
+        for offset, row in enumerate(rows):
+            ts, day, *columns = row
+            self.days[day].append((offset, ts, *columns))
+            if columns[-1] is not None:
+                self.compactions.append((offset, columns[-1]))
+            self.latest = max(ts, self.latest)
+
+    @classmethod
+    def pack(cls, parsed):
+        return (
+            parsed.get("project"), parsed.get("quota"), parsed.get("codex_ordinary_response_ids", ()),
+            [(e["ts"], e["day"], e["hour"], e["model"], e["in"], e["out"], e["cr"], e["cw"],
+              e.get("reason", 0), e.get("gen"), e.get("ttft"), e.get("codex_compaction_id"))
+             for e in parsed.get("events", ())],
+        )
+
+    def event(self, day, row):
+        _offset, ts, hour, model, inp, out, cr, cw, reason, gen, ttft, _rid = row
+        event = {"ts": ts, "day": day, "hour": hour, "model": model, "in": inp, "out": out,
+                 "cr": cr, "cw": cw, "reason": reason, "gen": gen, "ttft": ttft,
+                 "tool": "codex", "project": self.project, "session": self.session}
+        if _rid is not None:
+            event["codex_compaction_id"] = _rid
+        return event
+
+
+class _CodexArchive:
+    def __init__(self, cache_file, roots):
+        self.cache_file = cache_file
+        self.roots = roots
+        self.db_path = os.path.join(os.path.dirname(cache_file), "codex_archive_v1.sqlite3")
+        self.lock = threading.Lock()
+        self.entries = {}        # published copy-on-write: path -> (file signature, compact record)
+        self.wanted = {}
+        self.retry = {}
+        self.thread = None
+        self.epoch = 0
+        self.cancelled = False
+        self.bypass_disk = set()
+        self.compressed = {}
+        self.discovered_at = -math.inf
+
+    def close(self):
+        with self.lock:
+            self.cancelled = True
+            self.wanted = {}
+
+    def snapshot(self):
+        with self.lock:
+            return self.entries
+
+    def wait(self):
+        # One-shot CLI only. HTTP and SSE must always return the active data
+        # without waiting for the worker, even on force/manual rebuild.
+        while True:
+            with self.lock:
+                thread = self.thread
+            if thread is None:
+                return
+            thread.join()
+
+    def inventory(self, now, force):
+        # Called by the foreground scan; throttled archive metadata discovery,
+        # never opens or decompresses a single old archive.
+        if not force and now - self.discovered_at < _CODEX_ARCHIVE_INVENTORY_TTL:
+            return self.compressed
+        out = {}
+        for root in self.roots:
+            for folder in ("sessions", "archived_sessions"):
+                d = os.path.join(root, folder)
+                paths = {}
+                for p in sorted(glob.glob(os.path.join(d, "**", "*.jsonl.zst"), recursive=True)):
+                    try:
+                        st = os.stat(p)
+                        paths[p] = (st.st_mtime, st.st_size)
+                    except OSError:
+                        pass
+                out[d] = paths
+        self.compressed = out
+        self.discovered_at = now
+        return out
+
+    def request(self, wanted, rebuild):
+        with self.lock:
+            if rebuild:
+                self.epoch += 1
+                self.bypass_disk = set(wanted)
+                self.entries = {}
+                self.retry = {}
+            if self.wanted != wanted:
+                self.wanted = wanted
+                removed = {p for p, (sig, _) in self.entries.items() if wanted.get(p) != sig}
+                if removed:
+                    self.entries = {p: entry for p, entry in self.entries.items() if p not in removed}
+                self.retry = {p: info for p, info in self.retry.items() if wanted.get(p) == info[0]}
+            if self.thread is None and any(
+                p not in self.entries and self.retry.get(p, (None, 0))[1] <= time.monotonic()
+                for p in wanted
+            ):
+                self.thread = threading.Thread(target=self._run, name="codex-archive-scan", daemon=True)
+                self.thread.start()
+            failed = len(self.retry)
+            return self.entries, len(self.entries) + failed < len(wanted), failed
+
+    def _open_db(self):
+        db = None
+        try:
+            os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
+            db = sqlite3.connect(self.db_path, timeout=2)
+            db.execute("CREATE TABLE IF NOT EXISTS archives (path TEXT PRIMARY KEY, signature TEXT NOT NULL,"
+                       " revision TEXT NOT NULL, payload BLOB NOT NULL)")
+            return db
+        except (OSError, sqlite3.Error):
+            if db is not None:
+                db.close()
+            return None
+
+    def _read_or_parse(self, db, path, sig, bypass_disk):
+        key = json.dumps(sig, separators=(",", ":"))
+        revision = f"{_CODEX_ARCHIVE_SCHEMA}:{_CODEX_PARSER_REV}"
+        if db is not None and not bypass_disk:
+            try:
+                row = db.execute("SELECT payload FROM archives WHERE path=? AND signature=? AND revision=?",
+                                 (path, key, revision)).fetchone()
+                if row is not None:
+                    return _ArchivedCodex(path, json.loads(zlib.decompress(row[0]))), None
+            except (sqlite3.Error, ValueError, TypeError, IndexError, zlib.error):
+                pass  # Derived cache only; recover from the original archive.
+        parsed = parse_codex_file(path)
+        if parsed.get("zstd_retry"):
+            return None, None
+        try:
+            st = os.stat(path)
+            if (st.st_mtime, st.st_size) != sig:
+                return None, None  # A concurrent app move/edit is rechecked on inventory refresh.
+        except OSError:
+            return None, None
+        _hydrate_parsed("codex", path, parsed)
+        payload = _ArchivedCodex.pack(parsed)
+        stored = ((path, key, revision, zlib.compress(json.dumps(payload, separators=(",", ":"),
+                                                                  ensure_ascii=False).encode(), 3))
+                  if db is not None else None)
+        return _ArchivedCodex(path, payload), stored
+
+    def _run(self):
+        db = self._open_db()
+        try:
+            while True:
+                with self.lock:
+                    now = time.monotonic()
+                    work = []
+                    if not self.cancelled:
+                        for path, sig in self.wanted.items():
+                            if path not in self.entries and self.retry.get(path, (None, 0))[1] <= now:
+                                work.append((path, sig, path in self.bypass_disk))
+                                if len(work) == _CODEX_ARCHIVE_BATCH:
+                                    break
+                    if not work:
+                        self.thread = None
+                        return
+                    epoch = self.epoch
+                records, writes, retries = {}, [], {}
+                for path, sig, bypass in work:
+                    try:
+                        record, stored = self._read_or_parse(db, path, sig, bypass)
+                    except (OSError, ValueError, TypeError, OverflowError):
+                        record = stored = None
+                    if record is None:
+                        retries[path] = (sig, time.monotonic() + _CODEX_ARCHIVE_RETRY)
+                    else:
+                        records[path] = (sig, record)
+                        if stored is not None:
+                            writes.append(stored)
+                if db is not None and writes:
+                    try:
+                        with db:
+                            db.executemany("INSERT OR REPLACE INTO archives VALUES (?, ?, ?, ?)", writes)
+                    except sqlite3.Error:
+                        pass  # Continue serving in-memory results even in a read-only state dir.
+                with self.lock:
+                    if epoch != self.epoch or self.cancelled:
+                        continue
+                    active_retries = {p: pair for p, pair in retries.items() if self.wanted.get(p) == pair[0]}
+                    entries = {p: pair for p, pair in records.items() if self.wanted.get(p) == pair[0]}
+                    changed = bool(entries) or any(p not in self.retry for p in active_retries)
+                    self.retry.update(active_retries)
+                    for p in entries:
+                        self.retry.pop(p, None)
+                    if changed:
+                        # Invalidate the foreground view even when the result
+                        # was newly unavailable (e.g. no installed decoder).
+                        self.entries = {**self.entries, **entries}
+                        self.bypass_disk.difference_update(entries)
+                if changed:
+                    publish_telemetry()
+                # Give waiting foreground requests a chance to run between archive batches.
+                time.sleep(.015)
+        finally:
+            if db is not None:
+                db.close()
+            with self.lock:
+                if self.thread is threading.current_thread():
+                    self.thread = None
+
+
+class _RangedEvents:
+    def __init__(self, history_pending=False, history_unavailable=0):
+        self.history_pending = history_pending
+        self.history_unavailable = history_unavailable
+        self.total_rows = self.supplement_rows = 0
+        self.days = defaultdict(dict)    # day -> stable source ID -> ordered event rows
+        self.archives = {}
+        self.ordinary_ids = set()
+        self.compactions = {}
+        self.calibration = []
+        self.agy_events = []
+
+    def add_hot(self, index, events):
+        self.total_rows += len(events)
+        for offset, ev in enumerate(events):
+            self.days[ev["day"]].setdefault(index, []).append((offset, ev))
+            rid = ev.get("codex_compaction_id")
+            if rid is not None:
+                self.supplement_rows += 1
+                self.compactions.setdefault(rid, (index, offset))
+            if ev.get("native_cost_parts"):
+                self.calibration.append(ev)
+            if ev["tool"] == "antigravity":
+                self.agy_events.append(ev)
+
+    def add_archive(self, index, archive):
+        self.total_rows += archive.count
+        self.supplement_rows += len(archive.compactions)
+        self.archives[index] = archive
+        self.ordinary_ids.update(archive.ordinary_ids)
+        for offset, rid in archive.compactions:
+            self.compactions.setdefault(rid, (index, offset))
+        for day, rows in archive.days.items():
+            self.days[day][index] = rows
+
+    @staticmethod
+    def _dated_rows(day, rows):
+        return ((row[0], day, row) for row in rows)
+
+    def seal(self):
+        self.day_keys = sorted(self.days)
+        self.count = self.total_rows - self.supplement_rows + len(self.compactions.keys() - self.ordinary_ids)
+
+    def iter_range(self, minimum="0000-01-01", maximum="9999-12-31"):
+        first = bisect_left(self.day_keys, minimum)
+        after = bisect_right(self.day_keys, maximum)
+        by_source = defaultdict(list)
+        for day in self.day_keys[first:after]:
+            for source, rows in self.days[day].items():
+                by_source[source].append(self._dated_rows(day, rows))
+        # Match the original source and within-file order even for interleaved
+        # local days. This preserves stable ties and numerical addition order.
+        for source in sorted(by_source):
+            generators = by_source[source]
+            rows = generators[0] if len(generators) == 1 else heapq.merge(*generators)
+            archive = self.archives.get(source)
+            for offset, day, row in rows:
+                rid = row[-1] if archive else row[1].get("codex_compaction_id")
+                if rid is not None and (rid in self.ordinary_ids or self.compactions[rid] != (source, offset)):
+                    continue
+                yield archive.event(day, row) if archive else row[1]
+
+    def __iter__(self):
+        return self.iter_range()
+
+    def __len__(self):
+        return self.count
+
+
+def _iter_window(events, minimum, maximum):
+    if isinstance(events, _RangedEvents):
+        return events.iter_range(minimum, maximum)
+    return (ev for ev in events if minimum <= ev["day"] <= maximum)
+
+
+_ARCHIVE_OWNER = None
+_MEM_SCAN_ARCHIVES = None
+
+
+def scan_all_events(force: bool = False, rebuild: bool = False) -> tuple[_RangedEvents, dict[str, Any], float]:
     global _MEM_FILE_CACHE, _MEM_SCAN_TS, _MEM_SCAN_EVENTS, _MEM_SCAN_QUOTAS, _MEM_CODEX_ACTIVITY
+    global _ARCHIVE_OWNER, _MEM_SCAN_ARCHIVES
     t0 = time.perf_counter()
     with _SCAN_LOCK:
         now_mono = time.monotonic()
+        codex_home = os.environ.get("CODEX_HOME")
+        roots = [os.path.join(HOME, ".codex")]
+        if codex_home:
+            roots.append(os.path.abspath(os.path.expanduser(codex_home)))
+        unique_roots = {}
+        for root in roots:
+            unique_roots.setdefault(os.path.realpath(root), root)
+        roots = tuple(unique_roots.values())
+        if (_ARCHIVE_OWNER is None or _ARCHIVE_OWNER.cache_file != CACHE_FILE
+                or _ARCHIVE_OWNER.roots != roots):
+            if _ARCHIVE_OWNER is not None:
+                _ARCHIVE_OWNER.close()
+            _ARCHIVE_OWNER = _CodexArchive(CACHE_FILE, roots)
+        archive = _ARCHIVE_OWNER
+        incoming = archive.snapshot()
         if (
             not force
             and not rebuild
             and _MEM_SCAN_EVENTS is not None
+            and incoming is _MEM_SCAN_ARCHIVES
             and (now_mono - _MEM_SCAN_TS) < _MEM_SCAN_TTL
         ):
             elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 1)
@@ -2223,28 +2559,32 @@ def scan_all_events(force: bool = False, rebuild: bool = False) -> tuple[list[di
         else:
             cache = _load_cache()
         fcache: dict[str, Any] = cache.setdefault("files", {})
-        dirty = False
+        dirty = rebuild or (_MEM_FILE_CACHE is None and not os.path.exists(CACHE_FILE))
 
         # Discover all 16 local AI coding agent sources
         sources: list[tuple[str, str]] = []
         for p in discover_antigravity_dbs():
             sources.append(("antigravity", p))
-        codex_home = os.environ.get("CODEX_HOME")
-        codex_roots = [os.path.join(HOME, ".codex")]
-        if codex_home:
-            codex_roots.append(os.path.abspath(os.path.expanduser(codex_home)))
-        seen_codex_roots: set[str] = set()
-        for root in codex_roots:
-            # Deduplicate aliases without changing historical cache keys.
-            identity = os.path.realpath(root)
-            if identity in seen_codex_roots:
-                continue
-            seen_codex_roots.add(identity)
+        # Preserve the old traversal order: root, folder, plain then compressed.
+        # Recent metadata is rechecked during survey, never by decoding history.
+        compressed = archive.inventory(now_mono, force or rebuild)
+        cutoff = time.time() - _CODEX_ARCHIVE_DAYS * 86400
+        # A directory restored/copied today can contain years of compressed
+        # history. Bound the foreground archive work even if all mtimes look new.
+        candidates = ((sig[0], p) for paths in compressed.values() for p, sig in paths.items()
+                      if sig[0] >= cutoff and sig[1] <= _CODEX_SYNC_ZSTD_MAX_BYTES)
+        sync_compressed = {p for _, p in heapq.nlargest(_CODEX_SYNC_ZSTD_MAX_FILES, candidates)}
+        old = {}
+        for root in roots:
             for folder in ("sessions", "archived_sessions"):
                 cx_dir = os.path.join(root, folder)
-                for pattern in ("*.jsonl", "*.jsonl.zst"):
-                    for p in sorted(glob.glob(os.path.join(cx_dir, "**", pattern), recursive=True)):
-                        sources.append(("codex", p))
+                sources.extend(("codex", p) for p in sorted(
+                    glob.glob(os.path.join(cx_dir, "**", "*.jsonl"), recursive=True)))
+                for p, sig in compressed.get(cx_dir, {}).items():
+                    if p not in sync_compressed:
+                        old[p] = sig
+                    sources.append(("codex", p))
+        incoming, history_pending, history_unavailable = archive.request(old, rebuild)
         for p in discover_omp_files():
             sources.append(("omp", p))
         devin_db = os.path.join(HOME, ".local", "share", "devin", "cli", "sessions.db")
@@ -2312,6 +2652,10 @@ def scan_all_events(force: bool = False, rebuild: bool = False) -> tuple[list[di
 
         for tool, path in sources:
             key = f"{tool}:{path}"
+            if tool == "codex" and path in old:
+                if path in incoming:
+                    valid_sources.append((tool, path, key))
+                continue  # Neither read nor persist cold rows in the hot JSON.
             seen_keys.add(key)
             try:
                 sig = _file_sig(path)
@@ -2374,26 +2718,42 @@ def scan_all_events(force: bool = False, rebuild: bool = False) -> tuple[list[di
         _MEM_FILE_CACHE = cache
 
         # Fast path: zero file signatures changed -> reuse in-memory event list directly!
-        if not dirty and _MEM_SCAN_EVENTS is not None:
+        if (not dirty and _MEM_SCAN_EVENTS is not None and incoming is _MEM_SCAN_ARCHIVES
+                and _MEM_SCAN_EVENTS.history_pending == history_pending
+                and _MEM_SCAN_EVENTS.history_unavailable == history_unavailable):
             _MEM_SCAN_TS = time.monotonic()
             _flush_cache_if_needed(force_disk=False)
             elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 1)
             return _MEM_SCAN_EVENTS, _MEM_SCAN_QUOTAS, elapsed_ms
 
-        all_events: list[dict[str, Any]] = []
+        all_events = _RangedEvents(history_pending, history_unavailable)
         quotas: dict[str, Any] = {}
         agy_ws: dict[str, str] | None = None
         active_codex = codex_cli_home() if os.environ.get("TOOTOO_CODEX_QUOTA_AUTO") == "auto" else None
         codex_activity = 0.0
-        seen_codex_compactions: set[str] = set()
-        accounted_codex_responses: set[str] = set()
-        for tool, path, key in valid_sources:
+        for index, (tool, path, key) in enumerate(valid_sources):
+            cold = incoming.get(path) if tool == "codex" else None
+            if cold is not None:
+                historical = cold[1]
+                all_events.add_archive(index, historical)
+                q = historical.quota
+                if _has_valid_quota(q) and (
+                    "codex" not in quotas or _codex_quota_key(q) > _codex_quota_key(quotas["codex"])
+                ):
+                    quotas["codex"] = q
+                if active_codex is not None and historical.latest > codex_activity:
+                    try:
+                        if Path(path).resolve().is_relative_to(active_codex):
+                            codex_activity = historical.latest
+                    except (OSError, RuntimeError):
+                        pass
+                continue
             entry = fcache.get(key)
             if not entry:
                 continue
             parsed = entry["data"]
             if tool == "codex":
-                accounted_codex_responses.update(parsed.get("codex_ordinary_response_ids", ()))
+                all_events.ordinary_ids.update(parsed.get("codex_ordinary_response_ids", ()))
             fb_proj: str | None = None
             if tool == "antigravity" and not parsed.get("project"):
                 if agy_ws is None:
@@ -2413,16 +2773,7 @@ def scan_all_events(force: bool = False, rebuild: bool = False) -> tuple[list[di
                     quotas[tool] = q
             evs = parsed.get("events")
             if evs:
-                if tool == "codex":
-                    for ev in evs:
-                        rid = ev.get("codex_compaction_id")
-                        if rid is not None:
-                            if rid in seen_codex_compactions:
-                                continue
-                            seen_codex_compactions.add(rid)
-                        all_events.append(ev)
-                else:
-                    all_events.extend(evs)
+                all_events.add_hot(index, evs)
                 # Only the matching CLI profile can trigger an automatic probe.
                 # Other profiles still retain their normal log-based telemetry.
                 if tool == "codex" and active_codex is not None:
@@ -2436,12 +2787,9 @@ def scan_all_events(force: bool = False, rebuild: bool = False) -> tuple[list[di
             _CACHE_NEEDS_SAVE = True
             _flush_cache_if_needed(force_disk=rebuild)
 
-        # Only an exact provider response ID can suppress a supplementary
-        # compaction across files. Never infer identity from coincident totals.
-        if seen_codex_compactions & accounted_codex_responses:
-            all_events = [ev for ev in all_events if ev.get("codex_compaction_id") not in accounted_codex_responses]
-
+        all_events.seal()
         _MEM_SCAN_EVENTS = all_events
+        _MEM_SCAN_ARCHIVES = incoming
         _MEM_SCAN_QUOTAS = quotas
         _MEM_CODEX_ACTIVITY = codex_activity
         _MEM_SCAN_TS = time.monotonic()
@@ -3018,13 +3366,23 @@ def build_telemetry(
     tool_filter: str = "all",
     force: bool = False,
     rebuild: bool = False,
+    *,
+    wait_for_history: bool = False,
 ) -> dict[str, Any]:
     global _MEM_OBSERVED_TS, _MEM_OBSERVED_RATES
     trigger_background_sync_if_stale()
     events, quotas, scan_ms = scan_all_events(force=force, rebuild=rebuild)
+    if wait_for_history and isinstance(events, _RangedEvents) and events.history_pending:
+        archive = _ARCHIVE_OWNER
+        if archive is not None:
+            start = time.perf_counter()
+            archive.wait()
+            events, quotas, elapsed = scan_all_events()
+            scan_ms = round(scan_ms + elapsed + (time.perf_counter() - start) * 1000, 1)
     real_observed = time.monotonic()
     # Provider quotas refresh independently of unchanged local log signatures.
-    ag_result, hide_log_quota = select_antigravity_quota(events, force=force or rebuild)
+    agy_events = events.agy_events if isinstance(events, _RangedEvents) else events
+    ag_result, hide_log_quota = select_antigravity_quota(agy_events, force=force or rebuild)
     if hide_log_quota and "antigravity" in quotas:
         quotas = {key: value for key, value in quotas.items() if key != "antigravity"}
     ag_quota = ag_result["quota"]
@@ -3038,7 +3396,8 @@ def build_telemetry(
 
     # Dynamic 4-layer pricing (overrides -> locally calibrated native logs -> remote OpenRouter/LiteLLM -> fallback)
     if _MEM_OBSERVED_TS != _MEM_SCAN_TS or force:
-        _MEM_OBSERVED_RATES = calibrate_observed_rates(events)
+        calibration = events.calibration if isinstance(events, _RangedEvents) else events
+        _MEM_OBSERVED_RATES = calibrate_observed_rates(calibration)
         _MEM_OBSERVED_TS = _MEM_SCAN_TS
     pricing = PricingEngine(observed_rates=_MEM_OBSERVED_RATES)
 
@@ -3078,24 +3437,18 @@ def build_telemetry(
     tool_counts: dict[str, int] = defaultdict(int)
     tool_tokens_all: dict[str, int] = defaultdict(int)
     today_iso = today.isoformat()
-    today_tokens = 0
-
-    filtered: list[dict[str, Any]] = []
-    for ev in events:
-        dk = ev["day"]
-        tot_tok = ev["in"] + ev["out"] + ev["cr"] + ev["cw"] + ev.get("reason", 0)
-        if dk == today_iso:
-            today_tokens += tot_tok
-        if dk < min_day or dk > max_day:
-            continue
-        t = ev["tool"]
-        tool_counts[t] += 1
-        tool_tokens_all[t] += tot_tok
-        if tool_filter != "all" and t != tool_filter:
-            continue
-        filtered.append(ev)
-
-    evo_peak_tokens, effective_today_tokens = _observe_evo_telemetry(today_iso, today_tokens, real_observed)
+    history_pending = isinstance(events, _RangedEvents) and events.history_pending
+    today_tokens = provisional_compactions = 0
+    for ev in _iter_window(events, today_iso, today_iso):
+        tokens = ev["in"] + ev["out"] + ev["cr"] + ev["cw"] + ev.get("reason", 0)
+        today_tokens += tokens
+        if history_pending and ev.get("codex_compaction_id") is not None:
+            provisional_compactions += tokens
+    # Another copy of a Codex response may appear during backfill. Do not
+    # permanently unlock XP on a provisional supplemental compaction.
+    evo_peak_tokens, safe_effective = _observe_evo_telemetry(
+        today_iso, today_tokens - provisional_compactions, real_observed)
+    effective_today_tokens = safe_effective + provisional_compactions
 
     # Aggregations
     totals = {"in": 0, "out": 0, "cr": 0, "cw": 0, "reason": 0, "cost": 0.0, "requests": 0}
@@ -3110,7 +3463,21 @@ def build_telemetry(
     by_hour_perf = [empty_perf() for _ in range(24)]
     by_project: dict[str, dict[str, Any]] = {}
 
-    for ev in filtered:
+    # Keep only the latest 40 rows; large selected ranges never materialize an
+    # event-dictionary list or sort every event just to render the call tape.
+    recent_heap = []
+    for sequence, ev in enumerate(_iter_window(events, min_day, max_day)):
+        tool = ev["tool"]
+        tot_tok = ev["in"] + ev["out"] + ev["cr"] + ev["cw"] + ev.get("reason", 0)
+        tool_counts[tool] += 1
+        tool_tokens_all[tool] += tot_tok
+        if tool_filter != "all" and tool != tool_filter:
+            continue
+        recent_entry = (ev["ts"], -sequence, ev)
+        if len(recent_heap) < 40:
+            heapq.heappush(recent_heap, recent_entry)
+        elif recent_entry > recent_heap[0]:
+            heapq.heapreplace(recent_heap, recent_entry)
         inp = ev["in"]
         out = ev["out"]
         cr = ev["cr"]
@@ -3343,9 +3710,8 @@ def build_telemetry(
             })
 
     # Recent individual calls tape (latest 40 calls with real output)
-    recent_sorted = sorted(filtered, key=lambda x: x["ts"], reverse=True)
     recent_calls = []
-    for ev in recent_sorted[:60]:
+    for _timestamp, _sequence, ev in sorted(recent_heap, reverse=True):
         out = ev["out"]
         gen = ev.get("gen")
         ttft = ev.get("ttft")
@@ -3381,8 +3747,6 @@ def build_telemetry(
             "tps": tps,
             "cost": round(rc_cost, 4),
         })
-        if len(recent_calls) >= 40:
-            break
 
     # Projects
     projects_out = sorted(
@@ -3429,6 +3793,8 @@ def build_telemetry(
         "scan_ms": scan_ms,
         "range": range_key,
         "tool_filter": tool_filter,
+        "history_pending": history_pending,
+        "history_unavailable": events.history_unavailable if isinstance(events, _RangedEvents) else 0,
         "today_tokens": today_tokens,
         "effective_today_tokens": effective_today_tokens,
         "evo_peak_tokens": evo_peak_tokens,
@@ -3481,5 +3847,5 @@ def build_telemetry(
 
 
 if __name__ == "__main__":
-    data = build_telemetry("7d", "all")
+    data = build_telemetry("7d", "all", wait_for_history=True)
     print(json.dumps({"scan_ms": data["scan_ms"], "kpi": data["kpi"], "tools": data["tools"]}, indent=2, ensure_ascii=False))

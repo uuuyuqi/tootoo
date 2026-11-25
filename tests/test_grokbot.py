@@ -78,6 +78,35 @@ class GrokBotTest(unittest.TestCase):
         self.assertEqual(result["last_active_ts"], self.base + 301)
         self.assertNotIn("new", json.dumps(result))
 
+    def test_percent_encoded_auth0_quota_and_replica_join(self):
+        self.quota("auth0%7Cuser_synthetic", used="63")
+        self.blob("auth0%7cuser_synthetic", "transcript.replicas.shard%7Cuuid", [
+            self.event(0, "message", "user", "x"),
+            self.event(1, "send-message", "assistant", "x"),
+        ])
+        self.blob("auth0%7Cother", "transcript.replicas.unrelated", [
+            self.event(0, "message", "user", "irrelevant"),
+        ])
+        result = self.activity()
+        self.assertEqual(result["quota"]["buckets"][0]["used_percent"], 63)
+        self.assertEqual((result["sessions"], result["user_messages"], result["bot_replies"]), (1, 1, 1))
+        self.assertEqual(result["reply_latency_p50"], 1.0)
+        self.assertNotIn("auth0", json.dumps(result))
+
+    def test_percent_encoded_path_characters_never_reach_open(self):
+        for bad in ("/", "\\", "..", "%2F", "%5c", "%2e%2E", ".%2e", "%252f", "%00", "%0A", "%", "%GG"):
+            self.quota("auth0" + bad + "account")
+            self.blob("auth0%7Caccount", "transcript.replicas." + bad + "shard", [])
+        original = os.open
+
+        def open_file(path, *a, **kw):
+            if a and a[0] & os.O_DIRECTORY == 0 and kw.get("dir_fd") is not None:
+                self.fail("invalid encoded entry was opened")
+            return original(path, *a, **kw)
+
+        with patch.object(grokbot.os, "open", side_effect=open_file):
+            self.assertIsNone(self.activity())
+
     def test_safely_skips_secret_names_symlinks_and_malformed_docs(self):
         ignored = self.root / "sand-secrets.json"
         ignored.write_text('{"private":"ignore"}')
