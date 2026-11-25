@@ -7,6 +7,9 @@ const assert = require("node:assert/strict");
 const html = readFileSync(join(__dirname, "../ui/index.html"), "utf8");
 const debugBuild = /\/\*__TOOTOO_DEBUG_FLAG__\*\/true/.test(html);
 const pull = html.split("// TOOTOO_GACHA_PULL_START\n")[1].split("// TOOTOO_GACHA_PULL_END")[0];
+const odds = html.slice(html.indexOf("const GACHA_TIER_ODDS"), html.indexOf("const DEFAULT_HOME_STATE"));
+const pool = html.match(/const GACHA_POOL = \[[\s\S]*?\n\];/)[0];
+const picker = html.match(/function pickWeightedGacha\([\s\S]*?\n}/)[0];
 const mystery = html.match(/function rollInGameMysteryLoot\(\) \{[\s\S]*?\n}/)[0];
 
 function harness({ roll = 0.95, debug = false, balance = 5 } = {}) {
@@ -40,20 +43,21 @@ function harness({ roll = 0.95, debug = false, balance = 5 } = {}) {
     fmtNum: String,
   };
   const scope = vm.createContext(runtime);
-  vm.runInContext(pull + "\n" + mystery, scope);
+  vm.runInContext(odds + "\n" + pool + "\n" + pull + "\n" + mystery, scope);
   return { scope, run: (s) => vm.runInContext(s, scope), timers, elements, events, writes, states };
 }
 
-test("machine's 100 equally spaced centile midpoints exactly match displayed odds", () => {
+test("machine uses the intended tier boundaries and displays those same odds", () => {
   const { run } = harness();
   const counts = {};
-  for (let i = 0; i < 100; i++) {
-    const r = run(`rollMachineGachaTier(${(i + .5) / 100})`);
+  for (let i = 0; i < 400; i++) {
+    const r = run(`rollMachineGachaTier(${(i + .5) / 400})`);
     counts[r] = (counts[r] || 0) + 1;
   }
-  assert.deepEqual(counts, { MISS: 30, N: 40, R: 20, SR: 8, SSR: 2 });
+  assert.deepEqual(counts, { MISS: 120, N: 200, R: 60, SR: 18, SSR: 2 });
   assert.equal(run('rollMachineGachaTier(0.7)'), "MISS");
-  assert.match(html, /MISS 30% · N 40% · R 20% · SR 8% · SSR 2%/);
+  assert.match(html, /概率: \$\{gachaTierOddsLabel\(\)\}/);
+  assert.equal(run("gachaTierOddsLabel()"), "MISS 30% · N 50% · R 15% · SR 4.5% · SSR 0.5%");
 });
 
 test("MISS costs exactly one coin, never invokes reward or confetti/cinema, and plays only the quiet sound", () => {
@@ -105,12 +109,55 @@ test("debug force MISS is available only in dev and only consumes sandbox curren
   assert.match(elements.gachaResult.children[0].textContent, /沙盒/);
 });
 
-test("game mystery drops retain their earlier 68/25/6/1 split and no MISS", () => {
+test("chests never MISS and grant the tier rolled using chest-specific weighting", () => {
+  const { scope, run, states } = harness();
   const counts = {};
-  for (let i = 0; i < 100; i++) {
-    const { run, states } = harness({ roll: (i + .5) / 100 });
+  scope.pickWeightedGacha = (tier, source) => { states.push([tier, source]); return { r: tier }; };
+  for (let i = 0; i < 400; i++) {
+    scope.Math.random = () => (i + .5) / 400;
     run("rollInGameMysteryLoot()");
-    const r = states[0]; counts[r] = (counts[r] || 0) + 1;
   }
-  assert.deepEqual(counts, { N: 68, R: 25, SR: 6, SSR: 1 });
+  for (const [tier, source] of states) {
+    assert.equal(source, "chest");
+    counts[tier] = (counts[tier] || 0) + 1;
+  }
+  assert.deepEqual(counts, { N: 315, R: 72, SR: 12, SSR: 1 });
+});
+
+test("fixed item rates are unconditional; each weighted interval selects the expected reward", () => {
+  const run = code => vm.runInNewContext(odds + pool + picker + code);
+  const report = run(`
+    Object.fromEntries(Object.entries(GACHA_TIER_ODDS).map(([source, tiers]) => {
+      const items = [];
+      for (const [tier, tierPct] of Object.entries(tiers)) {
+        if (tier === "MISS") continue;
+        let start = 0;
+        for (const { item, percent } of gachaRewardOdds(tier, source)) {
+          items.push({ item, percent, drawn: pickWeightedGacha(tier, source, (start + percent/2) / tierPct).id });
+          start += percent;
+        }
+        if (Math.abs(start - tierPct) > 1e-8) throw Error(source + tier + " doesn't sum to tier rate");
+      }
+      return [source, items];
+    }));
+  `);
+  const rates = {
+    machine: [0.5, 0.1, 20 * 6 / 95, 8 * 8 / 93, 0.2, 0.02],
+    chest: [0.5, 0.1, 25 * 6 / 95, 6 * 8 / 93, 0.1, 0.01],
+  };
+  for (const [source, items] of Object.entries(report)) {
+    assert.equal(new Set(items.map(x => x.item.id)).size, items.length);
+    const byId = Object.fromEntries(items.map(x => [x.item.id, x.percent]));
+    for (const { item, drawn, percent } of items) {
+      assert.ok(percent > 0, item.name);
+      assert.equal(drawn, item.id);
+    }
+    for (const [idx, ids] of [[103], [203], [214,215], [310,311], [406], [408,409,410,411,412]].entries()) {
+      for (const id of ids) assert.equal(byId[id], rates[source][idx]);
+    }
+    const fresh = items.reduce((sum, { item, percent }) => sum + (item.amount || 0) * percent / 100, 0);
+    const veteran = items.reduce((sum, { item, percent }) => sum + (item.amount || item.refund || 0) * percent / 100, 0);
+    assert.ok(fresh >= .10 && fresh <= .22, `${source} new-player coin return ${fresh}`);
+    assert.ok(veteran >= fresh && veteran < .59, `${source} veteran coin return ${veteran}`);
+  }
 });

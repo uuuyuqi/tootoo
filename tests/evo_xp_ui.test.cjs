@@ -37,6 +37,7 @@ function harness() {
     localStorage: { getItem: () => null, setItem: (...args) => writes.push(["storage", ...args]) },
     cloneHomeState: structuredClone,
     getStarRankInfo: () => ({ active: false, stars: 0 }),
+    SECRET_SKINS: { prism: { id: "prism", label: "prism" } },
     getActiveSecretSkin: () => ({ id: "prism", label: "prism" }),
     getTierVisual: () => ({ stage: "", svg: "" }),
     getTierInteractHint: () => "",
@@ -114,9 +115,25 @@ test("next day ignores stale boost, but backend-confirmed historical peak still 
   scope.state.data.today_tokens = 5e6;
   scope.renderEvoModal();
   assert.match(nodes.evoProgressBox.innerHTML, /今日：<strong>Lv\.1/);
-  assert.match(card(6), /unlocked[^>]*data-locked="0"/);
+  assert.match(card(6), /unlocked past-tier[^>]*data-locked="0"/);
+  assert.match(nodes.evoGrid.innerHTML, /曾解锁 · 今日未达/);
+  assert.doesNotMatch(card(1), /past-tier/);
   assert.match(card(7), /data-locked="1"/);
   assert.match(wearCard(), /data-act="buy-wear"/);
+});
+
+test("a past EX unlock remains gray and usable, but an unearned EX is never shown", () => {
+  const { scope, card, nodes } = harness();
+  scope.renderEvoModal();
+  assert.equal(card(10), undefined);
+  scope.state.data.evo_peak_tokens = 50e9;
+  scope.renderEvoModal();
+  assert.match(card(10), /evo-secret unlocked past-tier[^>]*data-locked="0"/);
+  assert.match(nodes.evoGrid.innerHTML, /data-toggle-innate="10"/);
+  scope.state.data.today_tokens = 50e9;
+  scope.renderEvoModal();
+  assert.match(card(10), /evo-secret current[^>]*data-locked="0"/);
+  assert.doesNotMatch(card(10), /past-tier/);
 });
 
 test("sandbox reward and simulated tokens preview only; real XP and peak survive leaving debug unchanged", () => {

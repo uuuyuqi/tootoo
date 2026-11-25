@@ -310,7 +310,10 @@ def _sanitize_home_state(raw: Any) -> dict[str, Any]:
             v = ai.get(k)
             if isinstance(v, (int, float)) and v >= 0:
                 h["arcade_items"][k] = min(999, int(v))
-    valid_bgs = ("paper", "cyber_neon", "starry_nebula", "sakura_zen", "matrix_core", "golden_citadel")
+    valid_bgs = (
+        "paper", "cyber_neon", "starry_nebula", "sakura_zen", "matrix_core", "golden_citadel",
+        "moon_tide_observatory", "aurora_crown", "dragon_ink_seal", "prism_clockwork", "lantern_skyline",
+    )
     if isinstance(raw.get("owned_backdrops"), list):
         ob = [str(x).strip() for x in raw["owned_backdrops"] if isinstance(x, str) and x.strip() in valid_bgs]
         if "paper" not in ob:

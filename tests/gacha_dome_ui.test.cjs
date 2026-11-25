@@ -50,7 +50,7 @@ function harness() {
     cancelAnimationFrame: id => frames.delete(id),
     MutationObserver: class { constructor(cb) { this.cb = cb; } observe() { observers.push(this.cb); } },
     setTimeout: (cb, wait) => timers.push({ cb, when: now + wait }),
-    Math: Object.assign(Object.create(Math), { random: () => 0.05 }), // SR
+    Math: Object.assign(Object.create(Math), { random: () => 0.03 }), // SR
     minimalMode: false,
     debugState: { active: false }, DEV_DEBUG_ENABLED: true,
     getGachaCoinState: () => ({ balance: 5, realBalance: 5, key: "daily", realSpent: 0 }),
@@ -67,6 +67,8 @@ function harness() {
   vm.runInContext([
     codeBetween("function openGachaModal()", "// ---- More Arcade Modal"),
     dome,
+    codeBetween("const GACHA_TIER_ODDS", "const GACHA_FIXED_ODDS"),
+    codeBetween("function rollGachaTier", "function gachaTierOddsLabel"),
     codeBetween("// TOOTOO_GACHA_PULL_START", "// TOOTOO_GACHA_PULL_END"),
   ].join("\n"), scope);
   return {

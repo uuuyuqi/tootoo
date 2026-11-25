@@ -1231,6 +1231,10 @@
   }
 
   .evo-card.unlocked { background: var(--surface); }
+  .evo-card.past-tier { background: var(--surface-2, var(--surface)); }
+  .evo-card.past-tier .bunny-wrap { filter: grayscale(1); }
+  .evo-card.past-tier .evo-name { color: var(--muted); }
+  .evo-history-note { color: var(--muted); font-size: 9px; line-height: 1.35; }
   .evo-card.current {
     background: var(--surface);
     border: 1.5px solid var(--accent);
@@ -3749,6 +3753,34 @@
     border-radius: 9px;
     border: 1px solid var(--border);
     background: var(--surface-2);
+  }
+  .adv-backdrop-chips {
+    display: flex;
+    gap: 5px;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    padding: 3px 2px 4px;
+    flex: 1 1 100%;
+  }
+  .adv-backdrop-chips .adv-bg-chip { flex: 0 0 auto; }
+  .adv-scene-control {
+    display: flex;
+    justify-content: space-between;
+    gap: 6px;
+    align-items: center;
+    margin-bottom: 8px;
+    color: var(--muted);
+    font-size: 10px;
+  }
+  .adv-scene-control[hidden], .adv-scene-preview[hidden] { display: none; }
+  .adv-scene-preview {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 440 / 128;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    cursor: pointer;
   }
   .adv-bg-chip {
     display: inline-flex;
@@ -7958,7 +7990,7 @@
       </div>
       <div class="dbg-inline-row" id="dbgGachaForceChips">
         <span class="dbg-tag">强制出货:</span>
-        <button class="dbg-mini-btn on" data-rarity="auto">正常概率(SSR 2%)</button>
+        <button class="dbg-mini-btn on" data-rarity="auto">正常概率</button>
         <button class="dbg-mini-btn" data-rarity="SSR">👑 必SSR</button>
         <button class="dbg-mini-btn" data-rarity="SR">★ 必SR</button>
         <button class="dbg-mini-btn" data-rarity="R">◆ 必R</button>
@@ -7989,6 +8021,11 @@
     </div>
 
     <div class="adv-backdrop-bar" id="advBackdropBar"></div>
+    <div class="adv-scene-control" id="advSceneControl" hidden>
+      <span id="advSceneHint">SSR · 舞台互动</span>
+      <button type="button" class="adv-bg-chip" id="advSceneActivate" aria-controls="advScenePreview"></button>
+    </div>
+    <canvas class="adv-scene-preview" id="advScenePreview" width="880" height="256" aria-hidden="true" hidden></canvas>
 
     <!-- GAME 1 (FLAGSHIP): 🚀 TOKEN AMMO BUG BLASTER -->
     <div class="arcade-pane active" id="arcPane-blaster">
@@ -8163,6 +8200,7 @@
 <script src="/ui/tootoo_art_wonders.js"></script>
 <script src="/ui/tootoo_art_items.js"></script>
 <script src="/ui/tootoo_world_engine.js"></script>
+<script src="/ui/tootoo_arcade_scenes.js"></script>
 <script>
 const TOOTOO_DEV_DEBUG_BUILD = /*__TOOTOO_DEBUG_FLAG__*/true;
 const DEV_DEBUG_ENABLED = TOOTOO_DEV_DEBUG_BUILD && window.__TOOTOO_DEV_DEBUG__ !== false;
@@ -9960,11 +9998,14 @@ function renderEvoModal() {
   const activeSkin = getActiveSecretSkin();
   grid.innerHTML = BUNNY_TIERS.map((t, idx) => {
     const isLocked = !debugState.unlockAll && t.level > maxUnlockedLv;
+    const isPast = !isLocked && t.level > cur.level;
+    const tierClass = isLocked ? "locked" : t.level === cur.level ? "current" : isPast ? "unlocked past-tier" : "unlocked";
+    const pastNote = isPast ? '<span class="evo-history-note">曾解锁 · 今日未达</span>' : "";
     const delay = idx * 28;
     if (t.secret) {
       // True hidden tier: completely invisible until actually unlocked (or debug previewed)!
       if (isLocked) return "";
-      const cls = `evo-card evo-secret ${t.level === cur.level ? "current" : "unlocked"} evo-enter`;
+      const cls = `evo-card evo-secret ${tierClass} evo-enter`;
       const vis = getTierVisual(t);
       const skinBtns = Object.values(SECRET_SKINS).map(sk =>
         `<button class="evo-skin-btn${sk.id === activeSkin.id ? " active" : ""}" data-skin="${sk.id}">${sk.label}</button>`
@@ -9982,6 +10023,7 @@ function renderEvoModal() {
             <span class="evo-secret-badge">✦ EX 究极隐藏款 · ${t.range}</span>
             <div class="evo-name">${t.name} · ${activeSkin.label}</div>
             <div class="evo-rng">已永久解锁 · 悬停头像查看互动玩法 · 下方切换限定皮肤</div>
+            ${pastNote}
             ${innateMeta ? `<button class="evo-innate-btn${innateOn ? "" : " off"}" data-toggle-innate="10" title="等级自带专属饰品（不可购买），点击可随时取下或戴上">${innateMeta.icon} 自带「${innateMeta.name}」: ${innateOn ? "佩戴中 · 点此取下" : "已取下 · 点此戴上"}</button>` : ""}
           </div>
         </div>
@@ -9989,9 +10031,7 @@ function renderEvoModal() {
       </div>`;
     }
 
-    const cls = (t.level === cur.level
-      ? "evo-card current"
-      : (isLocked ? "evo-card locked" : "evo-card unlocked")) + " evo-enter";
+    const cls = `evo-card ${tierClass} evo-enter`;
     if (isLocked) {
       return `<div class="${cls}" style="--d:${delay}ms" data-locked="1" data-lv="${t.level}">
         <div class="bunny-wrap" title="神秘形态 · 达成隐藏门槛后永久解锁">
@@ -10016,6 +10056,7 @@ function renderEvoModal() {
       </div>
       <div class="evo-name">Lv.${t.level} ${t.name}</div>
       <div class="evo-rng">${t.range}</div>
+      ${pastNote}
       ${innateMeta ? `<button class="evo-innate-btn${innateOn ? "" : " off"}" data-toggle-innate="${t.level}" title="Lv.${t.level} 等级自带「${innateMeta.name}」（不可购买），点击可取下或戴上">${innateMeta.icon} ${innateOn ? "取下自带饰品" : "戴上自带饰品"}</button>` : ""}
     </div>`;
   }).join("");
@@ -12701,6 +12742,7 @@ function resumeArcadeRound(round, frame, tick) {
 }
 
 function pausePopoverArcade() {
+  if (typeof stopAdventureScenePreview === "function") stopAdventureScenePreview();
   clearArcadeKeys();
   blasterRaf = pauseArcadeRound(blasterState, blasterRaf);
   rainRaf = pauseArcadeRound(rainState, rainRaf);
@@ -12730,6 +12772,7 @@ function openArcadeModal() {
   if (typeof renderAdventurePropBars === "function") renderAdventurePropBars();
 }
 function closeArcadeModal() {
+  if (typeof stopAdventureScenePreview === "function") stopAdventureScenePreview();
   document.getElementById("arcadeModal").classList.remove("open");
   stopBlasterGame();
   stopRainGame();
@@ -12798,7 +12841,7 @@ function refreshArcadeContext() {
 }
 
 // ============================================================
-// ADVENTURE STAGE BACKDROPS (6 Animated Themes — 5 Unlockable via Gacha!)
+// ADVENTURE STAGE BACKDROPS (animated and interactive collectible themes)
 // ============================================================
 const ADVENTURE_BACKDROPS = [
   { id: "paper",          r: "N",   icon: "📜", name: "复古网格",   swatch: "#E7E2D4", dark: false, desc: "经典手账网格雷达画板（默认解锁）" },
@@ -12806,14 +12849,15 @@ const ADVENTURE_BACKDROPS = [
   { id: "starry_nebula",  r: "R",   icon: "🌌", name: "深空星云",   swatch: "#1E1B4B", dark: true,  desc: "R 扭蛋限定：双层视差星空与旋转紫粉星云" },
   { id: "sakura_zen",     r: "SR",  icon: "🌸", name: "樱花道场",   swatch: "#FBCFE8", dark: false, desc: "SR 扭蛋限定：绯红落日、飘舞樱瓣与鸟居剪影" },
   { id: "matrix_core",    r: "SR",  icon: "💚", name: "矩阵终端",   swatch: "#052E16", dark: true,  desc: "SR 扭蛋限定：翠绿代码瀑布流与脉冲芯片总线" },
-  { id: "golden_citadel", r: "SSR", icon: "👑", name: "黄金星穹殿", swatch: "#F59E0B", dark: true,  desc: "SSR 传世限定：鎏金星空神殿与旋转光环法阵" },
+  { id: "golden_citadel", r: "SR",  icon: "👑", name: "黄金星穹殿", swatch: "#F59E0B", dark: true,  desc: "经典舞台：鎏金星空神殿与旋转光环法阵" },
+  ...(globalThis.TooTooArcadeScenes?.themes || []),
 ];
 const ADVENTURE_BACKDROP_MAP = Object.fromEntries(ADVENTURE_BACKDROPS.map(b => [b.id, b]));
 
 function getActiveBackdropId() {
   const h = typeof getActiveHomeState === "function" ? getActiveHomeState() : null;
   const id = (h && h.active_backdrop) || "paper";
-  return ADVENTURE_BACKDROP_MAP[id] ? id : "paper";
+  return Object.hasOwn(ADVENTURE_BACKDROP_MAP, id) ? id : "paper";
 }
 
 function renderBackdropBar() {
@@ -12822,17 +12866,38 @@ function renderBackdropBar() {
   const h = getActiveHomeState();
   const owned = new Set((h && h.owned_backdrops) || ["paper"]);
   const active = getActiveBackdropId();
-  bar.innerHTML = `<span style="font-size:9.5px;font-weight:700;color:var(--muted)">🎨 舞台背景:</span>` +
+  const selected = ADVENTURE_BACKDROP_MAP[active];
+  const canInteract = selected?.interactive && (owned.has(active) || debugState.unlockAll);
+  const controls = document.getElementById("advSceneControl");
+  if (controls) {
+    controls.hidden = !canInteract;
+    if (canInteract) {
+      document.getElementById("advSceneHint").textContent = `SSR · ${selected.desc}`;
+      document.getElementById("advSceneActivate").textContent = selected.reaction;
+    }
+    if (!canInteract || (adventureScenePreviewId && adventureScenePreviewId !== active)) stopAdventureScenePreview();
+  }
+  const scroll = bar.querySelector(".adv-backdrop-chips");
+  const savedScroll = scroll?.scrollLeft ?? 0;
+  const focused = bar.contains(document.activeElement) && document.activeElement.dataset.bgId;
+  bar.innerHTML = `<span style="font-size:9.5px;font-weight:700;color:var(--muted)">🎨 舞台背景 <small>· 可横向滚动</small></span><div class="adv-backdrop-chips">` +
     ADVENTURE_BACKDROPS.map(bg => {
       const has = owned.has(bg.id) || debugState.unlockAll;
       const isAct = bg.id === active;
       const cls = `adv-bg-chip${isAct ? " active" : ""}${has ? "" : " locked"}`;
       const title = has ? `${bg.name} · ${bg.desc}` : `🔒 未解锁（${bg.r} · 请前往扭蛋机抽取）`;
-      return `<button type="button" class="${cls}" data-bg-id="${bg.id}" title="${title}">
+      return `<button type="button" class="${cls}" data-bg-id="${bg.id}" title="${title}" aria-pressed="${isAct}" aria-disabled="${!has}">
         <span class="swatch" style="background:${bg.swatch}"></span>
         <span>${has ? bg.icon : "🔒"}${bg.name}</span>
       </button>`;
-    }).join("");
+    }).join("") + "</div>";
+  const currentScroll = bar.querySelector(".adv-backdrop-chips");
+  if (currentScroll) {
+    currentScroll.scrollLeft = savedScroll;
+    if (focused && Object.hasOwn(ADVENTURE_BACKDROP_MAP, focused)) {
+      currentScroll.querySelector(`[data-bg-id="${focused}"]`)?.focus({ preventScroll: true });
+    }
+  }
   const pill = document.getElementById("advCoinCapPill");
   if (pill) {
     const todayKey = getTodayKey();
@@ -12845,6 +12910,7 @@ document.getElementById("advBackdropBar")?.addEventListener("click", (e) => {
   const btn = e.target.closest("button[data-bg-id]");
   if (!btn) return;
   const id = btn.dataset.bgId;
+  if (!Object.hasOwn(ADVENTURE_BACKDROP_MAP, id)) return;
   const h = cloneHomeState(getActiveHomeState());
   if (!h.owned_backdrops.includes(id) && !debugState.unlockAll) {
     playSfx("bomb");
@@ -12857,10 +12923,78 @@ document.getElementById("advBackdropBar")?.addEventListener("click", (e) => {
   playSfx("token");
 });
 
+const adventureScenePulses = new WeakMap();
+let adventureScenePreviewFrame = null;
+let adventureScenePreviewId = null;
+
+function stopAdventureScenePreview() {
+  if (adventureScenePreviewFrame !== null) cancelAnimationFrame(adventureScenePreviewFrame);
+  adventureScenePreviewFrame = null;
+  adventureScenePreviewId = null;
+  const canvas = document.getElementById("advScenePreview");
+  if (canvas) canvas.hidden = true;
+}
+
+function setAdventureScenePulse(canvas, e) {
+  const id = getActiveBackdropId();
+  if (!ADVENTURE_BACKDROP_MAP[id]?.interactive || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const r = canvas.getBoundingClientRect();
+  if (!r.width || !r.height) return;
+  adventureScenePulses.set(canvas, { id, start:performance.now(),
+    x:Math.max(0, Math.min(1,(e.clientX-r.left)/r.width))*440,
+    y:Math.max(0, Math.min(1,(e.clientY-r.top)/r.height))*180 });
+}
+
+function activateAdventureScene(e) {
+  const id = getActiveBackdropId();
+  const theme = ADVENTURE_BACKDROP_MAP[id];
+  const h = getActiveHomeState();
+  if (!theme?.interactive || (!h?.owned_backdrops?.includes(id) && !debugState.unlockAll) ||
+      !document.getElementById("arcadeModal").classList.contains("open") || document.hidden ||
+      (isPopover && !popoverVisible)) return;
+  const api = globalThis.TooTooArcadeScenes;
+  const canvas = document.getElementById("advScenePreview");
+  const ctx = canvas?.getContext("2d");
+  if (!api || !ctx) return;
+  if (adventureScenePreviewFrame !== null) cancelAnimationFrame(adventureScenePreviewFrame);
+  adventureScenePreviewFrame = null;
+  adventureScenePreviewId = id;
+  canvas.hidden = false;
+  const rect = canvas.getBoundingClientRect();
+  const atCanvas = e.currentTarget === canvas && rect.width && rect.height;
+  const x = atCanvas ? Math.max(0,Math.min(440,(e.clientX-rect.left)*440/rect.width)) : 220;
+  const y = atCanvas ? Math.max(0,Math.min(180,(e.clientY-rect.top)*180/rect.height)) : 89;
+  const start = performance.now();
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    api.draw(ctx,id,canvas.width,canvas.height,0,{x,y,age:.36});
+    return;
+  }
+  const draw = now => {
+    const age = Math.max(0, Math.min(1, (now-start)/api.durationMs));
+    api.draw(ctx,id,canvas.width,canvas.height,now,age < 1 ? {x,y,age} : null);
+    adventureScenePreviewFrame = age < 1 ? requestAnimationFrame(draw) : null;
+  };
+  draw(start);
+}
+
+document.getElementById("advSceneActivate")?.addEventListener("click", activateAdventureScene);
+document.getElementById("advScenePreview")?.addEventListener("click", activateAdventureScene);
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) stopAdventureScenePreview();
+});
+
 function drawAdventureBackdrop(ctx, w, h, now, isFrozen = false) {
   const id = getActiveBackdropId();
   const t = now * 0.001;
-  if (id === "cyber_neon") {
+  if (ADVENTURE_BACKDROP_MAP[id]?.interactive) {
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const api = globalThis.TooTooArcadeScenes;
+    const pulse = adventureScenePulses.get(ctx.canvas);
+    const age = pulse && Math.max(0, (now-pulse.start)/api.durationMs);
+    const active = !reduce && pulse?.id === id && age < 1;
+    if (pulse && !active) adventureScenePulses.delete(ctx.canvas);
+    api.draw(ctx, id, w, h, reduce ? 0 : now, active ? {...pulse,age} : null);
+  } else if (id === "cyber_neon") {
     const g = ctx.createLinearGradient(0, 0, 0, h);
     g.addColorStop(0, "#090B1E");
     g.addColorStop(0.55, "#17113A");
@@ -13034,10 +13168,8 @@ function grantAdventureCoins(amount = 1) {
 }
 
 function rollInGameMysteryLoot() {
-  // Low-chance real Gacha pool drop during gameplay: N 68% / R 25% / SR 6% / SSR 1%
-  const roll = Math.random();
-  const tier = roll < 0.01 ? "SSR" : roll < 0.07 ? "SR" : roll < 0.32 ? "R" : "N";
-  const pick = pickWeightedGacha(tier);
+  const tier = rollGachaTier(Math.random(), "chest");
+  const pick = pickWeightedGacha(tier, "chest");
   const res = grantGachaReward(pick);
   renderAdventurePropBars();
   renderBackdropBar();
@@ -13083,7 +13215,10 @@ blasterCanvas.addEventListener("pointermove", (e) => {
 });
 blasterCanvas.addEventListener("pointerdown", (e) => {
   if (blasterState?.pausedForPopover) recoverPopoverArcadeFromInput(e, "blaster", blasterState);
-  if (blasterState && blasterState.running) triggerBlasterNova();
+  if (blasterState && blasterState.running) {
+    if (typeof setAdventureScenePulse === "function") setAdventureScenePulse(blasterCanvas, e);
+    triggerBlasterNova();
+  }
 });
 document.getElementById("blNovaBtn").addEventListener("click", () => {
   if (blasterState && blasterState.running) triggerBlasterNova();
@@ -14709,7 +14844,10 @@ rainCanvas.addEventListener("pointermove", (e) => {
 });
 rainCanvas.addEventListener("pointerdown", (e) => {
   if (rainState?.pausedForPopover) recoverPopoverArcadeFromInput(e, "rain", rainState);
-  if (rainState && rainState.running) triggerRainDash();
+  if (rainState && rainState.running) {
+    if (typeof setAdventureScenePulse === "function") setAdventureScenePulse(rainCanvas, e);
+    triggerRainDash();
+  }
 });
 
 function triggerRainDash() {
@@ -15792,15 +15930,16 @@ function grantDailyAdventureBonusCoin() {
 }
 
 // ============================================================
-// GAME 3: 🎰 REAL-REWARD GACHA MACHINE (MISS 30% / N 40% / R 20% / SR 8% / SSR 2%)
+// GAME 3: 🎰 REAL-REWARD GACHA MACHINE (separate machine and mystery chest odds)
 // ============================================================
 const GACHA_EXCLUSIVE_IDS = [
   "gacha_clover_clip", "gacha_capsule_bag", "gacha_ribbon_cape", "gacha_star_wand", "gacha_prism_crown",
   "gacha_carrot_cushion", "gacha_lucky_flower", "gacha_mini_machine", "gacha_bubble_lights", "gacha_crystal_dome",
   "cyber_neon", "starry_nebula", "sakura_zen", "matrix_core", "golden_citadel",
+  "moon_tide_observatory", "aurora_crown", "dragon_ink_seal", "prism_clockwork", "lantern_skyline",
 ];
 const GACHA_POOL = [
-  // ---- N (普通 · 40% 胶囊机概率) ----
+  // ---- N (普通) ----
   { id: 101, r: "N", w: 10, type: "coins",   amount: 1,                  icon: "🥕", name: "萝卜币返本 +1",     desc: "返还 1 枚萝卜币，不亏不赚再来一发！" },
   { id: 102, r: "N", w: 12, type: "xp",      tokens: 5e6,                icon: "⚡", name: "迷你算力经验包 +5M", desc: "今日进化经验 +5M Token，加速兔兔升级！" },
   { id: 103, r: "N", w: 9,  type: "weather", tier: "h2",                 icon: "🌦️", name: "呼风唤雨卡 · 2小时", desc: "存入背包，随时自由切换小家晴/雨/雪/风 2 小时！" },
@@ -15810,7 +15949,7 @@ const GACHA_POOL = [
   { id: 107, r: "N", w: 11, type: "prop",    propId: "rain_magnet",      icon: "🧲", name: "强力吸金磁铁",      desc: "大冒险道具：接Token雨 开启 8 秒超大范围磁铁！" },
   { id: 108, r: "N", w: 9,  type: "prop",    propId: "slow_mo",          icon: "⏱️", name: "时光缓滞沙漏",      desc: "大冒险通用：打Bug 敌群减速 / Token雨 +10s 缓雷！" },
 
-  // ---- R (稀有 · 20% 胶囊机概率) ----
+  // ---- R (稀有) ----
   { id: 201, r: "R", w: 8,  type: "coins",    amount: 2,                  icon: "🥕", name: "小袋萝卜币 +2",     desc: "净赚翻倍！+2 枚萝卜币已存入钱包！" },
   { id: 202, r: "R", w: 8,  type: "xp",       tokens: 20e6,               icon: "⚡", name: "进阶算力经验包 +20M", desc: "今日进化经验 +20M Token，战力直冲！" },
   { id: 203, r: "R", w: 6,  type: "weather",  tier: "d1",                 icon: "⛈️", name: "呼风唤雨卡 · 1天",   desc: "存入背包，随时掌控小家天气一整天（24小时）！" },
@@ -15827,7 +15966,7 @@ const GACHA_POOL = [
   { id: 214, r: "R", w: 6,  type: "backdrop", bgId: "cyber_neon",         refund: 2, icon: "🌆", name: "背景板·赛博霓虹城", desc: "大冒险动态舞台背景：赛博霓虹透视网格夜空（重复折返 +2 币）" },
   { id: 215, r: "R", w: 6,  type: "backdrop", bgId: "starry_nebula",      refund: 2, icon: "🌌", name: "背景板·深空星云",   desc: "大冒险动态舞台背景：双层视差星空与旋转星云（重复折返 +2 币）" },
 
-  // ---- SR (超稀有 · 8% 胶囊机概率) ----
+  // ---- SR (超稀有) ----
   { id: 301, r: "SR", w: 9,  type: "coins",    amount: 5,                  icon: "💰", name: "丰厚萝卜礼袋 +5",   desc: "5 倍回报！+5 枚萝卜币直接到账！" },
   { id: 302, r: "SR", w: 9,  type: "xp",       tokens: 60e6,               icon: "🔥", name: "高能算力经验包 +60M", desc: "今日进化经验暴涨 +60M Token，直逼下一阶级！" },
   { id: 303, r: "SR", w: 7,  type: "lease",    houses: ["moganshan_cabin", "sunflower_glasshouse", "windmill_mill"], days: 7, refund: 4, icon: "🔑", name: "林间美宅 7天租房卡", desc: "免费入住 T4 精致林间美宅 7 天（已永久拥有自动返 +4 币）" },
@@ -15840,15 +15979,63 @@ const GACHA_POOL = [
   { id: 310, r: "SR", w: 8,  type: "backdrop", bgId: "sakura_zen",         refund: 5, icon: "🌸", name: "背景板·樱花道场",   desc: "SR 扭蛋限定动态舞台：落日樱花花瓣飘舞道场（重复折返 +5 币）" },
   { id: 311, r: "SR", w: 8,  type: "backdrop", bgId: "matrix_core",        refund: 5, icon: "💚", name: "背景板·矩阵终端",   desc: "SR 扭蛋限定动态舞台：黑客帝国翠绿代码雨终端（重复折返 +5 币）" },
 
-  // ---- SSR (传世神话 · 2% 超低稀缺概率！) ----
+  { id: 406, r: "SR", w: 10, type: "backdrop", bgId: "golden_citadel",      refund: 10, icon: "👑", name: "背景板·黄金星穹殿", desc: "经典动态舞台：鎏金星空神殿与神圣星环阵（重复折返 +10 币）" },
+
+  // ---- SSR (传世神话) ----
   { id: 401, r: "SSR", w: 18, type: "coupon",   kind: "rent", discount: 0.3, icon: "🔥", name: "3折租房神券",       desc: "SSR 传世神券！7天内租住任意顶豪立省 70%！" },
   { id: 402, r: "SSR", w: 18, type: "coupon",   kind: "wear", discount: 0.3, icon: "💎", name: "3折饰品神券",       desc: "SSR 传世神券！7天内购买任意顶奢穿搭立省 70%！" },
   { id: 403, r: "SSR", w: 16, type: "coins",    amount: 12,                  icon: "🪙", name: "黄金萝卜宝箱 +12币", desc: "欧皇暴击 12 倍回报！+12 枚萝卜币瞬间入账！" },
   { id: 404, r: "SSR", w: 14, type: "wear",     itemId: "gacha_prism_crown", refund: 10, icon: "👑", name: "传世幻彩扭蛋皇冠", desc: "SSR 扭蛋限定头饰：24K鎏金七彩棱镜星环皇冠（重复折返 +10 币）" },
   { id: 405, r: "SSR", w: 14, type: "decor",    itemId: "gacha_crystal_dome", refund: 10, icon: "💎", name: "银河扭蛋水晶穹顶灯", desc: "SSR 扭蛋限定灯饰：棱镜星河 24K 金环穹顶吊灯（重复折返 +10 币）" },
-  { id: 406, r: "SSR", w: 10, type: "backdrop", bgId: "golden_citadel",      refund: 10, icon: "👑", name: "背景板·黄金星穹殿", desc: "SSR 传世动态舞台：鎏金星空神殿与神圣星环阵（重复折返 +10 币）" },
   { id: 407, r: "SSR", w: 10, type: "prop",     propId: "time_freeze",       icon: "❄️", name: "绝对零度时停怀表", desc: "SSR 传世大冒险神装：冻结全屏敌弹6s+2×暴击 / Token雨 8s冻结时间！" },
+  { id: 408, r: "SSR", w: 1, type: "backdrop", bgId: "moon_tide_observatory", refund: 10, icon: "🌙", name: "背景板·月潮观测站", desc: "SSR 互动舞台：拨动月光，让潮汐追着指尖起伏（重复折返 +10 币）" },
+  { id: 409, r: "SSR", w: 1, type: "backdrop", bgId: "aurora_crown", refund: 10, icon: "❄️", name: "背景板·极光王冠", desc: "SSR 互动舞台：触碰冰晶，折射出漫天极光（重复折返 +10 币）" },
+  { id: 410, r: "SSR", w: 1, type: "backdrop", bgId: "dragon_ink_seal", refund: 10, icon: "🐉", name: "背景板·墨龙天印", desc: "SSR 互动舞台：落指成墨，唤醒水墨游龙（重复折返 +10 币）" },
+  { id: 411, r: "SSR", w: 1, type: "backdrop", bgId: "prism_clockwork", refund: 10, icon: "💠", name: "背景板·棱镜时轮", desc: "SSR 互动舞台：触发棱镜机芯的齿轮脉冲（重复折返 +10 币）" },
+  { id: 412, r: "SSR", w: 1, type: "backdrop", bgId: "lantern_skyline", refund: 10, icon: "🏮", name: "背景板·万灯天城", desc: "SSR 互动舞台：点亮天灯，看它穿过城楼升空（重复折返 +10 币）" },
 ];
+
+// Probabilities are percentages per paid pull or per collected chest, not tier weights.
+const GACHA_TIER_ODDS = Object.freeze({
+  machine: Object.freeze({ SSR: 0.5, SR: 4.5, R: 15, N: 50, MISS: 30 }),
+  chest: Object.freeze({ SSR: 0.25, SR: 3, R: 18, N: 78.75 }),
+});
+const GACHA_FIXED_ODDS = Object.freeze({
+  103: [0.5, 0.5], 203: [0.1, 0.1], // Weather is consumable but deliberately rare.
+  214: [20 * 6 / 95, 25 * 6 / 95], 215: [20 * 6 / 95, 25 * 6 / 95],
+  310: [8 * 8 / 93, 6 * 8 / 93], 311: [8 * 8 / 93, 6 * 8 / 93],
+  406: [0.2, 0.1], // The classic golden stage keeps its original odds as an SR.
+  408: [0.02, 0.01], 409: [0.02, 0.01], 410: [0.02, 0.01],
+  411: [0.02, 0.01], 412: [0.02, 0.01],
+});
+
+function rollGachaTier(roll, source = "machine") {
+  const odds = GACHA_TIER_ODDS[source];
+  let cumulative = 0;
+  for (const [tier, pct] of Object.entries(odds)) {
+    cumulative += pct;
+    if (roll < cumulative / 100) return tier;
+  }
+  return source === "chest" ? "N" : "MISS";
+}
+
+function gachaTierOddsLabel(source = "machine") {
+  const odds = GACHA_TIER_ODDS[source];
+  return ["MISS", "N", "R", "SR", "SSR"].filter(tier => tier in odds)
+    .map(tier => `${tier} ${odds[tier]}%`).join(" · ");
+}
+
+function gachaRewardOdds(tier, source) {
+  const index = source === "chest" ? 1 : 0;
+  const pool = GACHA_POOL.filter(item => item.r === tier);
+  const fixed = item => GACHA_FIXED_ODDS[item.id]?.[index];
+  const fixedTotal = pool.reduce((sum, item) => sum + (fixed(item) ?? 0), 0);
+  const flexibleWeight = pool.reduce((sum, item) => sum + (fixed(item) == null ? item.w : 0), 0);
+  const remaining = GACHA_TIER_ODDS[source][tier] - fixedTotal;
+  return pool.map(item => ({
+    item, percent: fixed(item) ?? remaining * item.w / flexibleWeight,
+  }));
+}
 
 const DEFAULT_HOME_STATE = {
   house: "street",
@@ -15954,7 +16141,7 @@ function cloneHomeState(src) {
     laser_beam: Math.max(0, Math.floor(Number(aiSrc.laser_beam || 0) || 0)),
     time_freeze: Math.max(0, Math.floor(Number(aiSrc.time_freeze || 0) || 0)),
   };
-  const validBgSet = new Set(["paper", "cyber_neon", "starry_nebula", "sakura_zen", "matrix_core", "golden_citadel"]);
+  const validBgSet = new Set(ADVENTURE_BACKDROPS.map(b => b.id));
   const owned_backdrops = Array.isArray(s.owned_backdrops)
     ? Array.from(new Set(["paper", ...s.owned_backdrops.filter(id => validBgSet.has(id))]))
     : ["paper"];
@@ -16198,16 +16385,14 @@ function claimCarrotCoins() {
   renderGachaMeta();
 }
 
-function pickWeightedGacha(tier) {
-  const bucket = GACHA_POOL.filter(x => x.r === tier);
-  const pool = bucket.length ? bucket : GACHA_POOL;
-  const totalW = pool.reduce((s, x) => s + (x.w || 1), 0);
-  let r = Math.random() * totalW;
-  for (const item of pool) {
-    r -= (item.w || 1);
-    if (r <= 0) return item;
+function pickWeightedGacha(tier, source = "machine", roll = Math.random()) {
+  const pool = gachaRewardOdds(tier, source);
+  let ticket = roll * GACHA_TIER_ODDS[source][tier];
+  for (const { item, percent } of pool) {
+    if (ticket < percent) return item;
+    ticket -= percent;
   }
-  return pool[pool.length - 1];
+  return pool.at(-1)?.item;
 }
 
 function grantGachaReward(pick) {
@@ -16368,7 +16553,7 @@ function renderGachaBag() {
 
   bagEl.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;margin-bottom:6px">
-      <span style="font-size:10.5px;font-weight:700;color:var(--ink)">🎒 扭蛋战利品背包 <span style="font-weight:400;color:var(--muted)">(概率: MISS 30% · N 40% · R 20% · SR 8% · SSR 2%)</span></span>
+      <span style="font-size:10.5px;font-weight:700;color:var(--ink)">🎒 扭蛋战利品背包 <span style="font-weight:400;color:var(--muted)">(概率: ${gachaTierOddsLabel()})</span></span>
       ${activeWeatherTxt}
     </div>
     <div style="display:flex;flex-wrap:wrap;gap:5px">${chips.join("")}</div>
@@ -16611,8 +16796,7 @@ let lastGachaMissQuote = -1;
 
 function rollMachineGachaTier(roll, forced) {
   if (["MISS", "N", "R", "SR", "SSR"].includes(forced)) return forced;
-  return roll < 0.02 ? "SSR" : roll < 0.10 ? "SR" : roll < 0.30 ? "R"
-    : roll < 0.70 ? "N" : "MISS";
+  return rollGachaTier(roll, "machine");
 }
 
 function nextGachaMissQuote(roll = Math.random()) {
