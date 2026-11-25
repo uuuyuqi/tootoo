@@ -268,10 +268,11 @@ def _cache_path():
 def _snapshot_key(home, binary):
     info = binary.stat()
     home_info = home.stat()
-    scope = hashlib.sha256(repr((str(home.resolve()), home_info.st_dev, home_info.st_ino,
+    state_dir = _cache_path().parent.resolve()
+    scope = hashlib.sha256(repr((str(state_dir), str(home.resolve()), home_info.st_dev, home_info.st_ino,
                                  str(binary), info.st_dev, info.st_ino, info.st_mtime_ns,
                                  info.st_size, os.getuid())).encode()).hexdigest()
-    return _cache_path().parent.resolve(), scope
+    return state_dir, scope
 
 
 def _private_path(key):

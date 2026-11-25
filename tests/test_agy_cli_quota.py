@@ -264,6 +264,13 @@ class AgyCliQuotaTest(unittest.TestCase):
                 cli.stop_agy_cli_quota()
                 cli.prime_agy_cli_quota()
                 self.assertIsNone(cli._cache_result)
+                copied = cli._cache_path()
+                copied.parent.mkdir()
+                copied.write_bytes(path.read_bytes())
+                copied.chmod(0o600)
+                cli.stop_agy_cli_quota()
+                cli.prime_agy_cli_quota()
+                self.assertIsNone(cli._cache_result)
             replacement = self.home / "replacement-agy"
             replacement.write_bytes(b"different inode")
             with patch.object(cli, "_find_agy", return_value=replacement):
@@ -309,8 +316,21 @@ class AgyCliQuotaTest(unittest.TestCase):
             sample = cli.fetch_agy_cli_quota(True)
             return {"quotas": {"antigravity": sample["quota"]}, "quota_status": {"antigravity": sample["status"]}}
 
+        handler_waits = threading.local()
+
+        def wait_once(generation):
+            if getattr(handler_waits, "waited", False):
+                # Finish both HTTP handler threads after the target frame.
+                # Otherwise a later quota update can wake dead subscribers
+                # and invoke production telemetry after our mocks leave scope.
+                raise BrokenPipeError
+            handler_waits.waited = True
+            return cli.wait_for_agy_quota_update(generation)
+
         with patch.object(cli, "_find_agy", return_value=Path(sys.executable)), \
-                patch.object(cli, "_exec", side_effect=execute), patch.object(server, "build_telemetry", side_effect=telemetry):
+                patch.object(cli, "_exec", side_effect=execute), \
+                patch.object(server, "wait_for_agy_quota_update", side_effect=wait_once), \
+                patch.object(server, "build_telemetry", side_effect=telemetry):
             with server.TooTooServer(("127.0.0.1", 0), server.TooTooHandler) as httpd:
                 thread = threading.Thread(target=httpd.serve_forever, kwargs={"poll_interval": .05}, daemon=True)
                 thread.start()
