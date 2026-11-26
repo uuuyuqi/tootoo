@@ -128,7 +128,7 @@ final class LayoutHarness: NSObject, NSApplicationDelegate, WKNavigationDelegate
                       'no XP/quota collision or horizontal overflow', {xp: xp.right, text: tp.right, badge: bp.right, quota: q.left, edge: q.right, page: document.documentElement.scrollWidth});
                 const value = text.querySelector('.xp-value');
                 const quotaTop = quota.querySelector('.tq-top');
-                check(id('tqName').textContent === 'Gemini Models · Weekly' && id('tqPct').textContent === '剩 84%' &&
+                check(id('tqName').textContent === 'Gemini' && quota.title === 'Gemini · 周额度' && id('tqPct').textContent === '剩 84%' &&
                       rect(id('tqName')).right <= rect(id('tqPct')).left + 0.5 &&
                       quotaTop.scrollWidth <= quotaTop.clientWidth + 1, 'quota copy must remain intact');
                 if (POPOVER) check(rect(brandRow).bottom <= rect(controls).top + 0.5, 'brand must not cross the controls row');
@@ -169,6 +169,68 @@ final class LayoutHarness: NSObject, NSApplicationDelegate, WKNavigationDelegate
             try await Task.sleep(nanoseconds: 220_000_000)
             try await verify(name, "window.__tootooLayoutFixtureCheck()")
         }
+        _ = try await eval("""
+            (() => {
+              const rows = [
+                ['gemini_7d','Gemini Models · Weekly',3,true],
+                ['gemini_5h','Gemini Models · 5h',10,true],
+                ['cg_7d','Claude and GPT models · Weekly',0,false],
+                ['cg_5h','Claude and GPT models · 5h',0,false],
+              ].map(([key,label,used_percent,hasReset]) => ({
+                key: 'antigravity:' + key, label, used_percent,
+                resets_at: hasReset ? Math.floor(Date.now() / 1000) + 7200 : null,
+              }));
+              const quota = { source:'cli', buckets: rows };
+              state.data = { today_tokens:439.05e6, evo_peak_tokens:439.05e6,
+                kpi:{tokens:439.05e6}, quotas:{antigravity:quota},
+                tools:[{tool:'antigravity', label:'Antigravity (agy)', tokens:186.14e6, quota}] };
+              menuBarQuotaBar = 'gem7d';
+              finishBoot();
+              renderTopQuota(state.data);
+              renderBunnyState(439.05e6);
+              renderAgents(state.data);
+              return true;
+            })()
+            """)
+        try await verify("452 compact Gemini and AGY rows", """
+            (() => {
+              const name = document.getElementById('tqName');
+              const mood = document.getElementById('bunnyMood');
+              const quota = document.getElementById('topQuota');
+              const moodText = mood.lastChild;
+              if (moodText?.nodeType !== Node.TEXT_NODE || !moodText.textContent.endsWith('兔 ▸'))
+                throw Error('expected the Lv.5 rabbit text and arrow');
+              const glyphBox = index => {
+                const range = document.createRange();
+                range.setStart(moodText, index);
+                range.setEnd(moodText, index + 1);
+                return range.getBoundingClientRect();
+              };
+              const arrow = glyphBox(moodText.length - 1);
+              const rabbit = glyphBox(moodText.length - 3);
+              const pill = mood.getBoundingClientRect();
+              if (innerWidth !== 452 || name.textContent !== 'Gemini' ||
+                  document.getElementById('tqPct').textContent !== '剩 97%' ||
+                  !document.getElementById('tqRst').textContent ||
+                  Math.min(rabbit.bottom, arrow.bottom) <= Math.max(rabbit.top, arrow.top) ||
+                  arrow.left < rabbit.right || arrow.right > pill.right + .5 ||
+                  pill.right > quota.getBoundingClientRect().left + .5)
+                throw Error('Gemini/mood do not fit on one row: ' + JSON.stringify({arrow,rabbit,pill}));
+              const rows = [...document.querySelectorAll('#agentListPop .agy-quota-grid .quota-item')];
+              if (rows.length !== 4) throw Error('missing AGY rows');
+              const tracks = rows.map(r => r.querySelector('.quota-track').getBoundingClientRect().left);
+              const percents = rows.map(r => r.querySelector('.quota-pct').getBoundingClientRect().right);
+              if (Math.max(...tracks) - Math.min(...tracks) > .5 || Math.max(...percents) - Math.min(...percents) > .5)
+                throw Error('AGY columns not aligned');
+              const labels = rows.map(r => r.querySelector('.agy-quota-name'));
+              if (labels.map(n => n.textContent).join(',') !== 'Gemini,Gemini,Claude / GPT,Claude / GPT' ||
+                  labels.some(n => n.scrollWidth > n.clientWidth + 1) ||
+                  rows.some(r => r.getBoundingClientRect().height > 18) ||
+                  rows[2].querySelector('.quota-rst') || rows[3].querySelector('.quota-rst'))
+                throw Error('label wrapping, clipping or false resets in AGY rows');
+              return 'PASS: 452px Gemini title, rabbit arrow and aligned AGY quota rows';
+            })()
+            """)
         try await check("452 Lv6", actual: "675.86e6")
         try await check("452 Lv9 star", actual: "4.975e9", icon: true)
         try await check("452 EX Lv10", actual: "50.03e9", icon: true)

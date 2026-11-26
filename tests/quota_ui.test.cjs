@@ -34,7 +34,7 @@ test('explicit sources never silently fall back; only automatic prefers first av
   const codex = {primary: weekly(60)};
   const buckets = [agy('cg_5h', 20), agy('gemini_7d', 40), agy('gemini_5h', 80)];
   assert.deepEqual(render('cg5h', {codex, antigravity: {buckets}}), [true, 'C/G 5h', '剩 80%']);
-  assert.deepEqual(render('gem7d', {codex, antigravity: {buckets: [buckets[2], buckets[0]]}}), [true, 'Gemini 周', '暂无数据']);
+  assert.deepEqual(render('gem7d', {codex, antigravity: {buckets: [buckets[2], buckets[0]]}}), [true, 'Gemini', '暂无数据']);
   assert.deepEqual(render('gem5h', {codex}), [true, 'Gemini 5h', '暂无数据']);
   assert.deepEqual(render('gem5h', {codex, antigravity: {buckets}}), [true, 'Gemini 5h', '剩 20%']);
   assert.deepEqual(render('auto', {codex, antigravity: {buckets}}), [true, 'Gemini 5h', '剩 20%']);

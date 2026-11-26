@@ -1,0 +1,34 @@
+name: TooToo compact quota layout
+on:
+  push:
+    branches: ['verification/compact-quota']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: macos-15-intel
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Run Python and UI regressions
+        run: |
+          set -euo pipefail
+          python3 -W error::SyntaxWarning -m unittest discover -s tests -v
+          node --test tests/*.test.cjs
+      - name: Verify the quota and bunny layout in a 452pt WKWebView
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp -d)"
+          pid=
+          trap 'if [ -n "$pid" ]; then kill "$pid" 2>/dev/null || true; fi; rm -rf "$tmp"' EXIT
+          xcrun swiftc -parse-as-library -swift-version 5 -framework AppKit -framework WebKit tests/xp_boost_layout.swift -o "$tmp/layout"
+          python3 tests/xp_boost_layout_server.py "$PWD" "$tmp/port" &
+          pid=$!
+          for attempt in {1..100}; do
+            [ -s "$tmp/port" ] && break
+            kill -0 "$pid"
+            sleep 0.1
+          done
+          "$tmp/layout" "http://127.0.0.1:$(cat "$tmp/port")/?mode=popover"

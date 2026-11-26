@@ -31,8 +31,8 @@ test('CLI exact weekly groups remain separate, including 0%, and diagnostics are
 
 test('only official AGY rows share grid columns; missing reset leaves no fake date', () => {
   const renderer = html.slice(html.indexOf('function renderAgents('), html.indexOf('let qcfgState = '));
-  const rows = [{label:'Claude and GPT models · Weekly', used_percent:0},
-    {label:'Gemini Models · 5h', used_percent:10, resets_at:123}];
+  const rows = [{key:'antigravity:cg_7d',label:'Claude and GPT models · Weekly', used_percent:0},
+    {key:'antigravity:gemini_5h',label:'Gemini Models · 5h', used_percent:10, resets_at:123}];
   for (const [tool,source,aligned] of [
     ['antigravity','cli',true], ['antigravity','cli_cached',true], ['antigravity','provider',true],
     ['antigravity','local',false], ['codex','provider',false],
@@ -44,7 +44,9 @@ test('only official AGY rows share grid columns; missing reset leaves no fake da
       esc:String,fmtCostRich:String,fmtNum:String,splitNumUnit:String,fmtResetTime:()=> '3h7m',
     });
     assert.equal(node.innerHTML.includes('quota-list agy-quota-grid'),aligned);
-    assert.match(node.innerHTML,/Claude and GPT models · Weekly/);
+    assert.match(node.innerHTML,/Claude and GPT models · Weekly/); // original tooltip
+    assert.equal(node.innerHTML.includes('<span class="agy-quota-name">Claude / GPT</span><span class="agy-quota-period">周</span>'), aligned);
+    assert.equal(node.innerHTML.includes('<span class="agy-quota-name">Gemini</span><span class="agy-quota-period">5h</span>'), aligned);
     assert.match(node.innerHTML,/剩 100%/);
     assert.equal((node.innerHTML.match(/class="quota-rst"/g)||[]).length,1);
   }
@@ -246,4 +248,26 @@ test('native hidden prewarm does not poll after failure and opening retries unfi
   await new Promise(setImmediate);
   assert.equal(h.divs.tqPct.textContent, '读取中…');
   assert.match(h.streams[0].url, /since_quota_version=320/);
+});
+
+
+test('Gemini weekly header uses short name while keeping the same bucket and a period tooltip', () => {
+  const code = html.slice(html.indexOf('function agyQuotaDiagnostic('), html.indexOf('const numAnimState'));
+  for (const [mode, name, percent, tooltip] of [
+    ['gem7d','Gemini','剩 97%','Gemini · 周额度'],
+    ['gem5h','Gemini 5h','剩 72%','Gemini · 5 小时额度'],
+    ['auto','Gemini 5h','剩 72%','Gemini · 5 小时额度'],
+  ]) {
+    const divs = Object.fromEntries(['topQuota','tqName','tqPct','tqFill','tqRst'].map(id => [id,
+      {style:{}, classList:{add(){},remove(){}},removeAttribute(){}}]));
+    vm.runInNewContext(code + '\nrenderTopQuota(data);', {menuBarQuotaBar:mode, document:{getElementById:id=>divs[id]}, data:{
+      quotas:{antigravity:{buckets:[
+        {key:'antigravity:gemini_7d',label:'Gemini Models · Weekly',used_percent:3},
+        {key:'antigravity:gemini_5h',label:'Gemini Models · 5h',used_percent:28}
+      ]}}
+    }});
+    assert.equal(divs.tqName.textContent, name);
+    assert.equal(divs.tqPct.textContent, percent);
+    assert.equal(divs.topQuota.title, tooltip);
+  }
 });
