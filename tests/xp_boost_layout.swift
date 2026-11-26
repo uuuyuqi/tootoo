@@ -223,6 +223,41 @@ final class LayoutHarness: NSObject, NSApplicationDelegate, WKNavigationDelegate
               return 'PASS: 452px Grok Bot quota and historical evolution styling';
             })()
             """)
+        _ = try await eval("""
+            (() => {
+              const id = s => document.getElementById(s);
+              state.data.today_tokens = 30e6;
+              carrotDiskState.balance = 7;
+              carrotDiskState.days = {};
+              localStorage.removeItem(getGachaCoinState().cKey);
+              const landed = [];
+              postNative = (action, payload) => {
+                if (action === 'haptic') landed.push([payload.pattern, Number(id('gachaHeaderCoins').textContent)]);
+              };
+              id('gachaBtn').click();
+              if (!carrotReduceMotion.matches) {
+                id('carrotClaimBtn').click();
+                if (getGachaCoinState().balance !== 10 ||
+                    id('gachaHeaderCoins').textContent !== '7' ||
+                    getComputedStyle(document.querySelector('.carrot-roll-particle')).position !== 'fixed')
+                  throw Error('expected an already credited, in-flight wallet');
+              } else {
+                id('carrotClaimBtn').click();
+              }
+              window.__checkWalletFixture = () => {
+                const expected = carrotReduceMotion.matches ? [['levelChange',10]] :
+                  [['levelChange',8],['levelChange',9],['levelChange',10]];
+                if (JSON.stringify(landed) !== JSON.stringify(expected) ||
+                    id('gachaHeaderCoins').textContent !== '10' || document.querySelector('.carrot-roll-particle'))
+                  throw Error('unexpected wallet result: ' + JSON.stringify(landed));
+                closeGachaModal();
+                return 'PASS: 452px wallet visual landing and WebView haptic payload';
+              };
+              return true;
+            })()
+            """)
+        try await Task.sleep(nanoseconds: 1_450_000_000)
+        try await verify("452 wallet", "window.__checkWalletFixture()")
         window.setContentSize(NSSize(width: 900, height: 650))
         _ = try await eval("document.body.classList.remove('popover-mode'); true")
         try await Task.sleep(nanoseconds: 150_000_000)

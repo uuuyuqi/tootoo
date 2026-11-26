@@ -47,7 +47,7 @@ function harness(active) {
   frames.set(0, tick[active]);  // requestAnimationFrame IDs may be zero.
   let seq = 0, now = 9999;
   const ctx = {
-    scheduleAgyQuotaLoadingRetry() {}, pauseAgyQuotaLoadingRetry() {},
+    scheduleAgyQuotaLoadingRetry() {}, pauseAgyQuotaLoadingRetry() {}, cancelCarrotRoll() {},
     window: {addEventListener(key, fn) { (windowEvents[key] ??= []).push(fn); }},
     nodes, state: {data: null}, isPopover: true, popoverVisible: true, minimalMode: false,
     blasterCanvas: nodes.blasterCanvas, rainCanvas: nodes.rainCanvas,

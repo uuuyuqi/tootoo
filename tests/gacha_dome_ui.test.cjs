@@ -56,7 +56,7 @@ function harness() {
     getGachaCoinState: () => ({ balance: 5, realBalance: 5, key: "daily", realSpent: 0 }),
     localStorage: { setItem() {} },
     persistCarrotPatch: patch => writes.push(patch),
-    renderAlchemyStats() {}, renderGachaMeta() {},
+    renderAlchemyStats() {}, renderGachaMeta() {}, cancelCarrotRoll() {},
     playSfx: sound => effects.push(sound),
     pickWeightedGacha: r => ({ r, icon: "★" }),
     grantGachaReward: pick => { effects.push(`grant-${pick.r}`); return { actualName: "fixture reward" }; },

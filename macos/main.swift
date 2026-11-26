@@ -324,7 +324,7 @@ class TelemetryWebViewController: NSViewController, WKScriptMessageHandler, WKNa
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         if let dict = message.body as? [String: Any], let action = dict["action"] as? String {
-            let privileged = ["getKeepAwakeState", "setKeepAwake", "getUpdateState", "checkForUpdate", "installUpdate", "openUpdateRelease"]
+            let privileged = ["getKeepAwakeState", "setKeepAwake", "getUpdateState", "checkForUpdate", "installUpdate", "openUpdateRelease", "haptic"]
             if privileged.contains(action) {
                 guard message.frameInfo.isMainFrame, let frameURL = message.frameInfo.request.url,
                       matchesAppPage(frameURL) else { return }
@@ -1128,8 +1128,30 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         fullWindow = win
     }
 
+    private var lastHapticUptime: TimeInterval = -.infinity
+
+    private func performWalletHaptic(_ rawPattern: Any?) {
+        // WKScriptMessage forwarding runs on the main queue after the frame/URL checks.
+        guard Thread.isMainThread else { return }
+        let pattern: NSHapticFeedbackManager.FeedbackPattern
+        switch rawPattern as? String ?? "levelChange" {
+        case "generic": pattern = .generic
+        case "alignment": pattern = .alignment
+        case "levelChange": pattern = .levelChange
+        default: return
+        }
+        guard rawPattern == nil || rawPattern is String else { return }
+        let now = ProcessInfo.processInfo.systemUptime
+        // Safety limit only; the UI owns the 220 ms cadence.
+        guard now - lastHapticUptime >= 0.18 else { return }
+        lastHapticUptime = now
+        NSHapticFeedbackManager.defaultPerformer.perform(pattern, performanceTime: .now)
+    }
+
     private func handleWebAction(_ action: String, payload: [String: Any]) {
         switch action {
+        case "haptic":
+            performWalletHaptic(payload["pattern"])
         case "openWindow":
             openFullWindow()
         case "openBrowser":
