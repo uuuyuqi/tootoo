@@ -199,21 +199,21 @@ test("a slow credit POST cannot land in storage after the immediate spend", asyn
   const calls = [];
   let finishCredit;
   const ctx = vm.createContext({
-    carrotDiskState: {},
+    carrotDiskState: {balance:7},
     fetch: (_, options) => {
-      const balance = JSON.parse(options.body).balance;
-      calls.push(balance);
+      const {balance,balance_delta} = JSON.parse(options.body);
+      calls.push([balance,balance_delta]);
       return balance === 19 ? new Promise(resolve => { finishCredit = resolve; }) : Promise.resolve();
     },
   });
   vm.runInContext("let carrotWriteTail = Promise.resolve(); let carrotRevision = 0;\n" +
-    part("function persistCarrotPatch(", "function getRealGachaCollected("), ctx);
+    part("function persistCarrotPatch(", "// TOOTOO_ADVENTURE_TICKETS_START"), ctx);
   ctx.persistCarrotPatch({balance:19});
   ctx.persistCarrotPatch({balance:18});
   assert.equal(ctx.carrotDiskState.balance, 18);
   await new Promise(setImmediate);
-  assert.deepEqual(calls,[19]);
+  assert.deepEqual(calls,[[19,12]]);
   finishCredit();
   await vm.runInContext("carrotWriteTail", ctx);
-  assert.deepEqual(calls,[19,18]);
+  assert.deepEqual(calls,[[19,12],[18,-1]]);
 });

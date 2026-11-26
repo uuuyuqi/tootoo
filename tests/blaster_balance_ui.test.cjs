@@ -9,10 +9,10 @@ function chunk(a,b) {
   assert(i>=0 && j>=0, a);
   return html.slice(i,j);
 }
-function harness() {
+function harness(seed) {
   let roll = .99;
   const math = Object.create(Math), awarded = [], written = [], canceled = [], sfx=[];
-  math.random = () => roll;
+  math.random = () => seed == null ? roll : ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 2**32);
   const nodes = new Map();
   const ctx = vm.createContext({
     Math: math, blasterRaf: 0, blKeys:{left:true,right:true},
@@ -26,13 +26,13 @@ function harness() {
       return nodes.get(id);
     }}, startBlasterGame(){}, frozen:false, hasActiveBoss:true, wave:2, dt:.05,
   });
-  vm.runInContext(chunk("function shouldStartBlasterHorde(", "function spawnHordeFormation(") +
+  vm.runInContext(chunk("const BLASTER_BERSERK_SECONDS", "function spawnHordeFormation(") +
     chunk("function handleBlasterEnemyDeath(", "function triggerBlasterNova(") +
     chunk("function finishBlasterGame(", "// GAME 1: 🥕 TOKEN RAIN CATCHER"),ctx);
   const game = extra => ({
     running:true, w:400, h:248, x:12, elapsed:40, hordeCount:1, hordeTimer:.05, hordeState:"warn",
     hordeWaveAcc:0, hordeEliteSpawned:true, nextBossAt:0, hordeSurvived:true,
-    lives:3, ammo:20, kills:0, combo:0, score:0, bossKills:0, berserkCharge:0, berserkTimer:0,
+    lives:3, breaches:0, shieldCharge:0, shieldTimer:0, maxAmmo:85, ammo:20, kills:0, combo:0, score:0, bossKills:0, berserkCharge:0, berserkTimer:0,
     feverCharge:0, overclockTimer:0, refunded:0, lootsFound:[], floats:[], pickups:[], enemies:[],
     ...extra,
   });
@@ -42,15 +42,14 @@ function enemy(extra) {
   return {x:140,y:50,pts:5,col:"red",...extra};
 }
 
-test("ordinary core and ammo drops get rarer without stealing coin, mystery, or shield odds", () => {
+test("random loot keeps coins and boxes but cannot chain defense or rage", () => {
   const h=harness();
-  // Exhaust 1,000 equal-width centile midpoints; deterministic and substantially
-  // finer than the rarest class, including 1.8% regular cores.
+  // Enumerate 1,000 evenly spaced drop rolls for each enemy type.
   const samples=[
-    [{}, {gacha_box:22,carrot_coin:32,berserk_orb:18,shield_pack:18,ammo:70}],
-    [{horde:true}, {gacha_box:22,carrot_coin:32,berserk_orb:35,shield_pack:55,ammo:70}],
-    [{kind:"tank",horde:true}, {gacha_box:22,carrot_coin:32,berserk_orb:180,shield_pack:55,ammo:70}],
-    [{split:true},{gacha_box:55,carrot_coin:60,berserk_orb:18,shield_pack:18,ammo:70}],
+    [{}, {gacha_box:22,carrot_coin:32,ammo:32}],
+    [{horde:true}, {gacha_box:22,carrot_coin:32,ammo:32}],
+    [{kind:"tank",horde:true}, {gacha_box:22,carrot_coin:32,ammo:32}],
+    [{split:true},{gacha_box:55,carrot_coin:60,ammo:32}],
   ];
   for(const [shape, expected] of samples) {
     const got={};
@@ -62,7 +61,7 @@ test("ordinary core and ammo drops get rarer without stealing coin, mystery, or 
       const [pk]=s.pickups;
       if (!pk) continue;
       got[pk.kind]=(got[pk.kind]??0)+1;
-      if(pk.kind==="ammo") assert.equal(pk.amt,8);
+      if(pk.kind==="ammo") assert.equal(pk.amt,4);
     }
     assert.deepEqual(got,expected);
   }
@@ -71,15 +70,15 @@ test("ordinary core and ammo drops get rarer without stealing coin, mystery, or 
   h.ctx.handleBlasterEnemyDeath(elite,enemy({kind:"elite",horde:true}),2);
   h.ctx.handleBlasterEnemyDeath(boss,enemy({boss:true}),2);
   h.ctx.handleBlasterEnemyDeath(decoy,enemy({boss:true,isDecoy:true}),2);
-  assert.equal(JSON.stringify(elite.pickups.map(p=>[p.kind,p.amt])), '[["ammo",8]]');
+  assert.equal(JSON.stringify(elite.pickups.map(p=>[p.kind,p.amt])), '[["ammo",5]]');
   assert.equal(JSON.stringify(boss.pickups.map(p=>p.kind)), '["carrot_coin","gacha_box"]');
   assert.equal(decoy.pickups.length,0);
 });
 
 test("each horde provides exactly one catchable combat-only pack", () => {
   const h=harness();
-  for(const [count,timer,kind] of [[1,0,"shield_pack"],[2,0,"shield_pack"],
-    [3,0,"berserk_orb"],[6,5,"shield_pack"]]) {
+  for(const [count,timer,kind] of [[1,0,"ammo"],[2,0,"shield_pack"],
+    [3,0,"berserk_orb"],[6,3,"berserk_orb"]]) {
     const s=h.game({hordeCount:count-1,berserkTimer:timer});
     h.ctx.triggerBlasterHorde(s,2);
     assert.equal(s.pickups.length,count===1 ? 1 : 0);
@@ -98,66 +97,133 @@ test("each horde provides exactly one catchable combat-only pack", () => {
   }
 });
 
-test("dry minimum ammo can reach and catch the first aid at default and maximum rate", () => {
-  for (const tps of [25, 72, 200]) {
-    const h=harness();
-    const root=h.ctx;
-    Object.assign(root, {
-      state:{data:{kpi:{tps,cache_hit:0}}}, debugState:{active:false},
-      getEffectiveTodayTokens:()=>0, getBunnyTier:()=>({level:1}),
-      performance:{now:()=>0}, blasterState:null, playTone(){},
-      requestAnimationFrame:()=>1, window:{}, blasterCanvas:{clientWidth:400}, blCtx:{setTransform(){}},
-      blKeys:{left:false,right:false},
-    });
-    vm.runInContext(chunk("function getBlasterLoadout(", "function refreshArcadeContext(") +
-      chunk("function spawnHordeFormation(", "function spawnBlasterParts(") +
-      chunk("function startBlasterGame(", "  // Render blaster canvas") +
-      chunk("  // End check (never end from 0 ammo", "function finishBlasterGame("), root);
-    root.startBlasterGame();
-    const s=root.blasterState;
-    assert.equal(s.ammo,40);
-    assert.equal(s.refundProb,0);
-    assert.equal(root.shouldStartBlasterHorde({...s, ammo:100, elapsed:8}),false);
-    assert.equal(root.shouldStartBlasterHorde({...s, ammo:100, elapsed:9.5}),true);
-    assert.equal(root.shouldStartBlasterHorde({...s, ammo:0, elapsed:0, hordeCount:1}),false);
-    let drops=0, spawnedAt, target;
-    for (let frame=1; frame<=600 && s.shieldTimer===0 && s.running; frame++) {
-      root.tickBlasterGame(frame*1000/60);
-      // Isolate ammo depletion from unrelated defense losses or combat drops.
-      s.enemies.length=0;
-      s.enemyBullets.length=0;
-      if (s.pickups.length && !target) {
-        drops+=s.pickups.length;
-        target=s.pickups[0];
-        spawnedAt=s.elapsed;
-        s.targetX=target.x;
-      }
-    }
-    assert.ok(spawnedAt < 9.5, `tps ${tps}: first dry warning occurred at ${spawnedAt}`);
-    assert.equal(drops,1);
-    assert.equal(target.kind,"shield_pack");
-    assert.equal(s.pickups.length,0);
-    assert.ok(s.shieldTimer>0 && s.running && s.ammo>0, `tps ${tps}: catch reached with ${s.ammo} ammo`);
-  }
+function live(seed, {tps=72,cache_hit=95,tokens=200e6,level=3,width=392}={}) {
+  const h=harness(seed), root=h.ctx;
+  Object.assign(root, {
+    state:{data:{kpi:{tps,cache_hit}}}, debugState:{active:false},
+    getEffectiveTodayTokens:()=>tokens, getBunnyTier:()=>({level}),
+    performance:{now:()=>0}, blasterState:null, playTone(){},
+    requestAnimationFrame:()=>1, window:{}, blasterCanvas:{clientWidth:width}, blCtx:{setTransform(){}},
+    blKeys:{left:false,right:false}, rollInGameMysteryLoot:()=>({icon:"",actualName:"",r:"N"}),
+  });
+  vm.runInContext(chunk("function getBlasterLoadout(", "function refreshArcadeContext(") +
+    chunk("function spawnHordeFormation(", "function spawnBlasterParts(") +
+    chunk("function hitBlasterDefense(", "  // Render blaster canvas") +
+    chunk("  // End check (never end from 0 ammo", "function finishBlasterGame("), root);
+  root.startBlasterGame();
+  return {...h, root,s:root.blasterState};
+}
+
+test("initial ammo and refunds stay bounded even on very high usage days", () => {
+  assert.equal(live(1,{tokens:0,cache_hit:0}).s.ammo,85);
+  const low=live(1,{tokens:12e6}).s, high=live(1,{tokens:64e9,cache_hit:100,level:9}).s;
+  assert.ok(low.ammo > 85 && low.ammo < high.ammo);
+  assert.equal(high.ammo,185);
+  assert.equal(high.refundProb,.18);
 });
 
-test("a cleared horde gives 6 ammo; overclock cannot recharge while active", () => {
-  const h=harness();
-  h.ctx.s=h.game({hordeState:"active",hordeTimer:.01,hordeWaveAcc:0});
-  vm.runInContext(chunk("  // Periodic Enemy Horde", '    if (s.hordeState === "idle" && !hasActiveBoss && s.elapsed >= s.nextBossAt)')+"\n}",h.ctx);
-  assert.equal(h.ctx.s.ammo,26);
-  assert.equal(h.ctx.s.score,200);
-  assert.match(h.ctx.s.bossBanner.txt,/补弹 \+6/);
-  const s=h.game({feverCharge:92,overclockTimer:.5});
+test("even a dry minimum loadout gets to its first pack at maximum rate", () => {
+  const {root,s}=live(7,{tps:200,tokens:0,cache_hit:0,level:1});
+  let pack, caught=false;
+  for(let frame=1; frame<680 && !caught; frame++){
+    root.tickBlasterGame(frame*1000/60);
+    s.enemies.length=0;
+    s.enemyBullets.length=0;
+    if(!pack && s.pickups.length) { pack=s.pickups[0]; s.targetX=pack.x; }
+    if(pack && !s.pickups.includes(pack)) caught=true;
+  }
+  assert.equal(pack.kind,"ammo");
+  assert.equal(pack.amt,10);
+  assert.ok(caught && s.ammo>0 && s.running);
+});
+
+test("three leaks cost a heart, full rage never saves a hit, shields spend on one hit, and rage cannot extend", () => {
+  const {root,s}=live(7);
+  s.berserkCharge=100;
+  s.shieldCharge=1;
+  const leak=()=>s.enemies.push({x:50,y:s.h-9,hp:2,r:9,vy:0,wobble:0,lbl:"BUG"});
+  for(let frame=1;frame<=6;frame++){
+    leak();
+    root.tickBlasterGame(frame*17);
+    assert.equal(s.lives,frame===6?2:3);
+    assert.equal(s.berserkTimer,0);
+    assert.equal(s.breaches,frame%3);
+    assert.equal(s.shieldCharge,frame<3?1:0);
+  }
+  s.enemyBullets.push({x:s.x,y:s.h-26,vx:0,vy:0,r:4});
+  root.tickBlasterGame(7*17);
+  assert.equal(s.lives,1);
+  assert.equal(s.berserkTimer,0);
+  assert.equal(root.triggerBlasterBerserk(),true);
+  assert.equal(s.berserkTimer,3);
+  assert.equal(root.triggerBlasterBerserk(),false);
+  assert.equal(root.triggerBlasterBerserk(true),false);
+  assert.equal(s.berserkTimer,3);
+  assert.equal(s.berserkCharge,0);
+  s.berserkTimer=0; s.berserkCharge=100;
+  s.elapsed=s.berserkReadyAt-.1;
+  assert.equal(root.triggerBlasterBerserk(),false);
+  s.elapsed=s.berserkReadyAt;
+  assert.equal(root.triggerBlasterBerserk(),true);
+});
+
+test("rage pickup charges without activating; the horde clear does not refill ammo", () => {
+  const {root,s}=live(7);
+  s.pickups.push({kind:"berserk_orb",x:s.x,y:s.h-26,vy:0});
+  root.tickBlasterGame(16);
+  assert.equal(s.berserkCharge,45);
+  assert.equal(s.berserkTimer,0);
+  s.hordeState="active"; s.hordeTimer=.01; s.hordeEliteSpawned=true;
+  const ammo=s.ammo;
+  root.tickBlasterGame(32);
+  assert.equal(s.ammo,ammo);
+  assert.equal(s.score,200);
+  assert.match(s.bossBanner.txt,/防线守住/);
+});
+
+test("overclock cannot recharge while active; it lasts under three seconds", () => {
+  const h=harness(), s=h.game({feverCharge:96,overclockTimer:.5});
   for(let n=0;n<20;n++) h.ctx.handleBlasterEnemyDeath(s,enemy({}),3);
-  assert.equal(s.feverCharge,92);
-  assert.equal(s.overclockTimer,.5);
+  assert.equal(s.feverCharge,96);
   s.overclockTimer=0;
   h.ctx.handleBlasterEnemyDeath(s,enemy({}),3);
-  assert.equal(s.feverCharge,99);
-  h.ctx.handleBlasterEnemyDeath(s,enemy({}),3);
   assert.equal(s.feverCharge,0);
-  assert.equal(s.overclockTimer,4.5);
+  assert.equal(s.overclockTimer,2.8);
+});
+
+test("later formations are thicker, tougher and arrive faster", () => {
+  const {root,s}=live(7);
+  const early=root.blasterWavePacing(1,true,false), late=root.blasterWavePacing(8,true,false);
+  assert(late.interval < early.interval && late.formation < early.formation);
+  assert.equal(late.cap,36);
+  assert(root.blasterEnemyHp(s,8,2) >= root.blasterEnemyHp(s,1,2)+2);
+  root.Math.random=()=>0.1;
+  root.spawnHordeFormation(s,1);
+  assert.equal(s.enemies.length,5);
+  s.enemies=[];
+  root.spawnHordeFormation(s,8);
+  assert.equal(s.enemies.length,7);
+  assert(s.enemies.every(e=>e.hp>=4 && e.hp===e.maxHp));
+});
+
+test("inventory caps actual uses without discarding redundant items or changing rain", () => {
+  const {root,s}=live(7);
+  let bag={arcade_items:{ammo_box:8,energy_shield:8,time_freeze:8}};
+  Object.assign(root,{getActiveHomeState:()=>bag,cloneHomeState:x=>JSON.parse(JSON.stringify(x)),
+    saveActiveHomeState:x=>{bag=x},rainState:{running:true,shields:0,floats:[],w:392,h:248,x:192}});
+  vm.runInContext(chunk("const ADVENTURE_PROPS", '["blPropBar", "rainPropBar"].forEach'),root);
+  assert.equal(root.useAdventureProp("blaster","ammo_box"),false);
+  assert.equal(bag.arcade_items.ammo_box,8);
+  assert.equal(root.useAdventureProp("blaster","energy_shield"),true);
+  assert.equal(root.useAdventureProp("blaster","energy_shield"),false);
+  s.ammo-=25;
+  assert.equal(root.useAdventureProp("blaster","ammo_box"),true);
+  assert.equal(s.ammo,s.maxAmmo-7);
+  assert.equal(root.useAdventureProp("blaster","time_freeze"),false);
+  assert.equal(bag.arcade_items.time_freeze,8);
+  assert.equal(bag.arcade_items.energy_shield,7);
+  assert.equal(root.useAdventureProp("rain","energy_shield"),true);
+  assert.equal(root.rainState.shields,2);
 });
 
 test("End Round settles the same report and capped coin grant only once", () => {
@@ -181,4 +247,57 @@ test("End Round settles the same report and capped coin grant only once", () => 
   h.ctx.finishBlasterGame(debug,"ended");
   assert.equal(h.awarded.length,1);
   assert.equal(h.written.length,1);
+});
+
+function simulate(seed, config, active) {
+  const {root,s}=live(seed,config);
+  let rageFrames=0, peak=0, waves=0, missiles=0, target=s.x;
+  for(let frame=1; frame<=60*180 && s.running; frame++) {
+    if(active && frame%9===1) {
+      const by=s.h-26;
+      const threats=s.enemies.filter(e=>e.y>-10).map(e=>[
+        Math.max(22,Math.min(s.w-22,e.x+(e.diveState==="dive"?e.vx*.22:0))),
+        e.boss? 3 : 2+Math.min(8,e.y/25)-e.hp*.28,
+      ]);
+      for (const p of s.pickups) {
+        if (p.y > by-69 && p.y < by+18 && (p.kind!=="ammo" || s.ammo<s.maxAmmo-6)) {
+          threats.push([p.x,p.kind==="ammo" && s.ammo<25?13:8]);
+        }
+      }
+      if(threats.length){
+        const bullets=s.enemyBullets.filter(e=>e.y>by-80 && e.y<by+7);
+        const risk=x=>bullets.reduce((v,b)=>v+(Math.abs(x-b.x-b.vx*.14)<26?7:0),0);
+        const value=([x,v])=>v-Math.abs(x-s.x)/90-risk(x);
+        target=threats.reduce((best,x)=>value(x)>value(best)?x:best)[0];
+      }
+      s.targetX=target;
+      if(s.berserkCharge>=100 && (s.enemies.length>=4 || s.enemies.some(e=>e.boss))) root.triggerBlasterBerserk();
+      if(!s.berserkTimer && s.ammo>40 && s.enemies.filter(e=>e.y>145).length>=5) root.triggerBlasterNova();
+    }
+    root.tickBlasterGame(frame*1000/60);
+    rageFrames+= +(s.berserkTimer>0);
+    peak=Math.max(peak,s.enemies.length);
+    waves=Math.max(waves,s.hordeCount);
+    missiles=Math.max(missiles,s.enemyBullets.length);
+  }
+  return {seconds:s.elapsed,kills:s.kills,score:s.score,rage:rageFrames/(s.elapsed*60),peak,waves,lives:s.lives,ammo:s.ammo,missiles,running:s.running};
+}
+
+test("fixed-seed real rounds remain survivable with aim, but not endless", () => {
+  const results={};
+  for(const [id,config] of [
+    ["new",{tokens:0,cache_hit:0,level:1}],
+    ["mid",{tokens:200e6,cache_hit:95,level:3}],
+    ["high",{tokens:8e9,tps:200,cache_hit:100,level:9}],
+  ]){
+    const pairs=Array.from({length:12},(_,i)=>[simulate(i+1,config,false),simulate(i+1,config,true)]);
+    const median=(xs)=>[...xs].sort((a,b)=>a-b)[Math.floor(xs.length/2)];
+    const passive=median(pairs.map(x=>x[0].seconds)), aimed=median(pairs.map(x=>x[1].seconds));
+    const longest=Math.max(...pairs.map(x=>x[1].seconds));
+    assert(aimed > passive * 1.7 && aimed > 20, id + ": aiming should matter");
+    assert(longest < 100 && pairs.every(([,round])=>!round.running), id + ": skilled play must not run indefinitely");
+    assert(pairs.every(([,round])=>round.rage < .29), id + ": rage must not dominate");
+    results[id]={passive,aimed,longest,minAimed:Math.min(...pairs.map(x=>x[1].seconds)),maxRage:Math.max(...pairs.map(x=>x[1].rage)),maxKills:Math.max(...pairs.map(x=>x[1].kills))};
+  }
+  console.log("Balance sample:",JSON.stringify(results));
 });

@@ -339,7 +339,48 @@ def _sanitize_home_state(raw: Any) -> dict[str, Any]:
     return h
 
 
-def load_carrot_state() -> dict[str, Any]:
+_ADVENTURE_TICKET_PRICE = 5
+_ADVENTURE_TICKET_DAILY_FREE = 3
+_ADVENTURE_TICKET_BUY_LIMIT = 5
+_ADVENTURE_TICKET_TTL_DAYS = 7
+_ADVENTURE_TICKET_TTL = _ADVENTURE_TICKET_TTL_DAYS * 24 * 60 * 60
+_ADVENTURE_OPERATION_ID = re.compile(r"[A-Za-z0-9_-]{16,64}")
+
+
+def _empty_adventure_ticket_state() -> dict[str, Any]:
+    return {"expiries": [], "free_day": "", "buy_day": "", "bought": 0,
+            "paid": False, "operations": {}}
+
+
+def _sanitize_adventure_ticket_state(raw) -> dict[str, Any]:
+    out = _empty_adventure_ticket_state()
+    if not isinstance(raw, dict):
+        return out
+    for key in ("free_day", "buy_day"):
+        value = raw.get(key)
+        if isinstance(value, str):
+            try:
+                if date.fromisoformat(value).isoformat() == value:
+                    out[key] = value
+            except ValueError:
+                pass
+    expiries = raw.get("expiries")
+    if isinstance(expiries, list):
+        out["expiries"] = sorted(n for n in expiries if type(n) is int and n > 0)
+    if type(raw.get("bought")) is int:
+        out["bought"] = min(_ADVENTURE_TICKET_BUY_LIMIT, max(0, raw["bought"]))
+    out["paid"] = raw.get("paid") is True
+    operations = raw.get("operations")
+    if isinstance(operations, dict):
+        for op_id, op in operations.items():
+            if (isinstance(op_id, str) and _ADVENTURE_OPERATION_ID.fullmatch(op_id)
+                    and isinstance(op, dict) and op.get("action") in ("buy", "blaster", "rain")
+                    and type(op.get("at")) is int and op["at"] > 0):
+                out["operations"][op_id] = {"action": op["action"], "at": op["at"]}
+    return out
+
+
+def load_carrot_state(*, include_private: bool = False, strict: bool = False) -> dict[str, Any]:
     default: dict[str, Any] = {
         "balance": None,
         "starter_day": "",
@@ -350,37 +391,43 @@ def load_carrot_state() -> dict[str, Any]:
         "collection": [],
         "home": _sanitize_home_state(None),
     }
+    if include_private:
+        default["adventure_tickets"] = _empty_adventure_ticket_state()
     try:
-        if os.path.exists(CARROT_STATE_FILE):
-            with open(CARROT_STATE_FILE, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            if isinstance(data, dict):
-                days = data.get("days") if isinstance(data.get("days"), dict) else {}
-                coll = data.get("collection") if isinstance(data.get("collection"), list) else []
-                clean_coll = sorted({int(x) for x in coll if isinstance(x, (int, float))})
-                bal = data.get("balance")
-                clean_bal = max(0, int(bal)) if isinstance(bal, (int, float)) else None
-                starter_day = str(data.get("starter_day") or "")
-                checkin_day = str(data.get("checkin_day") or "")
-                try:
-                    checkin_streak = max(0, int(data.get("checkin_streak") or 0))
-                except (TypeError, ValueError):
-                    checkin_streak = 0
-                skin = str(data.get("secret_skin") or "prism")
-                if skin not in ("prism", "void", "cyber"):
-                    skin = "prism"
-                return {
-                    "balance": clean_bal,
-                    "starter_day": starter_day,
-                    "checkin_day": checkin_day,
-                    "checkin_streak": checkin_streak,
-                    "secret_skin": skin,
-                    "days": days,
-                    "collection": clean_coll,
-                    "home": _sanitize_home_state(data.get("home")),
-                }
-    except Exception:
+        with open(CARROT_STATE_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if not isinstance(data, dict):
+            raise ValueError("invalid carrot state")
+        days = data.get("days") if isinstance(data.get("days"), dict) else {}
+        coll = data.get("collection") if isinstance(data.get("collection"), list) else []
+        clean_coll = sorted({int(x) for x in coll if isinstance(x, (int, float))})
+        bal = data.get("balance")
+        clean_bal = max(0, int(bal)) if isinstance(bal, (int, float)) else None
+        try:
+            checkin_streak = max(0, int(data.get("checkin_streak") or 0))
+        except (TypeError, ValueError):
+            checkin_streak = 0
+        skin = str(data.get("secret_skin") or "prism")
+        if skin not in ("prism", "void", "cyber"):
+            skin = "prism"
+        clean = {
+            "balance": clean_bal,
+            "starter_day": str(data.get("starter_day") or ""),
+            "checkin_day": str(data.get("checkin_day") or ""),
+            "checkin_streak": checkin_streak,
+            "secret_skin": skin,
+            "days": days,
+            "collection": clean_coll,
+            "home": _sanitize_home_state(data.get("home")),
+        }
+        if include_private:
+            clean["adventure_tickets"] = _sanitize_adventure_ticket_state(data.get("adventure_tickets"))
+        return clean
+    except FileNotFoundError:
         pass
+    except Exception:
+        if strict:
+            raise
     return default
 
 
@@ -394,15 +441,20 @@ def save_carrot_state(patch: dict[str, Any]) -> dict[str, Any]:
 
 
 def _save_carrot_state_locked(patch: dict[str, Any], request_day: str, real: int) -> dict[str, Any]:
-    cur = load_carrot_state()
-    previous = load_carrot_state() if isinstance(patch.get("home"), dict) else None
+    cur = load_carrot_state(include_private=True, strict=True)
+    # Rollback must include the server-owned ticket ledger.
+    previous = load_carrot_state(include_private=True, strict=True) if isinstance(patch.get("home"), dict) else None
     today = _local_day()
     existing_xp = _validated_xp_boost(cur["home"].get("xp_boost"), today)
     accepted_xp = 0
-    if "balance" in patch and patch["balance"] is not None:
+    if type(patch.get("balance_delta")) is int:
+        cur["balance"] = max(0, (cur["balance"] or 0) + patch["balance_delta"])
+    elif patch.get("balance") is not None and not cur["adventure_tickets"]["paid"]:
+        # Legacy initialization before any ticket purchase. Afterwards, an
+        # absolute balance from an earlier page must not undo a paid debit.
         try:
             cur["balance"] = max(0, int(patch["balance"]))
-        except (TypeError, ValueError):
+        except (TypeError, ValueError, OverflowError):
             pass
     if "starter_day" in patch and isinstance(patch["starter_day"], str) and len(patch["starter_day"]) == 10:
         cur["starter_day"] = patch["starter_day"]
@@ -456,7 +508,99 @@ def _save_carrot_state_locked(patch: dict[str, Any], request_day: str, real: int
             assert previous is not None
             _atomic_game_json(CARROT_STATE_FILE, previous)
             raise
-    return cur
+    return {key: value for key, value in cur.items() if key != "adventure_tickets"}
+
+
+def _prepare_adventure_tickets(ledger: dict[str, Any], today: str, now: int) -> bool:
+    changed = False
+    expiries = [n for n in ledger["expiries"] if n > now]
+    if expiries != ledger["expiries"]:
+        ledger["expiries"] = expiries
+        changed = True
+    operations = {op_id: op for op_id, op in ledger["operations"].items()
+                  if op["at"] > now - _ADVENTURE_TICKET_TTL}
+    if operations != ledger["operations"]:
+        ledger["operations"] = operations
+        changed = True
+    if today > ledger["free_day"]:
+        ledger["free_day"] = today
+        ledger["expiries"].extend([now + _ADVENTURE_TICKET_TTL] * _ADVENTURE_TICKET_DAILY_FREE)
+        ledger["expiries"].sort()
+        changed = True
+    return changed
+
+
+def _adventure_tickets_bought_today(ledger: dict[str, Any], today: str) -> int:
+    if today == ledger["buy_day"]:
+        return ledger["bought"]
+    # Rolling the clock back cannot reset the cap and create a second buying day.
+    return _ADVENTURE_TICKET_BUY_LIMIT if today < ledger["buy_day"] else 0
+
+
+def _adventure_ticket_snapshot(cur: dict[str, Any], today: str) -> dict[str, Any]:
+    ledger = cur["adventure_tickets"]
+    expiries = ledger["expiries"]
+    bought = _adventure_tickets_bought_today(ledger, today)
+    return {"ok": True, "balance": cur["balance"] or 0,
+            "tickets": {"available": len(expiries), "expires_next_at": expiries[0] if expiries else None,
+                        "bought_today": bought, "buy_remaining": _ADVENTURE_TICKET_BUY_LIMIT - bought,
+                        "price": _ADVENTURE_TICKET_PRICE, "daily_free": _ADVENTURE_TICKET_DAILY_FREE,
+                        "ttl_days": _ADVENTURE_TICKET_TTL_DAYS}}
+
+
+def adventure_tickets(action: str | None = None, operation_id: str | None = None,
+                      game: str | None = None) -> dict[str, Any]:
+    """One locked transaction for daily credit, purchase, or admission."""
+    if action is not None and (action not in ("buy", "consume")
+                               or not isinstance(operation_id, str)
+                               or not _ADVENTURE_OPERATION_ID.fullmatch(operation_id)
+                               or (action == "consume" and game not in ("blaster", "rain"))):
+        raise ValueError("invalid_request")
+    with _game_state_lock():
+        today = _local_day()
+        now = int(time.time())
+        cur = load_carrot_state(include_private=True, strict=True)
+        ledger = cur["adventure_tickets"]
+        changed = _prepare_adventure_tickets(ledger, today, now)
+        error = None
+        replayed = False
+        if action is not None:
+            assert operation_id is not None
+            kind = "buy" if action == "buy" else game
+            already = ledger["operations"].get(operation_id)
+            if already is not None:
+                replayed = already["action"] == kind
+                if not replayed:
+                    error = "operation_conflict"
+            elif action == "buy":
+                if _adventure_tickets_bought_today(ledger, today) >= _ADVENTURE_TICKET_BUY_LIMIT:
+                    error = "daily_limit"
+                elif (cur["balance"] or 0) < _ADVENTURE_TICKET_PRICE:
+                    error = "insufficient_coins"
+                else:
+                    cur["balance"] -= _ADVENTURE_TICKET_PRICE
+                    ledger["paid"] = True
+                    if ledger["buy_day"] != today:
+                        ledger["buy_day"], ledger["bought"] = today, 0
+                    ledger["bought"] += 1
+                    ledger["expiries"].append(now + _ADVENTURE_TICKET_TTL)
+                    ledger["expiries"].sort()
+            elif not ledger["expiries"]:
+                error = "no_tickets"
+            else:
+                ledger["expiries"].pop(0)
+            if error is None and not replayed:
+                ledger["operations"][operation_id] = {"action": kind, "at": now}
+                changed = True
+        if changed:
+            _atomic_game_json(CARROT_STATE_FILE, cur)
+        result = _adventure_ticket_snapshot(cur, today)
+        if action is not None:
+            result["replayed"] = replayed
+        if error is not None:
+            result.update(ok=False, error=error)
+        return result
+
 
 # Performance outlier guards & TTFT log-histogram parameters
 PERF_MIN_OUTPUT = 20

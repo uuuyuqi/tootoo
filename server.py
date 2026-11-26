@@ -31,7 +31,10 @@ from codex_app_quota import invalidate_codex_cli_quota, stop_codex_cli_quota
 from quota_runtime import generation as quota_generation, wait as wait_for_quota_update
 from pricing import sync_remote_pricing
 from update_check import checker as update_checker
-from scanner import CACHE_DIR, build_telemetry, refresh_native_codex_quota, load_carrot_state, save_carrot_state, save_local_quota_config
+from scanner import (
+    CACHE_DIR, adventure_tickets, build_telemetry, load_carrot_state,
+    refresh_native_codex_quota, save_carrot_state, save_local_quota_config,
+)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UI_FILE = os.path.join(BASE_DIR, "ui", "index.html")
@@ -280,8 +283,40 @@ class TooTooHandler(BaseHTTPRequestHandler):
         except (OSError, ValueError):
             return True
 
+    def _adventure_ticket_request(self, *, mutate: bool) -> None:
+        origin = self.headers.get("Origin")
+        host = self.headers.get("Host", "")
+        if (self.headers.get("Sec-Fetch-Site") == "cross-site"
+                or (origin is not None and origin not in (f"http://{host}", f"https://{host}"))):
+            self._send_json({"ok": False, "error": "cross_site"}, status=403)
+            return
+        action = operation_id = game = None
+        if mutate:
+            try:
+                length = int(self.headers.get("Content-Length", "0"))
+                if self.headers.get_content_type() != "application/json" or not 0 < length <= 4096:
+                    raise ValueError("invalid_request")
+                body = json.loads(self.rfile.read(length))
+                if not isinstance(body, dict) or body.get("action") not in ("buy", "consume"):
+                    raise ValueError("invalid_request")
+                action, operation_id, game = body["action"], body.get("operation_id"), body.get("game")
+            except (ValueError, TypeError):
+                self._send_json({"ok": False, "error": "invalid_request"}, status=400)
+                return
+        try:
+            state = adventure_tickets(action, operation_id, game)
+        except (ValueError, TypeError, OverflowError, OSError) as exc:
+            bad_request = isinstance(exc, ValueError) and str(exc) == "invalid_request"
+            self._send_json({"ok": False, "error": "invalid_request" if bad_request else "storage_error"},
+                            status=400 if bad_request else 500)
+            return
+        self._send_json(state, status=200 if state["ok"] else 409)
+
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
+        if parsed.path == "/api/adventure/tickets":
+            self._adventure_ticket_request(mutate=False)
+            return
         if parsed.path == "/api/update":
             if self.headers.get("Sec-Fetch-Site") == "cross-site":
                 self._send_json({"error": "Cross-site update checks are not allowed."}, status=403)
@@ -427,6 +462,9 @@ class TooTooHandler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
+        if parsed.path == "/api/adventure/tickets":
+            self._adventure_ticket_request(mutate=True)
+            return
         if parsed.path == "/api/quota/config":
             try:
                 length = int(self.headers.get("Content-Length", "0") or "0")

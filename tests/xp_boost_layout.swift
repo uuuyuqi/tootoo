@@ -320,6 +320,62 @@ final class LayoutHarness: NSObject, NSApplicationDelegate, WKNavigationDelegate
             """)
         try await Task.sleep(nanoseconds: 1_450_000_000)
         try await verify("452 wallet", "window.__checkWalletFixture()")
+        _ = try await eval("""
+            (() => {
+              const id = s => document.getElementById(s);
+              const original = fetch;
+              let available = 3, balance = 10, bought = 0;
+              const calls = [];
+              window.fetch = async (url, opts = {}) => {
+                if (url !== '/api/adventure/tickets') return original(url, opts);
+                const parsed = opts.body ? JSON.parse(opts.body) : null;
+                if (parsed) {
+                  calls.push([parsed.action, parsed.game ?? null]);
+                  if (parsed.action === 'buy') { available++; balance -= 5; bought++; }
+                  else { available--; }
+                }
+                return {ok:true,status:200,json:async()=>({
+                  ok:true,balance,tickets:{available,price:5,buy_remaining:5-bought,
+                    daily_free:3,ttl_days:7,expires_next_at:Math.floor(Date.now()/1000)+3600},
+                })};
+              };
+              carrotDiskState.balance = 10;
+              carrotDiskState.home = cloneHomeState({owned_backdrops:['paper'],active_backdrop:'paper'});
+              popoverVisible = true;
+              id('arcadeBtn').click();
+              const check = async () => {
+                await refreshAdventureTickets();
+                const bar = id('advTicketBar');
+                if (!id('arcadeModal').classList.contains('open') || !id('advTicketQty').textContent.includes('3 张') ||
+                    bar.scrollWidth > bar.clientWidth + 1)
+                  throw Error('ticket control invisible, invalid or overflowing');
+                const stage = id('advBackdropBar');
+                const secret = ADVENTURE_BACKDROPS.find(bg=>bg.id !== 'paper');
+                if (!stage.textContent.includes('未解锁') || stage.innerHTML.includes(secret.name) ||
+                    stage.querySelector('.locked [style]') || stage.querySelector('[data-bg-id="' + secret.id + '"]'))
+                  throw Error('locked stage leaks identity');
+                await buyAdventureTicket();
+                if (!id('advTicketQty').textContent.includes('4 张') || id('arcHeaderCoins').textContent !== '5')
+                  throw Error('purchase did not update wallet / count');
+                await requestAdventureRound('blaster');
+                if (!blasterState?.running || !id('advTicketQty').textContent.includes('3 张'))
+                  throw Error('ticket did not start blaster');
+                id('blEndBtn').click();
+                id('arcadeTabs').querySelector('[data-game="rain"]').click();
+                await requestAdventureRound('rain');
+                if (!rainState?.running || !id('advTicketQty').textContent.includes('2 张') ||
+                    JSON.stringify(calls) !== JSON.stringify([['buy',null],['consume','blaster'],['consume','rain']]))
+                  throw Error('rain admission or duplicate purchase');
+                closeArcadeModal();
+                window.fetch = original;
+                return 'PASS: 452px WKWebView shared tickets, wallet debit, and hidden stage names';
+              };
+              check().then(result => window.__ticketResult = result, error => window.__ticketResult = String(error));
+              return true;
+            })()
+            """)
+        try await Task.sleep(nanoseconds: 500_000_000)
+        try await verify("452 adventure tickets", "window.__ticketResult || 'ticket fixture incomplete'")
         window.setContentSize(NSSize(width: 900, height: 650))
         _ = try await eval("document.body.classList.remove('popover-mode'); true")
         try await Task.sleep(nanoseconds: 150_000_000)

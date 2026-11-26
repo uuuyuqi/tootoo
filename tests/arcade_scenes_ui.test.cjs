@@ -77,6 +77,10 @@ test('arcade gallery preserves old scenes, blocks locked scenes and interacts on
   const h=fixture();
   assert.equal(h.nodes.advSceneControl.hidden,true);
   assert.match(h.nodes.advBackdropBar.innerHTML,/黄金星穹殿/);
+  const markup=h.nodes.advBackdropBar.innerHTML;
+  const locked=art.themes.at(-1);
+  assert.match(markup,/🔒 未解锁/);
+  for (const spoiler of [locked.id,locked.name,locked.desc,locked.icon,locked.swatch]) assert(!markup.includes(spoiler));
   h.open('constructor');
   h.open(h.scenes.at(-1));
   assert.equal(h.saves.length,0);
