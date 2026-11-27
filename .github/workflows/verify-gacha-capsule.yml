@@ -1,4 +1,4 @@
-name: Verify TooToo v0.2.25 and gacha in macOS WebKit
+name: Verify TooToo v0.2.26 and gacha in macOS WebKit
 on:
   push:
     branches: ['verification/tootoo-gacha-capsule']
@@ -18,14 +18,14 @@ jobs:
       - name: Python and Node regressions
         run: |
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-          test "$(cat VERSION)" = 0.2.25
+          test "$(cat VERSION)" = 0.2.26
           python3 -W error::SyntaxWarning -m unittest discover -s tests -v
           node --test tests/*.test.cjs
       - name: Verify stripped Universal Release bundle and native Debug build
         run: |
           set -euo pipefail
           NO_INSTALL=1 TOOTOO_DEBUG=0 UNIVERSAL=1 PACKAGE_ZIP=1 bash macos/build_app.sh
-          zip=TooToo-v0.2.25-macos-universal.zip
+          zip=TooToo-v0.2.26-macos-universal.zip
           unzip -tq "dist/$zip"
           (cd dist && shasum -a 256 -c "$zip.sha256" && cat "$zip.sha256")
           python3 - "dist/$zip" <<'PYZIP'
@@ -37,26 +37,24 @@ jobs:
           app=dist/TooToo.app
           lipo "$app/Contents/MacOS/TooToo" -verify_arch arm64 x86_64
           codesign --verify --deep --strict --all-architectures -R '=identifier "com.tootoo.telemetry"' "$app"
-          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$app/Contents/Info.plist")" = 0.2.25
-          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "$app/Contents/Info.plist")" = 27
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$app/Contents/Info.plist")" = 0.2.26
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "$app/Contents/Info.plist")" = 28
           grep -Fq 'class="gm-dispensed"' dist/TooToo.app/Contents/Resources/ui/index.html
           if grep -Fq 'TOOTOO_DEV_DEBUG_JS_START' dist/TooToo.app/Contents/Resources/ui/index.html; then exit 1; fi
           python3 - "$app/Contents/Resources/ui/index.html" <<'PYPILE'
-          import sys
+          import math, re, sys
           from pathlib import Path
           html = Path(sys.argv[1]).read_text(encoding="utf-8")
-          new_rest = "const rest = [[39.4, 54], [51.6, 54], [70.6, 53.5], [54.52, 39.04], [45.5, 44.97], [60.65, 47.93]];"
-          new_angles = "const restA = [-22, 14, -11, 31, -17, 21];"
-          old_rest = "const rest = [[44, 54], [68, 54], [56, 53.5], [56, 42], [44.6, 42.5], [67.5, 42.2]];"
-          poses = [
+          fixed_v25 = "const rest = [[39.4, 54], [51.6, 54], [70.6, 53.5], [54.52, 39.04], [45.5, 44.97], [60.65, 47.93]];"
+          fixed_angles = "const restA = [-22, 14, -11, 31, -17, 21];"
+          fixed_v24 = "const rest = [[44, 54], [68, 54], [56, 53.5], [56, 42], [44.6, 42.5], [67.5, 42.2]];"
+          banned = [
               'transform="translate(39.40, 54.00) rotate(-22)"',
               'transform="translate(51.60, 54.00) rotate(14)"',
               'transform="translate(70.60, 53.50) rotate(-11)"',
               'transform="translate(54.52, 39.04) rotate(31)"',
               'transform="translate(45.50, 44.97) rotate(-17)"',
               'transform="translate(60.65, 47.93) rotate(21)"',
-          ]
-          old_poses = [
               'transform="translate(44, 54)"',
               'transform="translate(68, 54)"',
               'transform="translate(56, 53.5)"',
@@ -64,22 +62,55 @@ jobs:
               'transform="translate(44.6, 42.5)"',
               'transform="translate(67.5, 42.2)"',
           ]
-          assert new_rest in html, "packaged UI is missing the uneven settle pile"
-          assert new_angles in html, "packaged UI is missing uneven settle tilts"
-          assert old_rest not in html, "packaged UI still has the v0.2.24 even two-row rest"
-          for pose in poses:
-              assert pose in html, f"packaged UI missing uneven pile pose: {pose}"
-          for pose in old_poses:
-              assert pose not in html, f"packaged UI still has a v0.2.24 even-row pose: {pose}"
+          assert "function scatterCapsules(" in html, "packaged UI is missing the random bottom scatter"
+          assert "restPose = scatterCapsules(balls.map(b => ({ r: b.r })), Math.random)" in html
+          assert "function settle()" in html and "const pose = ensureRestPose();" in html
+          assert "function burstShake(" in html and "restPose = null;" in html
+          assert fixed_v25 not in html, "packaged UI still has the fixed v0.2.25 pile"
+          assert fixed_angles not in html, "packaged UI still has the fixed v0.2.25 tilts"
+          assert fixed_v24 not in html, "packaged UI still has the v0.2.24 even two-row rest"
+          assert "const rest =" not in html and "const restA =" not in html
+          for pose in banned:
+              assert pose not in html, f"packaged UI still has a fixed pose: {pose}"
+          painted = re.findall(
+              r'<g class="gm-ball" data-r="([\d.]+)" transform="translate\(([\d.]+), ([\d.]+)\) rotate\((-?[\d.]+)\)">',
+              html,
+          )
+          assert len(painted) == 6, "packaged idle pile is not six capsules"
+          cx, cy, dome_r, floor_y, top = 56, 46, 24.8, 59.6, 40.4
+          balls = [{"r": float(r), "x": float(x), "y": float(y), "a": float(a)} for r, x, y, a in painted]
+          angles, y_sum = set(), 0.0
+          for i, ball in enumerate(balls):
+              y_sum += ball["y"]
+              angles.add(ball["a"])
+              dome_slack = (dome_r - ball["r"]) - math.hypot(ball["x"] - cx, ball["y"] - cy)
+              assert dome_slack > 0.4, f"capsule {i} clips the glass"
+              floor_gap = (floor_y - ball["r"]) - ball["y"]
+              assert floor_gap > -0.05, f"capsule {i} sinks through the collar"
+              assert ball["y"] >= top, f"capsule {i} is parked above the bottom of the dome"
+              supported = abs(floor_gap) < 0.35
+              for j, other in enumerate(balls):
+                  if i == j:
+                      continue
+                  gap = math.hypot(ball["x"] - other["x"], ball["y"] - other["y"]) - (ball["r"] + other["r"])
+                  assert gap > -0.05, f"capsules {i} and {j} overlap"
+                  if gap < 0.4 and ball["y"] < other["y"] - 0.4:
+                      supported = True
+              assert supported, f"capsule {i} is floating"
+              assert ball["a"] != 0
+          assert len(angles) >= 4, "capsule seams share one angle"
+          assert y_sum / len(balls) > 46, "the pile is not resting in the bottom half of the dome"
+          assert any((floor_y - ball["r"]) - ball["y"] > 1 for ball in balls), "every capsule is on one tidy floor row"
+          assert sum(abs((floor_y - ball["r"]) - ball["y"]) < 0.35 for ball in balls) >= 2
           PYPILE
           NO_INSTALL=1 TOOTOO_DEBUG=1 UNIVERSAL=0 bash macos/build_app.sh
           test -x dist/TooToo-Debug.app/Contents/MacOS/TooToo-Debug
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: tootoo-v0.2.25-gacha-verified-zip
+          name: tootoo-v0.2.26-gacha-verified-zip
           path: |
-            dist/TooToo-v0.2.25-macos-universal.zip
-            dist/TooToo-v0.2.25-macos-universal.zip.sha256
+            dist/TooToo-v0.2.26-macos-universal.zip
+            dist/TooToo-v0.2.26-macos-universal.zip.sha256
           if-no-files-found: error
           retention-days: 14
           compression-level: 0
