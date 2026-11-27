@@ -112,7 +112,7 @@ test("capsules remain static while opening/hovering; actual draws animate only f
   assert.equal(elements.gachaMachine.classes.has("dispensing"), true);
   assert.equal(elements.gachaMachine.classes.has("shaking"), false);
   assert.equal(frames.size, 0);
-  assert.deepEqual(h.positions(), ["translate(44.00, 54.00) rotate(0.0)", "translate(68.00, 54.00) rotate(0.0)"]);
+  assert.deepEqual(h.positions(), ["translate(39.40, 54.00) rotate(-22.0)", "translate(51.60, 54.00) rotate(14.0)"]);
   const atEnd = h.positions();
   elements.gachaPullBtn.fire("click");
   h.advanceTimers(1039);
@@ -178,6 +178,48 @@ for (const [tier, roll, sound] of [["SSR", 0, "ssr"], ["SR", 0.03, "gold"]]) {
     assert.deepEqual(effects, [`grant-${tier}`, sound]);
   });
 }
+
+test("settled capsules rest on the collar or each other and are not an even row", () => {
+  const CX = 56, CY = 46, DOME_R = 24.8, FLOOR_Y = 59.6;
+  const rest = Function(`"use strict"; return (${html.match(/const rest = (\[[\s\S]*?\]);/)[1]});`)();
+  const restA = Function(`"use strict"; return (${html.match(/const restA = (\[[\s\S]*?\]);/)[1]});`)();
+  const painted = [...html.matchAll(/<g class="gm-ball" data-r="([\d.]+)" transform="translate\(([\d.]+), ([\d.]+)\) rotate\((-?[\d.]+)\)">/g)];
+  assert.equal(painted.length, 6);
+  assert.equal(rest.length, 6);
+  assert.equal(restA.length, 6);
+  const balls = painted.map((match, i) => {
+    const ball = { r: Number(match[1]), x: Number(match[2]), y: Number(match[3]), a: Number(match[4]) };
+    assert.equal(ball.x, rest[i][0]);
+    assert.equal(ball.y, rest[i][1]);
+    assert.equal(ball.a, restA[i]);
+    return ball;
+  });
+  for (let i = 0; i < balls.length; i++) {
+    const ball = balls[i];
+    const domeSlack = (DOME_R - ball.r) - Math.hypot(ball.x - CX, ball.y - CY);
+    assert.ok(domeSlack > 0.4, `capsule ${i} clips the glass`);
+    const floorGap = (FLOOR_Y - ball.r) - ball.y;
+    assert.ok(floorGap > -0.05, `capsule ${i} sinks through the collar`);
+    let supported = Math.abs(floorGap) < 0.35;
+    for (let j = 0; j < balls.length; j++) {
+      if (i === j) continue;
+      const other = balls[j];
+      const gap = Math.hypot(ball.x - other.x, ball.y - other.y) - (ball.r + other.r);
+      assert.ok(gap > -0.05, `capsules ${i} and ${j} overlap`);
+      if (gap < 0.4 && ball.y < other.y - 0.4) supported = true;
+    }
+    assert.ok(supported, `capsule ${i} is floating`);
+    assert.notEqual(ball.a, 0);
+  }
+  const floor = balls.filter(ball => Math.abs((FLOOR_Y - ball.r) - ball.y) < 0.35).sort((a, b) => a.x - b.x);
+  const gaps = floor.slice(1).map((ball, i) => ball.x - floor[i].x);
+  assert.ok(gaps.length >= 2);
+  assert.ok(Math.max(...gaps) - Math.min(...gaps) > 4, "floor capsules are evenly spaced");
+  const stacked = balls.filter(ball => (FLOOR_Y - ball.r) - ball.y > 1).map(ball => ball.y);
+  assert.ok(Math.max(...stacked) - Math.min(...stacked) > 4, "stacked capsules share one tidy line");
+  const angles = new Set(balls.map(ball => ball.a));
+  assert.ok(angles.size >= 5, "capsule seams share one angle");
+});
 
 for (const native of [false, true]) {
   for (const phase of ["shake", "drop"]) {
