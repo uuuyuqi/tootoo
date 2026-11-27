@@ -24,6 +24,7 @@ import os
 import re
 import shutil
 import sqlite3
+import sys
 import ssl
 import stat
 import subprocess
@@ -1851,24 +1852,38 @@ def parse_copilot_file(path: str) -> dict[str, Any]:
 
 # ---------- Factory Droid Scanner ----------
 
+_DROID_PARSER_REV = 2
+DROID_CREDIT_WINDOWS = (5, 24, 168, 720)
+
+
+def _nonnegative_number(value: Any) -> int | float:
+    if type(value) is int:
+        # Keep integer precision while rejecting values outside the finite
+        # numeric range shared by the JSON UI and rolling budget calculations.
+        return value if 0 <= value <= sys.float_info.max else 0
+    if type(value) is float and math.isfinite(value) and value >= 0:
+        return value
+    return 0
+
 def parse_droid_settings(path: str) -> dict[str, Any]:
     try:
         with open(path, "r", encoding="utf-8", errors="ignore") as f:
             d = json.load(f)
     except Exception:
-        return {"events": [], "project": None}
+        return {"events": [], "project": None, "droid_parser_rev": _DROID_PARSER_REV}
     if not isinstance(d, dict):
-        return {"events": [], "project": None}
+        return {"events": [], "project": None, "droid_parser_rev": _DROID_PARSER_REV}
     tu = d.get("tokenUsage")
     if not isinstance(tu, dict):
-        return {"events": [], "project": None}
+        return {"events": [], "project": None, "droid_parser_rev": _DROID_PARSER_REV}
     inp = int(tu.get("inputTokens") or 0)
     out = int(tu.get("outputTokens") or 0)
     cr = int(tu.get("cacheReadTokens") or 0)
     cw = int(tu.get("cacheCreationTokens") or 0)
     reas = int(tu.get("thinkingTokens") or 0)
-    if not (inp or out or cr or cw or reas):
-        return {"events": [], "project": None}
+    credits = _nonnegative_number(tu.get("factoryCredits"))
+    if not (inp or out or cr or cw or reas or credits):
+        return {"events": [], "project": None, "droid_parser_rev": _DROID_PARSER_REV}
     model = nice_model(d.get("model") or d.get("toolExecutionModeModelId"))
     ts = os.path.getmtime(path)
     active_ms = d.get("assistantActiveTimeMs")
@@ -1893,9 +1908,11 @@ def parse_droid_settings(path: str) -> dict[str, Any]:
             "reason": reas,
             "gen": gen,
             "ttft": None,
+            "credits": credits,
             "cost": estimate_cost(model, inp, out, cr, cw, reas),
         }],
         "project": project,
+        "droid_parser_rev": _DROID_PARSER_REV,
     }
 
 
@@ -2597,6 +2614,7 @@ class _RangedEvents:
         self.compactions = {}
         self.calibration = []
         self.agy_events = []
+        self.droid_events = []
 
     def add_hot(self, index, events):
         self.total_rows += len(events)
@@ -2610,6 +2628,8 @@ class _RangedEvents:
                 self.calibration.append(ev)
             if ev["tool"] == "antigravity":
                 self.agy_events.append(ev)
+            elif ev['tool'] == 'droid':
+                self.droid_events.append(ev)
 
     def add_archive(self, index, archive):
         self.total_rows += archive.count
@@ -2812,11 +2832,13 @@ def scan_all_events(force: bool = False, rebuild: bool = False) -> tuple[_Ranged
                 cached_quota = cached["data"].get("quota")
                 # Old parsers could persist an empty quota dict. Reparse it
                 # once; the new parser uses None when no usable quota exists.
-                if tool != "codex" or (
-                    cached["data"].get("codex_parser_rev") == _CODEX_PARSER_REV
-                    and not cached["data"].get("zstd_retry")
-                    and (not isinstance(cached_quota, dict) or _has_valid_quota(cached_quota))
-                ):
+                stale_codex = tool == "codex" and (
+                    cached["data"].get("codex_parser_rev") != _CODEX_PARSER_REV
+                    or cached["data"].get("zstd_retry")
+                    or (isinstance(cached_quota, dict) and not _has_valid_quota(cached_quota))
+                )
+                stale_droid = tool == "droid" and cached["data"].get("droid_parser_rev") != _DROID_PARSER_REV
+                if not stale_codex and not stale_droid:
                     continue
 
             if tool == "antigravity":
@@ -3239,7 +3261,18 @@ def load_local_quota_configs() -> dict[str, dict[str, Any]]:
     return {}
 
 
+def _droid_credit_config(entry: Any) -> tuple[int, int | float] | None:
+    if not isinstance(entry, dict) or entry.get("unit") != "credits":
+        return None
+    hours = _nonnegative_number(entry.get("window_hours"))
+    limit = _nonnegative_number(entry.get("limit"))
+    return (int(hours), limit) if hours in DROID_CREDIT_WINDOWS and limit > 0 else None
+
+
 def save_local_quota_config(tool: str, entry: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
+    if entry is not None and entry.get("unit") == "credits":
+        if tool != "droid" or _droid_credit_config(entry) is None:
+            raise ValueError("Factory 积分上限必须大于 0，周期仅支持 5、24、168 或 720 小时")
     cfg: dict[str, Any] = {}
     try:
         with open(CONFIG_FILE, "r", encoding="utf-8") as f:
@@ -3262,6 +3295,35 @@ def save_local_quota_config(tool: str, entry: dict[str, Any] | None) -> dict[str
         json.dump(cfg, f, ensure_ascii=False, indent=2)
     os.replace(tmp, CONFIG_FILE)
     return lq
+
+
+def _droid_credit_budget(events, now: datetime) -> dict[str, Any] | None:
+    config = _droid_credit_config(load_local_quota_configs().get("droid"))
+    if config is None:
+        return None
+    hours, limit = config
+    now_ts = now.timestamp()
+    seconds = hours * 3600
+    cutoff = now_ts - seconds
+    # Droid is a hot-file source. Do not materialize unrelated Codex archives
+    # to calculate the budget, and never restrict it to the selected range.
+    candidates = events.droid_events if isinstance(events, _RangedEvents) else events
+    used = 0
+    oldest = None
+    for ev in candidates:
+        if ev["tool"] == "droid" and cutoff < ev["ts"] <= now_ts:
+            credits = _nonnegative_number(ev.get("credits"))
+            if credits:
+                used += credits
+                oldest = ev["ts"] if oldest is None else min(oldest, ev["ts"])
+    percent = (used / limit) * 100
+    return {
+        "source": "local_custom", "is_custom": True, "unit": "credits",
+        "window_hours": hours, "window_minutes": hours * 60,
+        "used_value": used, "limit_value": limit,
+        "used_percent": round(percent, 2) if math.isfinite(percent) else sys.float_info.max,
+        "resets_at": oldest + seconds if oldest is not None else None,
+    }
 
 
 def _agy_pool(model: str) -> str:
@@ -3607,12 +3669,20 @@ def build_telemetry(
     by_hour_perf = [empty_perf() for _ in range(24)]
     by_project: dict[str, dict[str, Any]] = {}
 
+    droid_budget = _droid_credit_budget(events, now)
+    droid_credits = 0
     # Keep only the latest 40 rows; large selected ranges never materialize an
     # event-dictionary list or sort every event just to render the call tape.
     recent_heap = []
     for sequence, ev in enumerate(_iter_window(events, min_day, max_day)):
         tool = ev["tool"]
         tot_tok = ev["in"] + ev["out"] + ev["cr"] + ev["cw"] + ev.get("reason", 0)
+        if tool == "droid":
+            droid_credits += _nonnegative_number(ev.get("credits"))
+            # A credits-only snapshot is not a metered Token request. Do not
+            # change global requests, models, fees, or progression.
+            if not tot_tok:
+                continue
         tool_counts[tool] += 1
         tool_tokens_all[tool] += tot_tok
         if tool_filter != "all" and tool != tool_filter:
@@ -3791,7 +3861,17 @@ def build_telemetry(
         })
     models_out.sort(key=lambda x: x["tokens"], reverse=True)
 
-    # Finalize tool cards (only real verified quotas; never display guessed local estimates)
+    # A budget can still be edited/cleared in a range with no Droid activity.
+    if ("droid" not in by_tool and tool_filter in ("all", "droid")
+            and (droid_credits > 0 or droid_budget is not None)):
+        meta = TOOL_META["droid"]
+        by_tool["droid"] = {
+            "tool": "droid", "label": meta["label"], "short": meta["short"], "accent": meta["accent"],
+            "in": 0, "out": 0, "cr": 0, "cw": 0, "reason": 0,
+            "cost": 0.0, "requests": 0, "sessions": set(), "perf": {},
+        }
+
+    # Only verified provider quotas or the explicitly configured Droid budget.
     tools_out = []
     for tm in by_tool.values():
         p = tm["perf"].get("_")
@@ -3799,7 +3879,8 @@ def build_telemetry(
         p50 = histogram_percentile(p["th"], 0.50) if p else None
         t_tot = tm["in"] + tm["out"] + tm["cr"] + tm["cw"] + tm["reason"]
         t_in = tm["in"] + tm["cr"] + tm["cw"]
-        q_info = quotas.get(tm["tool"])
+        is_droid = tm["tool"] == "droid"
+        q_info = droid_budget if is_droid else quotas.get(tm["tool"])
         tools_out.append({
             "tool": tm["tool"],
             "label": tm["label"],
@@ -3818,6 +3899,7 @@ def build_telemetry(
             "ttft_p50": p50,
             "perf_samples": p["n"] if p else 0,
             "quota": q_info,
+            **({"credits": droid_credits} if is_droid else {}),
         })
     tools_out.sort(key=lambda x: x["tokens"], reverse=True)
 
@@ -3929,7 +4011,7 @@ def build_telemetry(
             "tokens": tool_tokens_all[t],
         }
         for t in TOOL_META.keys()
-        if tool_counts[t] > 0
+        if tool_counts[t] > 0 or (t == "droid" and (droid_credits > 0 or droid_budget is not None))
     ]
 
     return {

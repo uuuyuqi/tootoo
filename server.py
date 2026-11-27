@@ -28,7 +28,7 @@ from urllib.parse import parse_qs, urlparse
 
 from agy_cli_quota import fetch_agy_cli_quota, prime_agy_cli_quota, stop_agy_cli_quota
 from codex_app_quota import invalidate_codex_cli_quota, stop_codex_cli_quota
-from quota_runtime import generation as quota_generation, wait as wait_for_quota_update
+from quota_runtime import generation as quota_generation, publish as publish_telemetry, wait as wait_for_quota_update
 from pricing import sync_remote_pricing
 from update_check import checker as update_checker
 from scanner import (
@@ -474,8 +474,14 @@ class TooTooHandler(BaseHTTPRequestHandler):
                 if not tool:
                     self._send_json({"ok": False, "error": "missing tool"}, status=400)
                     return
-                if body.get("reset"):
+                if body.get("reset") is True:
                     lq = save_local_quota_config(tool, None)
+                elif body.get("unit") == "credits":
+                    lq = save_local_quota_config(tool, {
+                        "unit": "credits",
+                        "window_hours": body.get("window_hours"),
+                        "limit": body.get("limit"),
+                    })
                 else:
                     win_h = float(body.get("window_hours") or 5)
                     unit = "cost" if body.get("unit") == "cost" else "tokens"
@@ -484,6 +490,7 @@ class TooTooHandler(BaseHTTPRequestHandler):
                     if limit_val is not None and float(limit_val) > 0:
                         entry["limit"] = float(limit_val)
                     lq = save_local_quota_config(tool, entry)
+                publish_telemetry()
                 self._send_json({"ok": True, "local_quotas": lq})
             except Exception as e:
                 self._send_json({"ok": False, "error": str(e)}, status=400)

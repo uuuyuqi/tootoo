@@ -106,7 +106,7 @@ brew upgrade --cask tootoo
 
 ### 方式二：下载 GitHub Release 安装包
 
-1. 前往 [**Releases**](https://github.com/uuuyuqi/tootoo/releases) 下载最新版 `TooToo-v0.2.22-macos-universal.zip`。
+1. 前往 [**Releases**](https://github.com/uuuyuqi/tootoo/releases) 下载最新版 `TooToo-v0.2.23-macos-universal.zip`。
 2. 解压后将 `TooToo.app` 拖入 `/Applications`。
 3. 此安装包使用 ad-hoc 签名，未经过 Apple 公证。首次安装或手动替换时，macOS 仍可能提示无法验证开发者。
 
@@ -168,6 +168,11 @@ TooToo 启动后自动发现本机已安装工具的会话记录，零配置开�
 
 - Codex 优先保留本地日志已有的有效额度。近期使用过且日志没有可用额度时，macOS 应用才会从标准 Homebrew 位置启动 Codex，后台只向当前 Codex CLI 账号读取额度，不合并不同来源的窗口。
 - Codex 和 AGY 都默认按条件自动读取；设置仅显示来源，不重复显示额度列表。旧版明确保存的 AGY 关闭状态会保留。管理员可为应用进程设置 `TOOTOO_AGY_CLI=off` 或 `TOOTOO_CODEX_QUOTA_AUTO=off`，禁用新的后台读取。
+
+### v0.2.23 更新
+
+- Factory Droid 卡片显示所选日期范围内的本地已耗积分。仅从 `~/.factory/sessions` 的会话设置读取 `tokenUsage.factoryCredits`；不读取 Cookie 或凭证，也不查询 Factory 云端。沿用现有 Droid 统计方式，累计会话数据归到文件最近修改时间，不是逐笔扣费记录。
+- 可手动设置 5 小时、24 小时、7 天或 30 天的滚动积分预算。未设上限时只显示已耗积分，不显示套餐剩余额度。积分不计入全局 Token、估算费用或游戏进度。
 
 ### v0.2.22 更新
 

@@ -6512,6 +6512,12 @@
     background: var(--surface-2);
   }
 
+  .droid-credit-row .quota-lbl { min-width: 0; }
+  .droid-credit-row .quota-track { max-width: none; }
+  .droid-credit-row .quota-head { flex-wrap: wrap; }
+  .droid-credit-row .quota-edit-btn { font-family: var(--font-sans); white-space: nowrap; }
+  #quotaModal [hidden] { display: none !important; }
+
   .qcfg-dialog {
     width: min(360px, 92vw);
     background: var(--surface);
@@ -8236,9 +8242,10 @@
         <button data-win="5" class="active">5小时</button>
         <button data-win="24">24小时</button>
         <button data-win="168">7天</button>
+        <button data-win="720" hidden>30天</button>
       </div>
     </div>
-    <div class="qcfg-row">
+    <div class="qcfg-row" id="qcfgUnitRow">
       <label>计量方式</label>
       <div class="seg" id="qcfgUnitSeg" style="width:100%;display:grid;grid-template-columns:repeat(2,1fr)">
         <button data-unit="tokens" class="active">Token (百万 M)</button>
@@ -8246,9 +8253,10 @@
       </div>
     </div>
     <div class="qcfg-row">
-      <label id="qcfgLimitLbl">周期上限（百万 Tokens，留空按历史峰值自动估算）</label>
+      <label id="qcfgLimitLbl" for="qcfgLimitInput">周期上限（百万 Tokens，留空按历史峰值自动估算）</label>
       <input class="qcfg-input" id="qcfgLimitInput" type="number" step="any" min="0" placeholder="例如 200（代表 200M）" />
     </div>
+    <p id="qcfgError" role="alert" hidden style="color:var(--bad);font-size:11px;margin:0 0 8px"></p>
     <div class="qcfg-actions">
       <button class="btn" id="qcfgResetBtn">恢复自动估算</button>
       <button class="btn" id="qcfgSaveBtn" style="background:var(--active-bg);color:var(--active-fg);border-color:var(--active-border)">保存设置</button>
@@ -11573,6 +11581,43 @@ function renderGrokBotAgent(g, q) {
   </div>`;
 }
 
+function formatFactoryCredits(value) {
+  if (!value) return "0";
+  if (value < 0.001) return "<0.001";
+  const scales = [[1e9, "B"], [1e6, "M"], [1e3, "K"]];
+  const scale = scales.find(([divisor]) => value >= divisor);
+  return scale
+    ? new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(value / scale[0]) + scale[1]
+    : new Intl.NumberFormat("en-US", { maximumFractionDigits: 3 }).format(value);
+}
+
+function renderDroidCredits(t) {
+  const credits = Number(t.credits || 0);
+  const q = t.quota?.source === "local_custom" && t.quota?.unit === "credits" ? t.quota : null;
+  if (!(credits > 0) && !q) return "";
+  const labels = { 5: "5小时", 24: "24小时", 168: "7天", 720: "30天" };
+  const edit = `<button type="button" class="quota-edit-btn" data-qtool="droid" data-qlabel="Factory 积分" data-qparent="droid" aria-label="${q ? "编辑" : "设置"} Factory 积分上限">${q ? "编辑" : "设上限"}</button>`;
+  const budget = q ? (() => {
+    const pct = Math.max(0, Math.min(100, Math.round(100 - q.used_percent)));
+    const color = pct <= 15 ? "var(--bad)" : pct <= 30 ? "var(--warn)" : "var(--teal)";
+    const left = Math.max(0, Math.min(100, 100 - q.used_percent));
+    const title = `滚动 ${labels[q.window_hours]} · 用户设定的预算，不是 Factory 套餐额度`;
+    return `<div class="quota-item" title="${esc(title)}">
+      <span class="quota-lbl">预算（${labels[q.window_hours]}）</span>
+      <div class="quota-track" role="progressbar" aria-label="预算剩余" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><div class="quota-fill" style="width:${left}%;background:${color}"></div></div>
+      <span class="quota-pct" style="color:${color}">剩 ${pct}%</span>
+      <span class="quota-sub">已用 ${esc(formatFactoryCredits(q.used_value))} / ${esc(formatFactoryCredits(q.limit_value))}</span>
+    </div>`;
+  })() : "";
+  return `<div class="quota-row droid-credit-row">
+    <div class="quota-head">
+      <span class="quota-lbl" title="纯本地读取 ~/.factory/sessions，不读凭证">Factory 积分 · 已耗 ${esc(formatFactoryCredits(credits))}</span>
+      ${edit}
+    </div>
+    ${budget}
+  </div>`;
+}
+
 function renderAgents(d) {
   const targets = [
     [document.getElementById("agentList"), document.getElementById("agentCountPill")],
@@ -11703,6 +11748,8 @@ function renderAgents(d) {
           }
         }
 
+        if (t.tool === "droid") quotaHtml = renderDroidCredits(t);
+
         if (!quotaHtml && (t.tool === "codex" || t.tool === "antigravity") &&
             d.quota_status?.[t.tool]?.state === "loading") {
           quotaHtml = `<div class="quota-row"><div class="quota-head" role="status">
@@ -11775,15 +11822,24 @@ function renderAgents(d) {
 let qcfgState = { tool: "", win: 5, unit: "tokens" };
 
 function syncQcfgUI() {
+  const credits = qcfgState.unit === "credits";
+  document.getElementById("qcfgWinSeg").style.gridTemplateColumns = credits ? "repeat(4,1fr)" : "repeat(3,1fr)";
+  document.getElementById("qcfgUnitRow").hidden = credits;
+  document.getElementById("qcfgResetBtn").textContent = credits ? "清除上限" : "恢复自动估算";
   document.querySelectorAll("#qcfgWinSeg button").forEach(b => {
-    b.classList.toggle("active", Number(b.dataset.win) === qcfgState.win);
+    const win = Number(b.dataset.win);
+    b.hidden = win === 720 && !credits;
+    b.classList.toggle("active", win === qcfgState.win);
   });
   document.querySelectorAll("#qcfgUnitSeg button").forEach(b => {
     b.classList.toggle("active", b.dataset.unit === qcfgState.unit);
   });
   const lbl = document.getElementById("qcfgLimitLbl");
   const inp = document.getElementById("qcfgLimitInput");
-  if (qcfgState.unit === "cost") {
+  if (credits) {
+    lbl.textContent = "滚动预算上限（Factory 积分，不是套餐额度）";
+    inp.placeholder = "例如 20000000（两千万积分）";
+  } else if (qcfgState.unit === "cost") {
     lbl.textContent = "周期上限（美元 $，留空按自动估算）";
     inp.placeholder = "例如 50（代表 $50）";
   } else {
@@ -11799,16 +11855,24 @@ function openQuotaModal(cfgKey, label, parentTool) {
   if (q && q.buckets && q.buckets.length) {
     b = q.buckets.find(x => x.key === cfgKey) || b;
   }
+  const credits = cfgKey === "droid";
+  if (credits) b = q?.source === "local_custom" && q.unit === "credits" ? q : null;
   qcfgState.tool = cfgKey;
-  qcfgState.win = b && b.window_minutes ? Math.round(b.window_minutes / 60) : 5;
-  if (![5, 24, 168].includes(qcfgState.win)) qcfgState.win = 5;
-  qcfgState.unit = (b && b.unit === "cost") ? "cost" : "tokens";
-  document.getElementById("qcfgTitle").textContent = `${label || cfgKey} · 额度上限`;
+  if (credits) {
+    qcfgState.win = [5, 24, 168, 720].includes(b?.window_hours) ? b.window_hours : 24;
+    qcfgState.unit = "credits";
+  } else {
+    qcfgState.win = b && b.window_minutes ? Math.round(b.window_minutes / 60) : 5;
+    if (![5, 24, 168].includes(qcfgState.win)) qcfgState.win = 5;
+    qcfgState.unit = (b && b.unit === "cost") ? "cost" : "tokens";
+  }
+  document.getElementById("qcfgTitle").textContent = `${label || cfgKey} · ${credits ? "预算设置" : "额度上限"}`;
+  document.getElementById("qcfgError").hidden = true;
   const inp = document.getElementById("qcfgLimitInput");
   if (b && b.is_custom && b.limit_value) {
-    inp.value = qcfgState.unit === "cost"
-      ? String(b.limit_value)
-      : String(Math.round((b.limit_value / 1e6) * 10) / 10);
+    inp.value = qcfgState.unit === "tokens"
+      ? String(Math.round((b.limit_value / 1e6) * 10) / 10)
+      : String(b.limit_value);
   } else {
     inp.value = "";
   }
@@ -11828,32 +11892,43 @@ document.getElementById("qcfgCloseBtn").addEventListener("click", () => {
 document.getElementById("quotaModal").addEventListener("click", (e) => {
   if (e.target === e.currentTarget) e.currentTarget.classList.remove("open");
 });
-document.getElementById("qcfgResetBtn").addEventListener("click", async () => {
-  await fetch("/api/quota/config", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ tool: qcfgState.tool, reset: true }),
-  });
-  document.getElementById("quotaModal").classList.remove("open");
-  fetchTelemetry(false);
+async function writeQuotaConfig(body) {
+  const error = document.getElementById("qcfgError");
+  const save = document.getElementById("qcfgSaveBtn");
+  const reset = document.getElementById("qcfgResetBtn");
+  if (save.disabled) return;
+  error.hidden = true;
+  save.disabled = reset.disabled = true;
+  try {
+    const response = await fetch("/api/quota/config", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok || !(await response.json()).ok) throw new Error("Quota update failed");
+    document.getElementById("quotaModal").classList.remove("open");
+    fetchTelemetry(false);
+  } catch {
+    error.textContent = "未能保存设置，请重试。";
+    error.hidden = false;
+  } finally {
+    save.disabled = reset.disabled = false;
+  }
+}
+document.getElementById("qcfgResetBtn").addEventListener("click", () => {
+  return writeQuotaConfig({ tool: qcfgState.tool, reset: true });
 });
-document.getElementById("qcfgSaveBtn").addEventListener("click", async () => {
-  const raw = parseFloat(document.getElementById("qcfgLimitInput").value);
-  const limit = Number.isFinite(raw) && raw > 0
-    ? (qcfgState.unit === "cost" ? raw : raw * 1e6)
-    : null;
-  await fetch("/api/quota/config", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      tool: qcfgState.tool,
-      window_hours: qcfgState.win,
-      unit: qcfgState.unit,
-      limit,
-    }),
-  });
-  document.getElementById("quotaModal").classList.remove("open");
-  fetchTelemetry(false);
+document.getElementById("qcfgSaveBtn").addEventListener("click", () => {
+  const raw = Number(document.getElementById("qcfgLimitInput").value);
+  const converted = qcfgState.unit === "tokens" ? raw * 1e6 : raw;
+  const limit = Number.isFinite(converted) && converted > 0 ? converted : null;
+  if (qcfgState.unit === "credits" && limit == null) {
+    const error = document.getElementById("qcfgError");
+    error.textContent = "请输入大于 0 的积分上限。";
+    error.hidden = false;
+    return;
+  }
+  return writeQuotaConfig({ tool: qcfgState.tool, window_hours: qcfgState.win, unit: qcfgState.unit, limit });
 });
 
 let lastSeenCallTs = 0;
