@@ -35,7 +35,7 @@ function harness(quota, credits = 92300) {
   const tool = { tool: "droid", label: "Factory Droid", tokens: 20, cache_hit: 0, credits, quota };
   const d = { tools: [tool], kpi: { tokens: 20 } };
   const scope = vm.createContext({
-    document: doc, state: { data: d }, d,
+    document: doc, state: { data: d, tool: "all" }, d, pendingGrokFocus: false,
     esc: s => String(s).replaceAll("<", "&lt;"), fmtNum: String, fmtCostRich: String, splitNumUnit: String,
     fetch: async (path, req) => {
       assert.equal(path, "/api/quota/config");

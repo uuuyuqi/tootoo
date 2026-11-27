@@ -40,6 +40,7 @@ test('only official AGY rows share grid columns; missing reset leaves no fake da
     const node = {querySelectorAll: () => []};
     vm.runInNewContext(renderer + '\nrenderAgents({kpi:{tokens:1},tools:[fixture]});', {
       fixture:{tool,label:tool,tokens:1,cost:0,quota:{source,buckets:rows}},
+      state:{tool:'all'}, pendingGrokFocus:false,
       document:{getElementById:()=>node},localStorage:{getItem:()=>null},
       esc:String,fmtCostRich:String,fmtNum:String,splitNumUnit:String,fmtResetTime:()=> '3h7m',
     });
@@ -195,7 +196,8 @@ test('both tool cards show only explicit cold loading and retain valid buckets',
     const status = {state:'loading'};
     const data = {kpi:{tokens:1}, tools:[fixture], quota_status:{[tool]:status}};
     const ctx = vm.createContext({
-      data, document:{getElementById:()=>node}, localStorage:{getItem:()=>null},
+      data, state:{tool:'all'}, pendingGrokFocus:false,
+      document:{getElementById:()=>node}, localStorage:{getItem:()=>null},
       esc:String, fmtCostRich:String, fmtNum:String, splitNumUnit:String,
     });
     vm.runInContext(renderer, ctx);

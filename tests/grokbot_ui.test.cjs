@@ -6,7 +6,7 @@ const path = require('node:path');
 const html = fs.readFileSync(path.join(__dirname,'../ui/index.html'),'utf8');
 const slice=(a,b)=>html.slice(html.indexOf(a),html.indexOf(b));
 const top=slice('function pickCodexQuotaBucket(', 'const numAnimState');
-const tools=slice('function renderToolChips(', 'function pickCodexQuotaBucket(');
+const tools=slice('let pendingGrokFocus = false;', 'function pickCodexQuotaBucket(');
 const renderer=slice('function renderGrokBotAgent(', 'let qcfgState = ');
 const chips=slice('let menuBarFields = ', 'const state = {');
 const now=Date.now()/1000;
@@ -29,6 +29,7 @@ function fixture(isPopover=false, reduceMotion=false) {
          scrollIntoView:options=>actions.push(['scroll',selector,options.block,options.behavior])}};
   const w={matchMedia:()=>({matches:reduceMotion})};
   const ctx=vm.createContext({state:{data:null,tool:'all'}, window:w, document:doc, localStorage:{getItem:()=>null}, isPopover,
+    lastSeenCallTs:0, fetchTelemetry:()=>actions.push(['fetch']), connectStream:()=>actions.push(['stream']),
     fmtNum:String, esc:String, fmtCostRich:String, splitNumUnit:String, fmtResetTime:()=> '2h'});
   vm.runInContext(top+renderer+chips+tools,ctx);
   return {ctx,nodes,field,pin,window:w,actions,clickGrok:()=>chipClick()};
@@ -108,4 +109,31 @@ test('Grok Bot appends after token-sorted tools in both views, and its chip stil
   reduced.ctx.renderToolChips(data);
   reduced.clickGrok();
   assert.deepEqual(reduced.actions.at(-1),['scroll','#agentList [data-agent="grokbot"]','nearest','auto']);
+});
+
+test('individual filters exclude Grok Bot; its own chip returns to all and focuses the rendered card', () => {
+  const f = fixture(true);
+  const tools = ['antigravity', 'codex', 'gemini', 'omp', 'droid'].map(tool => ({tool, short:tool, label:tool, tokens:100, requests:1}));
+  tools.find(t => t.tool === 'droid').credits = 120;
+  const base = {kpi:{tokens:100},available_tools:tools,grokbot:{sessions:1},quotas:{grokbot:quota()}};
+  for (const tool of tools) {
+    f.ctx.state.tool = tool.tool;
+    // An older All snapshot cannot bring the card back after a click.
+    f.ctx.renderAgents({...base, tool_filter:'all', tools:[tool]});
+    assert.doesNotMatch(f.nodes.agentListPop.innerHTML,/data-agent="grokbot"/);
+    f.ctx.renderAgents({...base, tool_filter:tool.tool, tools:[tool]});
+    for (const suffix of ['', 'Pop']) {
+      assert.doesNotMatch(f.nodes['agentList'+suffix].innerHTML,/data-agent="grokbot"/);
+      assert.equal(f.nodes['agentCountPill'+suffix].textContent, '1 个活跃');
+      if (tool.tool === 'droid') assert.match(f.nodes['agentList'+suffix].innerHTML, /Factory 积分 · 已耗 120/);
+    }
+  }
+  f.ctx.renderToolChips(base);
+  assert.match(f.nodes.toolBar.innerHTML,/data-focus-agent="grokbot"/);
+  f.clickGrok();
+  assert.equal(f.ctx.state.tool, 'all');
+  assert.deepEqual(f.actions.map(a=>a[0]), ['tab','fetch','stream']);
+  f.ctx.renderAgents({...base, tool_filter:'all', tools});
+  assert.deepEqual(f.actions.at(-1), ['scroll','#agentListPop [data-agent="grokbot"]','nearest','smooth']);
+  assert.match(f.nodes.agentListPop.innerHTML,/Factory 积分 · 已耗 120[\s\S]*data-agent="grokbot"/);
 });

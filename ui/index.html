@@ -10887,6 +10887,17 @@ function renderAll(d) {
   shouldAnimateCharts = false;
 }
 
+let pendingGrokFocus = false;
+function focusGrokBotCard() {
+  const selector = isPopover ? "#agentListPop" : "#agentList";
+  const card = document.querySelector(`${selector} [data-agent="grokbot"]`);
+  if (!card) return false;
+  card.focus({preventScroll: true});
+  const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  card.scrollIntoView({block: "nearest", behavior: reduceMotion ? "auto" : "smooth"});
+  return true;
+}
+
 function renderToolChips(d) {
   const bar = document.getElementById("toolBar");
   const totalReqs = d.available_tools.reduce((a, b) => a + b.requests, 0);
@@ -10908,14 +10919,16 @@ function renderToolChips(d) {
   bar.innerHTML = html;
   bar.querySelector('[data-focus-agent="grokbot"]')?.addEventListener("click", () => {
     if (isPopover) document.querySelector('#popTabs [data-tab="overview"]')?.click();
-    const selector = isPopover ? "#agentListPop" : "#agentList";
-    const card = document.querySelector(`${selector} [data-agent="grokbot"]`);
-    card?.focus({preventScroll: true});
-    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    card?.scrollIntoView({block: "nearest", behavior: reduceMotion ? "auto" : "smooth"});
+    if (state.tool === "all" && (focusGrokBotCard() || (pendingGrokFocus && activeFetchCtrl))) return;
+    pendingGrokFocus = true;
+    state.tool = "all";
+    lastSeenCallTs = 0;
+    fetchTelemetry(false);
+    connectStream();
   });
   bar.querySelectorAll(".chip[data-tool]").forEach(btn => {
     btn.addEventListener("click", () => {
+      pendingGrokFocus = false;
       state.tool = btn.dataset.tool;
       btn.classList.remove("pop");
       void btn.offsetWidth;
@@ -11661,7 +11674,7 @@ function renderAgents(d) {
   const tools = d.tools || [];
   const grand = Math.max(1, d.kpi.tokens);
 
-  const hasGrokBot = d.grokbot || d.quotas?.grokbot;
+  const hasGrokBot = state.tool === "all" && (d.tool_filter ?? "all") === "all" && (d.grokbot || d.quotas?.grokbot);
   const html = !tools.length
     ? (hasGrokBot ? "" : `<div class="empty">暂无本地会话数据</div>`)
     : tools.map(t => {
@@ -11825,7 +11838,7 @@ function renderAgents(d) {
 
   const grokHtml = hasGrokBot ? renderGrokBotAgent(d.grokbot, d.quotas?.grokbot || d.grokbot?.quota) : "";
   for (const [el, pill] of targets) {
-    if (pill) pill.textContent = `${tools.length + (d.grokbot?.sessions > 0 ? 1 : 0)} 个活跃`;
+    if (pill) pill.textContent = `${tools.length + (hasGrokBot && d.grokbot?.sessions > 0 ? 1 : 0)} 个活跃`;
     if (el) {
       const retainGrokFocus = document.activeElement?.dataset?.agent === "grokbot" && el.contains(document.activeElement);
       el.innerHTML = html + grokHtml;
@@ -11851,6 +11864,10 @@ function renderAgents(d) {
         });
       });
     }
+  }
+  if (pendingGrokFocus && state.tool === "all" && (d.tool_filter ?? state.tool) === "all") {
+    pendingGrokFocus = false;
+    if (hasGrokBot) focusGrokBotCard();
   }
 }
 
