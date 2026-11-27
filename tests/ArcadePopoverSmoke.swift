@@ -125,7 +125,7 @@ final class Harness: NSObject, NSApplicationDelegate, WKNavigationDelegate, NSPo
     }
 
     private func waitFor(_ description: String, _ test: () async throws -> Bool) async throws {
-        for _ in 0..<70 {
+        for _ in 0..<100 {
             if try await test() { return }
             try await Task.sleep(nanoseconds: 45_000_000)
         }
@@ -146,6 +146,9 @@ final class Harness: NSObject, NSApplicationDelegate, WKNavigationDelegate, NSPo
     }
 
     private func runGacha() async throws {
+        if (try await evalJS("matchMedia('(prefers-reduced-motion: reduce)').matches") as? NSNumber)?.boolValue == true {
+            throw SmokeError("runner starts with Reduce Motion on; this fixture requires normal motion")
+        }
         try await assertJS("DEV_DEBUG_ENABLED && typeof window.__onPopoverVisibility === 'function'", "packaged Debug JS bootstrap")
         for (index, tier) in ["N", "MISS"].enumerated() {
             try await openGacha(tier)
@@ -158,30 +161,46 @@ final class Harness: NSObject, NSApplicationDelegate, WKNavigationDelegate, NSPo
                     const button = document.getElementById('gachaPullBtn');
                     button.scrollIntoView({block: 'nearest'});
                     const check = window.__qaGacha;
-                    check.start = cap.getBoundingClientRect().y;
-                    check.hiddenAtStart = +getComputedStyle(cap).opacity === 0;
-                    const startedAt = performance.now();
-                    button.click();
-                    const frame = () => {
-                        const rect = cap.getBoundingClientRect();
-                        const reveal = result.classList.contains('tier-\(tier)');
-                        const landed = machine.classList.contains('dispensed');
-                        check.frames.push({y: rect.y, bottom: rect.bottom, opacity: +getComputedStyle(cap).opacity,
-                            shake: machine.classList.contains('shaking'), drop: machine.classList.contains('dispensing'),
-                            reveal, landed});
-                        if ((landed && reveal && +getComputedStyle(cap).opacity === 1) || performance.now() - startedAt > 2800) {
-                            check.result = check.hiddenAtStart &&
-                                check.frames.some(f => f.shake && !f.reveal) &&
-                                check.frames.some(f => f.drop && f.opacity > 0 && f.y > check.start + 5 && !f.reveal) &&
-                                check.frames.every(f => !f.reveal || f.landed) &&
-                                landed && reveal && rect.y > check.start + 12 && rect.bottom < button.getBoundingClientRect().y &&
-                                +getComputedStyle(cap).opacity === 1 && debugState.gachaSpent === \(index + 1);
-                            check.done = true;
-                            return;
-                        }
-                        requestAnimationFrame(frame);
-                    };
-                    requestAnimationFrame(frame);
+                    const baselineY = () => cap.getBoundingClientRect().y - machine.getBoundingClientRect().y;
+                    check.animationEvents = [];
+                    // Wait until scroll/layout has painted and the popover has active frame delivery.
+                    requestAnimationFrame(() => requestAnimationFrame(() => {
+                        check.start = baselineY();
+                        check.hiddenAtStart = +getComputedStyle(cap).opacity === 0;
+                        const startedAt = performance.now();
+                        const markAnimation = event => {
+                            if (event.target === cap && event.animationName === 'gmDispense') {
+                                check.animationEvents.push(event.type);
+                            }
+                        };
+                        machine.addEventListener('animationstart', markAnimation);
+                        machine.addEventListener('animationend', markAnimation);
+                        button.click();
+                        check.startedShaking = machine.classList.contains('shaking');
+                        const frame = () => {
+                            const rect = cap.getBoundingClientRect();
+                            const y = baselineY();
+                            const opacity = +getComputedStyle(cap).opacity;
+                            const reveal = result.classList.contains('tier-\(tier)');
+                            const landed = machine.classList.contains('dispensed');
+                            check.frames.push({y, opacity, elapsed: Math.round(performance.now() - startedAt),
+                                shake: machine.classList.contains('shaking'), drop: machine.classList.contains('dispensing'),
+                                reveal, landed});
+                            if ((landed && reveal && opacity === 1) || performance.now() - startedAt > 2800) {
+                                check.result = check.hiddenAtStart && check.startedShaking &&
+                                    check.frames.some(f => f.drop && f.opacity > 0 && f.y > check.start + 5 && !f.reveal) &&
+                                    check.frames.every(f => !f.reveal || f.landed) &&
+                                    landed && reveal && y > check.start + 12 && rect.bottom < button.getBoundingClientRect().y &&
+                                    opacity === 1 && debugState.gachaSpent === \(index + 1);
+                                machine.removeEventListener('animationstart', markAnimation);
+                                machine.removeEventListener('animationend', markAnimation);
+                                check.done = true;
+                                return;
+                            }
+                            requestAnimationFrame(frame);
+                        };
+                        frame();
+                    }));
                 })();
                 true
                 """)

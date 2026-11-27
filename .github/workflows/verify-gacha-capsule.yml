@@ -28,6 +28,17 @@ jobs:
           if grep -Fq 'TOOTOO_DEV_DEBUG_JS_START' dist/TooToo.app/Contents/Resources/ui/index.html; then exit 1; fi
           NO_INSTALL=1 TOOTOO_DEBUG=1 UNIVERSAL=0 bash macos/build_app.sh
           test -x dist/TooToo-Debug.app/Contents/MacOS/TooToo-Debug
+  webkit:
+    runs-on: macos-15-intel
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Build native Debug and set normal motion on this disposable Mac
+        run: |
+          NO_INSTALL=1 TOOTOO_DEBUG=1 UNIVERSAL=0 bash macos/build_app.sh
+          defaults write com.apple.universalaccess reduceMotion -bool false
       - name: Packaged Debug UI in a real NSPopover at 452pt
         run: |
           set -euo pipefail
