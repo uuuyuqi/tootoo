@@ -69,7 +69,7 @@ function setup({ reduced = false, balance = 7, claimable = 12 } = {}) {
     debugState: { active: false },
     popoverVisible: true, minimalMode: false,
     pauseAgyQuotaLoadingRetry() {}, pausePopoverArcade() {}, disconnectStream() {},
-    gachaDomeSim: { stop() {} },
+    gachaDomeSim: { stop() {} }, gachaVisualGeneration: 0,
     postNative: (action, {pattern}) => feedback.push([time, action, pattern]),
     playSfx: kind => sounds.push([time, kind]),
     fmtNum: String,

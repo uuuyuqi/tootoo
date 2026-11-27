@@ -13,6 +13,7 @@ struct SmokeError: Error, CustomStringConvertible {
 @MainActor
 final class Harness: NSObject, NSApplicationDelegate, WKNavigationDelegate, NSPopoverDelegate {
     let url: URL
+    let testGacha: Bool
     let window = NSWindow(contentRect: NSRect(x: 120, y: 80, width: 520, height: 720),
                           styleMask: [.titled, .closable], backing: .buffered, defer: false)
     let anchor = NSButton(frame: NSRect(x: 20, y: 670, width: 150, height: 26))
@@ -34,7 +35,10 @@ final class Harness: NSObject, NSApplicationDelegate, WKNavigationDelegate, NSPo
         }
     }
 
-    init(_ url: URL) { self.url = url }
+    init(_ url: URL, testGacha: Bool = false) {
+        self.url = url
+        self.testGacha = testGacha
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         window.title = "TooToo isolated arcade smoke"
@@ -63,6 +67,11 @@ final class Harness: NSObject, NSApplicationDelegate, WKNavigationDelegate, NSPo
         lifecycle.sync()
         Task { @MainActor in
             do {
+                if self.testGacha {
+                    try await self.runGacha()
+                    print("PASS: WKWebView/NSPopover lands N/MISS before the result; native close/reopen does not replay the interrupted SR draw")
+                    exit(0)
+                }
                 try await self.run()
                 print("PASS: WKWebView/NSPopover: both games pause, preserve, resume after animated close/immediate reopen, and intentionally reset")
                 print("PASS: WKWebView OfflineAudioContext: production tone renders a non-silent buffer; mute renders silence (no audible-output check)")
@@ -121,6 +130,93 @@ final class Harness: NSObject, NSApplicationDelegate, WKNavigationDelegate, NSPo
             try await Task.sleep(nanoseconds: 45_000_000)
         }
         throw SmokeError(description)
+    }
+
+    private func openGacha(_ tier: String) async throws {
+        _ = try await evalJS("""
+            sfxEnabled = false;
+            debugState.active = true;
+            debugState.gachaCoins = 5;
+            debugState.gachaForce = "\(tier)";
+            document.getElementById('bootLoader')?.remove();
+            document.getElementById('gachaBtn').click();
+            true
+            """)
+        try await assertJS("document.getElementById('gachaModal').classList.contains('open') && !document.hidden", "visible gacha modal")
+    }
+
+    private func runGacha() async throws {
+        try await assertJS("DEV_DEBUG_ENABLED && typeof window.__onPopoverVisibility === 'function'", "packaged Debug JS bootstrap")
+        for (index, tier) in ["N", "MISS"].enumerated() {
+            try await openGacha(tier)
+            _ = try await evalJS("""
+                window.__qaGacha = {frames: [], done: false, result: null};
+                (() => {
+                    const machine = document.getElementById('gachaMachine');
+                    const cap = machine.querySelector('.gm-dispensed');
+                    const result = document.getElementById('gachaResult');
+                    const button = document.getElementById('gachaPullBtn');
+                    button.scrollIntoView({block: 'nearest'});
+                    const check = window.__qaGacha;
+                    check.start = cap.getBoundingClientRect().y;
+                    check.hiddenAtStart = +getComputedStyle(cap).opacity === 0;
+                    const startedAt = performance.now();
+                    button.click();
+                    const frame = () => {
+                        const rect = cap.getBoundingClientRect();
+                        const reveal = result.classList.contains('tier-\(tier)');
+                        const landed = machine.classList.contains('dispensed');
+                        check.frames.push({y: rect.y, bottom: rect.bottom, opacity: +getComputedStyle(cap).opacity,
+                            shake: machine.classList.contains('shaking'), drop: machine.classList.contains('dispensing'),
+                            reveal, landed});
+                        if ((landed && reveal && +getComputedStyle(cap).opacity === 1) || performance.now() - startedAt > 2800) {
+                            check.result = check.hiddenAtStart &&
+                                check.frames.some(f => f.shake && !f.reveal) &&
+                                check.frames.some(f => f.drop && f.opacity > 0 && f.y > check.start + 5 && !f.reveal) &&
+                                check.frames.every(f => !f.reveal || f.landed) &&
+                                landed && reveal && rect.y > check.start + 12 && rect.bottom < button.getBoundingClientRect().y &&
+                                +getComputedStyle(cap).opacity === 1 && debugState.gachaSpent === \(index + 1);
+                            check.done = true;
+                            return;
+                        }
+                        requestAnimationFrame(frame);
+                    };
+                    requestAnimationFrame(frame);
+                })();
+                true
+                """)
+            try await waitFor(tier + " result after the visible drop") {
+                (try await self.evalJS("window.__qaGacha.done") as? NSNumber)?.boolValue == true
+            }
+            try await assertJS("window.__qaGacha.result || JSON.stringify(window.__qaGacha)", tier + " visible drop, stable landing, one debit")
+            _ = try await evalJS("document.getElementById('gachaCloseBtn').click(); true")
+        }
+
+        try await openGacha("SR")
+        _ = try await evalJS("document.getElementById('gachaPullBtn').click(); true")
+        let nextClose = closeCount + 1
+        popover.performClose(nil)
+        try await waitFor("native close callback") { self.closeCount >= nextClose }
+        try await waitFor("WebKit received native hidden state") {
+            (try await self.evalJS("!popoverVisible") as? NSNumber)?.boolValue == true
+        }
+        requestOpen()
+        try await waitFor("native popover is visible again") {
+            guard self.popover.isShown, self.lifecycle.visible else { return false }
+            let visible = try await self.evalJS("!document.hidden && popoverVisible")
+            return (visible as? NSNumber)?.boolValue == true
+        }
+        try await openGacha("SR")
+        try await waitFor("SR still settles after native close/reopen") {
+            (try await self.evalJS("document.getElementById('gachaResult').classList.contains('tier-SR')") as? NSNumber)?.boolValue == true
+        }
+        try await assertJS("""
+            debugState.gachaSpent === 3 &&
+            !document.getElementById('gachaMachine').matches('.dispensing,.dispensed') &&
+            !document.getElementById('gachaResult').classList.contains('pop') &&
+            !document.getElementById('gachaCinema').classList.contains('open')
+            """, "interrupted draw has no late animation or double debit")
+        if let lifecycleError = lifecycleError { throw lifecycleError }
     }
 
     private func run() async throws {
@@ -242,7 +338,7 @@ final class Harness: NSObject, NSApplicationDelegate, WKNavigationDelegate, NSPo
 @main
 struct ArcadePopoverSmoke {
     @MainActor static func main() {
-        guard CommandLine.arguments.count == 2,
+        guard (2...3).contains(CommandLine.arguments.count),
               let url = URL(string: CommandLine.arguments[1]),
               url.scheme == "http", url.host == "127.0.0.1",
               url.user == nil, url.password == nil else {
@@ -250,7 +346,7 @@ struct ArcadePopoverSmoke {
         }
         let app = NSApplication.shared
         app.setActivationPolicy(.regular)
-        let harness = Harness(url)
+        let harness = Harness(url, testGacha: CommandLine.arguments.dropFirst(2).first == "--gacha")
         app.delegate = harness
         app.run()
     }

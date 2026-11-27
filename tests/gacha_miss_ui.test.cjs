@@ -14,12 +14,14 @@ const mystery = html.match(/function rollInGameMysteryLoot\(\) \{[\s\S]*?\n}/)[0
 
 function harness({ roll = 0.95, debug = false, balance = 5 } = {}) {
   const timers = [], events = [], states = [], writes = [];
-  const elements = { gachaPullBtn: {}, gachaResult: {}, gachaMachine: {
-    classList: { add() {}, remove() {} },
+  const elements = { gachaPullBtn: {}, gachaResult: {}, gachaModal: {classList:{contains:()=>true}}, gachaMachine: {
+    dataset:{},style:{setProperty(){}},
+    classList: { add() {}, remove() {}, contains:()=>true },
   } };
   elements.gachaPullBtn.addEventListener = (_, callback) => { elements.gachaPullBtn.click = callback; };
   elements.gachaResult.replaceChildren = (...values) => { elements.gachaResult.children = values; };
   const runtime = {
+    window: {matchMedia:()=>({matches:false})},
     DEV_DEBUG_ENABLED: debugBuild,
     debugState: { active: debug, gachaSpent: 0, gachaForce: "auto" },
     Math: { random: () => roll, max: Math.max, floor: Math.floor },
@@ -65,7 +67,8 @@ test("MISS costs exactly one coin, never invokes reward or confetti/cinema, and 
   elements.gachaPullBtn.click();
   elements.gachaPullBtn.click(); // Still busy; no second debit before reveal.
   assert.equal(timers.length, 1);
-  timers.shift()();
+  timers.shift()(); // shake
+  timers.shift()(); // land
   assert.deepEqual(writes, [["daily","9"],["tootoo_carrot_balance","4"],[4,9]]);
   assert.deepEqual(events, ["gachaMiss"]);
   assert.deepEqual(states, []);
@@ -94,7 +97,8 @@ test("debug force MISS is available only in dev and only consumes sandbox curren
     const { timers, elements, events, scope } = harness({ roll: 0.95, debug: true });
     scope.debugState.gachaForce = "SSR";
     elements.gachaPullBtn.click();
-    timers.shift()();
+    timers.shift()(); // shake
+  timers.shift()(); // land
     assert.deepEqual(events, ["gachaMiss"]);
     return;
   }
@@ -102,7 +106,8 @@ test("debug force MISS is available only in dev and only consumes sandbox curren
   const { timers, elements, writes, events, scope } = harness({ roll: 0.65, debug: true });
   scope.debugState.gachaForce = "MISS";
   elements.gachaPullBtn.click();
-  timers.shift()();
+  timers.shift()(); // shake
+  timers.shift()(); // land
   assert.deepEqual(writes, []);
   assert.equal(scope.debugState.gachaSpent, 1);
   assert.deepEqual(events, ["gachaMiss"]);
