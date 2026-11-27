@@ -1,4 +1,4 @@
-name: Verify TooToo gacha capsule in macOS WebKit
+name: Verify TooToo v0.2.24 and gacha in macOS WebKit
 on:
   push:
     branches: ['verification/tootoo-gacha-capsule']
@@ -17,17 +17,41 @@ jobs:
           python-version: '3.14'
       - name: Python and Node regressions
         run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(cat VERSION)" = 0.2.24
           python3 -W error::SyntaxWarning -m unittest discover -s tests -v
           node --test tests/*.test.cjs
       - name: Verify stripped Universal Release bundle and native Debug build
         run: |
           set -euo pipefail
-          NO_INSTALL=1 TOOTOO_DEBUG=0 UNIVERSAL=1 bash macos/build_app.sh
-          lipo dist/TooToo.app/Contents/MacOS/TooToo -verify_arch arm64 x86_64
+          NO_INSTALL=1 TOOTOO_DEBUG=0 UNIVERSAL=1 PACKAGE_ZIP=1 bash macos/build_app.sh
+          zip=TooToo-v0.2.24-macos-universal.zip
+          unzip -tq "dist/$zip"
+          (cd dist && shasum -a 256 -c "$zip.sha256" && cat "$zip.sha256")
+          python3 - "dist/$zip" <<'PYZIP'
+          import sys, zipfile
+          from macos.update_install import zip_entries
+          with zipfile.ZipFile(sys.argv[1]) as archive:
+              assert len(list(zip_entries(archive))) == len(archive.namelist())
+          PYZIP
+          app=dist/TooToo.app
+          lipo "$app/Contents/MacOS/TooToo" -verify_arch arm64 x86_64
+          codesign --verify --deep --strict --all-architectures -R '=identifier "com.tootoo.telemetry"' "$app"
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$app/Contents/Info.plist")" = 0.2.24
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "$app/Contents/Info.plist")" = 26
           grep -Fq 'class="gm-dispensed"' dist/TooToo.app/Contents/Resources/ui/index.html
           if grep -Fq 'TOOTOO_DEV_DEBUG_JS_START' dist/TooToo.app/Contents/Resources/ui/index.html; then exit 1; fi
           NO_INSTALL=1 TOOTOO_DEBUG=1 UNIVERSAL=0 bash macos/build_app.sh
           test -x dist/TooToo-Debug.app/Contents/MacOS/TooToo-Debug
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: tootoo-v0.2.24-gacha-verified-zip
+          path: |
+            dist/TooToo-v0.2.24-macos-universal.zip
+            dist/TooToo-v0.2.24-macos-universal.zip.sha256
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
   webkit:
     runs-on: macos-15-intel
     timeout-minutes: 10
