@@ -7053,6 +7053,16 @@
   body.popover-mode[data-pop-tab="live"]     [data-pop-panel~="live"]     { display: block; }
   body.popover-mode[data-pop-tab="rhythm"]   [data-pop-panel~="rhythm"]   { display: block; }
 
+  /* Grok Bot records messages and quota, not tokens, cost or model metrics. */
+  body.grokbot-view .hero-grid,
+  body.grokbot-view #topQuota,
+  body.grokbot-view #popTabs,
+  body.grokbot-view .deck .col > .card:not(.agent-breakdown),
+  body.grokbot-view:not(.popover-mode) .deck > .col:first-child,
+  body.grokbot-view.popover-mode .deck > .col:last-child { display: none; }
+  body.grokbot-view .deck { grid-template-columns: minmax(0, 1fr); }
+  body.grokbot-view.popover-mode #agentCardPop { display: block; }
+
   body.popover-mode .model-row {
     grid-template-columns: minmax(0, 1fr) 84px;
     gap: 8px;
@@ -7540,7 +7550,7 @@
   <section class="deck">
     <div class="col">
       <!-- Agent Breakdown (shown first on popover overview) -->
-      <div class="card pop-only-block" data-pop-panel="overview" id="agentCardPop">
+      <div class="card agent-breakdown pop-only-block" data-pop-panel="overview" id="agentCardPop">
         <div class="card-head">
           <span class="kicker">各工具明细</span>
           <span class="pill" id="agentCountPillPop">— 个活跃</span>
@@ -7605,7 +7615,7 @@
 
     <div class="col">
       <!-- Agent Breakdown (desktop right column) -->
-      <div class="card hide-in-pop" data-pop-panel="none">
+      <div class="card agent-breakdown hide-in-pop" data-pop-panel="none">
         <div class="card-head">
           <span class="kicker">各工具明细</span>
           <span class="pill" id="agentCountPill">— 个活跃</span>
@@ -10887,19 +10897,9 @@ function renderAll(d) {
   shouldAnimateCharts = false;
 }
 
-let pendingGrokFocus = false;
-function focusGrokBotCard() {
-  const selector = isPopover ? "#agentListPop" : "#agentList";
-  const card = document.querySelector(`${selector} [data-agent="grokbot"]`);
-  if (!card) return false;
-  card.focus({preventScroll: true});
-  const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-  card.scrollIntoView({block: "nearest", behavior: reduceMotion ? "auto" : "smooth"});
-  return true;
-}
-
 function renderToolChips(d) {
   const bar = document.getElementById("toolBar");
+  document.body.classList.toggle("grokbot-view", state.tool === "grokbot");
   const totalReqs = d.available_tools.reduce((a, b) => a + b.requests, 0);
   let html = `<button class="chip ${state.tool === "all" ? "active" : ""}" data-tool="all">
     <span class="dot" style="background:currentColor"></span>全部<span class="cnt">${totalReqs}</span>
@@ -10914,21 +10914,11 @@ function renderToolChips(d) {
     </button>`;
   }
   const grokChip = d.grokbot || d.quotas?.grokbot;
-  if (grokChip) html += `<button type="button" class="chip" data-focus-agent="grokbot" title="查看 Grok Bot 消息与本地周额度">
+  if (grokChip) html += `<button type="button" class="chip ${state.tool === "grokbot" ? "active" : ""}" data-tool="grokbot" title="筛选 Grok Bot 消息与本地周额度">
     <span class="dot" style="background:#7b81dc"></span>Grok Bot</button>`;
   bar.innerHTML = html;
-  bar.querySelector('[data-focus-agent="grokbot"]')?.addEventListener("click", () => {
-    if (isPopover) document.querySelector('#popTabs [data-tab="overview"]')?.click();
-    if (state.tool === "all" && (focusGrokBotCard() || (pendingGrokFocus && activeFetchCtrl))) return;
-    pendingGrokFocus = true;
-    state.tool = "all";
-    lastSeenCallTs = 0;
-    fetchTelemetry(false);
-    connectStream();
-  });
   bar.querySelectorAll(".chip[data-tool]").forEach(btn => {
     btn.addEventListener("click", () => {
-      pendingGrokFocus = false;
       state.tool = btn.dataset.tool;
       btn.classList.remove("pop");
       void btn.offsetWidth;
@@ -11609,7 +11599,7 @@ function renderGrokBotAgent(g, q) {
   const plan = [q?.plan, q?.plan_tier].map(x => typeof x === "string" ? x.trim().slice(0, 48) : "").filter(Boolean).join(" · ");
   const warn = bucket && q.would_refuse_send === true ? '<div class="grokbot-warning">Grok Bot 可能暂时拒绝发送消息，请留意周额度。</div>' : "";
   const val = (label, value) => `<div class="stat-cell"><span class="stat-lbl">${label}</span><strong class="stat-val">${value}</strong></div>`;
-  return `<div class="agent-item" data-agent="grokbot" tabindex="-1" style="border-left-color:#7b81dc">
+  return `<div class="agent-item" data-agent="grokbot" style="border-left-color:#7b81dc">
     <div class="agent-top"><span class="agent-name">Grok Bot</span>
       ${plan && bucket ? `<span class="quota-badge grokbot-plan">${esc(plan)}</span>` : ""}
       <span class="grokbot-meta">${last ? "最近活跃 " + esc(last) : "本地消息记录"}</span>
@@ -11671,10 +11661,10 @@ function renderAgents(d) {
     [document.getElementById("agentList"), document.getElementById("agentCountPill")],
     [document.getElementById("agentListPop"), document.getElementById("agentCountPillPop")],
   ];
-  const tools = d.tools || [];
+  const filter = state.tool;
+  const tools = filter === "grokbot" ? [] : d.tools || [];
   const grand = Math.max(1, d.kpi.tokens);
-
-  const hasGrokBot = state.tool === "all" && (d.tool_filter ?? "all") === "all" && (d.grokbot || d.quotas?.grokbot);
+  const hasGrokBot = (filter === "all" || filter === "grokbot") && (d.grokbot || d.quotas?.grokbot);
   const html = !tools.length
     ? (hasGrokBot ? "" : `<div class="empty">暂无本地会话数据</div>`)
     : tools.map(t => {
@@ -11840,9 +11830,7 @@ function renderAgents(d) {
   for (const [el, pill] of targets) {
     if (pill) pill.textContent = `${tools.length + (hasGrokBot && d.grokbot?.sessions > 0 ? 1 : 0)} 个活跃`;
     if (el) {
-      const retainGrokFocus = document.activeElement?.dataset?.agent === "grokbot" && el.contains(document.activeElement);
       el.innerHTML = html + grokHtml;
-      if (retainGrokFocus) el.querySelector('[data-agent="grokbot"]')?.focus({preventScroll: true});
       el.querySelectorAll(".quota-edit-btn").forEach(btn => {
         btn.addEventListener("click", (e) => {
           e.stopPropagation();
@@ -11864,10 +11852,6 @@ function renderAgents(d) {
         });
       });
     }
-  }
-  if (pendingGrokFocus && state.tool === "all" && (d.tool_filter ?? state.tool) === "all") {
-    pendingGrokFocus = false;
-    if (hasGrokBot) focusGrokBotCard();
   }
 }
 

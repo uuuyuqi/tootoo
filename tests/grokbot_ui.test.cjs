@@ -6,7 +6,7 @@ const path = require('node:path');
 const html = fs.readFileSync(path.join(__dirname,'../ui/index.html'),'utf8');
 const slice=(a,b)=>html.slice(html.indexOf(a),html.indexOf(b));
 const top=slice('function pickCodexQuotaBucket(', 'const numAnimState');
-const tools=slice('let pendingGrokFocus = false;', 'function pickCodexQuotaBucket(');
+const tools=slice('function renderToolChips(', 'function pickCodexQuotaBucket(');
 const renderer=slice('function renderGrokBotAgent(', 'let qcfgState = ');
 const chips=slice('let menuBarFields = ', 'const state = {');
 const now=Date.now()/1000;
@@ -14,25 +14,27 @@ function quota(age=2000,p=100,reset=now+2000) {
   return {source:'local_cache',cached:true,read_at:now-500,expires_at:now+age,
     would_refuse_send:true,plan:'Grok Bot Plan',plan_tier:'Premium',buckets:[{key:'grokbot:weekly',used_percent:p,resets_at:reset}]};
 }
-function fixture(isPopover=false, reduceMotion=false) {
+function fixture(isPopover=false) {
   const nodes=Object.fromEntries(['tqName','tqPct','tqFill','tqRst','topQuota','agentList','agentCountPill','agentListPop','agentCountPillPop','toolBar']
     .map(key=>[key,{style:{},classList:{add(){},remove(){},toggle(){}},removeAttribute(){},querySelectorAll:()=>[]}]));
   const mkBtn=(dataset)=>({dataset,classList:{toggle(){}},hidden:true});
   const field=mkBtn({field:'q_grokbot'}), pin=mkBtn({qbar:'grokbot'});
   const actions=[];
-  let chipClick;
-  nodes.toolBar.querySelector=()=>({addEventListener:(event, fn)=>{if(event==='click') chipClick=fn;}});
-  const doc={getElementById:id=>nodes[id],querySelectorAll:s=>s.includes('QuotaBar')?[pin]:[field],
-    querySelector:selector=>selector.startsWith('#popTabs')
-      ? {click:()=>actions.push(['tab',selector])}
-      : {focus:options=>actions.push(['focus',selector,options.preventScroll]),
-         scrollIntoView:options=>actions.push(['scroll',selector,options.block,options.behavior])}};
-  const w={matchMedia:()=>({matches:reduceMotion})};
-  const ctx=vm.createContext({state:{data:null,tool:'all'}, window:w, document:doc, localStorage:{getItem:()=>null}, isPopover,
-    lastSeenCallTs:0, fetchTelemetry:()=>actions.push(['fetch']), connectStream:()=>actions.push(['stream']),
+  const handlers=new Map(), classes=new Set();
+  nodes.toolBar.querySelectorAll=()=>Array.from(nodes.toolBar.innerHTML.matchAll(/data-tool="([^"]+)"/g), ([,tool])=>({
+    dataset:{tool}, classList:{add(){},remove(){}},
+    addEventListener(event,fn){if(event==='click') handlers.set(tool,fn);},
+  }));
+  const doc={body:{classList:{toggle(name,on){if(on) classes.add(name); else classes.delete(name);}}},
+    getElementById:id=>nodes[id],querySelectorAll:s=>s.includes('QuotaBar')?[pin]:[field]};
+  const w={};
+  const state={data:null,tool:'all'};
+  const ctx=vm.createContext({state, window:w, document:doc, localStorage:{getItem:()=>null}, isPopover,
+    lastSeenCallTs:0, shouldAnimateCharts:false, fetchTelemetry:()=>actions.push(['fetch',state.tool]),
+    connectStream:()=>actions.push(['stream',state.tool]),
     fmtNum:String, esc:String, fmtCostRich:String, splitNumUnit:String, fmtResetTime:()=> '2h'});
   vm.runInContext(top+renderer+chips+tools,ctx);
-  return {ctx,nodes,field,pin,window:w,actions,clickGrok:()=>chipClick()};
+  return {ctx,nodes,field,pin,window:w,actions,classes,click:tool=>handlers.get(tool)()};
 }
 test('Grok Bot config, explicit and automatic pin use valid official local quota only', () => {
   const f=fixture();
@@ -82,58 +84,43 @@ test('Grok Bot activity stays distinct from token and cost telemetry, including 
 });
 
 
-test('Grok Bot appends after token-sorted tools in both views, and its chip still focuses and scrolls', () => {
-  const tools = [
-    {tool:'codex', short:'Codex', label:'Codex', tokens:9000, requests:5, accent:'#36c'},
-    {tool:'gemini', short:'Gemini', label:'Gemini', tokens:1000, requests:2, accent:'#63c'},
-  ];
-  const data={kpi:{tokens:10000}, tools, available_tools:tools, grokbot:{sessions:1}, quotas:{grokbot:quota()}};
+test('tool chips filter consistently in both layouts; Grok Bot is last in All', () => {
+  const tools = ['antigravity', 'codex', 'gemini', 'omp', 'droid'].map((tool,i) =>
+    ({tool, short:tool, label:tool, tokens:(5-i)*100, requests:1}));
+  tools.find(t => t.tool === 'droid').credits = 120;
+  const base = {kpi:{tokens:1500},available_tools:tools,grokbot:{sessions:1},quotas:{grokbot:quota()}};
   for (const isPopover of [false,true]) {
     const f=fixture(isPopover);
-    f.ctx.renderAgents(data);
-    for (const id of ['agentList','agentListPop']) {
-      const cards=f.nodes[id].innerHTML;
-      assert.match(cards,/agent-name">Codex[\s\S]*agent-name">Gemini[\s\S]*data-agent="grokbot"/);
+    const lists=()=>[f.nodes.agentList.innerHTML,f.nodes.agentListPop.innerHTML];
+    const counts=()=>[f.nodes.agentCountPill.textContent,f.nodes.agentCountPillPop.textContent];
+    f.ctx.renderToolChips(base);
+    f.ctx.renderAgents({...base, tools});
+    for (const html of lists()) assert.match(html,/agent-name">antigravity[\s\S]*agent-name">droid[\s\S]*data-agent="grokbot"/);
+    for (const t of tools) {
+      f.click(t.tool);
+      assert.deepEqual(f.actions.slice(-2),[['fetch',t.tool],['stream',t.tool]]);
+      f.ctx.renderAgents({...base, tools:[t]});
+      for (const html of lists()) assert.doesNotMatch(html,/data-agent="grokbot"/);
+      assert.deepEqual(counts(),['1 个活跃','1 个活跃']);
     }
-    f.ctx.renderToolChips(data);
-    assert.match(f.nodes.toolBar.innerHTML,/data-focus-agent="grokbot"/);
-    f.clickGrok();
-    const selector=(isPopover?'#agentListPop':'#agentList')+' [data-agent="grokbot"]';
-    assert.deepEqual(f.actions,[
-      ...(isPopover?[['tab','#popTabs [data-tab="overview"]']]:[]),
-      ['focus',selector,true],['scroll',selector,'nearest','smooth'],
-    ]);
-    assert.equal(f.ctx.state.tool,'all');
-  }
-  const reduced=fixture(false,true);
-  reduced.ctx.renderToolChips(data);
-  reduced.clickGrok();
-  assert.deepEqual(reduced.actions.at(-1),['scroll','#agentList [data-agent="grokbot"]','nearest','auto']);
-});
-
-test('individual filters exclude Grok Bot; its own chip returns to all and focuses the rendered card', () => {
-  const f = fixture(true);
-  const tools = ['antigravity', 'codex', 'gemini', 'omp', 'droid'].map(tool => ({tool, short:tool, label:tool, tokens:100, requests:1}));
-  tools.find(t => t.tool === 'droid').credits = 120;
-  const base = {kpi:{tokens:100},available_tools:tools,grokbot:{sessions:1},quotas:{grokbot:quota()}};
-  for (const tool of tools) {
-    f.ctx.state.tool = tool.tool;
-    // An older All snapshot cannot bring the card back after a click.
-    f.ctx.renderAgents({...base, tool_filter:'all', tools:[tool]});
-    assert.doesNotMatch(f.nodes.agentListPop.innerHTML,/data-agent="grokbot"/);
-    f.ctx.renderAgents({...base, tool_filter:tool.tool, tools:[tool]});
-    for (const suffix of ['', 'Pop']) {
-      assert.doesNotMatch(f.nodes['agentList'+suffix].innerHTML,/data-agent="grokbot"/);
-      assert.equal(f.nodes['agentCountPill'+suffix].textContent, '1 个活跃');
-      if (tool.tool === 'droid') assert.match(f.nodes['agentList'+suffix].innerHTML, /Factory 积分 · 已耗 120/);
+    f.click('grokbot');
+    assert.deepEqual(f.actions.slice(-2),[['fetch','grokbot'],['stream','grokbot']]);
+    f.ctx.renderToolChips(base);
+    assert.match(f.nodes.toolBar.innerHTML,/chip active" data-tool="grokbot"/);
+    assert.equal(f.classes.has('grokbot-view'), true);
+    f.ctx.renderAgents({...base, tools:[]});
+    for (const html of lists()) {
+      assert.match(html,/data-agent="grokbot"/);
+      assert.equal((html.match(/class="agent-item"/g)||[]).length,1);
     }
+    assert.deepEqual(counts(),['1 个活跃','1 个活跃']);
+    f.ctx.renderAgents({...base, tools:[], grokbot:null});
+    assert.deepEqual(counts(),['0 个活跃','0 个活跃']);
+    for (const html of lists()) assert.match(html,/data-agent="grokbot"/);
+    f.click('all');
+    f.ctx.renderToolChips(base);
+    f.ctx.renderAgents({...base, tools});
+    assert.equal(f.classes.has('grokbot-view'), false);
+    assert.deepEqual(counts(),['6 个活跃','6 个活跃']);
   }
-  f.ctx.renderToolChips(base);
-  assert.match(f.nodes.toolBar.innerHTML,/data-focus-agent="grokbot"/);
-  f.clickGrok();
-  assert.equal(f.ctx.state.tool, 'all');
-  assert.deepEqual(f.actions.map(a=>a[0]), ['tab','fetch','stream']);
-  f.ctx.renderAgents({...base, tool_filter:'all', tools});
-  assert.deepEqual(f.actions.at(-1), ['scroll','#agentListPop [data-agent="grokbot"]','nearest','smooth']);
-  assert.match(f.nodes.agentListPop.innerHTML,/Factory 积分 · 已耗 120[\s\S]*data-agent="grokbot"/);
 });
