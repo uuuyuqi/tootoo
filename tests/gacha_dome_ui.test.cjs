@@ -112,7 +112,10 @@ test("capsules remain static while opening/hovering; actual draws animate only f
   assert.equal(elements.gachaMachine.classes.has("dispensing"), true);
   assert.equal(elements.gachaMachine.classes.has("shaking"), false);
   assert.equal(frames.size, 0);
-  assert.deepEqual(h.positions(), ["translate(39.40, 54.00) rotate(-22.0)", "translate(51.60, 54.00) rotate(14.0)"]);
+  const settled = h.positions();
+  assertLoosePile(settled.map(parsePose).map(ball => ({ ...ball, r: 5.6 })));
+  h.frame(900);
+  assert.deepEqual(h.positions(), settled, "the settled pile does not keep moving");
   const atEnd = h.positions();
   elements.gachaPullBtn.fire("click");
   h.advanceTimers(1039);
@@ -179,27 +182,26 @@ for (const [tier, roll, sound] of [["SSR", 0, "ssr"], ["SR", 0.03, "gold"]]) {
   });
 }
 
-test("settled capsules rest on the collar or each other and are not an even row", () => {
+function parsePose(raw) {
+  const match = /translate\(([-\d.]+), ([-\d.]+)\) rotate\(([-\d.]+)\)/.exec(raw);
+  assert.ok(match, raw);
+  return { x: Number(match[1]), y: Number(match[2]), a: Number(match[3]) };
+}
+
+function assertLoosePile(balls) {
   const CX = 56, CY = 46, DOME_R = 24.8, FLOOR_Y = 59.6;
-  const rest = Function(`"use strict"; return (${html.match(/const rest = (\[[\s\S]*?\]);/)[1]});`)();
-  const restA = Function(`"use strict"; return (${html.match(/const restA = (\[[\s\S]*?\]);/)[1]});`)();
-  const painted = [...html.matchAll(/<g class="gm-ball" data-r="([\d.]+)" transform="translate\(([\d.]+), ([\d.]+)\) rotate\((-?[\d.]+)\)">/g)];
-  assert.equal(painted.length, 6);
-  assert.equal(rest.length, 6);
-  assert.equal(restA.length, 6);
-  const balls = painted.map((match, i) => {
-    const ball = { r: Number(match[1]), x: Number(match[2]), y: Number(match[3]), a: Number(match[4]) };
-    assert.equal(ball.x, rest[i][0]);
-    assert.equal(ball.y, rest[i][1]);
-    assert.equal(ball.a, restA[i]);
-    return ball;
-  });
+  assert.ok(balls.length >= 2);
+  const angles = new Set();
+  let ySum = 0;
   for (let i = 0; i < balls.length; i++) {
     const ball = balls[i];
+    ySum += ball.y;
+    angles.add(ball.a);
     const domeSlack = (DOME_R - ball.r) - Math.hypot(ball.x - CX, ball.y - CY);
     assert.ok(domeSlack > 0.4, `capsule ${i} clips the glass`);
     const floorGap = (FLOOR_Y - ball.r) - ball.y;
     assert.ok(floorGap > -0.05, `capsule ${i} sinks through the collar`);
+    assert.ok(ball.y >= 40.4, `capsule ${i} is parked above the bottom of the dome`);
     let supported = Math.abs(floorGap) < 0.35;
     for (let j = 0; j < balls.length; j++) {
       if (i === j) continue;
@@ -211,14 +213,63 @@ test("settled capsules rest on the collar or each other and are not an even row"
     assert.ok(supported, `capsule ${i} is floating`);
     assert.notEqual(ball.a, 0);
   }
-  const floor = balls.filter(ball => Math.abs((FLOOR_Y - ball.r) - ball.y) < 0.35).sort((a, b) => a.x - b.x);
-  const gaps = floor.slice(1).map((ball, i) => ball.x - floor[i].x);
-  assert.ok(gaps.length >= 2);
-  assert.ok(Math.max(...gaps) - Math.min(...gaps) > 4, "floor capsules are evenly spaced");
-  const stacked = balls.filter(ball => (FLOOR_Y - ball.r) - ball.y > 1).map(ball => ball.y);
-  assert.ok(Math.max(...stacked) - Math.min(...stacked) > 4, "stacked capsules share one tidy line");
-  const angles = new Set(balls.map(ball => ball.a));
-  assert.ok(angles.size >= 5, "capsule seams share one angle");
+  assert.ok(angles.size >= Math.min(4, balls.length), "capsule seams share one angle");
+  assert.ok(ySum / balls.length > 46, "the pile is not resting in the bottom half of the dome");
+}
+
+function extractFunction(source, name) {
+  const start = source.indexOf(`function ${name}(`);
+  assert.notEqual(start, -1, name);
+  let depth = 0;
+  for (let i = source.indexOf("{", start); i < source.length; i++) {
+    if (source[i] === "{") depth++;
+    else if (source[i] === "}") {
+      depth--;
+      if (!depth) return source.slice(start, i + 1);
+    }
+  }
+  throw new Error(`unclosed ${name}`);
+}
+
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+test("idle capsules already sit in a loose bottom pile", () => {
+  const painted = [...html.matchAll(/<g class="gm-ball" data-r="([\d.]+)" transform="translate\(([\d.]+), ([\d.]+)\) rotate\((-?[\d.]+)\)">/g)];
+  assert.equal(painted.length, 6);
+  const balls = painted.map(match => ({
+    r: Number(match[1]), x: Number(match[2]), y: Number(match[3]), a: Number(match[4]),
+  }));
+  assertLoosePile(balls);
+  assert.ok(balls.some(ball => (59.6 - ball.r) - ball.y > 1), "every capsule is on one tidy floor row");
+  assert.ok(balls.filter(ball => Math.abs((59.6 - ball.r) - ball.y) < 0.35).length >= 2);
+});
+
+test("each shake can settle into a different supported pile", () => {
+  const scatter = vm.runInNewContext(`${extractFunction(html, "scatterCapsules")}\nscatterCapsules`);
+  const radii = [5.6, 5.6, 6.1, 5.5, 5.3, 5.3];
+  const signatures = new Set();
+  for (let seed = 1; seed <= 24; seed++) {
+    const balls = scatter(radii.map(r => ({ r })), mulberry32(seed));
+    balls.forEach((ball, i) => { ball.r = radii[i]; });
+    assertLoosePile(balls);
+    signatures.add(balls.map(ball => `${ball.x},${ball.y},${ball.a}`).join("|"));
+  }
+  assert.ok(signatures.size >= 20, "rest poses collapse to one fixed layout");
+  const stuck = scatter(radii.map(r => ({ r })), () => 0.03);
+  stuck.forEach((ball, i) => { ball.r = radii[i]; });
+  assertLoosePile(stuck);
+  const again = scatter(radii.map(r => ({ r })), mulberry32(7));
+  const same = scatter(radii.map(r => ({ r })), mulberry32(7));
+  assert.deepEqual(again, same, "a seed settles the same way twice");
+  assert.notDeepEqual(again.map(ball => [ball.x, ball.y]), stuck.map(ball => [ball.x, ball.y]));
 });
 
 for (const native of [false, true]) {
