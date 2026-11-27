@@ -1,4 +1,4 @@
-name: Verify TooToo v0.2.24 and gacha in macOS WebKit
+name: Verify TooToo v0.2.25 and gacha in macOS WebKit
 on:
   push:
     branches: ['verification/tootoo-gacha-capsule']
@@ -18,14 +18,14 @@ jobs:
       - name: Python and Node regressions
         run: |
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-          test "$(cat VERSION)" = 0.2.24
+          test "$(cat VERSION)" = 0.2.25
           python3 -W error::SyntaxWarning -m unittest discover -s tests -v
           node --test tests/*.test.cjs
       - name: Verify stripped Universal Release bundle and native Debug build
         run: |
           set -euo pipefail
           NO_INSTALL=1 TOOTOO_DEBUG=0 UNIVERSAL=1 PACKAGE_ZIP=1 bash macos/build_app.sh
-          zip=TooToo-v0.2.24-macos-universal.zip
+          zip=TooToo-v0.2.25-macos-universal.zip
           unzip -tq "dist/$zip"
           (cd dist && shasum -a 256 -c "$zip.sha256" && cat "$zip.sha256")
           python3 - "dist/$zip" <<'PYZIP'
@@ -37,18 +37,49 @@ jobs:
           app=dist/TooToo.app
           lipo "$app/Contents/MacOS/TooToo" -verify_arch arm64 x86_64
           codesign --verify --deep --strict --all-architectures -R '=identifier "com.tootoo.telemetry"' "$app"
-          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$app/Contents/Info.plist")" = 0.2.24
-          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "$app/Contents/Info.plist")" = 26
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$app/Contents/Info.plist")" = 0.2.25
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "$app/Contents/Info.plist")" = 27
           grep -Fq 'class="gm-dispensed"' dist/TooToo.app/Contents/Resources/ui/index.html
           if grep -Fq 'TOOTOO_DEV_DEBUG_JS_START' dist/TooToo.app/Contents/Resources/ui/index.html; then exit 1; fi
+          python3 - "$app/Contents/Resources/ui/index.html" <<'PYPILE'
+          import sys
+          from pathlib import Path
+          html = Path(sys.argv[1]).read_text(encoding="utf-8")
+          new_rest = "const rest = [[39.4, 54], [51.6, 54], [70.6, 53.5], [54.52, 39.04], [45.5, 44.97], [60.65, 47.93]];"
+          new_angles = "const restA = [-22, 14, -11, 31, -17, 21];"
+          old_rest = "const rest = [[44, 54], [68, 54], [56, 53.5], [56, 42], [44.6, 42.5], [67.5, 42.2]];"
+          poses = [
+              'transform="translate(39.40, 54.00) rotate(-22)"',
+              'transform="translate(51.60, 54.00) rotate(14)"',
+              'transform="translate(70.60, 53.50) rotate(-11)"',
+              'transform="translate(54.52, 39.04) rotate(31)"',
+              'transform="translate(45.50, 44.97) rotate(-17)"',
+              'transform="translate(60.65, 47.93) rotate(21)"',
+          ]
+          old_poses = [
+              'transform="translate(44, 54)"',
+              'transform="translate(68, 54)"',
+              'transform="translate(56, 53.5)"',
+              'transform="translate(56, 42)"',
+              'transform="translate(44.6, 42.5)"',
+              'transform="translate(67.5, 42.2)"',
+          ]
+          assert new_rest in html, "packaged UI is missing the uneven settle pile"
+          assert new_angles in html, "packaged UI is missing uneven settle tilts"
+          assert old_rest not in html, "packaged UI still has the v0.2.24 even two-row rest"
+          for pose in poses:
+              assert pose in html, f"packaged UI missing uneven pile pose: {pose}"
+          for pose in old_poses:
+              assert pose not in html, f"packaged UI still has a v0.2.24 even-row pose: {pose}"
+          PYPILE
           NO_INSTALL=1 TOOTOO_DEBUG=1 UNIVERSAL=0 bash macos/build_app.sh
           test -x dist/TooToo-Debug.app/Contents/MacOS/TooToo-Debug
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: tootoo-v0.2.24-gacha-verified-zip
+          name: tootoo-v0.2.25-gacha-verified-zip
           path: |
-            dist/TooToo-v0.2.24-macos-universal.zip
-            dist/TooToo-v0.2.24-macos-universal.zip.sha256
+            dist/TooToo-v0.2.25-macos-universal.zip
+            dist/TooToo-v0.2.25-macos-universal.zip.sha256
           if-no-files-found: error
           retention-days: 14
           compression-level: 0
