@@ -658,7 +658,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     }
 
     private func updateKeepAwakeToolTip() {
-        let suffix = keepAwakeMode == "off" ? "" : " · ☕ 防休眠中" + keepAwakeRemainingText()
+        let suffix = keepAwakeMode == "off" ? "" : " · 防休眠中" + keepAwakeRemainingText()
         statusItem?.button?.toolTip = baseStatusToolTip + suffix
     }
 
@@ -706,7 +706,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             item.state = minutes == keepAwakeDurationMin ? .on : .off
             submenu.addItem(item)
         }
-        let parent = NSMenuItem(title: "☕ 保持电脑唤醒", action: nil, keyEquivalent: "")
+        let parent = NSMenuItem(title: "保持电脑唤醒", action: nil, keyEquivalent: "")
         parent.submenu = submenu
         return parent
     }

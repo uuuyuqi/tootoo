@@ -20,7 +20,7 @@ function harness() {
     setAttribute(k, v) { this.attrs[k] = v; },
     addEventListener(k, f) { this.event[k] = f; },
   });
-  const ui = Object.fromEntries(['keepAwakeBtn','settingsModal','keepAwakeStatus'].map(id => [id, make()]));
+  const ui = Object.fromEntries(['keepAwakeBtn','settingsModal','keepAwakeStatus','keepAwakeFeedback'].map(id => [id, make()]));
   const modes = ['off','system','display'].map(awakeMode => make({awakeMode}));
   const durations = ['0','60','120','240','480'].map(awakeDuration => make({awakeDuration}));
   const document = {
@@ -30,7 +30,7 @@ function harness() {
     querySelectorAll: (sel) => sel.includes('Mode') ? modes : durations,
   };
   vm.runInNewContext(code, { window, document,
-    Date: {now: () => now}, postNative: (action, extra) => { sent.push({action, ...extra}); },
+    Date: {now: () => now}, postNative: (action, extra) => { sent.push({action, ...extra}); return true; },
     setTimeout: (f, delay) => { timers.set(++nextTimer, {f, delay}); return nextTimer; },
     clearTimeout: (id) => timers.delete(id),
   });
@@ -78,4 +78,42 @@ test('countdown only schedules for an open visible modal, and native failure sta
   assert.equal(ui.keepAwakeBtn.dataset.mode, 'off');
   assert.equal(ui.keepAwakeBtn.attrs['aria-pressed'], 'false');
   assert.match(ui.keepAwakeStatus.textContent, /未能开启/);
+});
+
+test('wake icon has distinct expressions for all three native states', () => {
+  const {window, ui} = harness();
+  for (const mode of ['off', 'system', 'display']) assert.ok(html.includes(`class="awake-face-${mode}"`));
+  assert.match(html, /class="awake-face-display".+class="awake-eye-glints" fill="#fff"/);
+  assert.match(html, /#keepAwakeBtn\[aria-pressed="true"\]::after/);
+  for (const [mode, pressed] of [['off','false'], ['system','true'], ['display','true'], ['off','false']]) {
+    window.__onKeepAwakeState({mode});
+    assert.equal(ui.keepAwakeBtn.attrs['aria-pressed'], pressed);
+    assert.equal(ui.keepAwakeBtn.dataset.mode, mode);
+    assert.doesNotMatch(ui.keepAwakeBtn.title, /☕/);
+  }
+});
+
+test('footer feedback waits for native confirmation, clears after a moment, and reports errors', () => {
+  const {window, ui, timers, document} = harness();
+  const update = (mode, error) => window.__onKeepAwakeState({mode, durationMin:60, error});
+  update('off');
+  assert.equal(ui.keepAwakeFeedback.textContent, undefined);
+  ui.keepAwakeBtn.event.click();
+  assert.equal(ui.keepAwakeFeedback.textContent, '');
+  update('off');
+  assert.equal(ui.keepAwakeFeedback.textContent, '');
+  update('system');
+  assert.equal(ui.keepAwakeFeedback.textContent, '已开启防休眠 · 允许息屏');
+  assert.equal([...timers.values()][0].delay, 2800);
+  [...timers.values()][0].f();
+  assert.equal(ui.keepAwakeFeedback.textContent, '');
+  ui.keepAwakeBtn.event.click();
+  update('off');
+  assert.equal(ui.keepAwakeFeedback.textContent, '已关闭防休眠');
+  ui.keepAwakeBtn.event.click();
+  update('off', 'macOS 未能开启防休眠');
+  assert.equal(ui.keepAwakeFeedback.textContent, 'macOS 未能开启防休眠');
+  document.hidden = true;
+  document.event.visibilitychange();
+  assert.equal(ui.keepAwakeFeedback.textContent, '');
 });
