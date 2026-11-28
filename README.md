@@ -6,7 +6,7 @@
 
 **零外部依赖的本地 AI 编程遥测控制台 · macOS 原生菜单栏小兔桌宠**
 
-实时追踪 16 款 AI 编程工具的 Token 用量、输出速度（TPS）、首字延迟（TTFT）、缓存命中率、剩余额度与估算费用。<br/>
+实时追踪 17 款 AI 编程工具的 Token 用量、输出速度（TPS）、首字延迟（TTFT）、缓存命中率、剩余额度与估算费用。<br/>
 纯本地只读扫描 · 零代理零侵入 · 写代码养一只会进化的菜单栏小兔。
 
 [![macOS 13+](https://img.shields.io/badge/macOS-13%2B%20(Apple%20Silicon%20%26%20Intel)-181715?style=flat-square&logo=apple&logoColor=white)](https://github.com/uuuyuqi/tootoo/releases)
@@ -123,7 +123,7 @@ open /Applications/TooToo.app
 
 ---
 
-## 支持 16 款本地 AI 编程工具
+## 支持 17 款本地 AI 编程工具
 
 TooToo 启动后自动发现本机已安装工具的会话记录，零配置开箱即用：
 
@@ -132,7 +132,8 @@ TooToo 启动后自动发现本机已安装工具的会话记录，零配置开�
 | **Antigravity (`agy`)** | **Claude Code** | **Codex CLI** | **OpenCode** |
 | **Gemini CLI** | **GitHub Copilot CLI** | **Devin CLI** | **Cline / Roo** |
 | **Qwen Code** | **Kimi Code** | **MiMoCode** | **Qoder CLI** |
-| **Factory Droid** | **Grok CLI** | **Hermes** | **OMP / Pi** |
+| **Factory Droid** | **Grok CLI** | **Hermes** | **Oh My Pi (OMP)** |
+| **Pi** | | | |
 
 ---
 
@@ -330,7 +331,7 @@ tootoo --refresh-pricing
 
 ```text
 tootoo/
-├── scanner.py             # 16 款工具本地日志 / SQLite 增量扫描引擎
+├── scanner.py             # 17 款工具本地日志 / SQLite 增量扫描引擎
 ├── pricing.py             # 4 层动态费用估算与 OpenRouter / LiteLLM 同步
 ├── server.py              # 零依赖 Python 3 本地 HTTP + SSE 服务与 CLI
 ├── tootoo                 # CLI 启动脚本（支持软链调用）

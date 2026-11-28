@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import atexit
 import fcntl
+import filecmp
 import glob
 import hashlib
 import heapq
@@ -653,7 +654,8 @@ MODEL_PRICING: list[tuple[str, tuple[float, float, float, float]]] = [
 TOOL_META = {
     "antigravity": {"label": "Antigravity (agy)", "short": "AGY", "accent": "#E54826"},
     "codex": {"label": "Codex CLI", "short": "CODEX", "accent": "#3B6CF6"},
-    "omp": {"label": "OMP / Pi", "short": "OMP", "accent": "#DB2777"},
+    "omp": {"label": "Oh My Pi", "short": "OMP", "accent": "#DB2777"},
+    "pi": {"label": "Pi", "short": "PI", "accent": "#047857"},
     "devin": {"label": "Devin CLI", "short": "DEVIN", "accent": "#0284C7"},
     "qoder": {"label": "Qoder CLI", "short": "QODER", "accent": "#059669"},
     "copilot": {"label": "Copilot CLI", "short": "COPILOT", "accent": "#4F46E5"},
@@ -1559,9 +1561,9 @@ def parse_claude_file(path: str) -> dict[str, Any]:
     return {"events": events, "project": project}
 
 
-# ---------- OMP (Oh My Pi) / Pi Coding Agent Scanner ----------
+# ---------- OMP (Oh My Pi) and Pi session logs ----------
 
-def parse_omp_file(path: str) -> dict[str, Any]:
+def parse_pi_session_file(path: str) -> dict[str, Any]:
     events: list[dict[str, Any]] = []
     project: str | None = None
     try:
@@ -1658,25 +1660,37 @@ def parse_omp_file(path: str) -> dict[str, Any]:
     return {"events": events, "project": project}
 
 
-def discover_omp_files() -> list[str]:
-    roots = [
-        os.path.join(HOME, ".omp", "agent", "sessions"),
-        os.path.join(HOME, ".pi", "agent", "sessions"),
-    ]
-    by_name: dict[str, tuple[float, int, str]] = {}
-    for root in roots:
-        if not os.path.isdir(root):
-            continue
-        for p in glob.glob(os.path.join(root, "**", "*.jsonl"), recursive=True):
+def discover_pi_sessions() -> list[tuple[str, str]]:
+    # The two tools share a log reader, not a telemetry identity. Prefer
+    # the upstream Pi root if an OMP installation mirrored a Pi session.
+    roots = (
+        ("pi", os.path.join(HOME, ".pi", "agent", "sessions")),
+        ("omp", os.path.join(HOME, ".omp", "agent", "sessions")),
+    )
+    sources: dict[str, list[str]] = {"pi": [], "omp": []}
+    pi_by_name: dict[tuple[str, int], list[str]] = defaultdict(list)
+    seen: set[tuple[int, int]] = set()
+    for tool, root in roots:
+        for path in glob.glob(os.path.join(root, "**", "*.jsonl"), recursive=True):
             try:
-                st = os.stat(p)
+                st = os.stat(path)
             except OSError:
                 continue
-            name = os.path.basename(p)
-            prev = by_name.get(name)
-            if prev is None or (st.st_size, st.st_mtime) > (prev[1], prev[0]):
-                by_name[name] = (st.st_mtime, st.st_size, p)
-    return [v[2] for v in by_name.values()]
+            identity = (st.st_dev, st.st_ino)
+            if identity in seen or not stat.S_ISREG(st.st_mode):
+                continue
+            seen.add(identity)
+            key = (os.path.basename(path), st.st_size)
+            if tool == "pi":
+                pi_by_name[key].append(path)
+            else:
+                try:
+                    if any(filecmp.cmp(path, pi_path, shallow=False) for pi_path in pi_by_name.get(key, ())):
+                        continue
+                except OSError:
+                    pass  # No evidence of a copy; use the OMP path.
+            sources[tool].append(path)
+    return [(tool, path) for tool in ("omp", "pi") for path in sources[tool]]
 
 
 # ---------- Devin CLI SQLite Scanner ----------
@@ -2725,7 +2739,7 @@ def scan_all_events(force: bool = False, rebuild: bool = False) -> tuple[_Ranged
         fcache: dict[str, Any] = cache.setdefault("files", {})
         dirty = rebuild or (_MEM_FILE_CACHE is None and not os.path.exists(CACHE_FILE))
 
-        # Discover all 16 local AI coding agent sources
+        # Discover local AI coding agent sources
         sources: list[tuple[str, str]] = []
         for p in discover_antigravity_dbs():
             sources.append(("antigravity", p))
@@ -2749,8 +2763,7 @@ def scan_all_events(force: bool = False, rebuild: bool = False) -> tuple[_Ranged
                         old[p] = sig
                     sources.append(("codex", p))
         incoming, history_pending, history_unavailable = archive.request(old, rebuild)
-        for p in discover_omp_files():
-            sources.append(("omp", p))
+        sources.extend(discover_pi_sessions())
         devin_db = os.path.join(HOME, ".local", "share", "devin", "cli", "sessions.db")
         if os.path.exists(devin_db):
             sources.append(("devin", devin_db))
@@ -2845,8 +2858,10 @@ def scan_all_events(force: bool = False, rebuild: bool = False) -> tuple[_Ranged
                 parsed = parse_antigravity_db(path)
             elif tool == "codex":
                 parsed = parse_codex_file(path)
-            elif tool == "omp":
-                parsed = parse_omp_file(path)
+            elif tool in ("omp", "pi"):
+                # A Pi session's new cache key forces a one-time reparse;
+                # pruning below removes its stale omp-prefixed cache entry.
+                parsed = parse_pi_session_file(path)
             elif tool == "devin":
                 parsed = parse_devin_db(path)
             elif tool == "qoder":

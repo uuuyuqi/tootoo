@@ -540,7 +540,7 @@ def main() -> None:
     ap.add_argument("--cli", action="store_true", help="Print terminal summary and exit")
     ap.add_argument("--json", action="store_true", help="Print raw JSON telemetry and exit")
     ap.add_argument("--range", default="week", choices=("today", "yesterday", "week", "last_week", "month", "all", "7d", "30d"), help="Time range")
-    ap.add_argument("--tool", default="all", help="Tool filter (all, antigravity, codex, omp, devin, qoder, copilot, droid, grok, opencode, claude, gemini, hermes, qwencode, kimicode, mimocode, cline)")
+    ap.add_argument("--tool", default="all", help="Tool filter (all, antigravity, codex, omp, pi, devin, qoder, copilot, droid, grok, opencode, claude, gemini, hermes, qwencode, kimicode, mimocode, cline)")
     ap.add_argument("--refresh-pricing", action="store_true", help="Force refresh remote model pricing catalogs and exit")
     ap.add_argument("--no-open", action="store_true", help="Do not auto-open browser")
     args = ap.parse_args()

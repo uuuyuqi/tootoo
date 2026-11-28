@@ -85,10 +85,11 @@ test('Grok Bot activity stays distinct from token and cost telemetry, including 
 
 
 test('tool chips filter consistently in both layouts; Grok Bot is last in All', () => {
-  const tools = ['antigravity', 'codex', 'gemini', 'omp', 'droid'].map((tool,i) =>
-    ({tool, short:tool, label:tool, tokens:(5-i)*100, requests:1}));
+  const tools = ['antigravity', 'codex', 'gemini', 'omp', 'pi', 'droid'].map((tool,i) =>
+    ({tool, short:tool.toUpperCase(), label:tool === 'omp' ? 'Oh My Pi' : tool === 'pi' ? 'Pi' : tool,
+      tokens:(6-i)*100, requests:1}));
   tools.find(t => t.tool === 'droid').credits = 120;
-  const base = {kpi:{tokens:1500},available_tools:tools,grokbot:{sessions:1},quotas:{grokbot:quota()}};
+  const base = {kpi:{tokens:2100},available_tools:tools,grokbot:{sessions:1},quotas:{grokbot:quota()}};
   for (const isPopover of [false,true]) {
     const f=fixture(isPopover);
     const lists=()=>[f.nodes.agentList.innerHTML,f.nodes.agentListPop.innerHTML];
@@ -99,8 +100,17 @@ test('tool chips filter consistently in both layouts; Grok Bot is last in All', 
     for (const t of tools) {
       f.click(t.tool);
       assert.deepEqual(f.actions.slice(-2),[['fetch',t.tool],['stream',t.tool]]);
+      f.ctx.renderToolChips(base);
+      assert.ok(f.nodes.toolBar.innerHTML.includes(`chip active" data-tool="${t.tool}"`));
       f.ctx.renderAgents({...base, tools:[t]});
-      for (const html of lists()) assert.doesNotMatch(html,/data-agent="grokbot"/);
+      for (const html of lists()) {
+        assert.doesNotMatch(html,/data-agent="grokbot"/);
+        if (t.tool === 'pi' || t.tool === 'omp') {
+          const other = tools.find(row => row.tool === (t.tool === 'pi' ? 'omp' : 'pi'));
+          assert.ok(html.includes(`agent-name">${t.label}</`));
+          assert.ok(!html.includes(`agent-name">${other.label}</`));
+        }
+      }
       assert.deepEqual(counts(),['1 个活跃','1 个活跃']);
     }
     f.click('grokbot');
@@ -121,6 +131,6 @@ test('tool chips filter consistently in both layouts; Grok Bot is last in All', 
     f.ctx.renderToolChips(base);
     f.ctx.renderAgents({...base, tools});
     assert.equal(f.classes.has('grokbot-view'), false);
-    assert.deepEqual(counts(),['6 个活跃','6 个活跃']);
+    assert.deepEqual(counts(),['7 个活跃','7 个活跃']);
   }
 });
