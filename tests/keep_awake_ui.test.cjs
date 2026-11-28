@@ -45,7 +45,7 @@ test('native-only controls, always present in simple mode HTML and startup', () 
   assert.doesNotMatch(html, /minimal-mode[^\n{]*(?:#keepAwake|\.pop-footer|\.footer-actions)/);
 });
 
-test('footer only requests safe system mode or off; settings mode and duration sync from native', () => {
+test('footer starts with system mode; settings mode and duration sync from native', () => {
   const {window, ui, sent, modes, durations} = harness();
   ui.keepAwakeBtn.event.click();
   assert.deepEqual(sent, []);
@@ -93,8 +93,8 @@ test('wake icon has distinct expressions for all three native states', () => {
   }
 });
 
-test('footer feedback waits for native confirmation, clears after a moment, and reports errors', () => {
-  const {window, ui, timers, document} = harness();
+test('footer cycles all three modes; feedback waits for confirmation and reports errors', () => {
+  const {window, ui, timers, document, sent} = harness();
   const update = (mode, error) => window.__onKeepAwakeState({mode, durationMin:60, error});
   update('off');
   assert.equal(ui.keepAwakeFeedback.textContent, undefined);
@@ -108,8 +108,13 @@ test('footer feedback waits for native confirmation, clears after a moment, and 
   [...timers.values()][0].f();
   assert.equal(ui.keepAwakeFeedback.textContent, '');
   ui.keepAwakeBtn.event.click();
+  update('display');
+  assert.equal(ui.keepAwakeFeedback.textContent, '已开启屏幕常亮');
+  assert.equal(ui.keepAwakeFeedback.dataset.tone, 'display');
+  ui.keepAwakeBtn.event.click();
   update('off');
   assert.equal(ui.keepAwakeFeedback.textContent, '已关闭防休眠');
+  assert.deepEqual(sent.map(x=>x.mode), ['system','display','off']);
   ui.keepAwakeBtn.event.click();
   update('off', 'macOS 未能开启防休眠');
   assert.equal(ui.keepAwakeFeedback.textContent, 'macOS 未能开启防休眠');

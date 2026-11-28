@@ -49,7 +49,7 @@ const available = {
 const settled = () => new Promise((resolve) => setImmediate(resolve));
 
 test("hidden until a candidate exists; footer remains before Keep Awake and outside simple-mode hiding", () => {
-  assert.match(html, /id="updateNoticeBtn" hidden[^\n]*\n\s*<button[^\n]+id="keepAwakeBtn"/);
+  assert.match(html, /id="updateNoticeBtn" hidden[^\n]*\n\s*<span class="keep-awake-control">\s*<button[^\n]+id="keepAwakeBtn"/);
   assert.match(html, /#updateNoticeBtn\[hidden\] \{ display: none !important; \}/);
   assert.doesNotMatch(html, /minimal-mode[^\n{]*(?:#updateNoticeBtn|\.pop-footer|\.footer-actions)/);
   assert.match(html, /id="keepAwakeCfg"[\s\S]+?<\/section>\s+<section[^>]+id="updateCfg"/);
