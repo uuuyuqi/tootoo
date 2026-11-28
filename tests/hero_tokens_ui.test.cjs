@@ -26,3 +26,13 @@ test('total usage shows one cache hit rate alongside input and output', () => {
   draw({kpi: {...kpi, cr: 0, cache_hit: 0}});
   assert.equal(elements.get('kpiCache').textContent, '命中率0%');
 });
+
+test('hero cards share title, value, chart and caption rows without a cost-only offset', () => {
+  const grid = html.match(/<section class="hero-grid">[\s\S]+?<\/section>/)[0];
+  assert.equal((grid.match(/class="hero-sub\b/g) || []).length, 4);
+  assert.doesNotMatch(grid, /class="hero-sub"\s+style=/);
+  assert.match(html, /\.hero-grid \.card-head \{ grid-row: 1; \}/);
+  assert.match(html, /\.hero-grid \.hero-val \{\s+grid-row: 2;/);
+  assert.match(html, /\.hero-grid :is\(\.stack-bar, \.gauge-track\) \{ grid-row: 3; \}/);
+  assert.match(html, /\.hero-grid \.hero-sub \{ grid-row: 4; \}/);
+});

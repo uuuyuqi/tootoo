@@ -5924,6 +5924,37 @@
     box-shadow: var(--shadow);
   }
 
+  /* Same title, value, chart and caption rows even when a slot is empty. */
+  .hero-grid > .card {
+    --hero-head-height: 20px;
+    --hero-value-size: 30px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: var(--hero-head-height) calc(var(--hero-value-size) * 1.08) 7px auto;
+    row-gap: 8px;
+    align-content: start;
+  }
+  .hero-grid .card-head,
+  .hero-grid .hero-val,
+  .hero-grid .stack-bar,
+  .hero-grid .gauge-track { margin-bottom: 0; }
+  .hero-grid .card-head { grid-row: 1; }
+  .hero-grid .card-head .kicker { white-space: nowrap; }
+  .hero-grid .card-head .pill {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 1.2;
+  }
+  .hero-grid .hero-val {
+    grid-row: 2;
+    font-size: var(--hero-value-size);
+    white-space: nowrap;
+  }
+  .hero-grid :is(.stack-bar, .gauge-track) { grid-row: 3; }
+  .hero-grid .hero-sub { grid-row: 4; }
+
   .card-head {
     display: flex;
     align-items: center;
@@ -7117,7 +7148,10 @@
   }
 
   body.popover-mode .card { padding: 11px 12px; }
-  body.popover-mode .hero-val { font-size: 22px; margin-bottom: 6px; }
+  body.popover-mode .hero-grid > .card {
+    --hero-head-height: 17px;
+    --hero-value-size: 22px;
+  }
   body.popover-mode .hero-sub { font-size: 9.5px; }
   body.popover-mode .kicker { font-size: 11.5px; gap: 5px; }
   body.popover-mode .kicker::before { height: 10px; }
@@ -7588,7 +7622,7 @@
         <span class="pill" id="peakHourPill">高峰 —</span>
       </div>
       <div class="hero-val" id="kpiCost">—</div>
-      <div class="hero-sub" style="margin-top:12px">
+      <div class="hero-sub">
         <span id="kpiReqs">— 次请求</span>
         <span id="kpiSessions">— 个会话</span>
       </div>
