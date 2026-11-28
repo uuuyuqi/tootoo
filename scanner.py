@@ -653,15 +653,15 @@ MODEL_PRICING: list[tuple[str, tuple[float, float, float, float]]] = [
 
 TOOL_META = {
     "antigravity": {"label": "Antigravity (agy)", "short": "AGY", "accent": "#E54826"},
-    "codex": {"label": "Codex CLI", "short": "CODEX", "accent": "#3B6CF6"},
+    "codex": {"label": "Codex CLI", "short": "CODEX", "accent": "#5B53CE"},
     "omp": {"label": "Oh My Pi", "short": "OMP", "accent": "#DB2777"},
-    "pi": {"label": "Pi", "short": "PI", "accent": "#047857"},
+    "pi": {"label": "Pi", "short": "PI", "accent": "#A052AA"},
     "devin": {"label": "Devin CLI", "short": "DEVIN", "accent": "#0284C7"},
     "qoder": {"label": "Qoder CLI", "short": "QODER", "accent": "#059669"},
     "copilot": {"label": "Copilot CLI", "short": "COPILOT", "accent": "#4F46E5"},
     "droid": {"label": "Factory Droid", "short": "DROID", "accent": "#EA580C"},
     "opencode": {"label": "OpenCode", "short": "OPENCODE", "accent": "#D97706"},
-    "grok": {"label": "Grok CLI", "short": "GROK", "accent": "#52525B"},
+    "grok": {"label": "Grok CLI", "short": "GROK", "accent": "#28282E"},
     "claude": {"label": "Claude Code", "short": "CLAUDE", "accent": "#D97757"},
     "gemini": {"label": "Gemini CLI", "short": "GEMINI", "accent": "#7C3AED"},
     "hermes": {"label": "Hermes", "short": "HERMES", "accent": "#0891B2"},

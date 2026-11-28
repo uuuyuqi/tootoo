@@ -25,6 +25,7 @@
     --amber: #d97706;
     --blue: #2563eb;
     --violet: #7c3aed;
+    --grok-accent: #28282E;
     --good: #0d8a72;
     --warn: #c96a08;
     --bad: #dc2626;
@@ -54,6 +55,7 @@
     --amber: #f59e0b;
     --blue: #4f8bff;
     --violet: #a78bfa;
+    --grok-accent: #9A9AA2;
     --good: #18b898;
     --warn: #f59e0b;
     --bad: #f87171;
@@ -10265,15 +10267,15 @@ function openEvoModal() {
 
 const TOOL_COLORS = {
   antigravity: "#E54826",
-  codex: "#3B6CF6",
+  codex: "#5B53CE",
   omp: "#DB2777",
-  pi: "#047857",
+  pi: "#A052AA",
   devin: "#0284C7",
   qoder: "#059669",
   copilot: "#4F46E5",
   droid: "#EA580C",
   opencode: "#D97706",
-  grok: "#52525B",
+  grok: "var(--grok-accent)",
   claude: "#D97757",
   gemini: "#7C3AED",
   hermes: "#0891B2",
@@ -10909,14 +10911,14 @@ function renderToolChips(d) {
     const active = state.tool === t.tool ? "active" : "";
     const lbl = isPopover ? t.short : t.label;
     html += `<button class="chip ${active}" data-tool="${esc(t.tool)}">
-      <span class="dot" style="background:${esc(t.accent)}"></span>
+      <span class="dot" style="background:${t.tool === "grok" ? "var(--grok-accent)" : esc(t.accent)}"></span>
       ${esc(lbl)}
       <span class="cnt">${fmtNum(t.tokens)}</span>
     </button>`;
   }
   const grokChip = d.grokbot || d.quotas?.grokbot;
   if (grokChip) html += `<button type="button" class="chip ${state.tool === "grokbot" ? "active" : ""}" data-tool="grokbot" title="筛选 Grok Bot 消息与本地周额度">
-    <span class="dot" style="background:#7b81dc"></span>Grok Bot</button>`;
+    <span class="dot" style="background:var(--grok-accent)"></span>Grok Bot</button>`;
   bar.innerHTML = html;
   bar.querySelectorAll(".chip[data-tool]").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -11600,7 +11602,7 @@ function renderGrokBotAgent(g, q) {
   const plan = [q?.plan, q?.plan_tier].map(x => typeof x === "string" ? x.trim().slice(0, 48) : "").filter(Boolean).join(" · ");
   const warn = bucket && q.would_refuse_send === true ? '<div class="grokbot-warning">Grok Bot 可能暂时拒绝发送消息，请留意周额度。</div>' : "";
   const val = (label, value) => `<div class="stat-cell"><span class="stat-lbl">${label}</span><strong class="stat-val">${value}</strong></div>`;
-  return `<div class="agent-item" data-agent="grokbot" style="border-left-color:#7b81dc">
+  return `<div class="agent-item" data-agent="grokbot" style="border-left-color:var(--grok-accent)">
     <div class="agent-top"><span class="agent-name">Grok Bot</span>
       ${plan && bucket ? `<span class="quota-badge grokbot-plan">${esc(plan)}</span>` : ""}
       <span class="grokbot-meta">${last ? "最近活跃 " + esc(last) : "本地消息记录"}</span>
@@ -11670,7 +11672,7 @@ function renderAgents(d) {
     ? (hasGrokBot ? "" : `<div class="empty">暂无本地会话数据</div>`)
     : tools.map(t => {
         const share = Math.round((t.tokens / grand) * 100);
-        const accent = esc(t.accent || "#6B7280");
+        const accent = t.tool === "grok" ? "var(--grok-accent)" : esc(t.accent || "#6B7280");
 
         // Semantic tones for instant numeric scannability
         const tpsTone = t.tps == null ? "tone-muted" : t.tps >= 70 ? "tone-good" : t.tps < 25 ? "tone-warn" : "";

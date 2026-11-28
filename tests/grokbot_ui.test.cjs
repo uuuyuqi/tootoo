@@ -134,3 +134,23 @@ test('tool chips filter consistently in both layouts; Grok Bot is last in All', 
     assert.deepEqual(counts(),['7 个活跃','7 个活跃']);
   }
 });
+
+test('tool branding stays distinct from quota status in chips and cards', () => {
+  const f = fixture(true);
+  const colors = {pi:'#A052AA', codex:'#5B53CE', grok:'#28282E'};
+  const tools = Object.entries(colors).map(([tool,accent]) =>
+    ({tool, accent, label:tool, short:tool.toUpperCase(), tokens:100, requests:1}));
+  const data = {kpi:{tokens:300}, available_tools:tools, tools, grokbot:{sessions:1}, quotas:{grokbot:quota()}};
+  f.ctx.renderToolChips(data);
+  f.ctx.renderAgents(data);
+  const chips = f.nodes.toolBar.innerHTML;
+  const cards = f.nodes.agentListPop.innerHTML;
+  for (const [tool, color] of Object.entries(colors)) {
+    const tone = tool === 'grok' ? 'var(--grok-accent)' : color;
+    assert.ok(chips.split(`data-tool="${tool}"`)[1].split('</button>')[0].includes(tone));
+    assert.ok(cards.includes(`class="agent-item" style="border-left-color:${tone}"`));
+  }
+  assert.ok(chips.split('data-tool="grokbot"')[1].includes('background:var(--grok-accent)'));
+  assert.ok(cards.includes('data-agent="grokbot" style="border-left-color:var(--grok-accent)"'));
+  assert.ok(cards.includes('var(--bad)'));
+});
