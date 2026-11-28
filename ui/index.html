@@ -6000,6 +6000,19 @@
     flex-wrap: wrap;
   }
 
+  .hero-sub.token-summary { flex-wrap: nowrap; }
+  .token-summary #kpiInOut {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .token-summary #kpiCache {
+    flex: none;
+    white-space: nowrap;
+    color: var(--teal);
+  }
+
   .stack-bar {
     height: 7px;
     border-radius: 3px;
@@ -7554,13 +7567,12 @@
     <div class="card" data-kpi="tokens" title="双击触发算力洪流并同步最新用量">
       <div class="card-head">
         <span class="kicker k-teal">总用量</span>
-        <span class="pill teal" id="cachePill">缓存 —%</span>
       </div>
       <div class="hero-val" id="kpiTokens">—</div>
       <div class="stack-bar" id="tokenStack"></div>
-      <div class="hero-sub">
-        <span id="kpiInOut">输入 — · 输出 —</span>
-        <span id="kpiCache">缓存 —</span>
+      <div class="hero-sub token-summary">
+        <span id="kpiInOut">输入— · 输出—</span>
+        <span id="kpiCache">命中率—</span>
       </div>
       <div class="token-carrot-hover" id="tokenCarrotHover">
         <button type="button" class="token-carrot-btn" id="tokenCarrotBtn" title="点击去兑换萝卜币">
@@ -11258,9 +11270,11 @@ function animateMetric(id, targetVal, formatter) {
 function renderHero(d) {
   const k = d.kpi;
   animateMetric("kpiTokens", k.tokens, fmtNum);
-  document.getElementById("cachePill").textContent = `缓存 ${k.cache_hit}%`;
-  document.getElementById("kpiInOut").textContent = `输入 ${fmtNum(k.in)} · 输出 ${fmtNum(k.out)}`;
-  document.getElementById("kpiCache").textContent = `命中 ${fmtNum(k.cr)}`;
+  const inOut = document.getElementById("kpiInOut");
+  inOut.title = inOut.textContent = `输入${fmtNum(k.in)} · 输出${fmtNum(k.out)}`;
+  const cache = document.getElementById("kpiCache");
+  cache.textContent = `命中率${k.cache_hit}%`;
+  cache.title = `缓存命中 ${fmtNum(k.cr)} Token`;
 
   const tot = Math.max(k.tokens, 1);
   const segs = [
